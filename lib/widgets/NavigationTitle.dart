@@ -1,0 +1,24 @@
+import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+
+import 'package:flutter/material.dart';
+
+class NavigationTitle extends StatelessWidget {
+  const NavigationTitle({Key key, this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 2),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 16,
+          color: Theme.of(context).appBarTheme.color,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
