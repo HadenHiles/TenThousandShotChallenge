@@ -34,6 +34,18 @@ class _StartShootingState extends State<StartShooting> {
   }
 
   @override
+  void dispose() {
+    _shots = [];
+    _currentShotCount = preferences.puckCount;
+    super.dispose();
+  }
+
+  void reset() {
+    _shots = [];
+    _currentShotCount = preferences.puckCount;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
@@ -54,7 +66,7 @@ class _StartShootingState extends State<StartShooting> {
                     fontSize: 28,
                   ),
                 ),
-                SizedBox(height: 25),
+                SizedBox(height: 15),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   mainAxisSize: MainAxisSize.max,
@@ -137,7 +149,7 @@ class _StartShootingState extends State<StartShooting> {
                     });
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       _puckCountUpdating
                           ? SizedBox(
@@ -146,10 +158,10 @@ class _StartShootingState extends State<StartShooting> {
                               child: CircularProgressIndicator(),
                             )
                           : Text(
-                              "Update how many pucks you have to $_currentShotCount",
+                              "Update # of pucks you have to $_currentShotCount",
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -297,7 +309,12 @@ class _StartShootingState extends State<StartShooting> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width - 15,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          //TODO: Save the user's shots to firestore
+                          sessionService.reset();
+                          widget.sessionPanelController.close();
+                          this.reset();
+                        },
                         child: Text(
                           "Finish".toUpperCase(),
                           style: TextStyle(
