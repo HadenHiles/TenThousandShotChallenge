@@ -10,7 +10,7 @@ class Shots {
   Shots(this.date, this.type, this.count);
 
   Shots.fromMap(Map<String, dynamic> map, {this.reference})
-      : assert(map['start_date'] != null),
+      : assert(map['date'] != null),
         assert(map['type'] != null),
         assert(map['count'] != null),
         id = map['id'],

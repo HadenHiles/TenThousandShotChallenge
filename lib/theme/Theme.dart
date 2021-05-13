@@ -24,7 +24,7 @@ class HomeTheme {
       onBackground: Colors.black,
     ),
     cardTheme: CardTheme(
-      color: Colors.white,
+      color: Colors.grey.shade300,
     ),
     iconTheme: IconThemeData(
       color: Colors.black54,
@@ -84,7 +84,7 @@ class HomeTheme {
       onBackground: Colors.white,
     ),
     cardTheme: CardTheme(
-      color: Color(0xff1F1F1F),
+      color: Color(0xff333333),
     ),
     iconTheme: IconThemeData(
       color: Color.fromRGBO(255, 255, 255, 0.8),

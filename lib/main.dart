@@ -1,6 +1,7 @@
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,8 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Setup a navigation key so that we can navigate without context
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
-// Create a global variable for referencing app settings
+// Global variables
 Preferences preferences = Preferences(false, 25);
+final sessionService = SessionService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
