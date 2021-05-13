@@ -240,23 +240,27 @@ class _NavigationState extends State<Navigation> {
             );
           },
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.sports_hockey),
-              label: 'Shots',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          backgroundColor: Theme.of(context).backgroundColor,
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
-          onTap: _onItemTapped,
+        bottomNavigationBar: SizedOverflowBox(
+          alignment: AlignmentDirectional.topCenter,
+          size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.sports_hockey),
+                label: 'Shots',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            backgroundColor: Theme.of(context).backgroundColor,
+            selectedItemColor: Theme.of(context).primaryColor,
+            unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
+            onTap: _onItemTapped,
+          ),
         ),
       ),
     );

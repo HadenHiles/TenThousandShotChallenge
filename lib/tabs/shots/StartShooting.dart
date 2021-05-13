@@ -288,6 +288,31 @@ class _StartShootingState extends State<StartShooting> {
                     children: _buildShotsList(context, _shots),
                   ),
                 ),
+                SizedBox(
+                  height: 5,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width - 15,
+                      child: TextButton(
+                        onPressed: () {},
+                        child: Text(
+                          "Finish".toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 20,
+                          ),
+                        ),
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
