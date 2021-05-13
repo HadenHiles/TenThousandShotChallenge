@@ -10,7 +10,7 @@ class BasicTitle extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 2),
       child: Text(
-        title,
+        title.toUpperCase(),
         style: Theme.of(context).textTheme.headline5,
         textAlign: TextAlign.center,
       ),

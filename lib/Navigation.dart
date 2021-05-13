@@ -2,14 +2,14 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
-import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/theme/SettingsStateNotifier.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
-import 'models/Settings.dart';
+import 'models/Preferences.dart';
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
@@ -25,9 +25,19 @@ class _NavigationState extends State<Navigation> {
   Widget _title;
   List<Widget> _actions;
   int _selectedIndex = 0;
+  final logo = Container(
+    height: 40,
+    padding: EdgeInsets.only(top: 6),
+    child: Image.asset('assets/images/logo-text-only.png'),
+  );
+
   static List<NavigationTab> _tabs = [
     NavigationTab(
-      title: NavigationTitle(title: "10k Shot Challenge"),
+      title: Container(
+        height: 40,
+        padding: EdgeInsets.only(top: 6),
+        child: Image.asset('assets/images/logo-text-only.png'),
+      ),
       actions: [],
       body: Shots(),
     ),
@@ -56,7 +66,8 @@ class _NavigationState extends State<Navigation> {
   void _onItemTapped(int index) async {
     setState(() {
       _selectedIndex = index;
-      _title = _tabs[index].title;
+      _selectedIndex = index;
+      _title = index == 0 ? logo : _tabs[index].title;
       _actions = _tabs[index].actions;
     });
   }
@@ -66,7 +77,7 @@ class _NavigationState extends State<Navigation> {
     _loadPreferences();
 
     setState(() {
-      _title = NavigationTitle(title: "10k Shot Challenge");
+      _title = logo;
       _actions = [];
     });
 
@@ -77,8 +88,9 @@ class _NavigationState extends State<Navigation> {
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
+    int puckCount = prefs.getInt('puck_count') ?? 25;
 
-    Provider.of<SettingsStateNotifier>(context, listen: false).updateSettings(Settings(darkMode));
+    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(darkMode, puckCount));
   }
 
   @override
@@ -90,21 +102,21 @@ class _NavigationState extends State<Navigation> {
             SliverAppBar(
               collapsedHeight: 65,
               expandedHeight: 125,
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
               iconTheme: Theme.of(context).iconTheme,
               actionsIconTheme: Theme.of(context).iconTheme,
               floating: true,
               pinned: true,
               flexibleSpace: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).accentColor,
+                  color: HomeTheme.darkTheme.colorScheme.primaryVariant,
                 ),
                 child: FlexibleSpaceBar(
                   collapseMode: CollapseMode.parallax,
                   centerTitle: true,
                   title: _title,
                   background: Container(
-                    color: Theme.of(context).accentColor,
+                    color: HomeTheme.darkTheme.colorScheme.primaryVariant,
                   ),
                 ),
               ),

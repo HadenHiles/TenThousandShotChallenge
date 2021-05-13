@@ -9,11 +9,12 @@ class HomeTheme {
     accentColor: Color(0xffB82e2e),
     scaffoldBackgroundColor: Color(0xffF7F7F7),
     appBarTheme: AppBarTheme(
-      color: Colors.white,
+      color: Colors.grey.shade400,
       iconTheme: IconThemeData(
         color: Colors.black87,
       ),
     ),
+    buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
       primary: Colors.white,
       onPrimary: Colors.black54,
@@ -43,7 +44,8 @@ class HomeTheme {
       ),
       headline5: TextStyle(
         color: Colors.black87,
-        fontSize: 20,
+        fontFamily: 'NovecentoSans',
+        fontSize: 22,
       ),
       headline6: TextStyle(
         color: Color(0xffCC3333),
@@ -72,6 +74,7 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
+    buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
       primary: Color(0xff1A1A1A),
       onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
@@ -101,6 +104,8 @@ class HomeTheme {
       ),
       headline5: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 0.8),
+        fontFamily: 'NovecentoSans',
+        fontSize: 22,
       ),
       headline6: TextStyle(
         color: Color(0xffCC3333),

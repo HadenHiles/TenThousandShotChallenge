@@ -4,9 +4,10 @@ import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/models/Settings.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
-import 'package:tenthousandshotchallenge/theme/SettingsStateNotifier.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 
 import 'EditProfile.dart';
@@ -88,6 +89,24 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               title: 'General',
               titleTextStyle: Theme.of(context).textTheme.headline6,
               tiles: [
+                SettingsTile(
+                  title: 'How many pucks do you have?',
+                  titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                  subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                  leading: Icon(
+                    Icons.bubble_chart_rounded,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  onPressed: (BuildContext context) {
+                    navigatorKey.currentState.push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return EditPuckCount();
+                        },
+                      ),
+                    );
+                  },
+                ),
                 SettingsTile.switchTile(
                   titleTextStyle: Theme.of(context).textTheme.bodyText1,
                   title: 'Dark Mode',
@@ -103,7 +122,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       prefs.setBool('dark_mode', _darkMode);
                     });
 
-                    Provider.of<SettingsStateNotifier>(context, listen: false).updateSettings(Settings(value));
+                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('puck_count')));
                   },
                 ),
               ],
