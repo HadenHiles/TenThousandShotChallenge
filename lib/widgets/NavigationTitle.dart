@@ -1,5 +1,3 @@
-import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
-
 import 'package:flutter/material.dart';
 
 class NavigationTitle extends StatelessWidget {
@@ -14,7 +12,8 @@ class NavigationTitle extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          fontSize: 16,
+          fontFamily: 'NovecentoSans',
+          fontSize: 20,
           color: Theme.of(context).appBarTheme.color,
         ),
         textAlign: TextAlign.center,

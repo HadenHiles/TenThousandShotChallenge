@@ -1,31 +1,31 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
 
-class EditProfile extends StatefulWidget {
-  EditProfile({Key key}) : super(key: key);
+class EditPuckCount extends StatefulWidget {
+  EditPuckCount({Key key}) : super(key: key);
 
   @override
-  _EditProfileState createState() => _EditProfileState();
+  _EditPuckCountState createState() => _EditPuckCountState();
 }
 
-class _EditProfileState extends State<EditProfile> {
+class _EditPuckCountState extends State<EditPuckCount> {
   final user = FirebaseAuth.instance.currentUser;
 
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController displayNameTextFieldController = TextEditingController();
+  final TextEditingController puckCountTextFieldController = TextEditingController();
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
-      UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
-
-      displayNameTextFieldController.text = userProfile.displayName != null ? userProfile.displayName : user.displayName;
+    setState(() {
+      puckCountTextFieldController.text = preferences.puckCount != null ? preferences.puckCount.toString() : 25.toString();
     });
 
     super.initState();
@@ -65,7 +65,7 @@ class _EditProfileState extends State<EditProfile> {
                   collapseMode: CollapseMode.parallax,
                   titlePadding: null,
                   centerTitle: false,
-                  title: BasicTitle(title: "Edit Profile"),
+                  title: BasicTitle(title: "How many pucks do you have?"),
                   background: Container(
                     color: Theme.of(context).scaffoldBackgroundColor,
                   ),
@@ -79,12 +79,24 @@ class _EditProfileState extends State<EditProfile> {
                       Icons.check,
                       size: 28,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState.validate()) {
-                        FirebaseFirestore.instance.collection('users').doc(user.uid).update({'display_name': displayNameTextFieldController.text.toString()}).then((value) {
-                          new SnackBar(content: new Text('Your profile details were saved successfully!'));
-                          navigatorKey.currentState.pop();
+                        SharedPreferences prefs = await SharedPreferences.getInstance();
+                        setState(() {
+                          prefs.setInt(
+                            'puck_count',
+                            int.parse(puckCountTextFieldController.text),
+                          );
                         });
+                        Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                          Preferences(
+                            prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
+                            int.parse(puckCountTextFieldController.text),
+                          ),
+                        );
+
+                        new SnackBar(content: new Text('Puck count was saved successfully!'));
+                        navigatorKey.currentState.pop();
                       }
                     },
                   ),
@@ -103,12 +115,14 @@ class _EditProfileState extends State<EditProfile> {
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 10),
                     child: BasicTextField(
-                      keyboardType: TextInputType.text,
-                      hintText: 'Enter a display name',
-                      controller: displayNameTextFieldController,
+                      keyboardType: TextInputType.number,
+                      hintText: '# of Pucks',
+                      controller: puckCountTextFieldController,
                       validator: (value) {
                         if (value.isEmpty) {
-                          return 'Please enter a display name';
+                          return 'Please enter how many pucks you have';
+                        } else if (int.parse(value) <= 0) {
+                          return 'Must have at least 1 puck';
                         }
                         return null;
                       },

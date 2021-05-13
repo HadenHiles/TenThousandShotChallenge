@@ -1,7 +1,7 @@
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:tenthousandshotchallenge/models/Settings.dart';
-import 'package:tenthousandshotchallenge/theme/SettingsStateNotifier.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 // Create a global variable for referencing app settings
-Settings settings = Settings(false);
+Preferences preferences = Preferences(false, 25);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +24,14 @@ void main() async {
 
   // Load app settings
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  settings = Settings(
+  preferences = Preferences(
     prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
+    prefs.getInt('puck_count') ?? 25,
   );
 
   runApp(
-    ChangeNotifierProvider<SettingsStateNotifier>(
-      create: (_) => SettingsStateNotifier(),
+    ChangeNotifierProvider<PreferencesStateNotifier>(
+      create: (_) => PreferencesStateNotifier(),
       child: Home(),
     ),
   );
@@ -49,16 +50,16 @@ class Home extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
 
-    return Consumer<SettingsStateNotifier>(
+    return Consumer<PreferencesStateNotifier>(
       builder: (context, settingsState, child) {
-        settings = settingsState.settings;
+        preferences = settingsState.preferences;
 
         return MaterialApp(
           title: '10,000 Shot Challenge',
           navigatorKey: navigatorKey,
           theme: HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
-          themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.system,
+          themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
           home: user != null ? Navigation() : Login(),
         );
       },
