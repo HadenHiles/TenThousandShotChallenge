@@ -57,12 +57,19 @@ class _ShotsState extends State<Shots> {
                       sessionService.reset();
                       Navigator.of(context).pop();
                       sessionService.start();
+                      widget.sessionPanelController.show();
                     },
                   ),
                 );
               }
             },
-            child: Text('Start Shooting!'.toUpperCase()),
+            child: Text(
+              'Start Shooting'.toUpperCase(),
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 20,
+              ),
+            ),
           ),
         ),
       ],
