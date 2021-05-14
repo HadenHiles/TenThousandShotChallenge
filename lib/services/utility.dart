@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 String printDuration(Duration duration, bool showSeconds) {
   String twoDigits(int n) => n.toString().padLeft(2, "0");
   String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
@@ -18,6 +20,10 @@ String printDuration(Duration duration, bool showSeconds) {
   }
 
   return durationString;
+}
+
+String printTime(DateTime date) {
+  return new DateFormat("hh:mm a").format(date);
 }
 
 String printWeekday(DateTime date) {
