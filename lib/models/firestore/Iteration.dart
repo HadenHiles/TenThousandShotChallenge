@@ -14,8 +14,8 @@ class Iteration {
       : assert(map['start_date'] != null),
         assert(map['total'] != null),
         id = map['id'],
-        startDate = map['start_date'],
-        endDate = map['end_date'],
+        startDate = map['start_date'] != null ? map['start_date'].toDate() : null,
+        endDate = map['end_date'] != null ? map['end_date'].toDate() : null,
         total = map['total'],
         complete = map['complete'];
 
