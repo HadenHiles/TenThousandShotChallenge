@@ -7,6 +7,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -68,47 +69,53 @@ class _StartShootingState extends State<StartShooting> {
                   ),
                 ),
                 SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    ShotTypeButton(
-                      type: 'wrist',
-                      active: _selectedShotType == 'wrist',
-                      onPressed: () {
-                        setState(() {
-                          _selectedShotType = 'wrist';
-                        });
-                      },
-                    ),
-                    ShotTypeButton(
-                      type: 'snap',
-                      active: _selectedShotType == 'snap',
-                      onPressed: () {
-                        setState(() {
-                          _selectedShotType = 'snap';
-                        });
-                      },
-                    ),
-                    ShotTypeButton(
-                      type: 'slap',
-                      active: _selectedShotType == 'slap',
-                      onPressed: () {
-                        setState(() {
-                          _selectedShotType = 'slap';
-                        });
-                      },
-                    ),
-                    ShotTypeButton(
-                      type: 'backhand',
-                      active: _selectedShotType == 'backhand',
-                      onPressed: () {
-                        setState(() {
-                          _selectedShotType = 'backhand';
-                        });
-                      },
-                    ),
-                  ],
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      ShotTypeButton(
+                        type: 'wrist',
+                        active: _selectedShotType == 'wrist',
+                        onPressed: () {
+                          setState(() {
+                            _selectedShotType = 'wrist';
+                          });
+                        },
+                      ),
+                      ShotTypeButton(
+                        type: 'snap',
+                        active: _selectedShotType == 'snap',
+                        onPressed: () {
+                          setState(() {
+                            _selectedShotType = 'snap';
+                          });
+                        },
+                      ),
+                      ShotTypeButton(
+                        type: 'slap',
+                        active: _selectedShotType == 'slap',
+                        onPressed: () {
+                          setState(() {
+                            _selectedShotType = 'slap';
+                          });
+                        },
+                      ),
+                      ShotTypeButton(
+                        type: 'backhand',
+                        active: _selectedShotType == 'backhand',
+                        onPressed: () {
+                          setState(() {
+                            _selectedShotType = 'backhand';
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(
                   height: 15,
@@ -318,25 +325,52 @@ class _StartShootingState extends State<StartShooting> {
                   children: [
                     SizedBox(
                       width: MediaQuery.of(context).size.width - 15,
-                      child: TextButton(
-                        onPressed: () {
-                          //TODO: Save the user's shots to firestore
-                          sessionService.reset();
-                          widget.sessionPanelController.close();
-                          this.reset();
-                        },
-                        child: Text(
-                          "Finish".toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 20,
-                          ),
-                        ),
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
-                        ),
-                      ),
+                      child: _shots.length < 1
+                          ? Container()
+                          : TextButton(
+                              onPressed: () async {
+                                if (_shots.length < 1) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: new Text('You haven\'t taken any shots yet.'),
+                                      duration: Duration(milliseconds: 1500),
+                                    ),
+                                  );
+                                } else {
+                                  await saveShootingSession(_shots).then((success) {
+                                    sessionService.reset();
+                                    widget.sessionPanelController.close();
+                                    this.reset();
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: new Text('Shooting session saved!'),
+                                        duration: Duration(milliseconds: 1200),
+                                      ),
+                                    );
+                                  }).onError((error, stackTrace) {
+                                    print(error);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: new Text('There was an error saving your shooting session :('),
+                                        duration: Duration(milliseconds: 1500),
+                                      ),
+                                    );
+                                  });
+                                }
+                              },
+                              child: Text(
+                                "Finish".toUpperCase(),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 20,
+                                ),
+                              ),
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                              ),
+                            ),
                     ),
                   ],
                 ),
