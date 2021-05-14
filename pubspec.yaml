@@ -39,6 +39,7 @@ dependencies:
   prompt_dialog: ^1.0.0
   sliding_up_panel: ^2.0.0+1
   intl: ^0.17.0
+  charts_flutter: ^0.10.0
 
 
   # The following adds the Cupertino Icons font to your application.

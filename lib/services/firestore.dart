@@ -64,6 +64,46 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
       batch.set(sRef, shot.toMap());
     });
 
+    await ref.get().then((i) {
+      Iteration iteration = Iteration.fromMap(i.data());
+      iteration = Iteration(iteration.startDate, iteration.endDate, iteration.total + shootingSession.total, iteration.complete);
+      batch.update(ref, iteration.toMap());
+    });
+
     return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
   });
+}
+
+Future<List<Iteration>> getIterations(String userId) async {
+  userId = userId.isNotEmpty ? userId : auth.currentUser.uid;
+
+  List<Iteration> iterations = [];
+  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').get().then((snapshots) {
+    snapshots.docs.forEach((doc) {
+      iterations.add(Iteration.fromMap(doc.data()));
+    });
+
+    return iterations;
+  }).onError((error, stackTrace) => iterations);
+}
+
+Future<String> getActiveIterationId(String userId) async {
+  userId = userId.isNotEmpty ? userId : auth.currentUser.uid;
+
+  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').where('complete', isEqualTo: false).get().then((snapshots) {
+    return snapshots.docs[0].id;
+  }).onError((error, stackTrace) => null);
+}
+
+Future<List<ShootingSession>> getShootingSessions(String userId, String iterationId) async {
+  userId = userId.isNotEmpty ? userId : auth.currentUser.uid;
+
+  List<ShootingSession> shootingSessions = [];
+  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').doc(iterationId).collection('sessions').get().then((snapshots) {
+    snapshots.docs.forEach((doc) {
+      shootingSessions.add(ShootingSession.fromMap(doc.data()));
+    });
+
+    return shootingSessions;
+  }).onError((error, stackTrace) => shootingSessions);
 }

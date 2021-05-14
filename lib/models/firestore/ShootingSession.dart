@@ -15,7 +15,7 @@ class ShootingSession {
 
   ShootingSession.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['total'] != null),
-        assert(map['total_rist'] != null),
+        assert(map['total_wrist'] != null),
         assert(map['total_snap'] != null),
         assert(map['total_slap'] != null),
         assert(map['total_backhand'] != null),
