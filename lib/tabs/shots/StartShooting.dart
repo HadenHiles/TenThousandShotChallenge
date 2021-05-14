@@ -7,6 +7,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
@@ -360,13 +361,27 @@ class _StartShootingState extends State<StartShooting> {
             style: TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
           ),
         ),
-        title: Text(
-          s.type.toUpperCase(),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
-            fontSize: 20,
-            fontFamily: 'NovecentoSans',
-          ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Text(
+              s.type.toUpperCase(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary,
+                fontSize: 20,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+            Text(
+              printTime(s.date),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary,
+                fontSize: 20,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          ],
         ),
         trailing: IconButton(
           onPressed: () {
