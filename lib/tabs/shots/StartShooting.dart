@@ -254,7 +254,7 @@ class _StartShootingState extends State<StartShooting> {
                   height: 15,
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width - 100,
+                  width: MediaQuery.of(context).size.width - 150,
                   child: TextButton(
                     onPressed: () {
                       Shots shots = Shots(DateTime.now(), _selectedShotType, _currentShotCount);
