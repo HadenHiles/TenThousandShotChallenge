@@ -22,6 +22,10 @@ String printDuration(Duration duration, bool showSeconds) {
   return durationString;
 }
 
+String printDate(DateTime date) {
+  return new DateFormat("EEEE MMMM d hh:mm a").format(date);
+}
+
 String printTime(DateTime date) {
   return new DateFormat("hh:mm a").format(date);
 }
