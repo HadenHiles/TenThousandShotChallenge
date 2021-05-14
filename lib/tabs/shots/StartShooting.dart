@@ -65,7 +65,7 @@ class _StartShootingState extends State<StartShooting> {
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontFamily: 'NovecentoSans',
-                    fontSize: 28,
+                    fontSize: 24,
                   ),
                 ),
                 SizedBox(height: 15),
@@ -120,15 +120,6 @@ class _StartShootingState extends State<StartShooting> {
                 SizedBox(
                   height: 15,
                 ),
-                Text(
-                  "# of Shots".toUpperCase(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 28,
-                  ),
-                ),
-                SizedBox(height: 15),
                 GestureDetector(
                   onTap: () async {
                     setState(() {
@@ -162,7 +153,7 @@ class _StartShootingState extends State<StartShooting> {
                     });
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       _puckCountUpdating
                           ? SizedBox(
@@ -172,7 +163,7 @@ class _StartShootingState extends State<StartShooting> {
                             )
                           : preferences.puckCount != _currentShotCount
                               ? Text(
-                                  "Update # of pucks you have from ${preferences.puckCount} to $_currentShotCount",
+                                  "Tap to update # of pucks you have from ${preferences.puckCount} to $_currentShotCount",
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 11,
@@ -193,8 +184,17 @@ class _StartShootingState extends State<StartShooting> {
                   ),
                 ),
                 SizedBox(
-                  height: 5,
+                  height: 15,
                 ),
+                Text(
+                  "# of Shots".toUpperCase(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 24,
+                  ),
+                ),
+                SizedBox(height: 15),
                 GestureDetector(
                   onLongPress: () async {
                     await prompt(
