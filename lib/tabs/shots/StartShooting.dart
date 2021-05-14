@@ -140,16 +140,21 @@ class _StartShootingState extends State<StartShooting> {
                       ),
                     );
 
-                    new SnackBar(content: new Text('# of pucks updated successfully!'));
-
                     Future.delayed(Duration(seconds: 1), () {
                       setState(() {
                         _puckCountUpdating = false;
                       });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: new Text('# of pucks updated successfully!'),
+                          duration: Duration(milliseconds: 1200),
+                        ),
+                      );
                     });
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _puckCountUpdating
                           ? SizedBox(
@@ -157,26 +162,30 @@ class _StartShootingState extends State<StartShooting> {
                               width: 14,
                               child: CircularProgressIndicator(),
                             )
-                          : Text(
-                              "Update # of pucks you have to $_currentShotCount",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                          : preferences.puckCount != _currentShotCount
+                              ? Text(
+                                  "Update # of pucks you have from ${preferences.puckCount} to $_currentShotCount",
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : Container(height: 14),
+                      preferences.puckCount != _currentShotCount
+                          ? Container(
+                              margin: EdgeInsets.only(left: 4),
+                              child: Icon(
+                                Icons.refresh_rounded,
+                                size: 14,
                               ),
-                            ),
-                      Container(
-                        margin: EdgeInsets.only(left: 4),
-                        child: Icon(
-                          Icons.refresh_rounded,
-                          size: 14,
-                        ),
-                      ),
+                            )
+                          : Container(),
                     ],
                   ),
                 ),
                 SizedBox(
-                  height: 15,
+                  height: 5,
                 ),
                 GestureDetector(
                   onLongPress: () async {
