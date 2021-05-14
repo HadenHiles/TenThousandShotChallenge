@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/SessionChart.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Profile extends StatefulWidget {
@@ -15,6 +19,9 @@ class _ProfileState extends State<Profile> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
   UserProfile userProfile;
+  List<Iteration> _iterations;
+  int _totalShots = 0;
+  List<ShootingSession> _sessions = [];
 
   @override
   void initState() {
@@ -22,7 +29,30 @@ class _ProfileState extends State<Profile> {
       userProfile = UserProfile.fromSnapshot(uDoc);
     });
 
+    loadHistory();
+
     super.initState();
+  }
+
+  void loadHistory() async {
+    await getIterations(user.uid).then((iterations) {
+      iterations.forEach((i) {
+        setState(() {
+          _totalShots += i.total;
+        });
+      });
+      setState(() {
+        _iterations = iterations;
+      });
+    });
+
+    await getActiveIterationId(user.uid).then((iterationId) async {
+      await getShootingSessions(user.uid, iterationId).then((sessions) {
+        setState(() {
+          _sessions = sessions;
+        });
+      });
+    });
   }
 
   @override
@@ -81,12 +111,43 @@ class _ProfileState extends State<Profile> {
                       },
                     ),
                   ),
+                  Container(
+                    child: Text(
+                      _totalShots.toString(),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
+          Expanded(
+            child: SessionChart.withSampleData(),
+          ),
         ],
       ),
     );
+  }
+
+  List<ListTile> buildSessionsList() {
+    List<ListTile> sessions = [];
+    _sessions.forEach((s) {
+      sessions.add(
+        ListTile(
+          title: Text(
+            s.total.toString(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+        ),
+      );
+    });
+
+    return sessions;
   }
 }
