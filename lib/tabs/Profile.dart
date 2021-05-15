@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
@@ -513,7 +512,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "W",
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -536,7 +535,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "SN",
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -559,7 +558,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "SL",
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -582,7 +581,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "B",
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
