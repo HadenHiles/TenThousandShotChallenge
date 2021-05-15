@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,6 +29,7 @@ class _ProfileState extends State<Profile> {
   UserProfile userProfile;
   int _totalShots = 0;
   List<ShootingSession> _sessions = [];
+  List<Iteration> _iterations = [];
 
   @override
   void initState() {
@@ -46,6 +48,10 @@ class _ProfileState extends State<Profile> {
         setState(() {
           _totalShots += i.total;
         });
+      });
+
+      setState(() {
+        _iterations = iterations;
       });
     });
 
@@ -66,64 +72,94 @@ class _ProfileState extends State<Profile> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                margin: EdgeInsets.only(right: 15),
-                child: SizedBox(
-                  height: 60,
-                  child: UserAvatar(
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
+              Row(
                 children: [
                   Container(
-                    child: StreamBuilder<DocumentSnapshot>(
-                      // ignore: deprecated_member_use
-                      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData)
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            ],
-                          );
-
-                        UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
-
-                        return Text(
-                          userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).textTheme.bodyText1.color,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Container(
-                    child: Text(
-                      _totalShots.toString() + " Lifetime Shots".toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontFamily: 'NovecentoSans',
-                        color: Theme.of(context).colorScheme.onPrimary,
+                    margin: EdgeInsets.symmetric(horizontal: 15),
+                    child: SizedBox(
+                      height: 60,
+                      child: UserAvatar(
+                        backgroundColor: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        child: StreamBuilder<DocumentSnapshot>(
+                          // ignore: deprecated_member_use
+                          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData)
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ],
+                              );
+
+                            UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
+
+                            return Text(
+                              userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).textTheme.bodyText1.color,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Container(
+                        child: Text(
+                          _totalShots.toString() + " Lifetime Shots".toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: 'NovecentoSans',
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
+              ),
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(top: 5, right: 2),
+                      child: Text(
+                        "x",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 20,
+                          fontFamily: 'NovecentoSans',
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _iterations.length.toString(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 34,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
