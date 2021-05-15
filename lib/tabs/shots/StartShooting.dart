@@ -153,7 +153,7 @@ class _StartShootingState extends State<StartShooting> {
                     });
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _puckCountUpdating
                           ? SizedBox(
@@ -326,38 +326,46 @@ class _StartShootingState extends State<StartShooting> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width - 15,
                       child: _shots.length < 1
-                          ? Container()
+                          ? TextButton(
+                              onPressed: () {
+                                sessionService.reset();
+                                widget.sessionPanelController.close();
+                                this.reset();
+                              },
+                              child: Text(
+                                "Cancel".toUpperCase(),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 20,
+                                ),
+                              ),
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all(Theme.of(context).cardTheme.color),
+                              ),
+                            )
                           : TextButton(
                               onPressed: () async {
-                                if (_shots.length < 1) {
+                                await saveShootingSession(_shots).then((success) {
+                                  sessionService.reset();
+                                  widget.sessionPanelController.close();
+                                  this.reset();
+
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: new Text('You haven\'t taken any shots yet.'),
+                                      content: new Text('Shooting session saved!'),
+                                      duration: Duration(milliseconds: 1200),
+                                    ),
+                                  );
+                                }).onError((error, stackTrace) {
+                                  print(error);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: new Text('There was an error saving your shooting session :('),
                                       duration: Duration(milliseconds: 1500),
                                     ),
                                   );
-                                } else {
-                                  await saveShootingSession(_shots).then((success) {
-                                    sessionService.reset();
-                                    widget.sessionPanelController.close();
-                                    this.reset();
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: new Text('Shooting session saved!'),
-                                        duration: Duration(milliseconds: 1200),
-                                      ),
-                                    );
-                                  }).onError((error, stackTrace) {
-                                    print(error);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: new Text('There was an error saving your shooting session :('),
-                                        duration: Duration(milliseconds: 1500),
-                                      ),
-                                    );
-                                  });
-                                }
+                                });
                               },
                               child: Text(
                                 "Finish".toUpperCase(),
