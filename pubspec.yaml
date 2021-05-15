@@ -32,7 +32,6 @@ dependencies:
   shared_preferences: ^2.0.5
   google_sign_in: ^5.0.2
   flutter_signin_button: ^2.0.0
-  flutter_launcher_icons: ^0.9.0
   password_strength: ^0.2.0
   settings_ui: ^1.0.0
   numberpicker: ^2.1.1
@@ -49,6 +48,12 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.9.0
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/app-icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
