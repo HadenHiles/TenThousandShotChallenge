@@ -63,14 +63,14 @@ class _ProfileState extends State<Profile> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.only(bottom: 25),
+                margin: EdgeInsets.only(right: 15),
                 child: SizedBox(
-                  height: 100,
+                  height: 75,
                   child: UserAvatar(
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
@@ -258,12 +258,28 @@ class _ProfileState extends State<Profile> {
             ],
           ),
           SizedBox(
-            height: 15,
+            height: 25,
           ),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.all(0),
-              children: buildSessionsList(),
+              padding: EdgeInsets.only(
+                top: 0,
+                right: 0,
+                bottom: AppBar().preferredSize.height,
+                left: 0,
+              ),
+              children: _sessions.length < 1
+                  ? [
+                      Column(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                        ],
+                      ),
+                    ]
+                  : buildSessionsList(),
             ),
           ),
         ],
@@ -271,164 +287,181 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  List<Column> buildSessionsList() {
-    List<Column> sessions = [];
-    _sessions.forEach((s) {
+  List<Container> buildSessionsList() {
+    List<Container> sessions = [];
+    _sessions.asMap().forEach((i, s) {
       sessions.add(
-        Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    printDate(s.date),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+        Container(
+          padding: EdgeInsets.only(top: 5, bottom: 25),
+          decoration: BoxDecoration(
+            color: i % 2 == 0 ? Theme.of(context).cardTheme.color : Colors.transparent,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      printDate(s.date),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                  Text(
-                    s.total.toString() + " Shots".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+                    Text(
+                      s.total.toString() + " Shots".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              width: MediaQuery.of(context).size.width - 30,
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Container(
-                    width: calculateSessionShotWidth(s, s.totalWrist),
-                    height: 30,
-                    padding: EdgeInsets.only(top: 8),
-                    decoration: BoxDecoration(
-                      color: wristShotColor,
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              s.totalWrist.toString() + " W",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.clip,
+              Container(
+                width: MediaQuery.of(context).size.width - 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Container(
+                      width: calculateSessionShotWidth(s, s.totalWrist),
+                      height: 30,
+                      padding: EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: wristShotColor,
+                      ),
+                      child: s.totalWrist < 1
+                          ? Container()
+                          : Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalWrist.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                  Container(
-                    width: calculateSessionShotWidth(s, s.totalSnap),
-                    height: 30,
-                    padding: EdgeInsets.only(top: 8),
-                    decoration: BoxDecoration(
-                      color: snapShotColor,
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              s.totalSnap.toString() + " SN",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.clip,
+                    Container(
+                      width: calculateSessionShotWidth(s, s.totalSnap),
+                      height: 30,
+                      padding: EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: snapShotColor,
+                      ),
+                      child: s.totalSnap < 1
+                          ? Container()
+                          : Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalSnap.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                  Container(
-                    width: calculateSessionShotWidth(s, s.totalSlap),
-                    height: 30,
-                    padding: EdgeInsets.only(top: 8),
-                    decoration: BoxDecoration(
-                      color: slapShotColor,
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              s.totalSlap.toString() + " SL",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.clip,
+                    Container(
+                      width: calculateSessionShotWidth(s, s.totalSlap),
+                      height: 30,
+                      padding: EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: slapShotColor,
+                      ),
+                      child: s.totalSlap < 1
+                          ? Container()
+                          : Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalSlap.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                  Container(
-                    width: calculateSessionShotWidth(s, s.totalBackhand),
-                    height: 30,
-                    padding: EdgeInsets.only(top: 8),
-                    decoration: BoxDecoration(
-                      color: backhandShotColor,
-                    ),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              s.totalBackhand.toString() + " B",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.clip,
+                    Container(
+                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                      height: 30,
+                      padding: EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: backhandShotColor,
+                      ),
+                      child: s.totalBackhand < 1
+                          ? Container()
+                          : Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalBackhand.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     });
