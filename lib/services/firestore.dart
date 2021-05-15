@@ -78,7 +78,7 @@ Future<List<Iteration>> getIterations(String userId) async {
   userId = userId.isNotEmpty ? userId : auth.currentUser.uid;
 
   List<Iteration> iterations = [];
-  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').get().then((snapshots) {
+  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').orderBy('start_date', descending: true).get().then((snapshots) {
     snapshots.docs.forEach((doc) {
       iterations.add(Iteration.fromMap(doc.data()));
     });
@@ -99,7 +99,7 @@ Future<List<ShootingSession>> getShootingSessions(String userId, String iteratio
   userId = userId.isNotEmpty ? userId : auth.currentUser.uid;
 
   List<ShootingSession> shootingSessions = [];
-  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').doc(iterationId).collection('sessions').get().then((snapshots) {
+  return await FirebaseFirestore.instance.collection('iterations').doc(userId).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: true).get().then((snapshots) {
     snapshots.docs.forEach((doc) {
       shootingSessions.add(ShootingSession.fromMap(doc.data()));
     });
