@@ -88,7 +88,7 @@ class _ProfileState extends State<Profile> {
                   ),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
@@ -123,7 +123,7 @@ class _ProfileState extends State<Profile> {
                       ),
                       Container(
                         child: Text(
-                          _totalShots.toString() + " Lifetime Shots".toUpperCase(),
+                          _totalShots.toString() + "  Lifetime Shots".toUpperCase(),
                           style: TextStyle(
                             fontSize: 20,
                             fontFamily: 'NovecentoSans',
