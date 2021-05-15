@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -70,7 +72,7 @@ class _ProfileState extends State<Profile> {
               Container(
                 margin: EdgeInsets.only(right: 15),
                 child: SizedBox(
-                  height: 75,
+                  height: 60,
                   child: UserAvatar(
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
@@ -125,8 +127,9 @@ class _ProfileState extends State<Profile> {
               ),
             ],
           ),
-          SizedBox(
+          Divider(
             height: 25,
+            color: Theme.of(context).cardTheme.color,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -281,7 +284,7 @@ class _ProfileState extends State<Profile> {
               padding: EdgeInsets.only(
                 top: 0,
                 right: 0,
-                bottom: AppBar().preferredSize.height,
+                bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
                 left: 0,
               ),
               children: _sessions.length < 1
