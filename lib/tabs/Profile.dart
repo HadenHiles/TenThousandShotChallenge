@@ -6,7 +6,6 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Profile extends StatefulWidget {
@@ -19,10 +18,6 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
-  final Color wristShotColor = Color(0xff741d1d);
-  final Color snapShotColor = Color(0xffae2b2b);
-  final Color slapShotColor = HomeTheme.lightTheme.primaryColor;
-  final Color backhandShotColor = Color(0xffd35050);
 
   UserProfile userProfile;
   List<Iteration> _iterations = [];

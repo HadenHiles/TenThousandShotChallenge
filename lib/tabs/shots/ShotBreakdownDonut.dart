@@ -1,8 +1,10 @@
+import 'dart:math';
+
 /// Donut chart with labels example. This is a simple pie chart with a hole in
 /// the middle.
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:charts_flutter/flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 
 class ShotBreakdownDonut extends StatelessWidget {
   final List<charts.Series> seriesList;
@@ -10,20 +12,13 @@ class ShotBreakdownDonut extends StatelessWidget {
 
   ShotBreakdownDonut(this.seriesList, {this.animate});
 
-  /// Creates a [PieChart] with sample data and no transition.
-  factory ShotBreakdownDonut.withSampleData() {
-    return new ShotBreakdownDonut(
-      _createSampleData(),
-      // Disable animations for image tests.
-      animate: false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return new charts.PieChart(
       seriesList,
       animate: animate,
+      animationDuration: Duration(milliseconds: 500),
+      selectionModels: [],
       // Configure the width of the pie slices to 60px. The remaining space in
       // the chart will be left as a hole in the center.
       //
@@ -40,30 +35,18 @@ class ShotBreakdownDonut extends StatelessWidget {
       //          insideLabelStyleSpec: new charts.TextStyleSpec(...),
       //          outsideLabelStyleSpec: new charts.TextStyleSpec(...)),
       defaultRenderer: new charts.ArcRendererConfig(
-        arcWidth: 60,
-        arcRendererDecorators: [new charts.ArcLabelDecorator()],
+        arcWidth: 30,
+        startAngle: 4 / 5 * pi,
+        arcLength: 7 / 5 * pi,
+        arcRendererDecorators: [
+          new charts.ArcLabelDecorator(
+              outsideLabelStyleSpec: TextStyleSpec(
+            fontFamily: 'NovecentoSans',
+            fontSize: 16,
+            color: charts.MaterialPalette.gray.shade300,
+          ))
+        ],
       ),
     );
-  }
-
-  /// Create one series with sample hard coded data.
-  static List<charts.Series<ShotCount, int>> _createSampleData() {
-    final data = [
-      new ShotCount('Wrist', 100),
-      new ShotCount('Snap', 75),
-      new ShotCount('Slap', 25),
-      new ShotCount('Backhand', 5),
-    ];
-
-    return [
-      new charts.Series<ShotCount, dynamic>(
-        id: 'Shots',
-        domainFn: (ShotCount sales, _) => sales.type,
-        measureFn: (ShotCount sales, _) => sales.count,
-        data: data,
-        // Set a label accessor to control the text of the arc label.
-        labelAccessorFn: (ShotCount row, _) => '${row.type}: ${row.count}',
-      )
-    ];
   }
 }
