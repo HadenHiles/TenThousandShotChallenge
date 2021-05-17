@@ -46,6 +46,7 @@ class _ShotsState extends State<Shots> {
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
       children: [
         _iterations.length < 1
             ? Container()
@@ -135,41 +136,6 @@ class _ShotsState extends State<Shots> {
                       Column(
                         children: [
                           Text(
-                            "Slap".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 18,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                          Container(
-                            width: 30,
-                            height: 25,
-                            margin: EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(color: slapShotColor),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.75,
-                                  child: Text(
-                                    "SL",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
                             "Backhand".toUpperCase(),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onPrimary,
@@ -202,6 +168,41 @@ class _ShotsState extends State<Shots> {
                           ),
                         ],
                       ),
+                      Column(
+                        children: [
+                          Text(
+                            "Slap".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 18,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                          Container(
+                            width: 30,
+                            height: 25,
+                            margin: EdgeInsets.only(top: 2),
+                            decoration: BoxDecoration(color: slapShotColor),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Opacity(
+                                  opacity: 0.75,
+                                  child: Text(
+                                    "SL",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   SizedBox(
@@ -210,111 +211,113 @@ class _ShotsState extends State<Shots> {
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                     builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return Center(
+                          child: LinearProgressIndicator(),
+                        );
+                      }
+
                       Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
-                      return !snapshot.hasData
-                          ? Center(
-                              child: LinearProgressIndicator(),
-                            )
-                          : Column(
+                      return Column(
+                        children: [
+                          Container(
+                            width: (MediaQuery.of(context).size.width),
+                            margin: EdgeInsets.symmetric(horizontal: 30),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Theme.of(context).cardTheme.color,
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
-                                  width: (MediaQuery.of(context).size.width),
-                                  margin: EdgeInsets.symmetric(horizontal: 30),
+                                  height: 40,
+                                  width: (iteration.totalWrist / 10000) * (MediaQuery.of(context).size.width - 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    color: Theme.of(context).cardTheme.color,
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        width: (iteration.totalWrist / 10000) * (MediaQuery.of(context).size.width - 30),
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
-                                        decoration: BoxDecoration(
-                                          color: wristShotColor,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width: (iteration.totalSnap / 10000) * (MediaQuery.of(context).size.width - 30),
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
-                                        decoration: BoxDecoration(
-                                          color: snapShotColor,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width: (iteration.totalBackhand / 10000) * (MediaQuery.of(context).size.width - 30),
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
-                                        decoration: BoxDecoration(
-                                          color: backhandShotColor,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width: (iteration.totalSlap / 10000) * (MediaQuery.of(context).size.width - 30),
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
-                                        decoration: BoxDecoration(
-                                          color: slapShotColor,
-                                        ),
-                                      ),
-                                    ],
+                                    color: wristShotColor,
                                   ),
                                 ),
                                 Container(
-                                  width: (MediaQuery.of(context).size.width - 30),
-                                  margin: EdgeInsets.symmetric(horizontal: 30),
+                                  height: 40,
+                                  width: (iteration.totalSnap / 10000) * (MediaQuery.of(context).size.width - 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: snapShotColor,
                                   ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        width: (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30),
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
-                                        child: Text(
-                                          numberFormat.format(iteration.total),
-                                          textAlign: TextAlign.right,
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 22,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          Container(
-                                            height: 40,
-                                            padding: EdgeInsets.symmetric(horizontal: 2),
-                                            child: Text(
-                                              "/ " + numberFormat.format(10000),
-                                              textAlign: TextAlign.right,
-                                              style: TextStyle(
-                                                fontFamily: 'NovecentoSans',
-                                                fontSize: 22,
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                ),
+                                Container(
+                                  height: 40,
+                                  width: (iteration.totalBackhand / 10000) * (MediaQuery.of(context).size.width - 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: backhandShotColor,
+                                  ),
+                                ),
+                                Container(
+                                  height: 40,
+                                  width: (iteration.totalSlap / 10000) * (MediaQuery.of(context).size.width - 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: slapShotColor,
                                   ),
                                 ),
                               ],
-                            );
+                            ),
+                          ),
+                          Container(
+                            width: (MediaQuery.of(context).size.width - 30),
+                            margin: EdgeInsets.symmetric(horizontal: 30),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  width: (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  child: Text(
+                                    numberFormat.format(iteration.total),
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 22,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    Container(
+                                      height: 40,
+                                      padding: EdgeInsets.symmetric(horizontal: 2),
+                                      child: Text(
+                                        "/ " + numberFormat.format(10000),
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 22,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
                     },
                   ),
                   SizedBox(
@@ -324,10 +327,17 @@ class _ShotsState extends State<Shots> {
                     stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return SizedBox(
-                          height: 30,
-                          width: 30,
-                          child: CircularProgressIndicator(),
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            SizedBox(
+                              height: 150,
+                              width: 150,
+                              child: CircularProgressIndicator(),
+                            ),
+                          ],
                         );
                       } else {
                         List<ShotCount> shotCounts = [

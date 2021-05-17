@@ -78,6 +78,7 @@ class _ProfileState extends State<Profile> {
                   setState(() => _isLoading = false);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
+                      duration: Duration(milliseconds: 1200),
                       content: Text('No more sessions!'),
                     ),
                   );
@@ -105,6 +106,7 @@ class _ProfileState extends State<Profile> {
                       setState(() => _isLoading = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
+                          duration: Duration(milliseconds: 1200),
                           content: Text('No more sessions!'),
                         ),
                       );
@@ -239,7 +241,7 @@ class _ProfileState extends State<Profile> {
                           );
                         }
 
-                        return null;
+                        return Container();
                       },
                     ),
                   ],
@@ -335,41 +337,6 @@ class _ProfileState extends State<Profile> {
               Column(
                 children: [
                   Text(
-                    "Slap".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
-                    ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: 25,
-                    margin: EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(color: slapShotColor),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0.75,
-                          child: Text(
-                            "SL",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
                     "Backhand".toUpperCase(),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
@@ -390,6 +357,41 @@ class _ProfileState extends State<Profile> {
                           opacity: 0.75,
                           child: Text(
                             "B",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    "Slap".toUpperCase(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 18,
+                      fontFamily: 'NovecentoSans',
+                    ),
+                  ),
+                  Container(
+                    width: 30,
+                    height: 25,
+                    margin: EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(color: slapShotColor),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Opacity(
+                          opacity: 0.75,
+                          child: Text(
+                            "SL",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -485,6 +487,7 @@ class _ProfileState extends State<Profile> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
         children: [
           Container(
             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -572,30 +575,6 @@ class _ProfileState extends State<Profile> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSlap),
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: slapShotColor,
-                      ),
-                      child: s.totalSlap < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  s.totalSlap.toString(),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                    ),
-                    Container(
                       width: calculateSessionShotWidth(s, s.totalBackhand),
                       height: 30,
                       decoration: BoxDecoration(
@@ -609,6 +588,30 @@ class _ProfileState extends State<Profile> {
                               children: [
                                 Text(
                                   s.totalBackhand.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.clip,
+                                ),
+                              ],
+                            ),
+                    ),
+                    Container(
+                      width: calculateSessionShotWidth(s, s.totalSlap),
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: slapShotColor,
+                      ),
+                      child: s.totalSlap < 1
+                          ? Container()
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  s.totalSlap.toString(),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
@@ -678,8 +681,8 @@ class _ProfileState extends State<Profile> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSlap),
-                      child: s.totalSlap < 1
+                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                      child: s.totalBackhand < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -688,7 +691,7 @@ class _ProfileState extends State<Profile> {
                                 Opacity(
                                   opacity: 0.5,
                                   child: Text(
-                                    "SL",
+                                    "B",
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 16,
@@ -701,8 +704,8 @@ class _ProfileState extends State<Profile> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalBackhand),
-                      child: s.totalBackhand < 1
+                      width: calculateSessionShotWidth(s, s.totalSlap),
+                      child: s.totalSlap < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -711,7 +714,7 @@ class _ProfileState extends State<Profile> {
                                 Opacity(
                                   opacity: 0.5,
                                   child: Text(
-                                    "B",
+                                    "SL",
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 16,

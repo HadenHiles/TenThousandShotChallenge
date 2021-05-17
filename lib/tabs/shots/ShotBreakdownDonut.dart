@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:charts_flutter/flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 
 class ShotBreakdownDonut extends StatelessWidget {
   final List<charts.Series> seriesList;
@@ -43,7 +44,7 @@ class ShotBreakdownDonut extends StatelessWidget {
               outsideLabelStyleSpec: TextStyleSpec(
             fontFamily: 'NovecentoSans',
             fontSize: 16,
-            color: charts.MaterialPalette.gray.shade300,
+            color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
           ))
         ],
       ),
