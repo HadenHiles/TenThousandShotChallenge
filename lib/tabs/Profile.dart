@@ -51,7 +51,7 @@ class _ProfileState extends State<Profile> {
     if (_lastVisible == null)
       await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
         snapshot.docs.forEach((doc) {
-          doc.reference.collection('sessions').orderBy('date', descending: true).limit(5).get().then((sSnap) {
+          doc.reference.collection('sessions').orderBy('date', descending: true).limit(7).get().then((sSnap) {
             sSnap.docs.forEach((s) {
               sessions.add(s);
             });
@@ -79,7 +79,7 @@ class _ProfileState extends State<Profile> {
     else
       await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
         snapshot.docs.forEach((doc) {
-          doc.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(5).get().then((sSnap) {
+          doc.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(7).get().then((sSnap) {
                 sSnap.docs.forEach((s) {
                   sessions.add(s);
                 });
