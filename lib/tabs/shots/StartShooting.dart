@@ -328,29 +328,9 @@ class _StartShootingState extends State<StartShooting> {
                       child: _shots.length < 1
                           ? TextButton(
                               onPressed: () {
-                                dialog(
-                                  context,
-                                  ConfirmDialog(
-                                    "All session data will be lost",
-                                    Text(
-                                      "Are you sure you want to cancel?",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    "Go back",
-                                    () {
-                                      navigatorKey.currentState.pop();
-                                    },
-                                    "Cancel",
-                                    () {
-                                      sessionService.reset();
-                                      widget.sessionPanelController.close();
-                                      this.reset();
-                                      navigatorKey.currentState.pop();
-                                    },
-                                  ),
-                                );
+                                sessionService.reset();
+                                widget.sessionPanelController.close();
+                                this.reset();
                               },
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -442,51 +422,94 @@ class _StartShootingState extends State<StartShooting> {
     );
   }
 
-  List<ListTile> _buildShotsList(BuildContext context, List<Shots> shots) {
-    List<ListTile> list = [];
+  List<Dismissible> _buildShotsList(BuildContext context, List<Shots> shots) {
+    List<Dismissible> list = [];
 
     shots.asMap().forEach((i, s) {
-      ListTile tile = ListTile(
-        tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
-        leading: Container(
-          margin: EdgeInsets.only(bottom: 4),
-          child: Text(
-            s.count.toString(),
-            style: TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+      Dismissible tile = Dismissible(
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          setState(() {
+            _shots.remove(s);
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: Duration(milliseconds: 800),
+              content: Text("${s.type.toUpperCase()} ${s.count} deleted"),
+            ),
+          );
+        },
+        background: Container(
+          color: Theme.of(context).primaryColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                margin: EdgeInsets.only(left: 15),
+                child: Text(
+                  "Delete".toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(right: 15),
+                child: Icon(
+                  Icons.delete,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Text(
-              s.type.toUpperCase(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary,
-                fontSize: 20,
-                fontFamily: 'NovecentoSans',
-              ),
+        child: ListTile(
+          tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
+          leading: Container(
+            margin: EdgeInsets.only(bottom: 4),
+            child: Text(
+              s.count.toString(),
+              style: TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
             ),
-            Text(
-              printTime(s.date),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary,
-                fontSize: 20,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          ],
-        ),
-        trailing: IconButton(
-          onPressed: () {
-            setState(() {
-              _shots.removeAt(i);
-            });
-          },
-          icon: Icon(
-            Icons.delete,
-            color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryVariant : Theme.of(context).cardTheme.color,
           ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Text(
+                s.type.toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 20,
+                  fontFamily: 'NovecentoSans',
+                ),
+              ),
+              Text(
+                printTime(s.date),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 20,
+                  fontFamily: 'NovecentoSans',
+                ),
+              ),
+            ],
+          ),
+          // trailing: IconButton(
+          //   onPressed: () {
+          //     setState(() {
+          //       _shots.removeAt(i);
+          //     });
+          //   },
+          //   icon: Icon(
+          //     Icons.delete,
+          //     color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryVariant : Theme.of(context).cardTheme.color,
+          //   ),
+          // ),
         ),
       );
 
