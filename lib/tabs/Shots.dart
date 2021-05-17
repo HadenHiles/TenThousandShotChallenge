@@ -44,7 +44,7 @@ class _ShotsState extends State<Shots> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         _iterations.length < 1
             ? Container()
@@ -59,26 +59,27 @@ class _ShotsState extends State<Shots> {
                     );
                   } else {
                     List<ShotCount> shotCounts = [
-                      ShotCount('Wrist', Iteration.fromMap(snapshot.data.docs[0].data()).totalWrist ?? 0),
-                      ShotCount('Snap', Iteration.fromMap(snapshot.data.docs[0].data()).totalSnap ?? 0),
-                      ShotCount('Slap', Iteration.fromMap(snapshot.data.docs[0].data()).totalSlap ?? 0),
-                      ShotCount('Backhand', Iteration.fromMap(snapshot.data.docs[0].data()).totalBackhand ?? 0),
+                      ShotCount('Wrist'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
+                      ShotCount('Snap'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
+                      ShotCount('Backhand'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
+                      ShotCount('Slap'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
                     ];
 
                     List<charts.Series<ShotCount, dynamic>> shotCountSeries = [
                       charts.Series<ShotCount, dynamic>(
                         id: 'Shots',
-                        domainFn: (ShotCount sales, _) => sales.type,
-                        measureFn: (ShotCount sales, _) => sales.count,
+                        domainFn: (ShotCount shot, _) => shot.type,
+                        measureFn: (ShotCount shot, _) => shot.count,
                         data: shotCounts,
+                        colorFn: (ShotCount shot, _) => shot.color,
                         // Set a label accessor to control the text of the arc label.
-                        labelAccessorFn: (ShotCount row, _) => '${row.type}: ${row.count}',
+                        labelAccessorFn: (ShotCount row, _) => '${row.type}\n${row.count}',
                       ),
                     ];
 
                     return Container(
-                      height: 399,
-                      width: 300,
+                      height: 280,
+                      width: MediaQuery.of(context).size.width - 100,
                       child: ShotBreakdownDonut(shotCountSeries),
                     );
                   }

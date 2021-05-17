@@ -17,6 +17,10 @@ final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 // Global variables
 Preferences preferences = Preferences(false, 25);
 final sessionService = SessionService();
+final Color wristShotColor = Color(0xff00BCD4);
+final Color snapShotColor = Color(0xff2296F3);
+final Color backhandShotColor = Color(0xff4050B5);
+final Color slapShotColor = Color(0xff009688);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
