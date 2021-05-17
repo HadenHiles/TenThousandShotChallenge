@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
@@ -317,31 +319,64 @@ class _StartShootingState extends State<StartShooting> {
                     children: _buildShotsList(context, _shots),
                   ),
                 ),
-                SizedBox(
-                  height: 5,
-                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: MediaQuery.of(context).size.width - 15,
+                      height: 50,
+                      width: MediaQuery.of(context).size.width,
                       child: _shots.length < 1
                           ? TextButton(
                               onPressed: () {
-                                sessionService.reset();
-                                widget.sessionPanelController.close();
-                                this.reset();
+                                dialog(
+                                  context,
+                                  ConfirmDialog(
+                                    "All session data will be lost",
+                                    Text(
+                                      "Are you sure you want to cancel?",
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    "Go back",
+                                    () {
+                                      navigatorKey.currentState.pop();
+                                    },
+                                    "Cancel",
+                                    () {
+                                      sessionService.reset();
+                                      widget.sessionPanelController.close();
+                                      this.reset();
+                                      navigatorKey.currentState.pop();
+                                    },
+                                  ),
+                                );
                               },
-                              child: Text(
-                                "Cancel".toUpperCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Cancel".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: EdgeInsets.only(top: 3, left: 4),
+                                    child: Icon(
+                                      Icons.delete_forever,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              style: ButtonStyle(
-                                backgroundColor: MaterialStateProperty.all(Theme.of(context).cardTheme.color),
+                              style: TextButton.styleFrom(
+                                primary: Theme.of(context).cardTheme.color,
+                                onSurface: Theme.of(context).colorScheme.onPrimary,
+                                shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                               ),
                             )
                           : TextButton(
@@ -367,16 +402,31 @@ class _StartShootingState extends State<StartShooting> {
                                   );
                                 });
                               },
-                              child: Text(
-                                "Finish".toUpperCase(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Finish".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: EdgeInsets.only(top: 3, left: 4),
+                                    child: Icon(
+                                      Icons.save_alt_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              style: ButtonStyle(
-                                backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                              style: TextButton.styleFrom(
+                                primary: Theme.of(context).primaryColor,
+                                onSurface: Colors.white,
+                                shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                               ),
                             ),
                     ),
