@@ -364,65 +364,71 @@ class _ShotsState extends State<Shots> {
           child: AnimatedBuilder(
             animation: sessionService, // listen to ChangeNotifier
             builder: (context, child) {
-              return Container(
-                padding: EdgeInsets.only(
-                  bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                ),
+              return Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    sessionService.isRunning
-                        ? Container()
-                        : Container(
-                            padding: EdgeInsets.symmetric(vertical: 15),
-                            width: MediaQuery.of(context).size.width - 30,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                primary: Colors.white,
-                                padding: EdgeInsets.all(10),
-                                backgroundColor: Theme.of(context).buttonColor,
-                              ),
-                              onPressed: () {
-                                if (!sessionService.isRunning) {
-                                  sessionService.start();
-                                  widget.sessionPanelController.open();
-                                } else {
-                                  dialog(
-                                    context,
-                                    ConfirmDialog(
-                                      "Override current session?",
-                                      Text(
-                                        "Starting a new session will override your existing one.\n\nWould you like to continue?",
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onBackground,
-                                        ),
-                                      ),
-                                      "Cancel",
-                                      () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      "Continue",
-                                      () {
-                                        sessionService.reset();
-                                        Navigator.of(context).pop();
-                                        sessionService.start();
-                                        widget.sessionPanelController.show();
-                                      },
+                    Container(
+                      padding: EdgeInsets.only(
+                        bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                      ),
+                      child: Column(
+                        children: [
+                          sessionService.isRunning
+                              ? Container()
+                              : Container(
+                                  padding: EdgeInsets.symmetric(vertical: 15),
+                                  width: MediaQuery.of(context).size.width - 30,
+                                  child: TextButton(
+                                    style: TextButton.styleFrom(
+                                      primary: Colors.white,
+                                      padding: EdgeInsets.all(10),
+                                      backgroundColor: Theme.of(context).buttonColor,
                                     ),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                'Start Shooting'.toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
+                                    onPressed: () {
+                                      if (!sessionService.isRunning) {
+                                        sessionService.start();
+                                        widget.sessionPanelController.open();
+                                      } else {
+                                        dialog(
+                                          context,
+                                          ConfirmDialog(
+                                            "Override current session?",
+                                            Text(
+                                              "Starting a new session will override your existing one.\n\nWould you like to continue?",
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onBackground,
+                                              ),
+                                            ),
+                                            "Cancel",
+                                            () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            "Continue",
+                                            () {
+                                              sessionService.reset();
+                                              Navigator.of(context).pop();
+                                              sessionService.start();
+                                              widget.sessionPanelController.show();
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Text(
+                                      'Start Shooting'.toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               );
