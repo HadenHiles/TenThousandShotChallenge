@@ -36,7 +36,7 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
   ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now());
   shootingSession.shots = shots;
 
-  Iteration iteration = Iteration(DateTime.now(), null, 0, false);
+  Iteration iteration = Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false);
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
@@ -66,7 +66,16 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
 
     await ref.get().then((i) {
       Iteration iteration = Iteration.fromMap(i.data());
-      iteration = Iteration(iteration.startDate, iteration.endDate, (iteration.total + shootingSession.total), iteration.complete);
+      iteration = Iteration(
+        iteration.startDate,
+        iteration.endDate,
+        (iteration.total + shootingSession.total),
+        (iteration.totalWrist + shootingSession.totalWrist),
+        (iteration.totalSnap + shootingSession.totalSnap),
+        (iteration.totalSlap + shootingSession.totalSlap),
+        (iteration.totalBackhand + shootingSession.totalBackhand),
+        iteration.complete,
+      );
       batch.update(ref, iteration.toMap());
     });
 

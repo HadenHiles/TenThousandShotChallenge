@@ -5,10 +5,14 @@ class Iteration {
   final DateTime startDate;
   final DateTime endDate;
   final int total;
+  final int totalWrist;
+  final int totalSnap;
+  final int totalSlap;
+  final int totalBackhand;
   final bool complete;
   DocumentReference reference;
 
-  Iteration(this.startDate, this.endDate, this.total, this.complete);
+  Iteration(this.startDate, this.endDate, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
 
   Iteration.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['start_date'] != null),
@@ -17,6 +21,10 @@ class Iteration {
         startDate = map['start_date'] != null ? map['start_date'].toDate() : null,
         endDate = map['end_date'] != null ? map['end_date'].toDate() : null,
         total = map['total'],
+        totalWrist = map['total_wrist'],
+        totalSnap = map['total_snap'],
+        totalSlap = map['total_slap'],
+        totalBackhand = map['total_backhand'],
         complete = map['complete'];
 
   Map<String, dynamic> toMap() {
@@ -25,6 +33,10 @@ class Iteration {
       'start_date': startDate,
       'end_date': endDate,
       'total': total,
+      'total_wrist': totalWrist,
+      'total_snap': totalSnap,
+      'total_slap': totalSlap,
+      'total_backhand': totalBackhand,
       'complete': complete,
     };
   }
