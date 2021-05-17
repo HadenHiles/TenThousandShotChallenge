@@ -409,17 +409,23 @@ class _ProfileState extends State<Profile> {
                     return _buildSessionItem(ShootingSession.fromMap(document.data()), index % 2 == 0 ? true : false);
                   }
                   return Container(
-                    padding: EdgeInsets.symmetric(vertical: 10),
                     child: Center(
                       child: Opacity(
                         opacity: _isLoading ? 1.0 : 0.0,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                          ],
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 9),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 25,
+                                width: 25,
+                                child: CircularProgressIndicator(),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
