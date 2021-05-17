@@ -42,7 +42,17 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
       iteration = Iteration.fromMap(snapshot.docs[0].data());
-      saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
+
+      // Check if they reached 10,000
+      if (iteration.total + total >= 10000) {
+        saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
+
+        snapshot.docs[0].reference.update({'complete': true}).then((_) {
+          FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false).toMap());
+        });
+      } else {
+        saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
+      }
     } else {
       await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').add(iteration.toMap()).then((i) async {
         saveSessionData(shootingSession, i, shots).then((value) => true).onError((error, stackTrace) => false);

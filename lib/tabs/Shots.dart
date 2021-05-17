@@ -348,7 +348,7 @@ class _ShotsState extends State<Shots> {
                     child: iteration.total < 1
                         ? Container(
                             child: Text(
-                              "You haven't taken any shots yet",
+                              "No shots recorded for this challenge yet. Check your profile for your session history.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',

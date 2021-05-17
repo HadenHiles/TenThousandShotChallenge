@@ -1,6 +1,5 @@
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
