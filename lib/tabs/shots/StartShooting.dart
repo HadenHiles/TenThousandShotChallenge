@@ -358,7 +358,7 @@ class _StartShootingState extends State<StartShooting> {
                                   Text(
                                     "Cancel".toUpperCase(),
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 20,
                                     ),
@@ -375,6 +375,7 @@ class _StartShootingState extends State<StartShooting> {
                               ),
                               style: TextButton.styleFrom(
                                 primary: Theme.of(context).cardTheme.color,
+                                backgroundColor: Theme.of(context).cardTheme.color,
                                 onSurface: Theme.of(context).colorScheme.onPrimary,
                                 shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                               ),
@@ -425,6 +426,7 @@ class _StartShootingState extends State<StartShooting> {
                               ),
                               style: TextButton.styleFrom(
                                 primary: Theme.of(context).primaryColor,
+                                backgroundColor: Theme.of(context).primaryColor,
                                 onSurface: Colors.white,
                                 shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                               ),
@@ -482,8 +484,8 @@ class _StartShootingState extends State<StartShooting> {
             });
           },
           icon: Icon(
-            Icons.remove,
-            color: Theme.of(context).primaryColor,
+            Icons.delete,
+            color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryVariant : Theme.of(context).cardTheme.color,
           ),
         ),
       );
