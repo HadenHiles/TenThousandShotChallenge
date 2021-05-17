@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
@@ -33,7 +34,7 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
     }
   });
 
-  ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now());
+  ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now(), sessionService.currentDuration);
   shootingSession.shots = shots;
 
   Iteration iteration = Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false);

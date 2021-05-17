@@ -9,10 +9,11 @@ class ShootingSession {
   final int totalSlap;
   final int totalBackhand;
   final DateTime date;
+  final Duration duration;
   List<Shots> shots;
   DocumentReference reference;
 
-  ShootingSession(this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.date);
+  ShootingSession(this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.date, this.duration);
 
   ShootingSession.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['total'] != null),
@@ -21,13 +22,15 @@ class ShootingSession {
         assert(map['total_slap'] != null),
         assert(map['total_backhand'] != null),
         assert(map['date'] != null),
+        assert(map['duration'] != null),
         id = map['id'],
         total = map['total'],
         totalWrist = map['total_wrist'],
         totalSnap = map['total_snap'],
         totalSlap = map['total_slap'],
         totalBackhand = map['total_backhand'],
-        date = map['date'] != null ? map['date'].toDate() : null;
+        date = map['date'] != null ? map['date'].toDate() : null,
+        duration = Duration(seconds: map['duration']);
 
   Map<String, dynamic> toMap() {
     List<Map<String, dynamic>> mappedShots = [];
@@ -44,6 +47,7 @@ class ShootingSession {
       'total_slap': totalSlap,
       'total_backhand': totalBackhand,
       'date': date,
+      'duration': duration.inSeconds,
     };
   }
 
