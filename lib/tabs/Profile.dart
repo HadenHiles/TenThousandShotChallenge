@@ -25,7 +25,8 @@ class _ProfileState extends State<Profile> {
   final Color backhandShotColor = Color(0xffd35050);
 
   UserProfile userProfile;
-  ScrollController controller;
+  List<Iteration> _iterations = [];
+  ScrollController sessionsController;
   DocumentSnapshot _lastVisible;
   bool _isLoading;
   List<DocumentSnapshot> _sessions = [];
@@ -36,56 +37,42 @@ class _ProfileState extends State<Profile> {
       userProfile = UserProfile.fromSnapshot(uDoc);
     });
 
-    controller = new ScrollController()..addListener(_scrollListener);
+    sessionsController = new ScrollController()..addListener(_scrollListener);
 
     super.initState();
 
     _isLoading = true;
+
     _loadHistory();
   }
 
   Future<Null> _loadHistory() async {
-    await new Future.delayed(new Duration(milliseconds: 500));
+    List<Iteration> iterations = [];
 
-    List<DocumentSnapshot> sessions = [];
-    if (_lastVisible == null)
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
-        snapshot.docs.forEach((doc) {
-          doc.reference.collection('sessions').orderBy('date', descending: true).limit(7).get().then((sSnap) {
-            sSnap.docs.forEach((s) {
-              sessions.add(s);
-            });
-
-            if (sessions != null && sessions.length > 0) {
-              _lastVisible = sessions[sessions.length - 1];
-
-              if (mounted) {
-                setState(() {
-                  _isLoading = false;
-                  _sessions.addAll(sessions);
-                });
-              }
-            } else {
-              setState(() => _isLoading = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('No more sessions!'),
-                ),
-              );
-            }
-          });
-        });
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').get().then((snapshot) async {
+      snapshot.docs.forEach((doc) {
+        iterations.add(Iteration.fromMap(doc.data()));
       });
-    else
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
-        snapshot.docs.forEach((doc) {
-          doc.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(7).get().then((sSnap) {
+
+      setState(() {
+        _iterations = iterations;
+      });
+
+      if (snapshot.docs.length > 0) {
+        await new Future.delayed(new Duration(milliseconds: 500));
+
+        List<DocumentSnapshot> sessions = [];
+        if (_lastVisible == null)
+          await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
+            snapshot.docs.forEach((doc) {
+              doc.reference.collection('sessions').orderBy('date', descending: true).limit(7).get().then((sSnap) {
                 sSnap.docs.forEach((s) {
                   sessions.add(s);
                 });
 
                 if (sessions != null && sessions.length > 0) {
                   _lastVisible = sessions[sessions.length - 1];
+
                   if (mounted) {
                     setState(() {
                       _isLoading = false;
@@ -101,8 +88,37 @@ class _ProfileState extends State<Profile> {
                   );
                 }
               });
-        });
-      });
+            });
+          });
+        else
+          await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
+            snapshot.docs.forEach((doc) {
+              doc.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(7).get().then((sSnap) {
+                    sSnap.docs.forEach((s) {
+                      sessions.add(s);
+                    });
+
+                    if (sessions != null && sessions.length > 0) {
+                      _lastVisible = sessions[sessions.length - 1];
+                      if (mounted) {
+                        setState(() {
+                          _isLoading = false;
+                          _sessions.addAll(sessions);
+                        });
+                      }
+                    } else {
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('No more sessions!'),
+                        ),
+                      );
+                    }
+                  });
+            });
+          });
+      }
+    });
   }
 
   @override
@@ -214,17 +230,21 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                     ),
-                    StreamBuilder(
+                    StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
-                      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                        return Text(
-                          snapshot.data.docs.length.toString(),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 34,
-                            fontFamily: 'NovecentoSans',
-                          ),
-                        );
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return Text(
+                            snapshot.data.docs.length.toString(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 34,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          );
+                        }
+
+                        return null;
                       },
                     ),
                   ],
@@ -395,7 +415,7 @@ class _ProfileState extends State<Profile> {
           Expanded(
             child: RefreshIndicator(
               child: ListView.builder(
-                controller: controller,
+                controller: sessionsController,
                 padding: EdgeInsets.only(
                   top: 0,
                   right: 0,
@@ -419,11 +439,13 @@ class _ProfileState extends State<Profile> {
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              SizedBox(
-                                height: 25,
-                                width: 25,
-                                child: CircularProgressIndicator(),
-                              ),
+                              _iterations.length < 1
+                                  ? Text("No shooting sessions yet")
+                                  : SizedBox(
+                                      height: 25,
+                                      width: 25,
+                                      child: CircularProgressIndicator(),
+                                    ),
                             ],
                           ),
                         ),
@@ -446,13 +468,13 @@ class _ProfileState extends State<Profile> {
 
   @override
   void dispose() {
-    controller.removeListener(_scrollListener);
+    sessionsController.removeListener(_scrollListener);
     super.dispose();
   }
 
   void _scrollListener() {
     if (!_isLoading) {
-      if (controller.position.pixels == controller.position.maxScrollExtent) {
+      if (sessionsController.position.pixels == sessionsController.position.maxScrollExtent) {
         setState(() => _isLoading = true);
         _loadHistory();
       }
