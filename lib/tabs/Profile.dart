@@ -503,6 +503,14 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
                 Text(
+                  printDuration(s.duration, true),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 18,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+                Text(
                   s.total.toString() + " Shots".toUpperCase(),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,

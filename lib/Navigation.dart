@@ -93,7 +93,6 @@ class _NavigationState extends State<Navigation> {
   @override
   void initState() {
     _loadPreferences();
-    bootstrap();
 
     setState(() {
       _title = logo;

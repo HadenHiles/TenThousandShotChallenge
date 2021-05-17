@@ -4,6 +4,7 @@ import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'Navigation.dart';
 
 class Login extends StatefulWidget {
@@ -592,6 +593,8 @@ class _LoginState extends State<Login> {
 
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
+        bootstrap();
+
         setState(() {
           _signedIn = true;
         });
@@ -621,6 +624,8 @@ class _LoginState extends State<Login> {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({'display_name': FirebaseAuth.instance.currentUser.displayName}).then((value) => () {});
 
+        bootstrap();
+
         setState(() {
           _signedIn = true;
         });
@@ -647,6 +652,8 @@ class _LoginState extends State<Login> {
       signInWithGoogle().then((googleSignInAccount) {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({'display_name': FirebaseAuth.instance.currentUser.displayName}).then((value) => () {});
+
+        bootstrap();
 
         setState(() {
           _signedIn = true;
