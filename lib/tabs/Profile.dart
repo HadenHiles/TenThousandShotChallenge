@@ -45,7 +45,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _loadHistory() async {
-    await new Future.delayed(new Duration(seconds: 2));
+    await new Future.delayed(new Duration(milliseconds: 500));
 
     List<DocumentSnapshot> sessions = [];
     if (_lastVisible == null)
@@ -239,6 +239,14 @@ class _ProfileState extends State<Profile> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              Text(
+                "My Sessions".toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 26,
+                  fontFamily: 'NovecentoSans',
+                ),
+              ),
               Column(
                 children: [
                   Text(
@@ -382,17 +390,6 @@ class _ProfileState extends State<Profile> {
             ],
           ),
           SizedBox(
-            height: 25,
-          ),
-          Text(
-            "Shooting Session History".toUpperCase(),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onPrimary,
-              fontSize: 26,
-              fontFamily: 'NovecentoSans',
-            ),
-          ),
-          SizedBox(
             height: 15,
           ),
           Expanded(
@@ -456,7 +453,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  Container _buildSessionItem(ShootingSession s, bool showBackground) {
+  Widget _buildSessionItem(ShootingSession s, bool showBackground) {
     return Container(
       padding: EdgeInsets.only(top: 5, bottom: 15),
       decoration: BoxDecoration(
