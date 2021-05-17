@@ -5,12 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
@@ -347,7 +345,7 @@ class _StartShootingState extends State<StartShooting> {
                                     margin: EdgeInsets.only(top: 3, left: 4),
                                     child: Icon(
                                       Icons.delete_forever,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                       size: 20,
                                     ),
                                   ),

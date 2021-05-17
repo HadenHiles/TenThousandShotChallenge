@@ -24,23 +24,6 @@ class Shots extends StatefulWidget {
 class _ShotsState extends State<Shots> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
-  List<Iteration> _iterations = [];
-
-  @override
-  void initState() {
-    List<Iteration> iterations = [];
-    FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').get().then((snapshot) {
-      snapshot.docs.forEach((doc) {
-        iterations.add(Iteration.fromMap(doc.data()));
-      });
-
-      setState(() {
-        _iterations = iterations;
-      });
-    });
-
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,244 +31,259 @@ class _ShotsState extends State<Shots> {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        _iterations.length < 1
-            ? Container()
-            : Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  "Progress".toUpperCase(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 26,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Wrist".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: wristShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "W",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Snap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: snapShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SN",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Backhand".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: backhandShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "B",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Slap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: slapShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SL",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 25,
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Center(
+                    child: LinearProgressIndicator(),
+                  );
+                } else {
+                  Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
+                  double totalShotsWidth = (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30);
+
+                  return Column(
                     children: [
-                      Text(
-                        "Progress".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 26,
-                          fontFamily: 'NovecentoSans',
+                      Container(
+                        width: (MediaQuery.of(context).size.width),
+                        margin: EdgeInsets.symmetric(horizontal: 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).cardTheme.color,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: (iteration.totalWrist / 10000) * (MediaQuery.of(context).size.width - 30),
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: wristShotColor,
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: (iteration.totalSnap / 10000) * (MediaQuery.of(context).size.width - 30),
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: snapShotColor,
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: (iteration.totalBackhand / 10000) * (MediaQuery.of(context).size.width - 30),
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: backhandShotColor,
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: (iteration.totalSlap / 10000) * (MediaQuery.of(context).size.width - 30),
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: slapShotColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Column(
-                        children: [
-                          Text(
-                            "Wrist".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 18,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                          Container(
-                            width: 30,
-                            height: 25,
-                            margin: EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(color: wristShotColor),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.75,
-                                  child: Text(
-                                    "W",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
+                      Container(
+                        width: (MediaQuery.of(context).size.width - 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: totalShotsWidth < 25 ? 40 : totalShotsWidth,
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              child: Text(
+                                iteration.total <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 22,
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            "Snap".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 18,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                          Container(
-                            width: 30,
-                            height: 25,
-                            margin: EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(color: snapShotColor),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.75,
-                                  child: Text(
-                                    "SN",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            "Backhand".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 18,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                          Container(
-                            width: 30,
-                            height: 25,
-                            margin: EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(color: backhandShotColor),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.75,
-                                  child: Text(
-                                    "B",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            "Slap".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 18,
-                              fontFamily: 'NovecentoSans',
-                            ),
-                          ),
-                          Container(
-                            width: 30,
-                            height: 25,
-                            margin: EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(color: slapShotColor),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.75,
-                                  child: Text(
-                                    "SL",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Center(
-                          child: LinearProgressIndicator(),
-                        );
-                      }
-
-                      Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
-                      return Column(
-                        children: [
-                          Container(
-                            width: (MediaQuery.of(context).size.width),
-                            margin: EdgeInsets.symmetric(horizontal: 30),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Theme.of(context).cardTheme.color,
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
                                   height: 40,
-                                  width: (iteration.totalWrist / 10000) * (MediaQuery.of(context).size.width - 30),
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
-                                    color: wristShotColor,
-                                  ),
-                                ),
-                                Container(
-                                  height: 40,
-                                  width: (iteration.totalSnap / 10000) * (MediaQuery.of(context).size.width - 30),
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
-                                    color: snapShotColor,
-                                  ),
-                                ),
-                                Container(
-                                  height: 40,
-                                  width: (iteration.totalBackhand / 10000) * (MediaQuery.of(context).size.width - 30),
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
-                                    color: backhandShotColor,
-                                  ),
-                                ),
-                                Container(
-                                  height: 40,
-                                  width: (iteration.totalSlap / 10000) * (MediaQuery.of(context).size.width - 30),
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
-                                    color: slapShotColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: (MediaQuery.of(context).size.width - 30),
-                            margin: EdgeInsets.symmetric(horizontal: 30),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                Container(
-                                  height: 40,
-                                  width: (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30),
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   child: Text(
-                                    numberFormat.format(iteration.total),
+                                    " / " + numberFormat.format(10000),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -294,81 +292,78 @@ class _ShotsState extends State<Shots> {
                                     ),
                                   ),
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Container(
-                                      height: 40,
-                                      padding: EdgeInsets.symmetric(horizontal: 2),
-                                      child: Text(
-                                        "/ " + numberFormat.format(10000),
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          fontFamily: 'NovecentoSans',
-                                          fontSize: 22,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            SizedBox(
-                              height: 150,
-                              width: 150,
-                              child: CircularProgressIndicator(),
-                            ),
                           ],
-                        );
-                      } else {
-                        List<ShotCount> shotCounts = [
-                          ShotCount('Wrist'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
-                          ShotCount('Snap'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
-                          ShotCount('Backhand'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
-                          ShotCount('Slap'.toUpperCase(), Iteration.fromMap(snapshot.data.docs[0].data()).totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
-                        ];
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+            SizedBox(
+              height: 25,
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      SizedBox(
+                        height: 150,
+                        width: 150,
+                        child: CircularProgressIndicator(),
+                      ),
+                    ],
+                  );
+                } else {
+                  Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
+                  List<ShotCount> shotCounts = [
+                    ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
+                    ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
+                    ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
+                    ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
+                  ];
 
-                        List<charts.Series<ShotCount, dynamic>> shotCountSeries = [
-                          charts.Series<ShotCount, dynamic>(
-                            id: 'Shots',
-                            domainFn: (ShotCount shot, _) => shot.type,
-                            measureFn: (ShotCount shot, _) => shot.count,
-                            data: shotCounts,
-                            colorFn: (ShotCount shot, _) => shot.color,
-                            // Set a label accessor to control the text of the arc label.
-                            labelAccessorFn: (ShotCount row, _) => '${row.type}\n${row.count}',
-                          ),
-                        ];
+                  List<charts.Series<ShotCount, dynamic>> shotCountSeries = [
+                    charts.Series<ShotCount, dynamic>(
+                      id: 'Shots',
+                      domainFn: (ShotCount shot, _) => shot.type,
+                      measureFn: (ShotCount shot, _) => shot.count,
+                      data: shotCounts,
+                      colorFn: (ShotCount shot, _) => shot.color,
+                      // Set a label accessor to control the text of the arc label.
+                      labelAccessorFn: (ShotCount row, _) => '${row.type}\n${row.count}',
+                    ),
+                  ];
 
-                        return Container(
-                          height: 280,
-                          width: MediaQuery.of(context).size.width - 100,
-                          child: ShotBreakdownDonut(shotCountSeries),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
+                  return Container(
+                    height: 280,
+                    width: MediaQuery.of(context).size.width - 100,
+                    child: iteration.total < 1
+                        ? Container(
+                            child: Text(
+                              "You haven't taken any shots yet",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 18,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : ShotBreakdownDonut(shotCountSeries),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
         SessionServiceProvider(
           service: sessionService,
           child: AnimatedBuilder(

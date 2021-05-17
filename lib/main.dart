@@ -1,6 +1,7 @@
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
