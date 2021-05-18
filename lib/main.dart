@@ -1,3 +1,4 @@
+import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
@@ -15,12 +16,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 // Global variables
+final user = FirebaseAuth.instance.currentUser;
 Preferences preferences = Preferences(false, 25);
 final sessionService = SessionService();
 final Color wristShotColor = Color(0xff00BCD4);
 final Color snapShotColor = Color(0xff2296F3);
 final Color backhandShotColor = Color(0xff4050B5);
 final Color slapShotColor = Color(0xff009688);
+bool introShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +38,9 @@ void main() async {
     prefs.getInt('puck_count') ?? 25,
   );
 
+  introShown = prefs.getBool('intro_shown') ?? false;
+  prefs.setBool('intro_shown', true);
+
   runApp(
     ChangeNotifierProvider<PreferencesStateNotifier>(
       create: (_) => PreferencesStateNotifier(),
@@ -44,9 +50,6 @@ void main() async {
 }
 
 class Home extends StatelessWidget {
-  // Get a reference to the potentially signed in firebase user
-  final user = FirebaseAuth.instance.currentUser;
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -66,7 +69,7 @@ class Home extends StatelessWidget {
           theme: HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
-          home: user != null ? Navigation() : Login(),
+          home: !introShown ? IntroScreen() : (user != null ? Navigation() : Login()),
         );
       },
     );
