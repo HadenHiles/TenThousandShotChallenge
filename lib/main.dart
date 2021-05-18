@@ -38,8 +38,7 @@ void main() async {
     prefs.getInt('puck_count') ?? 25,
   );
 
-  introShown = prefs.getBool('intro_shown') ?? false;
-  prefs.setBool('intro_shown', true);
+  introShown = prefs.getBool('intro_shown') == null ? false : true;
 
   runApp(
     ChangeNotifierProvider<PreferencesStateNotifier>(

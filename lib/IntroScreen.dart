@@ -282,8 +282,10 @@ class IntroScreenState extends State<IntroScreen> {
     super.initState();
   }
 
-  void onDonePress() {
-    // Back to the first tab
+  Future<void> onDonePress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('intro_shown', true);
+
     navigatorKey.currentState.pushReplacement(
       MaterialPageRoute(builder: (context) {
         return user != null ? Navigation() : Login();
