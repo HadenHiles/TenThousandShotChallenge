@@ -41,13 +41,13 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
-      iteration = Iteration.fromMap(snapshot.docs[0].data());
+      iteration = Iteration.fromSnapshot(snapshot.docs[0]);
 
       // Check if they reached 10,000
       if (iteration.total + total >= 10000) {
         saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
 
-        snapshot.docs[0].reference.update({'complete': true}).then((_) {
+        snapshot.docs[0].reference.update({'complete': true, 'end_date': DateTime.now()}).then((_) {
           FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false).toMap());
         });
       } else {
@@ -76,7 +76,7 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
     });
 
     await ref.get().then((i) {
-      Iteration iteration = Iteration.fromMap(i.data());
+      Iteration iteration = Iteration.fromSnapshot(i);
       iteration = Iteration(
         iteration.startDate,
         iteration.endDate,
@@ -91,5 +91,37 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
     });
 
     return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
+  });
+}
+
+Future<bool> deleteSession(ShootingSession shootingSession) async {
+  return await shootingSession.reference.parent.parent.get().then((iDoc) async {
+    Iteration iteration = Iteration.fromSnapshot(iDoc);
+    if (!iteration.complete) {
+      Iteration decrementedIteration = Iteration(
+        iteration.startDate,
+        iteration.endDate,
+        (iteration.total - shootingSession.total),
+        (iteration.totalWrist - shootingSession.totalWrist),
+        (iteration.totalSnap - shootingSession.totalSnap),
+        (iteration.totalSlap - shootingSession.totalSlap),
+        (iteration.totalBackhand - shootingSession.totalBackhand),
+        iteration.complete,
+      );
+      return await iDoc.reference.update(decrementedIteration.toMap()).then((_) async {
+        return await iDoc.reference
+            .collection('sessions')
+            .doc(shootingSession.reference.id)
+            .delete()
+            .then(
+              (success) => true,
+            )
+            .onError(
+              (error, stackTrace) => null,
+            );
+      });
+    } else {
+      return false;
+    }
   });
 }

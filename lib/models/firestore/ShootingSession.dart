@@ -23,7 +23,7 @@ class ShootingSession {
         assert(map['total_backhand'] != null),
         assert(map['date'] != null),
         assert(map['duration'] != null),
-        id = map['id'],
+        id = reference.id,
         total = map['total'],
         totalWrist = map['total_wrist'],
         totalSnap = map['total_snap'],

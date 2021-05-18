@@ -197,7 +197,7 @@ class _ShotsState extends State<Shots> {
                     child: LinearProgressIndicator(),
                   );
                 } else {
-                  Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
+                  Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                   double totalShotsWidth = (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30);
 
                   return Column(
@@ -217,7 +217,7 @@ class _ShotsState extends State<Shots> {
                           children: [
                             Container(
                               height: 40,
-                              width: (iteration.totalWrist / 10000) * (MediaQuery.of(context).size.width - 30),
+                              width: (iteration.totalWrist / 10000) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: wristShotColor,
@@ -225,7 +225,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalSnap / 10000) * (MediaQuery.of(context).size.width - 30),
+                              width: (iteration.totalSnap / 10000) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: snapShotColor,
@@ -233,7 +233,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalBackhand / 10000) * (MediaQuery.of(context).size.width - 30),
+                              width: (iteration.totalBackhand / 10000) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: backhandShotColor,
@@ -241,7 +241,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalSlap / 10000) * (MediaQuery.of(context).size.width - 30),
+                              width: (iteration.totalSlap / 10000) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: slapShotColor,
@@ -322,7 +322,7 @@ class _ShotsState extends State<Shots> {
                     ],
                   );
                 } else {
-                  Iteration iteration = Iteration.fromMap(snapshot.data.docs[0].data());
+                  Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                   List<ShotCount> shotCounts = [
                     ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
                     ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
