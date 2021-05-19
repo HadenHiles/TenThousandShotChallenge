@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -589,7 +590,10 @@ class _LoginState extends State<Login> {
       )
           .then((credential) {
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({'display_name': FirebaseAuth.instance.currentUser.email}).then((value) => () {});
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+          'display_name': FirebaseAuth.instance.currentUser.email,
+          'email': FirebaseAuth.instance.currentUser.email,
+        }).then((value) => () {});
 
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
@@ -622,7 +626,12 @@ class _LoginState extends State<Login> {
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({'display_name': FirebaseAuth.instance.currentUser.displayName}).then((value) => () {});
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
+          u.reference.update({
+            'display_name': UserProfile.fromSnapshot(u).displayName ?? FirebaseAuth.instance.currentUser.email,
+            'email': FirebaseAuth.instance.currentUser.email,
+          }).then((value) => null);
+        });
 
         bootstrap();
 
@@ -651,7 +660,10 @@ class _LoginState extends State<Login> {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) {
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({'display_name': FirebaseAuth.instance.currentUser.displayName}).then((value) => () {});
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+          'display_name': FirebaseAuth.instance.currentUser.displayName,
+          'email': FirebaseAuth.instance.currentUser.email,
+        }).then((value) => () {});
 
         bootstrap();
 
