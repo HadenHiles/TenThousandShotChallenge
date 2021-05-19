@@ -11,7 +11,7 @@ class HomeTheme {
     appBarTheme: AppBarTheme(
       color: Colors.grey.shade400,
       iconTheme: IconThemeData(
-        color: Colors.black87,
+        color: Colors.grey.shade400,
       ),
     ),
     buttonColor: Color(0xffCC3333),
@@ -27,7 +27,7 @@ class HomeTheme {
       color: Colors.grey.shade300,
     ),
     iconTheme: IconThemeData(
-      color: Colors.black54,
+      color: Colors.grey.shade400,
     ),
     textTheme: TextTheme(
       headline1: TextStyle(
@@ -69,9 +69,9 @@ class HomeTheme {
     accentColor: Color(0xffB82e2e),
     scaffoldBackgroundColor: Color(0xff1A1A1A),
     appBarTheme: AppBarTheme(
-      color: Colors.white,
+      color: Colors.grey.shade400,
       iconTheme: IconThemeData(
-        color: Colors.white,
+        color: Colors.grey.shade400,
       ),
     ),
     buttonColor: Color(0xffCC3333),
@@ -87,7 +87,7 @@ class HomeTheme {
       color: Color(0xff333333),
     ),
     iconTheme: IconThemeData(
-      color: Color.fromRGBO(255, 255, 255, 0.8),
+      color: Colors.grey.shade400,
     ),
     textTheme: TextTheme(
       headline1: TextStyle(
