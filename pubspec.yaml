@@ -40,7 +40,8 @@ dependencies:
   sliding_up_panel: ^2.0.0+1
   intl: ^0.17.0
   charts_flutter: ^0.10.0
-  # font_awesome_flutter: ^8.8.1
+  auto_size_text: ^2.1.0
+  # font_awesome_flutter: ^8.8.1 # Included in flutter_signin_button but has dependency conflict
 
 
   # The following adds the Cupertino Icons font to your application.
