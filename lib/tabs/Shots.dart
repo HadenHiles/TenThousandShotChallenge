@@ -343,12 +343,12 @@ class _ShotsState extends State<Shots> {
                   ];
 
                   return Container(
-                    height: 280,
-                    width: MediaQuery.of(context).size.width - 100,
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    width: MediaQuery.of(context).size.width * 0.7,
                     child: iteration.total < 1
                         ? Container(
                             child: Text(
-                              "No shots recorded for this challenge yet. Check your profile for your session history.",
+                              "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
