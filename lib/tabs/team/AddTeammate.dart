@@ -87,7 +87,7 @@ class _AddTeammateState extends State<AddTeammate> {
                           hintText: 'Search Name or Email'.toUpperCase(),
                           hintStyle: TextStyle(
                             fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
+                            color: Theme.of(context).cardTheme.color,
                           ),
                         ),
                         textAlign: TextAlign.center,
@@ -195,7 +195,7 @@ class _AddTeammateState extends State<AddTeammate> {
       teammates.add(
         Container(
           decoration: BoxDecoration(
-            color: i % 2 == 0 ? Colors.transparent : Theme.of(context).cardTheme.color,
+            color: i % 2 == 0 ? Theme.of(context).cardTheme.color : Colors.transparent,
           ),
           padding: EdgeInsets.symmetric(vertical: 9),
           child: Row(
