@@ -4,6 +4,7 @@ import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
+import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -52,7 +53,27 @@ class _NavigationState extends State<Navigation> {
       body: Shots(sessionPanelController: sessionPanelController),
     ),
     NavigationTab(
-      title: NavigationTitle(title: "Profile"),
+      title: NavigationTitle(title: "Team".toUpperCase()),
+      actions: [
+        Container(
+          margin: EdgeInsets.only(top: 10),
+          child: IconButton(
+            icon: Icon(
+              Icons.add,
+              size: 28,
+            ),
+            onPressed: () {
+              // navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+              //   return InviteTeammate();
+              // }));
+            },
+          ),
+        ),
+      ],
+      body: Team(),
+    ),
+    NavigationTab(
+      title: NavigationTitle(title: "Profile".toUpperCase()),
       actions: [
         Container(
           margin: EdgeInsets.only(top: 10),
@@ -249,6 +270,10 @@ class _NavigationState extends State<Navigation> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.sports_hockey),
                 label: 'Shots',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.people),
+                label: 'Team',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
