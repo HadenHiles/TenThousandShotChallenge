@@ -1,402 +1,305 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intro_slider/dot_animation_enum.dart';
-import 'package:intro_slider/intro_slider.dart';
-import 'package:intro_slider/slide_object.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:introduction_screen/introduction_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 
 class IntroScreen extends StatefulWidget {
-  IntroScreen({Key key}) : super(key: key);
-
   @override
-  IntroScreenState createState() => new IntroScreenState();
+  _IntroScreenState createState() => _IntroScreenState();
 }
 
-class IntroScreenState extends State<IntroScreen> {
+class _IntroScreenState extends State<IntroScreen> {
+  final introKey = GlobalKey<IntroductionScreenState>();
   final TextEditingController puckCountTextFieldController = TextEditingController(text: preferences.puckCount.toString());
 
-  // bool _darkMode = preferences.darkMode;
+  bool _darkMode = preferences.darkMode;
 
-  List<Slide> slides = [];
-
-  Function goToTab;
-
-  @override
-  void initState() {
-    slides.add(
-      Slide(
-        widgetTitle: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            SizedBox(
-              width: 360,
-              child: Text(
-                "Take the 10,000 shot challenge!".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 32,
-                  color: Colors.white,
-                ),
-                overflow: TextOverflow.clip,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Color(0xffCC3333),
-        widgetDescription: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 360,
-              child: Text(
-                "See how much you can improve",
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-                overflow: TextOverflow.clip,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        pathImage: "assets/images/logo.png",
-      ),
-    );
-
-    slides.add(
-      Slide(
-        widgetTitle: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            SizedBox(
-              width: 360,
-              child: Text(
-                "Track your progress".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 32,
-                  color: Colors.white,
-                ),
-                overflow: TextOverflow.clip,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Color(0xffCC3333),
-        widgetDescription: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 360,
-              child: Text(
-                "It's important to work on all different types of shots!",
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-                overflow: TextOverflow.clip,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        pathImage: "assets/images/progress.png",
-      ),
-    );
-
-    slides.add(
-      Slide(
-        widgetTitle: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            SizedBox(
-              width: 360,
-              child: Text(
-                "How many pucks do you have?".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 32,
-                  color: Colors.white,
-                ),
-                overflow: TextOverflow.clip,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Color(0xffCC3333),
-        widgetDescription: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 200,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: puckCountTextFieldController,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 28,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                    onChanged: (value) async {
-                      SharedPreferences prefs = await SharedPreferences.getInstance();
-                      prefs.setInt('puck_count', int.parse(value));
-                      preferences.puckCount = int.parse(value);
-                    },
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    'You can change this later',
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 18,
-                      color: Colors.white70,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    // slides.add(
-    //   Slide(
-    //     widgetTitle: Row(
-    //       mainAxisAlignment: MainAxisAlignment.center,
-    //       mainAxisSize: MainAxisSize.max,
-    //       children: [
-    //         SizedBox(
-    //           width: 360,
-    //           child: Text(
-    //             "Light or Dark Theme?".toUpperCase(),
-    //             style: TextStyle(
-    //               fontFamily: 'NovecentoSans',
-    //               fontSize: 32,
-    //               color: Colors.white,
-    //             ),
-    //             overflow: TextOverflow.clip,
-    //             textAlign: TextAlign.center,
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //     backgroundColor: Color(0xffCC3333),
-    //     widgetDescription: Column(
-    //       crossAxisAlignment: CrossAxisAlignment.center,
-    //       children: [
-    //         SizedBox(
-    //           width: 200,
-    //           child: Column(
-    //             children: [
-    //               Row(
-    //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //                 children: [
-    //                   Transform.scale(
-    //                     scale: _darkMode ? 1 : 1.2,
-    //                     child: TextButton(
-    //                       onPressed: () async {
-    //                         setState(() {
-    //                           _darkMode = false;
-    //                         });
-
-    //                         SharedPreferences prefs = await SharedPreferences.getInstance();
-    //                         prefs.setBool('dark_mode', false);
-    //                         preferences.darkMode = false;
-    //                       },
-    //                       child: Text(
-    //                         "Light".toUpperCase(),
-    //                         style: TextStyle(
-    //                           fontFamily: 'NovecentoSans',
-    //                           fontSize: 24,
-    //                           color: Colors.black54,
-    //                         ),
-    //                       ),
-    //                       style: ButtonStyle(
-    //                         backgroundColor: MaterialStateProperty.all(Colors.white),
-    //                       ),
-    //                     ),
-    //                   ),
-    //                   Transform.scale(
-    //                     scale: _darkMode ? 1.2 : 1,
-    //                     child: TextButton(
-    //                       onPressed: () async {
-    //                         setState(() {
-    //                           _darkMode = true;
-    //                         });
-
-    //                         SharedPreferences prefs = await SharedPreferences.getInstance();
-    //                         prefs.setBool('dark_mode', true);
-    //                         preferences.darkMode = true;
-    //                       },
-    //                       child: Text(
-    //                         "Dark".toUpperCase(),
-    //                         style: TextStyle(
-    //                           fontFamily: 'NovecentoSans',
-    //                           fontSize: 24,
-    //                           color: Color.fromRGBO(255, 255, 255, 0.75),
-    //                         ),
-    //                       ),
-    //                       style: ButtonStyle(
-    //                         backgroundColor: MaterialStateProperty.all(Color(0xff1A1A1A)),
-    //                       ),
-    //                     ),
-    //                   ),
-    //                 ],
-    //               ),
-    //               SizedBox(
-    //                 height: 10,
-    //               ),
-    //               Text(
-    //                 'You can change this later',
-    //                 style: TextStyle(
-    //                   fontFamily: 'NovecentoSans',
-    //                   fontSize: 18,
-    //                   color: Colors.white70,
-    //                 ),
-    //                 textAlign: TextAlign.center,
-    //               ),
-    //             ],
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //   ),
-    // );
-
-    super.initState();
-  }
-
-  Future<void> onDonePress() async {
+  Future<void> _onIntroEnd(context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('intro_shown', true);
 
-    navigatorKey.currentState.pushReplacement(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) {
         return user != null ? Navigation() : Login();
       }),
     );
   }
 
-  void onTabChangeCompleted(index) {
-    // Index of current tab is focused
-  }
-
-  Widget renderNextBtn() {
-    return Icon(
-      Icons.navigate_next,
-      color: Color(0xffffffff),
-      size: 35.0,
+  Widget _buildFullscrenImage() {
+    return Image.asset(
+      'assets/fullscreen.jpg',
+      fit: BoxFit.cover,
+      height: double.infinity,
+      width: double.infinity,
+      alignment: Alignment.center,
     );
   }
 
-  Widget renderDoneBtn() {
-    return Icon(
-      Icons.done,
-      color: Color(0xffffffff),
-    );
-  }
-
-  Widget renderSkipBtn() {
-    return Icon(
-      Icons.skip_next,
-      color: Color(0xffffffff),
-    );
-  }
-
-  List<Widget> renderListCustomTabs() {
-    List<Widget> tabs = [];
-    for (int i = 0; i < slides.length; i++) {
-      Slide currentSlide = slides[i];
-      tabs.add(
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          padding: EdgeInsets.only(top: 150),
-          decoration: BoxDecoration(
-            color: currentSlide.backgroundColor,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              currentSlide.pathImage == null
-                  ? Container()
-                  : GestureDetector(
-                      child: Image.asset(
-                        currentSlide.pathImage,
-                        width: 320.0,
-                        height: 320.0,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-              Container(
-                child: currentSlide.widgetTitle,
-                margin: EdgeInsets.only(top: 20.0),
-              ),
-              Container(
-                child: currentSlide.widgetDescription,
-                margin: EdgeInsets.only(top: 20.0),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return tabs;
+  Widget _buildImage(String assetName, [double width = 350]) {
+    return Image.asset('assets/images/$assetName', width: width);
   }
 
   @override
   Widget build(BuildContext context) {
-    return IntroSlider(
-      // Skip button
-      renderSkipBtn: this.renderSkipBtn(),
-      colorSkipBtn: Color(0x33ffffff),
-      highlightColorSkipBtn: Color(0xffffffff),
+    const bodyStyle = TextStyle(fontSize: 22.0, color: Color.fromRGBO(255, 255, 255, 0.9));
 
-      // Next button
-      renderNextBtn: this.renderNextBtn(),
+    const pageDecoration = const PageDecoration(
+      titleTextStyle: TextStyle(
+        fontSize: 32.0,
+        fontFamily: 'NovecentoSans',
+        color: Colors.white,
+      ),
+      bodyTextStyle: bodyStyle,
+      descriptionPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      pageColor: Color(0xffCC3333),
+      imagePadding: EdgeInsets.zero,
+    );
 
-      // Done button
-      renderDoneBtn: this.renderDoneBtn(),
-      onDonePress: this.onDonePress,
-      colorDoneBtn: Color(0x33ffffff),
-      highlightColorDoneBtn: Color(0xffffffff),
+    return IntroductionScreen(
+      key: introKey,
+      globalBackgroundColor: Color(0xffCC33333),
+      pages: [
+        PageViewModel(
+          title: "Take the 10,000 shot challenge".toUpperCase(),
+          body: "See how much you can improve",
+          image: _buildImage('logo-small.png', MediaQuery.of(context).size.width * 0.7),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "Track your progress".toUpperCase(),
+          body: "It's important to work on all different types of shots!",
+          image: _buildImage('progress.png', MediaQuery.of(context).size.width * 0.9),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "How many pucks do you have?".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: puckCountTextFieldController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 28,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                      onChanged: (value) async {
+                        SharedPreferences prefs = await SharedPreferences.getInstance();
+                        prefs.setInt('puck_count', int.parse(value));
+                        preferences.puckCount = int.parse(value);
+                      },
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'You can change this later',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          image: Container(
+            margin: EdgeInsets.only(bottom: 30),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  FontAwesomeIcons.hockeyPuck,
+                  size: MediaQuery.of(context).size.width * 0.25,
+                  color: Colors.white,
+                ),
+                // Top Left
+                Positioned(
+                  left: -25,
+                  top: -25.0,
+                  child: Icon(
+                    FontAwesomeIcons.hockeyPuck,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ),
+                // Bottom Left
+                Positioned(
+                  left: -35,
+                  bottom: -30.0,
+                  child: Icon(
+                    FontAwesomeIcons.hockeyPuck,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                // Top right
+                Positioned(
+                  right: -30,
+                  top: -35.0,
+                  child: Icon(
+                    FontAwesomeIcons.hockeyPuck,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                // Bottom right
+                Positioned(
+                  right: -30,
+                  bottom: -25.0,
+                  child: Icon(
+                    FontAwesomeIcons.hockeyPuck,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "Light or Dark theme?".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Transform.scale(
+                          scale: _darkMode ? 1 : 1.2,
+                          child: TextButton(
+                            onPressed: () async {
+                              setState(() {
+                                _darkMode = false;
+                              });
 
-      // Dot indicator
-      colorDot: Color(0xffffffff),
-      sizeDot: 13.0,
-      typeDotAnimation: dotSliderAnimation.SIZE_TRANSITION,
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              prefs.setBool('dark_mode', false);
+                              preferences.darkMode = false;
+                            },
+                            child: Text(
+                              "Light".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 24,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Colors.white),
+                            ),
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: _darkMode ? 1.2 : 1,
+                          child: TextButton(
+                            onPressed: () async {
+                              setState(() {
+                                _darkMode = true;
+                              });
 
-      // Tabs
-      listCustomTabs: this.renderListCustomTabs(),
-      backgroundColorAllSlides: Colors.white,
-      refFuncGoToTab: (refFunc) {
-        this.goToTab = refFunc;
-      },
-
-      // Behavior
-      scrollPhysics: BouncingScrollPhysics(),
-
-      // Show or hide status bar
-      hideStatusBar: true,
-
-      // On tab change completed
-      onTabChangeCompleted: this.onTabChangeCompleted,
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              prefs.setBool('dark_mode', true);
+                              preferences.darkMode = true;
+                            },
+                            child: Text(
+                              "Dark".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 24,
+                                color: Color.fromRGBO(255, 255, 255, 0.75),
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Color(0xff1A1A1A)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'You can change this later',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          image: Icon(
+            Icons.brightness_4,
+            size: MediaQuery.of(context).size.width * 0.5,
+            color: Colors.white,
+          ),
+          decoration: pageDecoration,
+        ),
+      ],
+      onDone: () => _onIntroEnd(context),
+      //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
+      showSkipButton: true,
+      skipFlex: 0,
+      nextFlex: 0,
+      //rtl: true, // Display as right-to-left
+      skip: Text(
+        'Skip'.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontSize: 20,
+        ),
+      ),
+      next: Icon(Icons.arrow_forward_ios),
+      done: Text(
+        'Done'.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontSize: 20,
+        ),
+      ),
+      curve: Curves.fastLinearToSlowEaseIn,
+      controlsMargin: const EdgeInsets.all(16),
+      controlsPadding: kIsWeb ? const EdgeInsets.all(12.0) : const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+      dotsDecorator: const DotsDecorator(
+        size: Size(10.0, 10.0),
+        color: Color(0xFFBDBDBD),
+        activeSize: Size(22.0, 10.0),
+        activeShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(25.0)),
+        ),
+      ),
+      dotsContainerDecorator: const ShapeDecoration(
+        color: Color(0xffa32929),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+        ),
+      ),
     );
   }
 }
