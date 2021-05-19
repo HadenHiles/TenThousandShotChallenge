@@ -41,7 +41,7 @@ class _NavigationState extends State<Navigation> {
     child: Image.asset('assets/images/logo-text-only.png'),
   );
 
-  final List<NavigationTab> _tabs = [
+  static List<NavigationTab> _tabs = [
     NavigationTab(
       title: Container(
         height: 40,
@@ -60,7 +60,6 @@ class _NavigationState extends State<Navigation> {
             icon: Icon(
               Icons.settings,
               size: 28,
-              color: HomeTheme.darkTheme.appBarTheme.iconTheme.color,
             ),
             onPressed: () {
               navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
