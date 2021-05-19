@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
@@ -125,8 +126,55 @@ class _ProfileState extends State<Profile> {
                     margin: EdgeInsets.symmetric(horizontal: 15),
                     child: SizedBox(
                       height: 60,
-                      child: UserAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
+                      child: GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text(
+                                  "Teammates can add you with this".toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 24,
+                                  ),
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 200,
+                                      height: 200,
+                                      child: QrImage(
+                                        data: user.uid,
+                                        backgroundColor: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: Text(
+                                      "Close".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: UserAvatar(
+                          user: UserProfile(user.displayName, user.email, user.photoURL),
+                          backgroundColor: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ),
                   ),

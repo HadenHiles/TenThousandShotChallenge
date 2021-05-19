@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
+import 'package:tenthousandshotchallenge/tabs/team/AddTeammate.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -63,9 +64,9 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              // navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
-              //   return InviteTeammate();
-              // }));
+              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+                return AddTeammate();
+              }));
             },
           ),
         ),

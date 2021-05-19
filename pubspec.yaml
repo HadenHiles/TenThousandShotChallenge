@@ -41,6 +41,8 @@ dependencies:
   intl: ^0.17.0
   charts_flutter: ^0.10.0
   auto_size_text: ^2.1.0
+  qr_flutter: ^4.0.0
+  flutter_barcode_scanner: ^2.0.0
   # font_awesome_flutter: ^8.8.1 # Included in flutter_signin_button but has dependency conflict
 
 

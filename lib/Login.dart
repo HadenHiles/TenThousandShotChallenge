@@ -591,8 +591,10 @@ class _LoginState extends State<Login> {
           .then((credential) {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+          'display_name_lowercase': FirebaseAuth.instance.currentUser.email.toLowerCase(),
           'display_name': FirebaseAuth.instance.currentUser.email,
           'email': FirebaseAuth.instance.currentUser.email,
+          'photo_url': null,
         }).then((value) => () {});
 
         Navigator.of(context, rootNavigator: true).pop('dialog');
@@ -628,6 +630,7 @@ class _LoginState extends State<Login> {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
           u.reference.update({
+            'display_name_lowercase': UserProfile.fromSnapshot(u).displayName.toLowerCase() ?? FirebaseAuth.instance.currentUser.email.toLowerCase(),
             'display_name': UserProfile.fromSnapshot(u).displayName ?? FirebaseAuth.instance.currentUser.email,
             'email': FirebaseAuth.instance.currentUser.email,
           }).then((value) => null);
@@ -661,8 +664,10 @@ class _LoginState extends State<Login> {
       signInWithGoogle().then((googleSignInAccount) {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+          'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
           'display_name': FirebaseAuth.instance.currentUser.displayName,
           'email': FirebaseAuth.instance.currentUser.email,
+          'photo_url': FirebaseAuth.instance.currentUser.photoURL,
         }).then((value) => () {});
 
         bootstrap();
