@@ -344,7 +344,7 @@ class _ShotsState extends State<Shots> {
 
                   return Container(
                     height: MediaQuery.of(context).size.height * 0.3,
-                    width: MediaQuery.of(context).size.width * 0.7,
+                    width: MediaQuery.of(context).size.width * 0.75,
                     child: iteration.total < 1
                         ? Container(
                             child: Text(
@@ -352,7 +352,7 @@ class _ShotsState extends State<Shots> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
-                                fontSize: 18,
+                                fontSize: 16,
                                 color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),

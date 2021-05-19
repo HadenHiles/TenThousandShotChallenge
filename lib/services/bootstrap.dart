@@ -11,7 +11,7 @@ Future<void> bootstrap() async {
 Future<void> bootstrapIterations() async {
   await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').get().then((iSnap) async {
     if (iSnap.docs.isEmpty) {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false).toMap()).then((_) {});
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, Duration(), 0, 0, 0, 0, 0, false).toMap()).then((_) {});
     }
   });
 }
