@@ -77,7 +77,7 @@ class _LoginState extends State<Login> {
                       margin: EdgeInsets.only(bottom: 50),
                       height: 280,
                       child: Image.asset(
-                        'assets/images/app-icon.png',
+                        'assets/images/logo-small.png',
                       ),
                     ),
                     SizedBox(
@@ -184,7 +184,7 @@ class _LoginState extends State<Login> {
                                           Container(
                                             height: 50,
                                             child: Image.asset(
-                                              'assets/images/logo.png',
+                                              'assets/images/logo-small-red.png',
                                               width: 120,
                                             ),
                                           ),
@@ -303,7 +303,7 @@ class _LoginState extends State<Login> {
                                                                   Container(
                                                                     height: 50,
                                                                     child: Image.asset(
-                                                                      'assets/images/logo.png',
+                                                                      'assets/images/logo-small-red.png',
                                                                       width: 120,
                                                                     ),
                                                                   ),
@@ -436,7 +436,7 @@ class _LoginState extends State<Login> {
                                               Container(
                                                 height: 50,
                                                 child: Image.asset(
-                                                  'assets/images/logo.png',
+                                                  'assets/images/logo-small-red.png',
                                                   width: 120,
                                                 ),
                                               ),
