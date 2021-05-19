@@ -178,9 +178,9 @@ class _ProfileState extends State<Profile> {
                               if (!snapshot.hasData) {
                                 return Center(
                                   child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(),
+                                    width: 120,
+                                    height: 2,
+                                    child: LinearProgressIndicator(),
                                   ),
                                 );
                               } else {
@@ -197,6 +197,37 @@ class _ProfileState extends State<Profile> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 );
+                              }
+                            }),
+                      ),
+                      Container(
+                        child: StreamBuilder(
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                              if (!snapshot.hasData) {
+                                return Center(
+                                  child: SizedBox(
+                                    width: 120,
+                                    height: 2,
+                                    child: LinearProgressIndicator(),
+                                  ),
+                                );
+                              } else {
+                                Duration totalDuration = Duration();
+                                snapshot.data.docs.forEach((doc) {
+                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration;
+                                });
+
+                                return totalDuration > Duration()
+                                    ? Text(
+                                        "IN " + printDuration(totalDuration, true),
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontFamily: 'NovecentoSans',
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      )
+                                    : Container();
                               }
                             }),
                       ),

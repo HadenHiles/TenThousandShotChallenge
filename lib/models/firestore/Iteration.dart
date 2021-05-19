@@ -4,6 +4,7 @@ class Iteration {
   String id;
   final DateTime startDate;
   final DateTime endDate;
+  final Duration totalDuration;
   final int total;
   final int totalWrist;
   final int totalSnap;
@@ -12,7 +13,7 @@ class Iteration {
   final bool complete;
   DocumentReference reference;
 
-  Iteration(this.startDate, this.endDate, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
+  Iteration(this.startDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
 
   Iteration.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['start_date'] != null),
@@ -20,6 +21,7 @@ class Iteration {
         id = map['id'],
         startDate = map['start_date'] != null ? map['start_date'].toDate() : null,
         endDate = map['end_date'] != null ? map['end_date'].toDate() : null,
+        totalDuration = Duration(seconds: map['total_duration']),
         total = map['total'],
         totalWrist = map['total_wrist'],
         totalSnap = map['total_snap'],
@@ -32,6 +34,7 @@ class Iteration {
       'id': id,
       'start_date': startDate,
       'end_date': endDate,
+      'total_duration': totalDuration.inSeconds,
       'total': total,
       'total_wrist': totalWrist,
       'total_snap': totalSnap,

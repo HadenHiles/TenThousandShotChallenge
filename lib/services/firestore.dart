@@ -37,7 +37,7 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
   ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now(), sessionService.currentDuration);
   shootingSession.shots = shots;
 
-  Iteration iteration = Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false);
+  Iteration iteration = Iteration(DateTime.now(), null, Duration(), 0, 0, 0, 0, 0, false);
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
@@ -48,7 +48,7 @@ Future<bool> saveShootingSession(List<Shots> shots) async {
         saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
 
         snapshot.docs[0].reference.update({'complete': true, 'end_date': DateTime.now()}).then((_) {
-          FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, 0, 0, 0, 0, 0, false).toMap());
+          FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').doc().set(Iteration(DateTime.now(), null, Duration(), 0, 0, 0, 0, 0, false).toMap());
         });
       } else {
         saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
@@ -80,6 +80,7 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
       iteration = Iteration(
         iteration.startDate,
         iteration.endDate,
+        (iteration.totalDuration + shootingSession.duration),
         (iteration.total + shootingSession.total),
         (iteration.totalWrist + shootingSession.totalWrist),
         (iteration.totalSnap + shootingSession.totalSnap),
@@ -101,6 +102,7 @@ Future<bool> deleteSession(ShootingSession shootingSession) async {
       Iteration decrementedIteration = Iteration(
         iteration.startDate,
         iteration.endDate,
+        (iteration.totalDuration - shootingSession.duration),
         (iteration.total - shootingSession.total),
         (iteration.totalWrist - shootingSession.totalWrist),
         (iteration.totalSnap - shootingSession.totalSnap),
