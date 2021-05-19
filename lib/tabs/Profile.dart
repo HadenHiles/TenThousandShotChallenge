@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -66,6 +67,10 @@ class _ProfileState extends State<Profile> {
                       _sessions.addAll(sessions);
                     });
                   }
+                } else {
+                  setState(() {
+                    _isLoading = false;
+                  });
                 }
               });
             });
@@ -131,6 +136,7 @@ class _ProfileState extends State<Profile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
+                        width: 200,
                         child: StreamBuilder<DocumentSnapshot>(
                           // ignore: deprecated_member_use
                           stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
@@ -153,8 +159,9 @@ class _ProfileState extends State<Profile> {
 
                             UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
 
-                            return Text(
+                            return AutoSizeText(
                               userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
+                              maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -412,24 +419,30 @@ class _ProfileState extends State<Profile> {
                   }
                   return Container(
                     child: Center(
-                      child: Opacity(
-                        opacity: _isLoading ? 1.0 : 0.0,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 9),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              (!_isLoading && _sessions.length < 1)
-                                  ? Text("No shooting sessions yet")
-                                  : SizedBox(
-                                      height: 25,
-                                      width: 25,
-                                      child: CircularProgressIndicator(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 9),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            !_isLoading && _sessions.length < 1
+                                ? Text(
+                                    "You don't have any sessions yet".toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 16,
                                     ),
-                            ],
-                          ),
+                                  )
+                                : _sessions.length < 1
+                                    ? SizedBox(
+                                        height: 25,
+                                        width: 25,
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : Container(),
+                          ],
                         ),
                       ),
                     ),
@@ -471,12 +484,21 @@ class _ProfileState extends State<Profile> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${s.total} shots deleted!'),
+            content: Text(
+              '${s.total} shots deleted!',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
             duration: Duration(seconds: 4),
             action: SnackBarAction(
-              label: "CANCEL",
+              label: "UNDO",
+              textColor: Theme.of(context).primaryColor,
               onPressed: () {
                 proceedWithDelete = false;
+
+                _sessions.clear();
+                _lastVisible = null;
                 _loadHistory();
               },
             ),
