@@ -171,56 +171,61 @@ class _NavigationState extends State<Navigation> {
                 AnimatedBuilder(
                   animation: sessionService, // listen to ChangeNotifier
                   builder: (context, child) {
-                    return ListTile(
-                      tileColor: Theme.of(context).primaryColor,
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            printWeekday(DateTime.now()) + " Session",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSecondary,
-                              fontFamily: "NovecentoSans",
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Text(
-                                printDuration(sessionService.currentDuration, true),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSecondary,
-                                  fontFamily: "NovecentoSans",
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      child: ListTile(
+                        tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              printWeekday(DateTime.now()) + " Session",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondary,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      trailing: InkWell(
-                        child: Icon(
-                          _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                          color: Theme.of(context).colorScheme.onSecondary,
+                            ),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text(
+                                  printDuration(sessionService.currentDuration, true),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSecondary,
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
+                        trailing: InkWell(
+                          child: Icon(
+                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: Theme.of(context).colorScheme.onSecondary,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        onTap: () {
+                          if (sessionPanelController.isPanelClosed) {
+                            sessionPanelController.open();
+                            setState(() {
+                              _sessionPanelState = PanelState.OPEN;
+                            });
+                          } else {
+                            sessionPanelController.close();
+                            setState(() {
+                              _sessionPanelState = PanelState.CLOSED;
+                            });
+                          }
+                        },
                       ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                      onTap: () {
-                        if (sessionPanelController.isPanelClosed) {
-                          sessionPanelController.open();
-                          setState(() {
-                            _sessionPanelState = PanelState.OPEN;
-                          });
-                        } else {
-                          sessionPanelController.close();
-                          setState(() {
-                            _sessionPanelState = PanelState.CLOSED;
-                          });
-                        }
-                      },
                     );
                   },
                 ),

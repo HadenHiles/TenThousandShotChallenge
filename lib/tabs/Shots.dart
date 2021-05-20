@@ -263,7 +263,11 @@ class _ShotsState extends State<Shots> {
                           children: [
                             Container(
                               height: 40,
-                              width: totalShotsWidth < 25 ? 40 : totalShotsWidth,
+                              width: totalShotsWidth < 35
+                                  ? 40
+                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                      ? totalShotsWidth - 40
+                                      : totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               child: Text(
                                 iteration.total <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
