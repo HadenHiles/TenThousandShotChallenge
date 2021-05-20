@@ -6,6 +6,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
@@ -198,7 +199,9 @@ class _ShotsState extends State<Shots> {
                   );
                 } else {
                   Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
-                  double totalShotsWidth = (iteration.total / 10000) * (MediaQuery.of(context).size.width - 60);
+                  int maxIterationTotalForWidth = iteration.total <= 10000 ? iteration.total : 10000;
+                  int iterationTotal = iteration.total < 10000 ? 10000 : iteration.total;
+                  double totalShotsWidth = (maxIterationTotalForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
 
                   return Column(
                     children: [
@@ -217,7 +220,7 @@ class _ShotsState extends State<Shots> {
                           children: [
                             Container(
                               height: 40,
-                              width: (iteration.totalWrist / 10000) * totalShotsWidth,
+                              width: (iteration.totalWrist / iterationTotal) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: wristShotColor,
@@ -225,7 +228,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalSnap / 10000) * totalShotsWidth,
+                              width: (iteration.totalSnap / iterationTotal) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: snapShotColor,
@@ -233,7 +236,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalBackhand / 10000) * totalShotsWidth,
+                              width: (iteration.totalBackhand / iterationTotal) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: backhandShotColor,
@@ -241,7 +244,7 @@ class _ShotsState extends State<Shots> {
                             ),
                             Container(
                               height: 40,
-                              width: (iteration.totalSlap / 10000) * totalShotsWidth,
+                              width: (iteration.totalSlap / iterationTotal) * totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: slapShotColor,
@@ -385,6 +388,75 @@ class _ShotsState extends State<Shots> {
                       ),
                       child: Column(
                         children: [
+                          StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
+
+                                return iteration.total < 10000
+                                    ? Container()
+                                    : Container(
+                                        width: MediaQuery.of(context).size.width - 30,
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                            primary: Colors.white,
+                                            padding: EdgeInsets.all(10),
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                          ),
+                                          onPressed: () {
+                                            dialog(
+                                              context,
+                                              ConfirmDialog(
+                                                "Restart Challenge?",
+                                                Text(
+                                                  "Your current challenge data will remain accessible in your profile.\n\nWould you like to continue?",
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onBackground,
+                                                  ),
+                                                ),
+                                                "Cancel",
+                                                () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                "Continue",
+                                                () {
+                                                  startNewIteration().then((success) {
+                                                    if (success) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          duration: Duration(milliseconds: 1200),
+                                                          content: Text('Challenge restarted!'),
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          duration: Duration(milliseconds: 1200),
+                                                          content: Text('There was an error restarting the challenge :('),
+                                                        ),
+                                                      );
+                                                    }
+                                                  });
+
+                                                  navigatorKey.currentState.pop();
+                                                },
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            'Restart Challenge'.toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              fontSize: 20,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                              }
+                              return Container();
+                            },
+                          ),
                           sessionService.isRunning
                               ? Container()
                               : Container(
