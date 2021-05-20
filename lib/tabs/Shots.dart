@@ -198,7 +198,7 @@ class _ShotsState extends State<Shots> {
                   );
                 } else {
                   Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
-                  double totalShotsWidth = (iteration.total / 10000) * (MediaQuery.of(context).size.width - 30);
+                  double totalShotsWidth = (iteration.total / 10000) * (MediaQuery.of(context).size.width - 60);
 
                   return Column(
                     children: [
@@ -266,7 +266,7 @@ class _ShotsState extends State<Shots> {
                               width: totalShotsWidth < 35
                                   ? 40
                                   : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
-                                      ? totalShotsWidth - 40
+                                      ? totalShotsWidth - 65
                                       : totalShotsWidth,
                               padding: EdgeInsets.symmetric(horizontal: 2),
                               child: Text(
