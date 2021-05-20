@@ -81,7 +81,10 @@ class _EditProfileState extends State<EditProfile> {
                     ),
                     onPressed: () {
                       if (_formKey.currentState.validate()) {
-                        FirebaseFirestore.instance.collection('users').doc(user.uid).update({'display_name': displayNameTextFieldController.text.toString()}).then((value) {
+                        FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                          'display_name': displayNameTextFieldController.text.toString(),
+                          'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
+                        }).then((value) {
                           new SnackBar(content: new Text('Your profile details were saved successfully!'));
                           navigatorKey.currentState.pop();
                         });
