@@ -2,24 +2,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Invite {
   String id;
-  final String uid;
-  final bool pending;
+  final String fromUid;
+  final DateTime date;
   DocumentReference reference;
 
-  Invite(this.uid, this.pending);
+  Invite(this.fromUid, this.date);
 
   Invite.fromMap(Map<String, dynamic> map, {this.reference})
-      : assert(map['uid'] != null),
-        assert(map['active'] != null),
+      : assert(map['from_uid'] != null),
+        assert(map['date'] != null),
         id = map['id'],
-        uid = map['uid'],
-        pending = map['pending'];
+        fromUid = map['from_uid'],
+        date = map['date'] != null ? map['date'].toDate() : null;
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'uid': uid,
-      'pending': pending,
+      'from_uid': fromUid,
+      'date': date,
     };
   }
 
