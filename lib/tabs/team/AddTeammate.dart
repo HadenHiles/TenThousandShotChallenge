@@ -76,73 +76,94 @@ class _AddTeammateState extends State<AddTeammate> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 50),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        keyboardType: TextInputType.text,
-                        decoration: InputDecoration(
-                          hintText: 'Search Name or Email'.toUpperCase(),
-                          hintStyle: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).cardTheme.color,
-                          ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              keyboardType: TextInputType.text,
+                              decoration: InputDecoration(
+                                hintText: 'Search Name or Email'.toUpperCase(),
+                                hintStyle: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  color: Theme.of(context).cardTheme.color,
+                                ),
+                              ),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontFamily: 'NovecentoSans',
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              onChanged: (value) async {
+                                setState(() {
+                                  _isSearching = true;
+                                });
+
+                                List<DocumentSnapshot> users = [];
+                                if (value.isNotEmpty) {
+                                  await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                        uSnaps.docs.forEach((uDoc) {
+                                          if (uDoc.reference.id != user.uid) {
+                                            users.add(uDoc);
+                                          }
+                                        });
+                                      });
+                                  if (users.length < 1) {
+                                    await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                          uSnaps.docs.forEach((uDoc) {
+                                            if (uDoc.reference.id != user.uid) {
+                                              users.add(uDoc);
+                                            }
+                                          });
+                                        });
+                                  }
+
+                                  await new Future.delayed(new Duration(milliseconds: 500));
+
+                                  setState(() {
+                                    _teammates = users;
+                                    _isSearching = false;
+                                  });
+                                }
+
+                                setState(() {
+                                  _teammates = users;
+                                  _isSearching = false;
+                                });
+                              },
+                              controller: searchFieldController,
+                              validator: (value) {
+                                if (value.isEmpty) {
+                                  return 'Enter a name or email address';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                      child: IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.qr_code_2_rounded,
+                          size: 35,
                           color: Theme.of(context).colorScheme.onPrimary,
                         ),
-                        onChanged: (value) async {
-                          setState(() {
-                            _isSearching = true;
-                          });
-
-                          List<DocumentSnapshot> users = [];
-                          if (value.isNotEmpty) {
-                            await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                  uSnaps.docs.forEach((uDoc) {
-                                    if (uDoc.reference.id != user.uid) {
-                                      users.add(uDoc);
-                                    }
-                                  });
-                                });
-                            if (users.length < 1) {
-                              await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                    uSnaps.docs.forEach((uDoc) {
-                                      if (uDoc.reference.id != user.uid) {
-                                        users.add(uDoc);
-                                      }
-                                    });
-                                  });
-                            }
-
-                            await new Future.delayed(new Duration(milliseconds: 500));
-
-                            setState(() {
-                              _teammates = users;
-                              _isSearching = false;
-                            });
-                          }
-
-                          setState(() {
-                            _teammates = users;
-                            _isSearching = false;
-                          });
-                        },
-                        controller: searchFieldController,
-                        validator: (value) {
-                          if (value.isEmpty) {
-                            return 'Enter a name or email address';
-                          }
-                          return null;
-                        },
+                        color: Theme.of(context).primaryColor,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               Flexible(
@@ -211,10 +232,12 @@ class _AddTeammateState extends State<AddTeammate> {
                 ),
               ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       teammate.displayName != null
@@ -251,6 +274,7 @@ class _AddTeammateState extends State<AddTeammate> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
+                        width: 135,
                         child: StreamBuilder(
                             stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -268,8 +292,9 @@ class _AddTeammateState extends State<AddTeammate> {
                                   total += Iteration.fromSnapshot(doc).total;
                                 });
 
-                                return Text(
+                                return AutoSizeText(
                                   total.toString() + " Lifetime Shots",
+                                  maxLines: 1,
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
                                     fontSize: 20,
