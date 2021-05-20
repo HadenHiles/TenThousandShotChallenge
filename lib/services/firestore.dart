@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -134,4 +136,33 @@ Future<bool> startNewIteration() async {
   }).onError((error, stackTrace) {
     print(error);
   });
+}
+
+Future<bool> sendInvite(String fromUid, String toUid) async {
+  Invite invite = Invite(fromUid, DateTime.now());
+  return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) => true).onError((error, stackTrace) => null);
+}
+
+Future<bool> acceptInvite(Invite invite) async {
+  // Get the teammate who the invite is from
+  return await FirebaseFirestore.instance.collection('users').doc(invite.fromUid).get().then((u) async {
+    UserProfile teammate = UserProfile.fromSnapshot(u);
+    // Save the teammate to the current user's teammates
+    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(teammate.reference.id).set(teammate.toMap()).then((_) async {
+      // Get the current user
+      return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser.uid).get().then((u) async {
+        UserProfile user = UserProfile.fromSnapshot(u);
+        // Save the current user as a teammate of the invitee teammate
+        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => null);
+      });
+    });
+  });
+}
+
+Future<bool> deleteInvite(String fromUid, String toUid) async {
+  if (toUid == auth.currentUser.uid) {
+    return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).delete().then((value) => true).onError((error, stackTrace) => null);
+  }
+
+  return false;
 }

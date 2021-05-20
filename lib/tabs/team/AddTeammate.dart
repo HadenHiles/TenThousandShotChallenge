@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
@@ -78,18 +79,29 @@ class _AddTeammateState extends State<AddTeammate> {
                             size: 28,
                           ),
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!"),
-                                duration: Duration(seconds: 4),
-                              ),
-                            );
+                            sendInvite(user.uid, _teammates[_selectedTeammate].id).then((success) {
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!"),
+                                    duration: Duration(seconds: 4),
+                                  ),
+                                );
 
-                            setState(() {
-                              _selectedTeammate = null;
-                              _teammates = [];
+                                setState(() {
+                                  _selectedTeammate = null;
+                                  _teammates = [];
+                                });
+                                searchFieldController.text = "";
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :("),
+                                    duration: Duration(seconds: 4),
+                                  ),
+                                );
+                              }
                             });
-                            searchFieldController.text = "";
                           },
                         ),
                       ),
