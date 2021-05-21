@@ -124,6 +124,7 @@ class _TeamState extends State<Team> {
           appBar: PreferredSize(
             preferredSize: Size.fromHeight(35),
             child: AppBar(
+              automaticallyImplyLeading: false,
               titleSpacing: 0,
               backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
               elevation: 0,

@@ -22,8 +22,9 @@ final PanelController sessionPanelController = PanelController();
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  Navigation({Key key, this.selectedIndex}) : super(key: key);
+  Navigation({Key key, this.title, this.selectedIndex}) : super(key: key);
 
+  final Widget title;
   final int selectedIndex;
 
   @override
@@ -175,7 +176,7 @@ class _NavigationState extends State<Navigation> {
     _loadPreferences();
 
     setState(() {
-      _title = logo;
+      _title = widget.title != null ? widget.title : logo;
       _actions = [];
       _selectedIndex = widget.selectedIndex;
     });

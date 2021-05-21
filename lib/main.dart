@@ -72,6 +72,7 @@ class Home extends StatelessWidget {
               ? IntroScreen()
               : (user != null
                   ? Navigation(
+                      title: null,
                       selectedIndex: 0,
                     )
                   : Login()),
