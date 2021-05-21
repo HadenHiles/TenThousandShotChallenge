@@ -7,6 +7,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Team extends StatefulWidget {
@@ -56,16 +57,20 @@ class _TeamState extends State<Team> {
                 });
               }
             } else {
-              setState(() {
-                _isLoadingInvites = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _isLoadingInvites = false;
+                });
+              }
             }
           });
         });
       } else {
-        setState(() {
-          _isLoadingInvites = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoadingInvites = false;
+          });
+        }
       }
     });
   }
@@ -88,16 +93,20 @@ class _TeamState extends State<Team> {
                 });
               }
             } else {
-              setState(() {
-                _isLoadingTeammates = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _isLoadingTeammates = false;
+                });
+              }
             }
           });
         });
       } else {
-        setState(() {
-          _isLoadingTeammates = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoadingTeammates = false;
+          });
+        }
       }
     });
   }
@@ -115,7 +124,7 @@ class _TeamState extends State<Team> {
             preferredSize: Size.fromHeight(35),
             child: AppBar(
               titleSpacing: 0,
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
               elevation: 0,
               flexibleSpace: TabBar(
                 labelStyle: TextStyle(
@@ -233,7 +242,7 @@ class _TeamState extends State<Team> {
                               ),
                             ),
                           )
-                        : _teammates.length < 1
+                        : _invites.length < 1
                             ? Container(
                                 margin: EdgeInsets.symmetric(vertical: 25),
                                 child: Center(
