@@ -25,45 +25,43 @@ class _TeamState extends State<Team> {
 
   bool _isLoadingInvites = false;
   List<DocumentSnapshot> _invites = [];
+  List<Invite> _inviteDates = [];
 
   @override
   void initState() {
-    _isLoadingTeammates = true;
     _loadTeammates();
-
-    _isLoadingInvites = true;
     _loadInvites();
 
     super.initState();
   }
 
   Future<Null> _loadInvites() async {
+    setState(() {
+      _isLoadingInvites = true;
+    });
+
     await FirebaseFirestore.instance.collection('invites').doc(user.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
-        List<DocumentSnapshot> invites = [];
 
-        snapshot.docs.forEach((doc) {
-          String fromUid = Invite.fromSnapshot(doc).fromUid;
+        Future.forEach(snapshot.docs, (doc) {
+          Invite invite = Invite.fromSnapshot(doc);
+          String fromUid = invite.fromUid;
 
           FirebaseFirestore.instance.collection('users').doc(fromUid).get().then((uSnap) {
-            invites.add(uSnap);
-
-            if (invites != null && invites.length > 0) {
-              if (mounted) {
-                setState(() {
-                  _isLoadingInvites = false;
-                  _invites.addAll(invites);
-                });
-              }
-            } else {
-              if (mounted) {
-                setState(() {
-                  _isLoadingInvites = false;
-                });
-              }
+            if (mounted) {
+              setState(() {
+                _inviteDates.add(invite);
+                _invites.add(uSnap);
+              });
             }
           });
+        }).then((_) {
+          if (mounted) {
+            setState(() {
+              _isLoadingInvites = false;
+            });
+          }
         });
       } else {
         if (mounted) {
@@ -76,30 +74,30 @@ class _TeamState extends State<Team> {
   }
 
   Future<Null> _loadTeammates() async {
+    setState(() {
+      _isLoadingTeammates = true;
+    });
+
     await FirebaseFirestore.instance.collection('teammates').doc(user.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
-        List<DocumentSnapshot> teammates = [];
 
-        snapshot.docs.forEach((doc) async {
-          await FirebaseFirestore.instance.collection('users').doc(UserProfile.fromSnapshot(doc).reference.id).get().then((uSnap) {
-            teammates.add(uSnap);
+        Future.forEach(snapshot.docs, (doc) {
+          String fromUid = Invite.fromSnapshot(doc).fromUid;
 
-            if (teammates != null && teammates.length > 0) {
-              if (mounted) {
-                setState(() {
-                  _isLoadingTeammates = false;
-                  _teammates.addAll(teammates);
-                });
-              }
-            } else {
-              if (mounted) {
-                setState(() {
-                  _isLoadingTeammates = false;
-                });
-              }
+          FirebaseFirestore.instance.collection('users').doc(fromUid).get().then((uSnap) {
+            if (mounted) {
+              setState(() {
+                _teammates.add(uSnap);
+              });
             }
           });
+        }).then((_) {
+          if (mounted) {
+            setState(() {
+              _isLoadingTeammates = false;
+            });
+          }
         });
       } else {
         if (mounted) {
@@ -262,7 +260,7 @@ class _TeamState extends State<Team> {
                                       itemBuilder: (_, int index) {
                                         if (index < _invites.length) {
                                           final DocumentSnapshot document = _invites[index];
-                                          return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                          return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
                                         }
 
                                         return !_isLoadingInvites
@@ -440,7 +438,7 @@ class _TeamState extends State<Team> {
     );
   }
 
-  Widget _buildTeammateInviteItem(UserProfile teammate, bool bg) {
+  Widget _buildTeammateInviteItem(UserProfile teammate, Invite invite, bool bg) {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
@@ -556,6 +554,7 @@ class _TeamState extends State<Team> {
         padding: EdgeInsets.symmetric(vertical: 9),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -608,6 +607,20 @@ class _TeamState extends State<Team> {
             ),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  width: 40,
+                  child: AutoSizeText(
+                    printDuration(DateTime.now().difference(invite.date), false),
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 20),
@@ -628,6 +641,8 @@ class _TeamState extends State<Team> {
                               duration: Duration(milliseconds: 1500),
                             ),
                           );
+
+                          _loadInvites();
                         }
                       });
                     },
