@@ -38,6 +38,8 @@ class _TeamState extends State<Team> {
   Future<Null> _loadInvites() async {
     setState(() {
       _isLoadingInvites = true;
+      _invites = [];
+      _inviteDates = [];
     });
 
     await FirebaseFirestore.instance.collection('invites').doc(user.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
@@ -76,16 +78,15 @@ class _TeamState extends State<Team> {
   Future<Null> _loadTeammates() async {
     setState(() {
       _isLoadingTeammates = true;
+      _teammates = [];
     });
 
     await FirebaseFirestore.instance.collection('teammates').doc(user.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
-        Future.forEach(snapshot.docs, (doc) {
-          String fromUid = Invite.fromSnapshot(doc).fromUid;
-
-          FirebaseFirestore.instance.collection('users').doc(fromUid).get().then((uSnap) {
+        Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
+          FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
             if (mounted) {
               setState(() {
                 _teammates.add(uSnap);
@@ -170,7 +171,7 @@ class _TeamState extends State<Team> {
                             ? Container(
                                 margin: EdgeInsets.symmetric(vertical: 25),
                                 child: Center(
-                                  child: Text("No teammates :("),
+                                  child: Text("Tap + to add teammates"),
                                 ),
                               )
                             : Column(
@@ -642,6 +643,7 @@ class _TeamState extends State<Team> {
                             ),
                           );
 
+                          _loadTeammates();
                           _loadInvites();
                         }
                       });
