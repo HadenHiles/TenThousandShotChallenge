@@ -68,7 +68,13 @@ class Home extends StatelessWidget {
           theme: HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
-          home: !introShown ? IntroScreen() : (user != null ? Navigation() : Login()),
+          home: !introShown
+              ? IntroScreen()
+              : (user != null
+                  ? Navigation(
+                      selectedIndex: 0,
+                    )
+                  : Login()),
         );
       },
     );
