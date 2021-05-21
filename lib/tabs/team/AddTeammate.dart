@@ -2,6 +2,8 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -26,6 +28,16 @@ class _AddTeammateState extends State<AddTeammate> {
   List<DocumentSnapshot> _teammates = [];
   bool _isSearching = false;
   int _selectedTeammate;
+
+  Future<bool> scanBarcodeNormal() async {
+    String barcodeScanRes;
+
+    // Invitee uid (from_uid)
+    barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
+    print(barcodeScanRes);
+
+    return acceptTeammateBarcode(barcodeScanRes);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +208,27 @@ class _AddTeammateState extends State<AddTeammate> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 5),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          scanBarcodeNormal().then((success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("You are now teammates!"),
+                                duration: Duration(milliseconds: 2500),
+                              ),
+                            );
+
+                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+                              return Navigation(selectedIndex: 1);
+                            }));
+                          }).onError((error, stackTrace) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("There was an error scanning your teammates QR code :("),
+                                duration: Duration(milliseconds: 4000),
+                              ),
+                            );
+                          });
+                        },
                         icon: Icon(
                           Icons.qr_code_2_rounded,
                           size: 35,

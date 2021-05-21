@@ -169,3 +169,19 @@ Future<bool> deleteInvite(String fromUid, String toUid) async {
 
   return false;
 }
+
+Future<bool> acceptTeammateBarcode(String teammateUid) async {
+  // Get the teammate
+  return await FirebaseFirestore.instance.collection('users').doc(teammateUid).get().then((u) async {
+    UserProfile teammate = UserProfile.fromSnapshot(u);
+    // Save the teammate to the current user's teammates
+    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(teammate.reference.id).set(teammate.toMap()).then((_) async {
+      // Get the current user
+      return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser.uid).get().then((u) async {
+        UserProfile user = UserProfile.fromSnapshot(u);
+        // Save the current user as a teammate of the invitee teammate
+        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => null);
+      });
+    });
+  });
+}
