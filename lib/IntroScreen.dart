@@ -66,6 +66,16 @@ class _IntroScreenState extends State<IntroScreen> {
           decoration: pageDecoration,
         ),
         PageViewModel(
+          title: "Challenge your teammates".toUpperCase(),
+          body: "View eachothers shooting sessions, and see who can reach 10,000 first!",
+          image: Icon(
+            Icons.people_rounded,
+            size: MediaQuery.of(context).size.width * 0.5,
+            color: Colors.white,
+          ),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
           title: "How many pucks do you have?".toUpperCase(),
           bodyWidget: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
