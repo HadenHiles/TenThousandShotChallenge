@@ -185,3 +185,9 @@ Future<bool> acceptTeammateBarcode(String teammateUid) async {
     });
   });
 }
+
+Future<bool> deleteTeammate(String uid) async {
+  return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(uid).delete().then((_) async {
+    return await FirebaseFirestore.instance.collection('teammates').doc(uid).collection('teammates').doc(auth.currentUser.uid).delete().then((value) => true).onError((error, stackTrace) => null);
+  });
+}

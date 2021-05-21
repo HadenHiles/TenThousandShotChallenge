@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class AddTeammate extends StatefulWidget {
@@ -218,7 +219,10 @@ class _AddTeammateState extends State<AddTeammate> {
                             );
 
                             navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
-                              return Navigation(selectedIndex: 1);
+                              return Navigation(
+                                title: NavigationTitle(title: "Team".toUpperCase()),
+                                selectedIndex: 1,
+                              );
                             }));
                           }).onError((error, stackTrace) {
                             ScaffoldMessenger.of(context).showSnackBar(

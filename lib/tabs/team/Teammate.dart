@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Teammate extends StatefulWidget {
@@ -144,6 +148,67 @@ class _TeammateState extends State<Teammate> {
                   },
                 ),
               ),
+              actions: [
+                Container(
+                  margin: EdgeInsets.only(top: 10),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: Theme.of(context).primaryColor,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      dialog(
+                        context,
+                        ConfirmDialog(
+                          "Remove Teammate?",
+                          Text(
+                            "Are you sure you want to remove ${_userTeammate.displayName} from your team?",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                          ),
+                          "Cancel",
+                          () {
+                            Navigator.of(context).pop();
+                          },
+                          "Continue",
+                          () {
+                            deleteTeammate(_userTeammate.reference.id).then((success) {
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: Duration(milliseconds: 2500),
+                                    content: Text('${_userTeammate.displayName} was removed from your team.'),
+                                  ),
+                                );
+
+                                navigatorKey.currentState.pushReplacement(
+                                  MaterialPageRoute(builder: (context) {
+                                    return Navigation(
+                                      title: NavigationTitle(title: "Team".toUpperCase()),
+                                      selectedIndex: 1,
+                                    );
+                                  }),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: Duration(milliseconds: 4000),
+                                    content: Text('There was an error removing teammate :('),
+                                  ),
+                                );
+
+                                Navigator.of(context).pop();
+                              }
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
               flexibleSpace: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Theme.of(context).backgroundColor,
@@ -157,7 +222,6 @@ class _TeammateState extends State<Teammate> {
                   ),
                 ),
               ),
-              actions: [],
             ),
           ];
         },
