@@ -54,7 +54,7 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     //If user is signed in
     if (_signedIn) {
-      return Navigation();
+      return Navigation(title: null, selectedIndex: 0);
     }
 
     return Scaffold(
