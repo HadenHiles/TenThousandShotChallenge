@@ -61,6 +61,7 @@ class _NavigationState extends State<Navigation> {
           child: IconButton(
             icon: Icon(
               Icons.add,
+              color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
             ),
             onPressed: () {
@@ -81,6 +82,7 @@ class _NavigationState extends State<Navigation> {
           child: IconButton(
             icon: Icon(
               Icons.settings,
+              color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
             ),
             onPressed: () {
