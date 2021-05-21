@@ -220,7 +220,7 @@ class _AddTeammateState extends State<AddTeammate> {
                           )
                         ],
                       )
-                    : _teammates.length < 1
+                    : _teammates.length < 1 && searchFieldController.text.length > 0
                         ? Column(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.start,
