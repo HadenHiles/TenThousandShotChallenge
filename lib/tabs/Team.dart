@@ -62,6 +62,10 @@ class _TeamState extends State<Team> {
             }
           });
         });
+      } else {
+        setState(() {
+          _isLoadingInvites = false;
+        });
       }
     });
   }
@@ -90,6 +94,10 @@ class _TeamState extends State<Team> {
             }
           });
         });
+      } else {
+        setState(() {
+          _isLoadingTeammates = false;
+        });
       }
     });
   }
@@ -97,22 +105,37 @@ class _TeamState extends State<Team> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: EdgeInsets.all(0),
       child: DefaultTabController(
         length: 2,
+        initialIndex: 0,
         child: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.primary,
-          appBar: AppBar(
-            toolbarHeight: 50,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            bottom: TabBar(
-              tabs: [
-                Tab(
-                  text: "Teammates".toUpperCase(),
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(35),
+            child: AppBar(
+              titleSpacing: 0,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              elevation: 0,
+              flexibleSpace: TabBar(
+                labelStyle: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 18,
                 ),
-                Tab(
-                  text: "Invites".toUpperCase(),
-                ),
-              ],
+                labelPadding: EdgeInsets.all(0),
+                tabs: [
+                  Tab(
+                    icon: Icon(Icons.people),
+                    iconMargin: EdgeInsets.all(0),
+                    text: "Teammates".toUpperCase(),
+                  ),
+                  Tab(
+                    icon: Icon(Icons.person_add),
+                    iconMargin: EdgeInsets.all(0),
+                    text: "Invites".toUpperCase(),
+                  ),
+                ],
+              ),
             ),
           ),
           body: TabBarView(
@@ -123,68 +146,67 @@ class _TeamState extends State<Team> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _isLoadingTeammates || _teammates.length < 1
+                    _isLoadingTeammates
                         ? Container(
-                            child: Text("No Friends."),
+                            margin: EdgeInsets.only(top: 25),
+                            child: Center(
+                              child: SizedBox(
+                                height: 30,
+                                width: 30,
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
                           )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Text(
-                                  'Teammates'.toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 28,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
+                        : _teammates.length < 1
+                            ? Container(
+                                margin: EdgeInsets.symmetric(vertical: 25),
+                                child: Center(
+                                  child: Text("No teammates :("),
                                 ),
-                              ),
-                              SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                height: MediaQuery.of(context).size.height - 350,
-                                child: ListView.builder(
-                                  padding: EdgeInsets.all(0),
-                                  itemCount: _invites.length + 1,
-                                  itemBuilder: (_, int index) {
-                                    if (index < _invites.length) {
-                                      final DocumentSnapshot document = _invites[index];
-                                      return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                    }
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    height: MediaQuery.of(context).size.height - 350,
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.all(0),
+                                      itemCount: _invites.length + 1,
+                                      itemBuilder: (_, int index) {
+                                        if (index < _teammates.length) {
+                                          final DocumentSnapshot document = _teammates[index];
+                                          return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                        }
 
-                                    return !_isLoadingInvites
-                                        ? Container()
-                                        : Container(
-                                            child: Center(
-                                              child: Container(
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.max,
-                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 25,
-                                                      width: 25,
-                                                      child: CircularProgressIndicator(),
+                                        return !_isLoadingTeammates
+                                            ? Container()
+                                            : Container(
+                                                child: Center(
+                                                  child: Container(
+                                                    child: Column(
+                                                      mainAxisSize: MainAxisSize.max,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: [
+                                                        SizedBox(
+                                                          height: 25,
+                                                          width: 25,
+                                                          child: CircularProgressIndicator(),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                          );
-                                  },
-                                ),
+                                              );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                   ],
                 ),
                 onRefresh: () async {
@@ -198,68 +220,67 @@ class _TeamState extends State<Team> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _isLoadingInvites || _invites.length < 1
+                    _isLoadingInvites
                         ? Container(
-                            child: Text("No Invites"),
+                            margin: EdgeInsets.only(top: 25),
+                            child: Center(
+                              child: SizedBox(
+                                height: 30,
+                                width: 30,
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
                           )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Text(
-                                  'Invites'.toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 28,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
+                        : _teammates.length < 1
+                            ? Container(
+                                margin: EdgeInsets.symmetric(vertical: 25),
+                                child: Center(
+                                  child: Text("No invites :("),
                                 ),
-                              ),
-                              SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                height: MediaQuery.of(context).size.height * 0.6,
-                                child: ListView.builder(
-                                  padding: EdgeInsets.all(0),
-                                  itemCount: _invites.length + 1,
-                                  itemBuilder: (_, int index) {
-                                    if (index < _invites.length) {
-                                      final DocumentSnapshot document = _invites[index];
-                                      return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                    }
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.all(0),
+                                      itemCount: _invites.length + 1,
+                                      itemBuilder: (_, int index) {
+                                        if (index < _invites.length) {
+                                          final DocumentSnapshot document = _invites[index];
+                                          return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                        }
 
-                                    return !_isLoadingInvites
-                                        ? Container()
-                                        : Container(
-                                            child: Center(
-                                              child: Container(
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.max,
-                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 25,
-                                                      width: 25,
-                                                      child: CircularProgressIndicator(),
+                                        return !_isLoadingInvites
+                                            ? Container()
+                                            : Container(
+                                                child: Center(
+                                                  child: Container(
+                                                    child: Column(
+                                                      mainAxisSize: MainAxisSize.max,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: [
+                                                        SizedBox(
+                                                          height: 25,
+                                                          width: 25,
+                                                          child: CircularProgressIndicator(),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                          );
-                                  },
-                                ),
+                                              );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                   ],
                 ),
                 onRefresh: () async {

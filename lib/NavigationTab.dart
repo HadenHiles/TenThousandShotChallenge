@@ -18,7 +18,6 @@ class _NavigationTabState extends State<NavigationTab> {
       decoration: BoxDecoration(
         color: Colors.transparent,
       ),
-      margin: EdgeInsets.only(top: 15),
       child: widget.body,
     );
   }

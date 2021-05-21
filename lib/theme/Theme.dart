@@ -27,7 +27,7 @@ class HomeTheme {
       color: Colors.grey.shade300,
     ),
     iconTheme: IconThemeData(
-      color: Colors.white,
+      color: Colors.black87,
     ),
     textTheme: TextTheme(
       headline1: TextStyle(
