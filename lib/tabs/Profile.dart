@@ -46,66 +46,65 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _loadHistory() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').get().then((snapshot) async {
-      if (snapshot.docs.length > 0) {
-        await new Future.delayed(new Duration(milliseconds: 500));
+    await new Future.delayed(new Duration(milliseconds: 500));
 
-        if (_lastVisible == null)
-          await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
-            snapshot.docs.forEach((doc) {
-              List<DocumentSnapshot> sessions = [];
-              doc.reference.collection('sessions').orderBy('date', descending: true).limit(7).get().then((sSnap) {
-                sSnap.docs.forEach((s) {
-                  sessions.add(s);
-                });
+    if (_lastVisible == null) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).where('complete', isEqualTo: false).get().then((snapshot) {
+        List<DocumentSnapshot> sessions = [];
+        snapshot.docs[0].reference.collection('sessions').orderBy('date', descending: true).get().then((sSnap) {
+          sSnap.docs.forEach((s) {
+            sessions.add(s);
+          });
 
-                if (sessions != null && sessions.length > 0) {
-                  _lastVisible = sessions[sessions.length - 1];
+          if (sessions != null && sessions.length > 0) {
+            _lastVisible = sessions[sessions.length - 1];
 
-                  if (mounted) {
-                    setState(() {
-                      _isLoading = false;
-                      _sessions.addAll(sessions);
-                    });
-                  }
-                } else {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _sessions.addAll(sessions);
+              });
+            }
+          } else {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        });
+      });
+    } else {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).where('complete', isEqualTo: false).get().then((snapshot) {
+        List<DocumentSnapshot> sessions = [];
+        snapshot.docs[0].reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).get().then((sSnap) {
+              sSnap.docs.forEach((s) {
+                sessions.add(s);
+              });
+
+              if (sessions != null && sessions.length > 0) {
+                _lastVisible = sessions[sessions.length - 1];
+                if (mounted) {
                   setState(() {
                     _isLoading = false;
+                    _sessions.addAll(sessions);
                   });
                 }
-              });
+              } else {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: Duration(milliseconds: 1200),
+                    content: Text('No more sessions!'),
+                  ),
+                );
+              }
             });
-          });
-        else
-          await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).get().then((snapshot) {
-            snapshot.docs.forEach((doc) {
-              List<DocumentSnapshot> sessions = [];
-              doc.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(7).get().then((sSnap) {
-                    sSnap.docs.forEach((s) {
-                      sessions.add(s);
-                    });
+      });
+    }
 
-                    if (sessions != null && sessions.length > 0) {
-                      _lastVisible = sessions[sessions.length - 1];
-                      if (mounted) {
-                        setState(() {
-                          _isLoading = false;
-                          _sessions.addAll(sessions);
-                        });
-                      }
-                    } else {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          duration: Duration(milliseconds: 1200),
-                          content: Text('No more sessions!'),
-                        ),
-                      );
-                    }
-                  });
-            });
-          });
-      }
+    setState(() {
+      _sessions.sort((DocumentSnapshot a, DocumentSnapshot b) {
+        return ShootingSession.fromSnapshot(a).date.compareTo(ShootingSession.fromSnapshot(b).date);
+      });
     });
   }
 
