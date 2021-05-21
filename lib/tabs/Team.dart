@@ -2,11 +2,13 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/team/Teammate.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
@@ -46,7 +48,7 @@ class _TeamState extends State<Team> {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
-        Future.forEach(snapshot.docs, (doc) {
+        await Future.forEach(snapshot.docs, (doc) {
           Invite invite = Invite.fromSnapshot(doc);
           String fromUid = invite.fromUid;
 
@@ -85,7 +87,7 @@ class _TeamState extends State<Team> {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
-        Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
+        await Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
           FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
             if (mounted) {
               setState(() {
@@ -305,7 +307,11 @@ class _TeamState extends State<Team> {
 
   Widget _buildTeammateItem(UserProfile teammate, bool bg) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+          return Teammate(uid: teammate.reference.id);
+        }));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
@@ -565,9 +571,16 @@ class _TeamState extends State<Team> {
                   margin: EdgeInsets.symmetric(horizontal: 15),
                   child: SizedBox(
                     height: 60,
-                    child: UserAvatar(
-                      user: teammate,
-                      backgroundColor: Theme.of(context).primaryColor,
+                    child: GestureDetector(
+                      onTap: () {
+                        navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                          return Teammate(uid: teammate.reference.id);
+                        }));
+                      },
+                      child: UserAvatar(
+                        user: teammate,
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ),
                 ),
