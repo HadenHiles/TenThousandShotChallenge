@@ -153,7 +153,10 @@ Future<bool> acceptInvite(Invite invite) async {
       return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
         // Save the current user as a teammate of the invitee teammate
-        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => null);
+        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((_) async {
+          // Delete the invite
+          return await FirebaseFirestore.instance.collection('invites').doc(auth.currentUser.uid).collection('invites').doc(invite.fromUid).delete().then((value) => true).onError((error, stackTrace) => null);
+        });
       });
     });
   });
