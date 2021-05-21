@@ -29,6 +29,8 @@ class _ProfileState extends State<Profile> {
   DocumentSnapshot _lastVisible;
   bool _isLoading;
   List<DocumentSnapshot> _sessions = [];
+  List<DropdownMenuItem> _attemptDropdownItems = [];
+  String _selectedIterationId;
 
   @override
   void initState() {
@@ -40,18 +42,47 @@ class _ProfileState extends State<Profile> {
 
     super.initState();
 
-    _isLoading = true;
-
     _loadHistory();
+
+    _getAttempts();
+  }
+
+  Future<Null> _getAttempts() async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
+      List<DropdownMenuItem> iterations = [];
+      snapshot.docs.asMap().forEach((i, iDoc) {
+        iterations.add(DropdownMenuItem<String>(
+          value: iDoc.reference.id,
+          child: Text(
+            "attempt ".toUpperCase() + (i + 1).toString(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontSize: 26,
+              fontFamily: 'NovecentoSans',
+            ),
+          ),
+        ));
+      });
+
+      setState(() {
+        _selectedIterationId = iterations[iterations.length - 1].value;
+        _attemptDropdownItems = iterations;
+      });
+    });
   }
 
   Future<Null> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+      _lastVisible = null;
+      _sessions.clear();
+    });
     await new Future.delayed(new Duration(milliseconds: 500));
 
     if (_lastVisible == null) {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).where('complete', isEqualTo: false).get().then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.docs[0].reference.collection('sessions').orderBy('date', descending: true).get().then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(7).get().then((sSnap) {
           sSnap.docs.forEach((s) {
             sessions.add(s);
           });
@@ -73,9 +104,9 @@ class _ProfileState extends State<Profile> {
         });
       });
     } else {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: true).where('complete', isEqualTo: false).get().then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.docs[0].reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).get().then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(7).get().then((sSnap) {
               sSnap.docs.forEach((s) {
                 sessions.add(s);
               });
@@ -290,7 +321,7 @@ class _ProfileState extends State<Profile> {
                     Container(
                       margin: EdgeInsets.only(top: 5, right: 2),
                       child: Text(
-                        "completed x",
+                        "attempt ",
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onPrimary,
                           fontSize: 20,
@@ -303,7 +334,7 @@ class _ProfileState extends State<Profile> {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return Text(
-                            (snapshot.data.docs.length - 1).toString(),
+                            (snapshot.data.docs.length).toString(),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onPrimary,
                               fontSize: 34,
@@ -327,13 +358,20 @@ class _ProfileState extends State<Profile> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Text(
-                "My Sessions".toUpperCase(),
+              DropdownButton(
+                onChanged: (value) {
+                  setState(() {
+                    _selectedIterationId = value;
+                    _loadHistory();
+                  });
+                },
+                dropdownColor: Theme.of(context).colorScheme.primary,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 26,
                   fontFamily: 'NovecentoSans',
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
+                value: _selectedIterationId,
+                items: _attemptDropdownItems,
               ),
               Column(
                 children: [
@@ -482,52 +520,50 @@ class _ProfileState extends State<Profile> {
           ),
           Expanded(
             child: RefreshIndicator(
-              child: ListView.builder(
-                controller: sessionsController,
-                padding: EdgeInsets.only(
-                  top: 0,
-                  right: 0,
-                  bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                  left: 0,
-                ),
-                itemCount: _sessions.length + 1,
-                itemBuilder: (_, int index) {
-                  if (index < _sessions.length) {
-                    final DocumentSnapshot document = _sessions[index];
-                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
-                  }
-                  return Container(
-                    child: Center(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 9),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            !_isLoading && _sessions.length < 1
-                                ? Text(
-                                    "You don't have any sessions yet".toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                    ),
-                                  )
-                                : _sessions.length < 1
-                                    ? SizedBox(
-                                        height: 25,
-                                        width: 25,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Container(),
-                          ],
-                        ),
+              child: _isLoading
+                  ? Container(
+                      margin: EdgeInsets.only(top: 15),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _isLoading
+                              ? SizedBox(
+                                  height: 25,
+                                  width: 25,
+                                  child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                                )
+                              : _sessions.length < 1
+                                  ? Text(
+                                      "You don't have any sessions yet".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 16,
+                                      ),
+                                    )
+                                  : Container()
+                        ],
                       ),
+                    )
+                  : ListView.builder(
+                      controller: sessionsController,
+                      padding: EdgeInsets.only(
+                        top: 0,
+                        right: 0,
+                        bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                        left: 0,
+                      ),
+                      itemCount: _sessions.length + 1,
+                      itemBuilder: (_, int index) {
+                        if (index < _sessions.length) {
+                          final DocumentSnapshot document = _sessions[index];
+                          return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
+                        }
+                        return Container();
+                      },
                     ),
-                  );
-                },
-              ),
               onRefresh: () async {
                 _sessions.clear();
                 _lastVisible = null;
