@@ -186,7 +186,7 @@ class _TeamState extends State<Team> {
                                     height: MediaQuery.of(context).size.height - 350,
                                     child: ListView.builder(
                                       padding: EdgeInsets.all(0),
-                                      itemCount: _invites.length + 1,
+                                      itemCount: _teammates.length + 1,
                                       itemBuilder: (_, int index) {
                                         if (index < _teammates.length) {
                                           final DocumentSnapshot document = _teammates[index];
