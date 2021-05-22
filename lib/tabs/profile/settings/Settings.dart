@@ -133,7 +133,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       prefs.setBool('dark_mode', _darkMode);
                     });
 
-                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('dark_mode')));
+                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('puck_count')));
                   },
                 ),
               ],
