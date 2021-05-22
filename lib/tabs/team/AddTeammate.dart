@@ -163,7 +163,7 @@ class _AddTeammateState extends State<AddTeammate> {
 
                                   List<DocumentSnapshot> users = [];
                                   if (value.isNotEmpty) {
-                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                           uSnaps.docs.forEach((uDoc) {
                                             if (uDoc.reference.id != user.uid) {
                                               users.add(uDoc);
@@ -171,7 +171,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                           });
                                         });
                                     if (users.length < 1) {
-                                      await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                      await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                             uSnaps.docs.forEach((uDoc) {
                                               if (uDoc.reference.id != user.uid) {
                                                 users.add(uDoc);
@@ -245,14 +245,14 @@ class _AddTeammateState extends State<AddTeammate> {
                 ),
               ),
               Flexible(
-                child: _isSearching && _teammates.length < 1
+                child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
                     ? Column(
                         mainAxisSize: MainAxisSize.max,
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                           )
                         ],
                       )
