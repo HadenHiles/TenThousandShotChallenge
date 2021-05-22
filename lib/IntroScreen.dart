@@ -24,7 +24,11 @@ class _IntroScreenState extends State<IntroScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) {
-        return user != null ? Navigation() : Login();
+        return user != null
+            ? Navigation(
+                selectedIndex: 0,
+              )
+            : Login();
       }),
     );
   }

@@ -136,6 +136,7 @@ class _StartShootingState extends State<StartShooting> {
                       Preferences(
                         prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
                         _currentShotCount,
+                        prefs.getString('fcm_token'),
                       ),
                     );
 

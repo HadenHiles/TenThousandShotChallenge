@@ -6,6 +6,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/firebaseMessageService.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -140,7 +141,22 @@ Future<bool> startNewIteration() async {
 
 Future<bool> sendInvite(String fromUid, String toUid) async {
   Invite invite = Invite(fromUid, DateTime.now());
-  return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) => true).onError((error, stackTrace) => null);
+  return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) async {
+    return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((t) async {
+      String teammateFCMToken = UserProfile.fromSnapshot(t).fcmToken;
+
+      if (teammateFCMToken.isNotEmpty) {
+        // Get the current user profile
+        return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((u) async {
+          UserProfile user = UserProfile.fromSnapshot(u);
+          // Send the teammate a push notification! WOW
+          return sendPushMessage(teammateFCMToken, "A Teammate has challenged you!", "${user.displayName} has sent you a teammate invitation.").then((value) => true);
+        }).onError((error, stackTrace) => null);
+      }
+
+      return true;
+    }).onError((error, stackTrace) => null);
+  });
 }
 
 Future<bool> acceptInvite(Invite invite) async {

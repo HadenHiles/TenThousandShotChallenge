@@ -92,6 +92,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                           Preferences(
                             prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
                             int.parse(puckCountTextFieldController.text),
+                            prefs.getString('fcm_token'),
                           ),
                         );
 
