@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -22,6 +24,7 @@ class ProfileSettings extends StatefulWidget {
 class _ProfileSettingsState extends State<ProfileSettings> {
   // State settings values
   bool _darkMode = false;
+  bool _publicProfile = true;
 
   @override
   void initState() {
@@ -33,8 +36,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   //Loading counter value on start
   _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
     setState(() {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
+    });
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snapshot) {
+      UserProfile u = UserProfile.fromSnapshot(snapshot);
+      setState(() {
+        _publicProfile = u.public;
+      });
     });
   }
 
@@ -122,7 +133,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       prefs.setBool('dark_mode', _darkMode);
                     });
 
-                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('puck_count')));
+                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('dark_mode')));
                   },
                 ),
               ],
@@ -131,6 +142,22 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               titleTextStyle: Theme.of(context).textTheme.headline6,
               title: 'Account',
               tiles: [
+                SettingsTile.switchTile(
+                  titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                  title: 'Public',
+                  leading: Icon(
+                    Icons.privacy_tip_rounded,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  switchValue: _publicProfile,
+                  onToggle: (bool value) async {
+                    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
+                      setState(() {
+                        _publicProfile = !_publicProfile;
+                      });
+                    });
+                  },
+                ),
                 SettingsTile(
                   title: 'Edit Profile',
                   titleTextStyle: Theme.of(context).textTheme.bodyText1,

@@ -273,7 +273,7 @@ class _TeammateState extends State<Teammate> {
                               child: SizedBox(
                                 height: 60,
                                 child: UserAvatar(
-                                  user: UserProfile(_userTeammate.displayName, _userTeammate.email, _userTeammate.photoUrl),
+                                  user: _userTeammate,
                                   backgroundColor: Theme.of(context).primaryColor,
                                 ),
                               ),

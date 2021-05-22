@@ -192,7 +192,7 @@ class _ProfileState extends State<Profile> {
                           );
                         },
                         child: UserAvatar(
-                          user: UserProfile(user.displayName, user.email, user.photoURL),
+                          user: UserProfile(user.displayName, user.email, user.photoURL, true),
                           backgroundColor: Theme.of(context).primaryColor,
                         ),
                       ),
