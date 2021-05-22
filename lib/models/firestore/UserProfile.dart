@@ -5,15 +5,17 @@ class UserProfile {
   final String displayName;
   final String email;
   final String photoUrl;
+  final bool public;
   DocumentReference reference;
 
-  UserProfile(this.displayName, this.email, this.photoUrl);
+  UserProfile(this.displayName, this.email, this.photoUrl, this.public);
 
   UserProfile.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
         displayName = map['display_name'],
         email = map['email'],
-        photoUrl = map['photo_url'];
+        photoUrl = map['photo_url'],
+        public = map['public'] ?? true;
 
   Map<String, dynamic> toMap() {
     return {
@@ -21,6 +23,7 @@ class UserProfile {
       'display_name': displayName,
       'email': email,
       'photo_url': photoUrl,
+      'public': public ?? true,
     };
   }
 
