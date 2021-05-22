@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
@@ -588,13 +589,16 @@ class _LoginState extends State<Login> {
         email: authAttempt.email,
         password: authAttempt.password,
       )
-          .then((credential) {
+          .then((credential) async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
           'display_name_lowercase': FirebaseAuth.instance.currentUser.email.toLowerCase(),
           'display_name': FirebaseAuth.instance.currentUser.email,
           'email': FirebaseAuth.instance.currentUser.email,
           'photo_url': null,
+          'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
 
         Navigator.of(context, rootNavigator: true).pop('dialog');
@@ -628,11 +632,13 @@ class _LoginState extends State<Login> {
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) async {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
           u.reference.update({
             'display_name_lowercase': UserProfile.fromSnapshot(u).displayName.toLowerCase() ?? FirebaseAuth.instance.currentUser.email.toLowerCase(),
             'display_name': UserProfile.fromSnapshot(u).displayName ?? FirebaseAuth.instance.currentUser.email,
             'email': FirebaseAuth.instance.currentUser.email,
+            'fcm_token': prefs.getString('fcm_token'),
           }).then((value) => null);
         });
 
@@ -661,13 +667,16 @@ class _LoginState extends State<Login> {
 
   socialSignIn(BuildContext context, String provider, Function error) async {
     if (provider == 'google') {
-      signInWithGoogle().then((googleSignInAccount) {
+      signInWithGoogle().then((googleSignInAccount) async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
           'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
           'display_name': FirebaseAuth.instance.currentUser.displayName,
           'email': FirebaseAuth.instance.currentUser.email,
           'photo_url': FirebaseAuth.instance.currentUser.photoURL,
+          'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
 
         bootstrap();

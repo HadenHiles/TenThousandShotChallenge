@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -189,7 +190,15 @@ class _NavigationState extends State<Navigation> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
-    preferences = Preferences(darkMode, puckCount);
+    String fcmToken = prefs.getString('fcm_token');
+
+    // Potentially update user's FCM Token if stale
+    if (preferences.fcmToken != fcmToken) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'fcm_token': fcmToken}).then((_) => null);
+    }
+
+    // Update the preferences reference with the latest settings
+    preferences = Preferences(darkMode, puckCount, fcmToken);
 
     Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
   }

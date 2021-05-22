@@ -11,7 +11,6 @@ import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
-
 import 'EditProfile.dart';
 
 class ProfileSettings extends StatefulWidget {
@@ -133,7 +132,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       prefs.setBool('dark_mode', _darkMode);
                     });
 
-                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(Preferences(value, prefs.getInt('puck_count')));
+                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                      Preferences(
+                        value,
+                        prefs.getInt('puck_count'),
+                        prefs.getString('fcm_token'),
+                      ),
+                    );
                   },
                 ),
               ],
