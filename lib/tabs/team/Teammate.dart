@@ -284,7 +284,7 @@ class _TeammateState extends State<Teammate> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  width: 200,
+                                  width: (MediaQuery.of(context).size.width - 100) * 0.6,
                                   child: StreamBuilder<DocumentSnapshot>(
                                     // ignore: deprecated_member_use
                                     stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
@@ -384,36 +384,57 @@ class _TeammateState extends State<Teammate> {
                           ],
                         ),
                         Container(
-                          margin: EdgeInsets.symmetric(horizontal: 15),
-                          child: Row(
+                          width: (MediaQuery.of(context).size.width - 100) * 0.4,
+                          margin: EdgeInsets.only(right: 10),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Container(
-                                margin: EdgeInsets.only(top: 5, right: 2),
-                                child: Text(
-                                  "attempt ",
+                                child: AutoSizeText(
+                                  _userTeammate.email,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.right,
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 20,
+                                    fontSize: 22,
                                     fontFamily: 'NovecentoSans',
                                   ),
                                 ),
                               ),
-                              StreamBuilder<QuerySnapshot>(
-                                stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData) {
-                                    return Text(
-                                      (snapshot.data.docs.length).toString(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.only(top: 5, right: 2),
+                                    child: Text(
+                                      "attempt ",
+                                      textAlign: TextAlign.right,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 34,
+                                        fontSize: 20,
                                         fontFamily: 'NovecentoSans',
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  ),
+                                  StreamBuilder<QuerySnapshot>(
+                                    stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Text(
+                                          (snapshot.data.docs.length).toString(),
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 34,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
+                                        );
+                                      }
 
-                                  return Container();
-                                },
+                                      return Container();
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
