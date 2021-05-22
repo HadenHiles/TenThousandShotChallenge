@@ -357,6 +357,7 @@ class _ProfileState extends State<Profile> {
                     _loadHistory();
                   });
                 },
+                underline: Container(),
                 dropdownColor: Theme.of(context).colorScheme.primary,
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
@@ -582,447 +583,450 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget _buildSessionItem(ShootingSession s, bool showBackground) {
-    return Dismissible(
-      key: UniqueKey(),
-      onDismissed: (direction) {
-        bool proceedWithDelete = true;
+    return AbsorbPointer(
+      absorbing: _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
+      child: Dismissible(
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          bool proceedWithDelete = true;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${s.total} shots deleted!',
-              style: TextStyle(
-                color: Colors.white,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${s.total} shots deleted!',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+              duration: Duration(seconds: 4),
+              action: SnackBarAction(
+                label: "UNDO",
+                textColor: Theme.of(context).primaryColor,
+                onPressed: () {
+                  proceedWithDelete = false;
+
+                  _sessions.clear();
+                  _lastVisible = null;
+                  _loadHistory();
+                },
               ),
             ),
-            duration: Duration(seconds: 4),
-            action: SnackBarAction(
-              label: "UNDO",
-              textColor: Theme.of(context).primaryColor,
-              onPressed: () {
-                proceedWithDelete = false;
+          );
+
+          Timer(Duration(seconds: 4), () async {
+            if (proceedWithDelete) {
+              await deleteSession(s).then((deleted) {
+                if (deleted == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: new Text("There was an error deleting the session"),
+                      duration: Duration(milliseconds: 1500),
+                    ),
+                  );
+                } else if (!deleted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: new Text("Sorry this session can't be deleted"),
+                      duration: Duration(milliseconds: 1500),
+                    ),
+                  );
+                }
 
                 _sessions.clear();
                 _lastVisible = null;
                 _loadHistory();
-              },
-            ),
-          ),
-        );
-
-        Timer(Duration(seconds: 4), () async {
-          if (proceedWithDelete) {
-            await deleteSession(s).then((deleted) {
-              if (deleted == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: new Text("There was an error deleting the session"),
-                    duration: Duration(milliseconds: 1500),
+              });
+            }
+          });
+        },
+        confirmDismiss: (DismissDirection direction) async {
+          return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  "Delete Session?".toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 24,
                   ),
-                );
-              } else if (!deleted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: new Text("Sorry this session can't be deleted"),
-                    duration: Duration(milliseconds: 1500),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Are you sure you want to delete this shooting session forever?",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                    Container(
+                      height: 120,
+                      margin: EdgeInsets.only(top: 15),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "You will lose:",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            s.total.toString() + " Shots".toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            "Taken on:",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            printDate(s.date),
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(
+                      "Cancel".toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
                   ),
-                );
-              }
-
-              _sessions.clear();
-              _lastVisible = null;
-              _loadHistory();
-            });
-          }
-        });
-      },
-      confirmDismiss: (DismissDirection direction) async {
-        return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                "Delete Session?".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 24,
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(
+                      "Delete".toUpperCase(),
+                      style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        background: Container(
+          color: Theme.of(context).primaryColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                margin: EdgeInsets.only(left: 15),
+                child: Text(
+                  "Delete".toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Container(
+                margin: EdgeInsets.only(right: 15),
+                child: Icon(
+                  Icons.delete,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        child: Container(
+          padding: EdgeInsets.only(top: 5, bottom: 15),
+          decoration: BoxDecoration(
+            color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      printDate(s.date),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Text(
+                      printDuration(s.duration, true),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Text(
+                      s.total.toString() + " Shots".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    "Are you sure you want to delete this shooting session forever?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
+                  Container(
+                    width: MediaQuery.of(context).size.width - 30,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalWrist),
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: wristShotColor,
+                          ),
+                          child: s.totalWrist < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalWrist.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalSnap),
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: snapShotColor,
+                          ),
+                          child: s.totalSnap < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalSnap.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalBackhand),
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: backhandShotColor,
+                          ),
+                          child: s.totalBackhand < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalBackhand.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalSlap),
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: slapShotColor,
+                          ),
+                          child: s.totalSlap < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      s.totalSlap.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.clip,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
-                    height: 120,
-                    margin: EdgeInsets.only(top: 15),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    width: MediaQuery.of(context).size.width - 30,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
                       children: [
-                        Text(
-                          "You will lose:",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalWrist),
+                          child: s.totalWrist < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Opacity(
+                                      opacity: 0.5,
+                                      child: Text(
+                                        "W",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
-                        SizedBox(
-                          height: 5,
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalSnap),
+                          child: s.totalSnap < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Opacity(
+                                      opacity: 0.5,
+                                      child: Text(
+                                        "SN",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
-                        Text(
-                          s.total.toString() + " Shots".toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 20,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalBackhand),
+                          child: s.totalBackhand < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Opacity(
+                                      opacity: 0.5,
+                                      child: Text(
+                                        "B",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          "Taken on:",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          printDate(s.date),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 20,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                        Container(
+                          width: calculateSessionShotWidth(s, s.totalSlap),
+                          child: s.totalSlap < 1
+                              ? Container()
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Opacity(
+                                      opacity: 0.5,
+                                      child: Text(
+                                        "SL",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    "Cancel".toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(
-                    "Delete".toUpperCase(),
-                    style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-      background: Container(
-        color: Theme.of(context).primaryColor,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Container(
-              margin: EdgeInsets.only(left: 15),
-              child: Text(
-                "Delete".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(right: 15),
-              child: Icon(
-                Icons.delete,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-      child: Container(
-        padding: EdgeInsets.only(top: 5, bottom: 15),
-        decoration: BoxDecoration(
-          color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    printDate(s.date),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
-                    ),
-                  ),
-                  Text(
-                    printDuration(s.duration, true),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
-                    ),
-                  ),
-                  Text(
-                    s.total.toString() + " Shots".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width - 30,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalWrist),
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: wristShotColor,
-                        ),
-                        child: s.totalWrist < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    s.totalWrist.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalSnap),
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: snapShotColor,
-                        ),
-                        child: s.totalSnap < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    s.totalSnap.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalBackhand),
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: backhandShotColor,
-                        ),
-                        child: s.totalBackhand < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    s.totalBackhand.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalSlap),
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: slapShotColor,
-                        ),
-                        child: s.totalSlap < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    s.totalSlap.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width - 30,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalWrist),
-                        child: s.totalWrist < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.5,
-                                    child: Text(
-                                      "W",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                      overflow: TextOverflow.clip,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalSnap),
-                        child: s.totalSnap < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.5,
-                                    child: Text(
-                                      "SN",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                      overflow: TextOverflow.clip,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalBackhand),
-                        child: s.totalBackhand < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.5,
-                                    child: Text(
-                                      "B",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                      overflow: TextOverflow.clip,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                      Container(
-                        width: calculateSessionShotWidth(s, s.totalSlap),
-                        child: s.totalSlap < 1
-                            ? Container()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.5,
-                                    child: Text(
-                                      "SL",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                      overflow: TextOverflow.clip,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
