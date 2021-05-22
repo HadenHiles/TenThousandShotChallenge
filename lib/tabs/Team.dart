@@ -226,7 +226,7 @@ class _TeamState extends State<Team> {
                         ? Container(
                             margin: EdgeInsets.symmetric(vertical: 25),
                             child: Center(
-                              child: Text("No invites :("),
+                              child: Text("No invites"),
                             ),
                           )
                         : ListView.builder(
