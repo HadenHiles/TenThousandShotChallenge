@@ -163,7 +163,7 @@ class _AddTeammateState extends State<AddTeammate> {
 
                                   List<DocumentSnapshot> users = [];
                                   if (value.isNotEmpty) {
-                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                           uSnaps.docs.forEach((uDoc) {
                                             if (uDoc.reference.id != user.uid) {
                                               users.add(uDoc);
@@ -190,6 +190,11 @@ class _AddTeammateState extends State<AddTeammate> {
 
                                   setState(() {
                                     _teammates = users;
+                                    _isSearching = false;
+                                  });
+                                } else {
+                                  setState(() {
+                                    _teammates = [];
                                     _isSearching = false;
                                   });
                                 }
