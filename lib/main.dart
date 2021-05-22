@@ -1,3 +1,5 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
@@ -58,6 +60,8 @@ class Home extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
 
+    FirebaseAnalytics analytics = FirebaseAnalytics();
+
     return Consumer<PreferencesStateNotifier>(
       builder: (context, settingsState, child) {
         preferences = settingsState.preferences;
@@ -68,6 +72,9 @@ class Home extends StatelessWidget {
           theme: HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
+          navigatorObservers: [
+            FirebaseAnalyticsObserver(analytics: analytics),
+          ],
           home: !introShown
               ? IntroScreen()
               : (user != null
