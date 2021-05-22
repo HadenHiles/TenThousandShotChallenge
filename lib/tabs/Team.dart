@@ -152,148 +152,114 @@ class _TeamState extends State<Team> {
           body: TabBarView(
             children: [
               RefreshIndicator(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    _isLoadingTeammates
+                child: _isLoadingTeammates
+                    ? Container(
+                        margin: EdgeInsets.only(top: 25),
+                        child: Center(
+                          child: SizedBox(
+                            height: 30,
+                            width: 30,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    : _teammates.length < 1
                         ? Container(
-                            margin: EdgeInsets.only(top: 25),
+                            margin: EdgeInsets.symmetric(vertical: 25),
                             child: Center(
-                              child: SizedBox(
-                                height: 30,
-                                width: 30,
-                                child: CircularProgressIndicator(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
+                              child: Text("Tap + to add teammates"),
                             ),
                           )
-                        : _teammates.length < 1
-                            ? Container(
-                                margin: EdgeInsets.symmetric(vertical: 25),
-                                child: Center(
-                                  child: Text("Tap + to add teammates"),
-                                ),
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    height: MediaQuery.of(context).size.height - 350,
-                                    child: ListView.builder(
-                                      padding: EdgeInsets.all(0),
-                                      itemCount: _teammates.length + 1,
-                                      itemBuilder: (_, int index) {
-                                        if (index < _teammates.length) {
-                                          final DocumentSnapshot document = _teammates[index];
-                                          return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                        }
+                        : ListView.builder(
+                            padding: EdgeInsets.all(0),
+                            itemCount: _teammates.length + 1,
+                            itemBuilder: (_, int index) {
+                              if (index < _teammates.length) {
+                                final DocumentSnapshot document = _teammates[index];
+                                return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                              }
 
-                                        return !_isLoadingTeammates
-                                            ? Container()
-                                            : Container(
-                                                child: Center(
-                                                  child: Container(
-                                                    child: Column(
-                                                      mainAxisSize: MainAxisSize.max,
-                                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      children: [
-                                                        SizedBox(
-                                                          height: 25,
-                                                          width: 25,
-                                                          child: CircularProgressIndicator(),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                  ],
-                ),
+                              return !_isLoadingTeammates
+                                  ? Container()
+                                  : Container(
+                                      child: Center(
+                                        child: Container(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                height: 25,
+                                                width: 25,
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                            },
+                          ),
                 onRefresh: () async {
                   _teammates.clear();
                   await _loadTeammates();
                 },
               ),
               RefreshIndicator(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    _isLoadingInvites
+                child: _isLoadingInvites
+                    ? Container(
+                        margin: EdgeInsets.only(top: 25),
+                        child: Center(
+                          child: SizedBox(
+                            height: 30,
+                            width: 30,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    : _invites.length < 1
                         ? Container(
-                            margin: EdgeInsets.only(top: 25),
+                            margin: EdgeInsets.symmetric(vertical: 25),
                             child: Center(
-                              child: SizedBox(
-                                height: 30,
-                                width: 30,
-                                child: CircularProgressIndicator(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
+                              child: Text("No invites :("),
                             ),
                           )
-                        : _invites.length < 1
-                            ? Container(
-                                margin: EdgeInsets.symmetric(vertical: 25),
-                                child: Center(
-                                  child: Text("No invites :("),
-                                ),
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    height: MediaQuery.of(context).size.height * 0.6,
-                                    child: ListView.builder(
-                                      padding: EdgeInsets.all(0),
-                                      itemCount: _invites.length + 1,
-                                      itemBuilder: (_, int index) {
-                                        if (index < _invites.length) {
-                                          final DocumentSnapshot document = _invites[index];
-                                          return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
-                                        }
+                        : ListView.builder(
+                            padding: EdgeInsets.all(0),
+                            itemCount: _invites.length + 1,
+                            itemBuilder: (_, int index) {
+                              if (index < _invites.length) {
+                                final DocumentSnapshot document = _invites[index];
+                                return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
+                              }
 
-                                        return !_isLoadingInvites
-                                            ? Container()
-                                            : Container(
-                                                child: Center(
-                                                  child: Container(
-                                                    child: Column(
-                                                      mainAxisSize: MainAxisSize.max,
-                                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      children: [
-                                                        SizedBox(
-                                                          height: 25,
-                                                          width: 25,
-                                                          child: CircularProgressIndicator(),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                  ],
-                ),
+                              return !_isLoadingInvites
+                                  ? Container()
+                                  : Container(
+                                      child: Center(
+                                        child: Container(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                height: 25,
+                                                width: 25,
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                            },
+                          ),
                 onRefresh: () async {
                   _invites.clear();
                   await _loadInvites();
