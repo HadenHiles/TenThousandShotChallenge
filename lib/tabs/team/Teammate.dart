@@ -69,7 +69,7 @@ class _TeammateState extends State<Teammate> {
         iterations.add(DropdownMenuItem<String>(
           value: iDoc.reference.id,
           child: Text(
-            "attempt ".toUpperCase() + (i + 1).toString(),
+            "challenge ".toUpperCase() + (i + 1).toString(),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 26,
@@ -408,7 +408,7 @@ class _TeammateState extends State<Teammate> {
                                   Container(
                                     margin: EdgeInsets.only(top: 5, right: 2),
                                     child: Text(
-                                      "attempt ",
+                                      "challenge ",
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimary,

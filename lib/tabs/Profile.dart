@@ -54,7 +54,7 @@ class _ProfileState extends State<Profile> {
         iterations.add(DropdownMenuItem<String>(
           value: iDoc.reference.id,
           child: Text(
-            "attempt ".toUpperCase() + (i + 1).toString(),
+            "challenge ".toUpperCase() + (i + 1).toString(),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 26,
@@ -310,7 +310,7 @@ class _ProfileState extends State<Profile> {
                     Container(
                       margin: EdgeInsets.only(top: 5, right: 2),
                       child: Text(
-                        "attempt ",
+                        "challenge ",
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onPrimary,
                           fontSize: 20,
