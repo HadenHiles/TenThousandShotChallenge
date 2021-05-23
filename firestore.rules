@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users {
+      allow read, create: if request.auth != null
+      
+      match /{userId}/{document=**} {
+      	allow read: if request.auth != null
+        allow write: if request.auth.uid == userId;
+      }
+    }
+    match /iterations {
+      allow read, create: if request.auth != null
+      
+      match /{userId} {
+      	allow read: if request.auth != null
+        
+        match /{document=**} {
+          allow read: if request.auth != null
+          allow write: if request.auth.uid == userId
+        }
+        
+        match /iterations {
+        	match /{document=**} {
+          	allow read: if request.auth != null
+          }
+          
+          match /sessions/{document=**} {
+            allow read: if request.auth != null
+          }
+        }
+      }
+    }
+    match /teammates {
+      allow read, create: if request.auth != null
+      
+      match /{userId} {
+      	allow read: if request.auth != null
+        
+        match /{document=**} {
+          allow read, write: if request.auth != null
+        }
+        
+        match /teammates {
+        	match /{document=**} {
+          	allow read: if request.auth != null
+          }
+        }
+      }
+    }
+    match /invites {
+      allow read, create: if request.auth != null
+      
+      match /{userId} {
+      	allow read: if request.auth != null
+        
+        match /{document=**} {
+          allow read, write: if request.auth != null
+        }
+        
+        match /invites {
+        	match /{document=**} {
+          	allow read: if request.auth != null
+          }
+        }
+      }
+    }
+  }
+}
