@@ -49,7 +49,7 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
                 "Content-Type": "application/json",
                 "Authorization": `key=${functions.config().messagingservice.key}`,
             },
-            body: data,
+            body: JSON.stringify(data),
         });
     }
 });
