@@ -32,6 +32,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
+            <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@mipmap/launcher_icon" 
+            />
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK" />
                 <category android:name="android.intent.category.DEFAULT" />
