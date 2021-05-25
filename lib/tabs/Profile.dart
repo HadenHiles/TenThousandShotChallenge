@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Profile extends StatefulWidget {
@@ -159,7 +160,7 @@ class _ProfileState extends State<Profile> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "Edit Avatar".toUpperCase(),
+                                        "Edit Profile".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           color: Theme.of(context).colorScheme.onPrimary,
@@ -195,6 +196,9 @@ class _ProfileState extends State<Profile> {
                               ],
                               onSelected: (value) {
                                 if (value == 'edit') {
+                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                                    return EditProfile();
+                                  }));
                                 } else if (value == 'qr_code') {
                                   showQRCode(user);
                                 }
@@ -213,7 +217,7 @@ class _ProfileState extends State<Profile> {
                                 },
                                 child: UserAvatar(
                                   user: UserProfile(user.displayName, user.email, userProfile.photoUrl, true, preferences.fcmToken),
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor: Colors.transparent,
                                 ),
                               ),
                             ),
