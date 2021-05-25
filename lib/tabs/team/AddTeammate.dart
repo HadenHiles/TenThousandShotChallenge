@@ -404,19 +404,6 @@ class _AddTeammateState extends State<AddTeammate> {
                                 ),
                               )
                             : Container(),
-                        teammate.email != null
-                            ? Container(
-                                width: MediaQuery.of(context).size.width - 235,
-                                child: AutoSizeText(
-                                  teammate.email,
-                                  maxLines: 1,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                ),
-                              )
-                            : Container(),
                       ],
                     ),
                     Column(

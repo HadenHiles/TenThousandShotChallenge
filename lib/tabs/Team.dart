@@ -319,19 +319,6 @@ class _TeamState extends State<Team> {
                             ),
                           )
                         : Container(),
-                    teammate.email != null
-                        ? Container(
-                            width: MediaQuery.of(context).size.width - 235,
-                            child: AutoSizeText(
-                              teammate.email,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : Container(),
                   ],
                 ),
                 Column(
@@ -565,19 +552,6 @@ class _TeamState extends State<Team> {
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).textTheme.bodyText1.color,
-                              ),
-                            ),
-                          )
-                        : Container(),
-                    teammate.email != null
-                        ? Container(
-                            width: MediaQuery.of(context).size.width - 235,
-                            child: AutoSizeText(
-                              teammate.email,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
                           )
