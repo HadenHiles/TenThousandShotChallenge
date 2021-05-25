@@ -24,7 +24,7 @@ class _ProfileState extends State<Profile> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
-  UserProfile userProfile;
+  UserProfile userProfile = UserProfile('', '', '', true, '');
   ScrollController sessionsController;
   DocumentSnapshot _lastVisible;
   bool _isLoading = true;

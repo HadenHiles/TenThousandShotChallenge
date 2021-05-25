@@ -18,7 +18,7 @@ class UserAvatar extends StatelessWidget {
           backgroundImage: NetworkImage(
             user.photoUrl,
           ),
-          backgroundColor: backgroundColor,
+          backgroundColor: Colors.transparent,
         ),
       );
     } else if (user.photoUrl != null) {
@@ -36,7 +36,7 @@ class UserAvatar extends StatelessWidget {
         child: CircleAvatar(
           radius: radius,
           backgroundImage: AssetImage("assets/images/avatar.png"),
-          backgroundColor: backgroundColor,
+          backgroundColor: Colors.transparent,
         ),
       );
     }
