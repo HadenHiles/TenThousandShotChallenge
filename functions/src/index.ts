@@ -15,8 +15,6 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
 
     // Retrieve the user who will be receiving the notification
     await admin.firestore().collection("users").doc(context.params.userId).get().then(async (doc) => {
-        functions.logger.log("Retrieved user with uid: " + doc.ref.id);
-
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
         let data = {
@@ -36,8 +34,6 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
         if (fcmToken != null) {
             // Retrieve the teammate who sent the invite
             await admin.firestore().collection("users").doc(context.params.teammateId).get().then((tDoc) => {
-                functions.logger.log("Retrieved teammate user with uid: " + tDoc.ref.id);
-
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = teammate != undefined ? teammate.display_name : "Someone";
