@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
 class IntroScreen extends StatefulWidget {
   @override
@@ -71,11 +73,105 @@ class _IntroScreenState extends State<IntroScreen> {
         ),
         PageViewModel(
           title: "Challenge your teammates".toUpperCase(),
-          body: "View eachothers shooting sessions, and see who can reach 10,000 first!",
+          body: "View eachother's shooting sessions, and see who can reach 10,000 first!",
           image: Icon(
             Icons.people_rounded,
             size: MediaQuery.of(context).size.width * 0.5,
             color: Colors.white,
+          ),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "Light or Dark theme?".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Transform.scale(
+                          scale: _darkMode ? 1 : 1.2,
+                          child: TextButton(
+                            onPressed: () async {
+                              setState(() {
+                                _darkMode = false;
+                              });
+
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              prefs.setBool('dark_mode', false);
+                              preferences.darkMode = false;
+
+                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                            },
+                            child: Text(
+                              "Light".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 24,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Colors.white),
+                            ),
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: _darkMode ? 1.2 : 1,
+                          child: TextButton(
+                            onPressed: () async {
+                              setState(() {
+                                _darkMode = true;
+                              });
+
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              prefs.setBool('dark_mode', true);
+                              preferences.darkMode = true;
+
+                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                            },
+                            child: Text(
+                              "Dark".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 24,
+                                color: Color.fromRGBO(255, 255, 255, 0.75),
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Color(0xff1A1A1A)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'You can change this later',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          image: Icon(
+            Icons.brightness_4,
+            size: MediaQuery.of(context).size.width * 0.5,
+            color: preferences.darkMode ? Colors.black : Colors.white,
           ),
           decoration: pageDecoration,
         ),
@@ -101,6 +197,8 @@ class _IntroScreenState extends State<IntroScreen> {
                         SharedPreferences prefs = await SharedPreferences.getInstance();
                         prefs.setInt('puck_count', int.parse(value));
                         preferences.puckCount = int.parse(value);
+
+                        Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
                       },
                     ),
                     SizedBox(
@@ -175,96 +273,6 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
           decoration: pageDecoration,
         ),
-        PageViewModel(
-          title: "Light or Dark theme?".toUpperCase(),
-          bodyWidget: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              SizedBox(
-                width: 200,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Transform.scale(
-                          scale: _darkMode ? 1 : 1.2,
-                          child: TextButton(
-                            onPressed: () async {
-                              setState(() {
-                                _darkMode = false;
-                              });
-
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              prefs.setBool('dark_mode', false);
-                              preferences.darkMode = false;
-                            },
-                            child: Text(
-                              "Light".toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 24,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Colors.white),
-                            ),
-                          ),
-                        ),
-                        Transform.scale(
-                          scale: _darkMode ? 1.2 : 1,
-                          child: TextButton(
-                            onPressed: () async {
-                              setState(() {
-                                _darkMode = true;
-                              });
-
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              prefs.setBool('dark_mode', true);
-                              preferences.darkMode = true;
-                            },
-                            child: Text(
-                              "Dark".toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 24,
-                                color: Color.fromRGBO(255, 255, 255, 0.75),
-                              ),
-                            ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Color(0xff1A1A1A)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'You can change this later',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 18,
-                        color: Colors.white70,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          image: Icon(
-            Icons.brightness_4,
-            size: MediaQuery.of(context).size.width * 0.5,
-            color: Colors.white,
-          ),
-          decoration: pageDecoration,
-        ),
       ],
       onDone: () => _onIntroEnd(context),
       //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
@@ -277,14 +285,19 @@ class _IntroScreenState extends State<IntroScreen> {
         style: TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
+          color: Colors.white,
         ),
       ),
-      next: Icon(Icons.arrow_forward_ios),
+      next: Icon(
+        Icons.arrow_forward_ios,
+        color: Colors.white,
+      ),
       done: Text(
         'Done'.toUpperCase(),
         style: TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
+          color: Colors.white,
         ),
       ),
       curve: Curves.fastLinearToSlowEaseIn,
