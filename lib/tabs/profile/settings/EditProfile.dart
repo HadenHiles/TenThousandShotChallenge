@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
@@ -23,11 +24,14 @@ class _EditProfileState extends State<EditProfile> {
   final TextEditingController displayNameTextFieldController = TextEditingController();
 
   List<String> _avatars = [];
+  String _avatar = "";
 
   @override
   void initState() {
     FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
       UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
+
+      _avatar = userProfile.photoUrl;
 
       displayNameTextFieldController.text = userProfile.displayName != null ? userProfile.displayName : user.displayName;
     });
@@ -42,7 +46,7 @@ class _EditProfileState extends State<EditProfile> {
     final List<String> avatars = jsonDecode(manifestJson).keys.where((String key) => key.startsWith('assets/images/avatars')).toList();
 
     setState(() {
-      _avatars = avatars;
+      _avatars.addAll(avatars);
     });
   }
 
@@ -99,9 +103,12 @@ class _EditProfileState extends State<EditProfile> {
                           FirebaseFirestore.instance.collection('users').doc(user.uid).update({
                             'display_name': displayNameTextFieldController.text.toString(),
                             'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
+                            'photo_url': _avatar,
                           }).then((value) {
                             new SnackBar(content: new Text('Your profile details were saved successfully!'));
-                            navigatorKey.currentState.pop();
+                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+                              return Navigation(selectedIndex: 2);
+                            }));
                           });
                         }
                       },
@@ -115,27 +122,25 @@ class _EditProfileState extends State<EditProfile> {
             children: [
               Container(
                 padding: EdgeInsets.all(20),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: BasicTextField(
-                            keyboardType: TextInputType.text,
-                            hintText: 'Enter a display name',
-                            controller: displayNameTextFieldController,
-                            validator: (value) {
-                              if (value.isEmpty) {
-                                return 'Please enter a display name';
-                              }
-                              return null;
-                            },
-                          ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: BasicTextField(
+                          keyboardType: TextInputType.text,
+                          hintText: 'Enter a display name',
+                          controller: displayNameTextFieldController,
+                          validator: (value) {
+                            if (value.isEmpty) {
+                              return 'Please enter a display name';
+                            }
+                            return null;
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -153,6 +158,9 @@ class _EditProfileState extends State<EditProfile> {
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
+                    SizedBox(
+                      height: 15,
+                    ),
                     Wrap(
                       children: _buildAvatars(),
                     ),
@@ -165,16 +173,58 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   List<Widget> _buildAvatars() {
-    List<Widget> avatars = [];
+    List<Widget> avatars = [
+      GestureDetector(
+        onTap: () {
+          setState(() {
+            _avatar = user.photoURL;
+          });
+        },
+        child: Container(
+          margin: EdgeInsets.only(bottom: 10, right: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(55),
+            border: _avatar == user.photoURL
+                ? Border.all(
+                    color: Theme.of(context).primaryColor,
+                    width: 2,
+                  )
+                : Border.all(width: 0),
+          ),
+          width: 70,
+          height: 70,
+          child: UserAvatar(
+            user: UserProfile(user.displayName, user.email, user.photoURL, true, preferences.fcmToken),
+            backgroundColor: _avatar == user.photoURL ? Theme.of(context).cardTheme.color : Colors.transparent,
+          ),
+        ),
+      ),
+    ];
     _avatars.forEach((a) {
       avatars.add(
-        Container(
-          margin: EdgeInsets.only(bottom: 2, right: 2),
-          width: 75,
-          height: 75,
-          child: UserAvatar(
-            user: UserProfile(user.displayName, user.email, a, true, preferences.fcmToken),
-            backgroundColor: Theme.of(context).primaryColor,
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _avatar = a;
+            });
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: 10, right: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(55),
+              border: _avatar == a
+                  ? Border.all(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    )
+                  : Border.all(width: 0),
+            ),
+            width: 70,
+            height: 70,
+            child: UserAvatar(
+              user: UserProfile(user.displayName, user.email, a, true, preferences.fcmToken),
+              backgroundColor: _avatar == a ? Theme.of(context).cardTheme.color : Colors.transparent,
+            ),
           ),
         ),
       );

@@ -27,7 +27,7 @@ class _ProfileState extends State<Profile> {
 
   final GlobalKey _avatarMenuKey = new GlobalKey();
 
-  UserProfile userProfile = UserProfile('', '', '', true, '');
+  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser.photoURL, true, '');
   ScrollController sessionsController;
   DocumentSnapshot _lastVisible;
   bool _isLoading = true;
@@ -148,6 +148,7 @@ class _ProfileState extends State<Profile> {
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 15),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Stack(
                           children: [
@@ -204,8 +205,7 @@ class _ProfileState extends State<Profile> {
                                 }
                               },
                             ),
-                            SizedBox(
-                              height: 60,
+                            Container(
                               child: GestureDetector(
                                 onLongPress: () {
                                   dynamic state = _avatarMenuKey.currentState;
@@ -215,9 +215,13 @@ class _ProfileState extends State<Profile> {
                                   dynamic state = _avatarMenuKey.currentState;
                                   state.showButtonMenu();
                                 },
-                                child: UserAvatar(
-                                  user: UserProfile(user.displayName, user.email, userProfile.photoUrl, true, preferences.fcmToken),
-                                  backgroundColor: Colors.transparent,
+                                child: SizedBox(
+                                  height: 60,
+                                  width: 60,
+                                  child: UserAvatar(
+                                    user: UserProfile(user.displayName, user.email, userProfile != null ? userProfile.photoUrl : user.photoURL, true, preferences.fcmToken),
+                                    backgroundColor: Colors.transparent,
+                                  ),
                                 ),
                               ),
                             ),

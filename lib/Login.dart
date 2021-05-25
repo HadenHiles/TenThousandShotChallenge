@@ -669,15 +669,18 @@ class _LoginState extends State<Login> {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
+          String photoUrl = UserProfile.fromSnapshot(u).photoUrl;
 
-        // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
-          'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
-          'display_name': FirebaseAuth.instance.currentUser.displayName,
-          'email': FirebaseAuth.instance.currentUser.email,
-          'photo_url': FirebaseAuth.instance.currentUser.photoURL,
-          'fcm_token': prefs.getString('fcm_token'),
-        }).then((value) => () {});
+          // Update/add the user's display name to firestore
+          FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+            'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
+            'display_name': FirebaseAuth.instance.currentUser.displayName,
+            'email': FirebaseAuth.instance.currentUser.email,
+            'photo_url': photoUrl ?? FirebaseAuth.instance.currentUser.photoURL,
+            'fcm_token': prefs.getString('fcm_token'),
+          }).then((value) => () {});
+        });
 
         bootstrap();
 

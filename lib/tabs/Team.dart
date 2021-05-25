@@ -292,7 +292,7 @@ class _TeamState extends State<Team> {
                 height: 60,
                 child: UserAvatar(
                   user: teammate,
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: Colors.transparent,
                 ),
               ),
             ),
@@ -533,7 +533,7 @@ class _TeamState extends State<Team> {
                       },
                       child: UserAvatar(
                         user: teammate,
-                        backgroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: Colors.transparent,
                       ),
                     ),
                   ),

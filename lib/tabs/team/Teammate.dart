@@ -274,7 +274,7 @@ class _TeammateState extends State<Teammate> {
                                 height: 60,
                                 child: UserAvatar(
                                   user: _userTeammate,
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor: Colors.transparent,
                                 ),
                               ),
                             ),
