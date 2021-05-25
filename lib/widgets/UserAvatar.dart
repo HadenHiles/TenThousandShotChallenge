@@ -10,7 +10,7 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (user.photoUrl != null) {
+    if (user.photoUrl != null && user.photoUrl.contains('http')) {
       return FittedBox(
         fit: BoxFit.contain,
         child: CircleAvatar(
@@ -19,6 +19,15 @@ class UserAvatar extends StatelessWidget {
             user.photoUrl,
           ),
           backgroundColor: backgroundColor,
+        ),
+      );
+    } else if (user.photoUrl != null) {
+      return FittedBox(
+        fit: BoxFit.contain,
+        child: CircleAvatar(
+          radius: radius,
+          backgroundImage: AssetImage("assets/images/avatars/maple-leafs.png"),
+          backgroundColor: Colors.transparent,
         ),
       );
     } else {
