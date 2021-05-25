@@ -26,7 +26,12 @@ class UserAvatar extends StatelessWidget {
         fit: BoxFit.contain,
         child: CircleAvatar(
           radius: radius,
-          backgroundImage: AssetImage("assets/images/avatars/maple-leafs.png"),
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Image(
+              image: AssetImage(user.photoUrl),
+            ),
+          ),
           backgroundColor: Colors.transparent,
         ),
       );
