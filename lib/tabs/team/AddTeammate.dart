@@ -1,5 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -81,6 +82,23 @@ class _AddTeammateState extends State<AddTeammate> {
                 ),
               ),
               actions: [
+                Container(
+                  margin: EdgeInsets.only(top: 10),
+                  child: IconButton(
+                    onPressed: () {
+                      Share.text(
+                        'Take the How To Hockey 10,000 Shot Challenge!',
+                        'https://play.google.com/store/apps/developer?id=How+To+Hockey&hl=en_US&gl=US',
+                        'text/plain',
+                      ); // TODO: Insert app link that directs to appropriate app store
+                    },
+                    icon: Icon(
+                      Icons.share,
+                      size: 28,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
                 _selectedTeammate == null
                     ? Container()
                     : Container(
@@ -304,14 +322,42 @@ class _AddTeammateState extends State<AddTeammate> {
                                 Container(
                                   margin: EdgeInsets.only(top: 40),
                                   child: Text(
-                                    "No teammates found",
+                                    "Couldn't find your teammate?",
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 20,
                                       color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
-                                )
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(top: 25),
+                                  child: Text(
+                                    "Challenge them!".toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 26,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(top: 5),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Share.text(
+                                        'Take the How To Hockey 10,000 Shot Challenge!',
+                                        'https://play.google.com/store/apps/developer?id=How+To+Hockey&hl=en_US&gl=US',
+                                        'text/plain',
+                                      ); // TODO: Insert app link that directs to appropriate app store
+                                    },
+                                    icon: Icon(
+                                      Icons.share,
+                                      size: 40,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
                               ],
                             )
                           : ListView(
