@@ -155,6 +155,7 @@ class _NavigationState extends State<Navigation> {
       _leading = Container();
       _actions = [];
       _selectedIndex = widget.selectedIndex;
+      _onItemTapped(widget.selectedIndex);
     });
 
     super.initState();
