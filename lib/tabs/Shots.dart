@@ -410,9 +410,9 @@ class _ShotsState extends State<Shots> {
                                               dialog(
                                                 context,
                                                 ConfirmDialog(
-                                                  "Restart Challenge?",
+                                                  "Start a new challenge?",
                                                   Text(
-                                                    "Your current challenge data will remain accessible in your profile.\n\nWould you like to continue?",
+                                                    "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
                                                     style: TextStyle(
                                                       color: Theme.of(context).colorScheme.onBackground,
                                                     ),
@@ -447,7 +447,7 @@ class _ShotsState extends State<Shots> {
                                               );
                                             },
                                             child: Text(
-                                              'Restart Challenge'.toUpperCase(),
+                                              'Start New Challenge'.toUpperCase(),
                                               style: TextStyle(
                                                 fontFamily: 'NovecentoSans',
                                                 fontSize: 20,
