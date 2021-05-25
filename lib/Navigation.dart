@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
@@ -7,6 +6,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +36,7 @@ class Navigation extends StatefulWidget {
 class _NavigationState extends State<Navigation> {
   // State variables
   Widget _title;
+  Widget _leading;
   List<Widget> _actions;
   int _selectedIndex = 0;
   // State variables
@@ -70,48 +71,7 @@ class _NavigationState extends State<Navigation> {
               color: HomeTheme.darkTheme.colorScheme.onPrimary,
             ),
             onPressed: () {
-              showDialog(
-                context: navigatorKey.currentContext,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text(
-                      "Teammates can add you with this".toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 24,
-                      ),
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 200,
-                          height: 200,
-                          child: QrImage(
-                            data: user.uid,
-                            backgroundColor: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(
-                          "Close".toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
+              showQRCode(user);
             },
           ),
         ),
@@ -135,6 +95,19 @@ class _NavigationState extends State<Navigation> {
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
+      leading: Container(
+        margin: EdgeInsets.only(top: 10),
+        child: IconButton(
+          icon: Icon(
+            Icons.qr_code_2_rounded,
+            color: HomeTheme.darkTheme.colorScheme.onPrimary,
+            size: 28,
+          ),
+          onPressed: () {
+            showQRCode(user);
+          },
+        ),
+      ),
       actions: [
         Container(
           margin: EdgeInsets.only(top: 10),
@@ -161,6 +134,7 @@ class _NavigationState extends State<Navigation> {
       _selectedIndex = index;
       _selectedIndex = index;
       _title = index == 0 ? logo : _tabs[index].title;
+      _leading = _tabs[index].leading;
       _actions = _tabs[index].actions;
     });
 
@@ -178,6 +152,7 @@ class _NavigationState extends State<Navigation> {
 
     setState(() {
       _title = widget.title != null ? widget.title : logo;
+      _leading = Container();
       _actions = [];
       _selectedIndex = widget.selectedIndex;
     });
@@ -327,6 +302,7 @@ class _NavigationState extends State<Navigation> {
                       ),
                     ),
                   ),
+                  leading: _leading,
                   actions: _actions,
                 ),
               ];

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
@@ -11,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Profile extends StatefulWidget {
@@ -23,6 +23,8 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
+
+  final GlobalKey _avatarMenuKey = new GlobalKey();
 
   UserProfile userProfile = UserProfile('', '', '', true, '');
   ScrollController sessionsController;
@@ -144,58 +146,80 @@ class _ProfileState extends State<Profile> {
                 children: [
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 15),
-                    child: SizedBox(
-                      height: 60,
-                      child: GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text(
-                                  "Teammates can add you with this".toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 24,
-                                  ),
-                                ),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 200,
-                                      height: 200,
-                                      child: QrImage(
-                                        data: user.uid,
-                                        backgroundColor: Colors.white70,
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            PopupMenuButton(
+                              key: _avatarMenuKey,
+                              color: Theme.of(context).colorScheme.primaryVariant,
+                              itemBuilder: (_) => <PopupMenuItem<String>>[
+                                new PopupMenuItem<String>(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Edit Avatar".toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                actions: <Widget>[
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: Text(
-                                      "Close".toUpperCase(),
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
+                                      Icon(
+                                        Icons.edit,
                                         color: Theme.of(context).colorScheme.onPrimary,
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: UserAvatar(
-                          user: UserProfile(user.displayName, user.email, userProfile.photoUrl, true, preferences.fcmToken),
-                          backgroundColor: Theme.of(context).primaryColor,
+                                  value: 'edit',
+                                ),
+                                new PopupMenuItem<String>(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "QR Code".toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.qr_code_2_rounded,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ],
+                                  ),
+                                  value: 'qr_code',
+                                ),
+                              ],
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                } else if (value == 'qr_code') {
+                                  showQRCode(user);
+                                }
+                              },
+                            ),
+                            SizedBox(
+                              height: 60,
+                              child: GestureDetector(
+                                onLongPress: () {
+                                  dynamic state = _avatarMenuKey.currentState;
+                                  state.showButtonMenu();
+                                },
+                                onTap: () {
+                                  dynamic state = _avatarMenuKey.currentState;
+                                  state.showButtonMenu();
+                                },
+                                child: UserAvatar(
+                                  user: UserProfile(user.displayName, user.email, userProfile.photoUrl, true, preferences.fcmToken),
+                                  backgroundColor: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   Column(

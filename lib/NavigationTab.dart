@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class NavigationTab extends StatefulWidget {
-  NavigationTab({Key key, this.title, this.actions, this.body}) : super(key: key);
+  NavigationTab({Key key, this.title, this.leading, this.actions, this.body}) : super(key: key);
 
   final Widget title;
+  final Widget leading;
   final List<Widget> actions;
   final Widget body;
 
