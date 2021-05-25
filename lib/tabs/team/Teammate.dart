@@ -643,7 +643,7 @@ class _TeammateState extends State<Teammate> {
                                         )
                                       : _sessions.length < 1
                                           ? Text(
-                                              "You don't have any sessions yet".toUpperCase(),
+                                              "${_userTeammate.displayName.substring(0, _userTeammate.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toUpperCase(),
                                               style: TextStyle(
                                                 fontFamily: 'NovecentoSans',
                                                 color: Theme.of(context).colorScheme.onPrimary,
