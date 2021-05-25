@@ -634,10 +634,12 @@ class _LoginState extends State<Login> {
         // Update/add the user's display name to firestore
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) async {
           SharedPreferences prefs = await SharedPreferences.getInstance();
+          UserProfile user = UserProfile.fromSnapshot(u);
           u.reference.update({
             'display_name_lowercase': UserProfile.fromSnapshot(u).displayName.toLowerCase() ?? FirebaseAuth.instance.currentUser.email.toLowerCase(),
             'display_name': UserProfile.fromSnapshot(u).displayName ?? FirebaseAuth.instance.currentUser.email,
             'email': FirebaseAuth.instance.currentUser.email,
+            'public': user.public ?? true,
             'fcm_token': prefs.getString('fcm_token'),
           }).then((value) => null);
         });
@@ -670,7 +672,8 @@ class _LoginState extends State<Login> {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
-          String photoUrl = UserProfile.fromSnapshot(u).photoUrl;
+          UserProfile user = UserProfile.fromSnapshot(u);
+          String photoUrl = user.photoUrl;
 
           // Update/add the user's display name to firestore
           FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
@@ -678,6 +681,7 @@ class _LoginState extends State<Login> {
             'display_name': FirebaseAuth.instance.currentUser.displayName,
             'email': FirebaseAuth.instance.currentUser.email,
             'photo_url': photoUrl ?? FirebaseAuth.instance.currentUser.photoURL,
+            'public': user.public ?? true,
             'fcm_token': prefs.getString('fcm_token'),
           }).then((value) => () {});
         });

@@ -50,6 +50,23 @@ class _EditProfileState extends State<EditProfile> {
     });
   }
 
+  void _saveProfile() {
+    FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'display_name': displayNameTextFieldController.text.toString(),
+      'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
+      'photo_url': _avatar,
+    }).then((value) {});
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Avatar saved!'),
+      ),
+    );
+    navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+      return Navigation(selectedIndex: 2);
+    }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,20 +113,12 @@ class _EditProfileState extends State<EditProfile> {
                     child: IconButton(
                       icon: Icon(
                         Icons.check,
+                        color: Colors.green.shade600,
                         size: 28,
                       ),
                       onPressed: () {
                         if (_formKey.currentState.validate()) {
-                          FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-                            'display_name': displayNameTextFieldController.text.toString(),
-                            'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
-                            'photo_url': _avatar,
-                          }).then((value) {
-                            new SnackBar(content: new Text('Your profile details were saved successfully!'));
-                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
-                              return Navigation(selectedIndex: 2);
-                            }));
-                          });
+                          _saveProfile();
                         }
                       },
                     ),
@@ -179,6 +188,8 @@ class _EditProfileState extends State<EditProfile> {
           setState(() {
             _avatar = user.photoURL;
           });
+
+          _saveProfile();
         },
         child: Container(
           margin: EdgeInsets.only(bottom: 10, right: 4),
@@ -207,6 +218,8 @@ class _EditProfileState extends State<EditProfile> {
             setState(() {
               _avatar = a;
             });
+
+            _saveProfile();
           },
           child: Container(
             margin: EdgeInsets.only(bottom: 10, right: 4),
