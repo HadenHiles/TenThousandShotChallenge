@@ -122,169 +122,204 @@ class _AddTeammateState extends State<AddTeammate> {
             ),
           ];
         },
-        body: Container(
-          padding: EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Container(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              keyboardType: TextInputType.text,
-                              decoration: InputDecoration(
-                                hintText: 'Search Name or Email'.toUpperCase(),
-                                hintStyle: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  color: Theme.of(context).cardTheme.color,
-                                ),
-                              ),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontFamily: 'NovecentoSans',
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              onChanged: (value) async {
-                                if (value.length >= 1) {
-                                  setState(() {
-                                    _isSearching = true;
-                                  });
+        body: GestureDetector(
+          onTap: () {
+            FocusScopeNode currentFocus = FocusScope.of(context);
 
-                                  List<DocumentSnapshot> users = [];
-                                  if (value.isNotEmpty) {
-                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                          uSnaps.docs.forEach((uDoc) {
-                                            if (uDoc.reference.id != user.uid) {
-                                              users.add(uDoc);
-                                            }
-                                          });
-                                        });
-                                    if (users.length < 1) {
-                                      await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus();
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                keyboardType: TextInputType.text,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter Name or Email'.toUpperCase(),
+                                  labelText: "Find a teammate".toUpperCase(),
+                                  alignLabelWithHint: true,
+                                  labelStyle: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 20,
+                                    color: Theme.of(context).cardTheme.color,
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontFamily: 'NovecentoSans',
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                                onChanged: (value) async {
+                                  if (value.length >= 1) {
+                                    setState(() {
+                                      _isSearching = true;
+                                    });
+
+                                    List<DocumentSnapshot> users = [];
+                                    if (value.isNotEmpty) {
+                                      await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                             uSnaps.docs.forEach((uDoc) {
                                               if (uDoc.reference.id != user.uid) {
                                                 users.add(uDoc);
                                               }
                                             });
                                           });
-                                    }
+                                      if (users.length < 1) {
+                                        await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                              uSnaps.docs.forEach((uDoc) {
+                                                if (uDoc.reference.id != user.uid) {
+                                                  users.add(uDoc);
+                                                }
+                                              });
+                                            });
+                                      }
 
-                                    await new Future.delayed(new Duration(milliseconds: 500));
+                                      await new Future.delayed(new Duration(milliseconds: 500));
+
+                                      setState(() {
+                                        _teammates = users;
+                                        _isSearching = false;
+                                      });
+                                    }
 
                                     setState(() {
                                       _teammates = users;
                                       _isSearching = false;
                                     });
+                                  } else {
+                                    setState(() {
+                                      _teammates = [];
+                                      _isSearching = false;
+                                    });
                                   }
+                                },
+                                controller: searchFieldController,
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return 'Enter a name or email address';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              child: Text(
+                                "Scan".toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 20,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(right: 15),
+                              child: IconButton(
+                                onPressed: () {
+                                  scanBarcodeNormal().then((success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("You are now teammates!"),
+                                        duration: Duration(milliseconds: 2500),
+                                      ),
+                                    );
 
-                                  setState(() {
-                                    _teammates = users;
-                                    _isSearching = false;
+                                    navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+                                      return Navigation(
+                                        title: NavigationTitle(title: "Team".toUpperCase()),
+                                        selectedIndex: 1,
+                                      );
+                                    }));
+                                  }).onError((error, stackTrace) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("There was an error scanning your teammates QR code :("),
+                                        duration: Duration(milliseconds: 4000),
+                                      ),
+                                    );
                                   });
-                                } else {
-                                  setState(() {
-                                    _teammates = [];
-                                    _isSearching = false;
-                                  });
-                                }
-                              },
-                              controller: searchFieldController,
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Enter a name or email address';
-                                }
-                                return null;
-                              },
+                                },
+                                icon: Icon(
+                                  Icons.qr_code_2_rounded,
+                                  size: 50,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                                color: Theme.of(context).primaryColor,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 5),
-                      child: IconButton(
-                        onPressed: () {
-                          scanBarcodeNormal().then((success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("You are now teammates!"),
-                                duration: Duration(milliseconds: 2500),
-                              ),
-                            );
-
-                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
-                              return Navigation(
-                                title: NavigationTitle(title: "Team".toUpperCase()),
-                                selectedIndex: 1,
-                              );
-                            }));
-                          }).onError((error, stackTrace) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("There was an error scanning your teammates QR code :("),
-                                duration: Duration(milliseconds: 4000),
-                              ),
-                            );
-                          });
-                        },
-                        icon: Icon(
-                          Icons.qr_code_2_rounded,
-                          size: 35,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Flexible(
-                child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
-                    ? Column(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Center(
-                            child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                          )
-                        ],
-                      )
-                    : _teammates.length < 1 && searchFieldController.text.length > 0
-                        ? Column(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(top: 40),
-                                child: Text(
-                                  "No teammates found",
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 20,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                Flexible(
+                  child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
+                      ? Column(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Center(
+                              child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                            )
+                          ],
+                        )
+                      : _teammates.length < 1 && searchFieldController.text.length > 0
+                          ? Column(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.only(top: 40),
+                                  child: Text(
+                                    "No teammates found",
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
                                   ),
-                                ),
-                              )
-                            ],
-                          )
-                        : ListView(
-                            children: _buildTeammateResults(),
-                          ),
-              ),
-            ],
+                                )
+                              ],
+                            )
+                          : ListView(
+                              children: _buildTeammateResults(),
+                            ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -299,6 +334,12 @@ class _AddTeammateState extends State<AddTeammate> {
       teammates.add(
         GestureDetector(
           onTap: () {
+            FocusScopeNode currentFocus = FocusScope.of(context);
+
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus();
+            }
+
             setState(() {
               _selectedTeammate = _selectedTeammate == i ? null : i;
               searchFieldController.text = searchFieldController.text;
