@@ -357,7 +357,7 @@ class _NavigationState extends State<Navigation> {
               ),
             ],
             currentIndex: _selectedIndex,
-            backgroundColor: Theme.of(context).backgroundColor,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             selectedItemColor: Theme.of(context).primaryColor,
             unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
             onTap: _onItemTapped,

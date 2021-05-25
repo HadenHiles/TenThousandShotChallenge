@@ -450,6 +450,7 @@ class _ShotsState extends State<Shots> {
                                               'Start New Challenge'.toUpperCase(),
                                               style: TextStyle(
                                                 fontFamily: 'NovecentoSans',
+                                                color: Theme.of(context).colorScheme.onPrimary,
                                                 fontSize: 20,
                                               ),
                                             ),
