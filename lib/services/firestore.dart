@@ -141,21 +141,27 @@ Future<bool> startNewIteration() async {
 
 Future<bool> sendInvite(String fromUid, String toUid) async {
   Invite invite = Invite(fromUid, DateTime.now());
-  return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) async {
-    return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((t) async {
-      String teammateFCMToken = UserProfile.fromSnapshot(t).fcmToken;
+  return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).get().then((i) async {
+    if (!i.exists) {
+      return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) async {
+        return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((t) async {
+          String teammateFCMToken = UserProfile.fromSnapshot(t).fcmToken;
 
-      if (teammateFCMToken.isNotEmpty) {
-        // Get the current user profile
-        return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((u) async {
-          UserProfile user = UserProfile.fromSnapshot(u);
-          // Send the teammate a push notification! WOW
-          return sendPushMessage(teammateFCMToken, "A Teammate has challenged you!", "${user.displayName} has sent you a teammate invitation.").then((value) => true);
+          if (teammateFCMToken.isNotEmpty) {
+            // Get the current user profile
+            return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((u) async {
+              UserProfile user = UserProfile.fromSnapshot(u);
+              // Send the teammate a push notification! WOW
+              return sendPushMessage(teammateFCMToken, "A Teammate has challenged you!", "${user.displayName} has sent you a teammate invitation.").then((value) => true);
+            }).onError((error, stackTrace) => null);
+          }
+
+          return true;
         }).onError((error, stackTrace) => null);
-      }
-
+      });
+    } else {
       return true;
-    }).onError((error, stackTrace) => null);
+    }
   });
 }
 
