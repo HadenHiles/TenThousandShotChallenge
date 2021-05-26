@@ -190,6 +190,15 @@ class _TeammateState extends State<Teammate> {
                           },
                           "Continue",
                           () {
+                            navigatorKey.currentState.pushReplacement(
+                              MaterialPageRoute(builder: (context) {
+                                return Navigation(
+                                  title: NavigationTitle(title: "Team".toUpperCase()),
+                                  selectedIndex: 1,
+                                );
+                              }),
+                            );
+
                             deleteTeammate(_userTeammate.reference.id).then((success) {
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -197,15 +206,6 @@ class _TeammateState extends State<Teammate> {
                                     duration: Duration(milliseconds: 2500),
                                     content: Text('${_userTeammate.displayName} was removed from your team.'),
                                   ),
-                                );
-
-                                navigatorKey.currentState.pushReplacement(
-                                  MaterialPageRoute(builder: (context) {
-                                    return Navigation(
-                                      title: NavigationTitle(title: "Team".toUpperCase()),
-                                      selectedIndex: 1,
-                                    );
-                                  }),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(

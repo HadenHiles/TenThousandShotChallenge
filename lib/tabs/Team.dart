@@ -8,6 +8,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/team/AddTeammate.dart';
 import 'package:tenthousandshotchallenge/tabs/team/Teammate.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
@@ -168,9 +169,50 @@ class _TeamState extends State<Team> {
                       )
                     : _teammates.length < 1
                         ? Container(
-                            margin: EdgeInsets.symmetric(vertical: 25),
-                            child: Center(
-                              child: Text("Tap + to add teammates"),
+                            width: MediaQuery.of(context).size.width - 30,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.only(top: 40),
+                                  child: Text(
+                                    "Tap + to invite a teammate".toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(top: 15),
+                                  child: Center(
+                                    child: Ink(
+                                      decoration: ShapeDecoration(
+                                        color: Theme.of(context).cardTheme.color,
+                                        shape: CircleBorder(),
+                                      ),
+                                      child: IconButton(
+                                        color: Theme.of(context).cardTheme.color,
+                                        onPressed: () {
+                                          navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+                                            return AddTeammate();
+                                          }));
+                                        },
+                                        iconSize: 40,
+                                        icon: Icon(
+                                          Icons.add,
+                                          size: 40,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(
