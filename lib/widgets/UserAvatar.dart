@@ -26,12 +26,15 @@ class UserAvatar extends StatelessWidget {
       return FittedBox(
         fit: BoxFit.cover,
         clipBehavior: Clip.antiAlias,
-        child: CircleAvatar(
-          radius: radius,
-          child: Image(
-            image: AssetImage(user.photoUrl),
+        child: Transform.scale(
+          scale: user.photoUrl.contains('characters') ? 1.03 : 0.98,
+          child: CircleAvatar(
+            radius: radius,
+            child: Image(
+              image: AssetImage(user.photoUrl),
+            ),
+            backgroundColor: backgroundColor,
           ),
-          backgroundColor: backgroundColor,
         ),
       );
     } else {
