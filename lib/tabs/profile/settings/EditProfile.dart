@@ -239,7 +239,10 @@ class _EditProfileState extends State<EditProfile> {
                       color: Colors.transparent,
                       width: 2,
                     )
-                  : Border.all(width: 0),
+                  : Border.all(
+                      width: 1,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
             ),
             width: 70,
             height: 70,
