@@ -122,6 +122,8 @@ class _StartShootingState extends State<StartShooting> {
                 ),
                 GestureDetector(
                   onTap: () async {
+                    Feedback.forTap(context);
+
                     setState(() {
                       _puckCountUpdating = true;
                     });
@@ -198,6 +200,8 @@ class _StartShootingState extends State<StartShooting> {
                 SizedBox(height: 15),
                 GestureDetector(
                   onLongPress: () async {
+                    Feedback.forLongPress(context);
+
                     await prompt(
                       context,
                       title: Text('Shots'),

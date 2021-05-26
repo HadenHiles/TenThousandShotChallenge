@@ -142,6 +142,8 @@ class _AddTeammateState extends State<AddTeammate> {
         },
         body: GestureDetector(
           onTap: () {
+            Feedback.forTap(context);
+
             FocusScopeNode currentFocus = FocusScope.of(context);
 
             if (!currentFocus.hasPrimaryFocus) {
@@ -380,6 +382,8 @@ class _AddTeammateState extends State<AddTeammate> {
       teammates.add(
         GestureDetector(
           onTap: () {
+            Feedback.forTap(context);
+
             FocusScopeNode currentFocus = FocusScope.of(context);
 
             if (!currentFocus.hasPrimaryFocus) {

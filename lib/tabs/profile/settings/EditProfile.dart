@@ -185,6 +185,8 @@ class _EditProfileState extends State<EditProfile> {
     List<Widget> avatars = [
       GestureDetector(
         onTap: () {
+          Feedback.forTap(context);
+
           setState(() {
             _avatar = user.photoURL;
           });
@@ -215,6 +217,8 @@ class _EditProfileState extends State<EditProfile> {
       avatars.add(
         GestureDetector(
           onTap: () {
+            Feedback.forTap(context);
+
             setState(() {
               _avatar = a;
             });

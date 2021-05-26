@@ -277,6 +277,8 @@ class _TeamState extends State<Team> {
   Widget _buildTeammateItem(UserProfile teammate, bool bg) {
     return GestureDetector(
       onTap: () {
+        Feedback.forTap(context);
+
         navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
           return Teammate(uid: teammate.reference.id);
         }));
@@ -529,6 +531,7 @@ class _TeamState extends State<Team> {
                     height: 60,
                     child: GestureDetector(
                       onTap: () {
+                        Feedback.forTap(context);
                         navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
                           return Teammate(uid: teammate.reference.id);
                         }));
