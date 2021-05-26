@@ -148,7 +148,9 @@ class _ProfileState extends State<Profile> {
                           children: [
                             PopupMenuButton(
                               key: _avatarMenuKey,
-                              color: Theme.of(context).colorScheme.primaryVariant,
+                              color: Theme.of(context).colorScheme.primary,
+                              iconSize: 40,
+                              icon: Container(),
                               itemBuilder: (_) => <PopupMenuItem<String>>[
                                 new PopupMenuItem<String>(
                                   child: Row(
@@ -200,6 +202,12 @@ class _ProfileState extends State<Profile> {
                               },
                             ),
                             Container(
+                              width: 60,
+                              height: 60,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(60),
+                              ),
                               child: GestureDetector(
                                 onLongPress: () {
                                   Feedback.forLongPress(context);

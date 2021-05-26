@@ -423,6 +423,12 @@ class _AddTeammateState extends State<AddTeammate> {
                       )
                     : Container(
                         margin: EdgeInsets.symmetric(horizontal: 15),
+                        width: 60,
+                        height: 60,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(60),
+                        ),
                         child: SizedBox(
                           height: 60,
                           child: UserAvatar(

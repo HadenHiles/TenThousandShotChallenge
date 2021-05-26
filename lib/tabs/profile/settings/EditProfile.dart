@@ -72,62 +72,63 @@ class _EditProfileState extends State<EditProfile> {
     return Scaffold(
       backgroundColor: Theme.of(context).backgroundColor,
       body: NestedScrollView(
-          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-            return [
-              SliverAppBar(
-                collapsedHeight: 65,
-                expandedHeight: 65,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                floating: true,
-                pinned: true,
-                leading: Container(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              collapsedHeight: 65,
+              expandedHeight: 65,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              floating: true,
+              pinned: true,
+              leading: Container(
+                margin: EdgeInsets.only(top: 10),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    navigatorKey.currentState.pop();
+                  },
+                ),
+              ),
+              flexibleSpace: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).backgroundColor,
+                ),
+                child: FlexibleSpaceBar(
+                  collapseMode: CollapseMode.parallax,
+                  titlePadding: null,
+                  centerTitle: false,
+                  title: BasicTitle(title: "Edit Profile"),
+                  background: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                  ),
+                ),
+              ),
+              actions: [
+                Container(
                   margin: EdgeInsets.only(top: 10),
                   child: IconButton(
                     icon: Icon(
-                      Icons.arrow_back,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      Icons.check,
+                      color: Colors.green.shade600,
                       size: 28,
                     ),
                     onPressed: () {
-                      navigatorKey.currentState.pop();
+                      if (_formKey.currentState.validate()) {
+                        _saveProfile();
+                      }
                     },
                   ),
                 ),
-                flexibleSpace: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).backgroundColor,
-                  ),
-                  child: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.parallax,
-                    titlePadding: null,
-                    centerTitle: false,
-                    title: BasicTitle(title: "Edit Profile"),
-                    background: Container(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                    ),
-                  ),
-                ),
-                actions: [
-                  Container(
-                    margin: EdgeInsets.only(top: 10),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.check,
-                        color: Colors.green.shade600,
-                        size: 28,
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState.validate()) {
-                          _saveProfile();
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ];
-          },
-          body: Column(
+              ],
+            ),
+          ];
+        },
+        body: SingleChildScrollView(
+          child: Column(
             children: [
               Container(
                 padding: EdgeInsets.all(20),
@@ -177,7 +178,9 @@ class _EditProfileState extends State<EditProfile> {
                 ),
               ),
             ],
-          )),
+          ),
+        ),
+      ),
     );
   }
 
@@ -195,6 +198,7 @@ class _EditProfileState extends State<EditProfile> {
         },
         child: Container(
           margin: EdgeInsets.only(bottom: 10, right: 4),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(55),
             border: _avatar == user.photoURL
@@ -227,11 +231,12 @@ class _EditProfileState extends State<EditProfile> {
           },
           child: Container(
             margin: EdgeInsets.only(bottom: 10, right: 4),
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(55),
               border: _avatar == a
                   ? Border.all(
-                      color: Theme.of(context).primaryColor,
+                      color: Colors.transparent,
                       width: 2,
                     )
                   : Border.all(width: 0),

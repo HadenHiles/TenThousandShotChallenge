@@ -13,6 +13,7 @@ class UserAvatar extends StatelessWidget {
     if (user.photoUrl != null && user.photoUrl.contains('http')) {
       return FittedBox(
         fit: BoxFit.contain,
+        clipBehavior: Clip.antiAlias,
         child: CircleAvatar(
           radius: radius,
           backgroundImage: NetworkImage(
@@ -23,7 +24,8 @@ class UserAvatar extends StatelessWidget {
       );
     } else if (user.photoUrl != null && user.photoUrl.isNotEmpty) {
       return FittedBox(
-        fit: BoxFit.contain,
+        fit: BoxFit.fill,
+        clipBehavior: Clip.antiAlias,
         child: CircleAvatar(
           radius: radius,
           child: Image(
@@ -35,6 +37,7 @@ class UserAvatar extends StatelessWidget {
     } else {
       return FittedBox(
         fit: BoxFit.contain,
+        clipBehavior: Clip.antiAlias,
         child: CircleAvatar(
           radius: radius,
           backgroundImage: AssetImage("assets/images/avatar.png"),
