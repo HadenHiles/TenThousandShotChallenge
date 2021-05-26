@@ -66,19 +66,6 @@ class _NavigationState extends State<Navigation> {
           margin: EdgeInsets.only(top: 10),
           child: IconButton(
             icon: Icon(
-              Icons.qr_code_2_rounded,
-              size: 28,
-              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-            ),
-            onPressed: () {
-              showQRCode(user);
-            },
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.only(top: 10),
-          child: IconButton(
-            icon: Icon(
               Icons.add,
               color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
@@ -285,6 +272,7 @@ class _NavigationState extends State<Navigation> {
                 SliverAppBar(
                   collapsedHeight: 65,
                   expandedHeight: 125,
+                  automaticallyImplyLeading: false,
                   backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                   iconTheme: Theme.of(context).iconTheme,
                   actionsIconTheme: Theme.of(context).iconTheme,

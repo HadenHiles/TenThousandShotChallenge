@@ -131,12 +131,6 @@ class _TeammateState extends State<Teammate> {
                 }
               } else {
                 setState(() => _isLoading = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    duration: Duration(milliseconds: 1200),
-                    content: Text('No more sessions!'),
-                  ),
-                );
               }
             });
       });
@@ -179,6 +173,7 @@ class _TeammateState extends State<Teammate> {
                       size: 28,
                     ),
                     onPressed: () {
+                      Feedback.forTap(context);
                       dialog(
                         context,
                         ConfirmDialog(
@@ -614,6 +609,7 @@ class _TeammateState extends State<Teammate> {
                     ),
                     Expanded(
                       child: RefreshIndicator(
+                        color: Theme.of(context).primaryColor,
                         child: ListView.builder(
                           controller: sessionsController,
                           padding: EdgeInsets.only(

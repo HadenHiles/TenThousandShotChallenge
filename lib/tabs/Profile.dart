@@ -119,12 +119,6 @@ class _ProfileState extends State<Profile> {
                 }
               } else {
                 setState(() => _isLoading = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    duration: Duration(milliseconds: 1200),
-                    content: Text('No more sessions!'),
-                  ),
-                );
               }
             });
       });
@@ -161,7 +155,7 @@ class _ProfileState extends State<Profile> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "Edit Profile".toUpperCase(),
+                                        "Change Avatar".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           color: Theme.of(context).colorScheme.onPrimary,
@@ -180,7 +174,7 @@ class _ProfileState extends State<Profile> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "QR Code".toUpperCase(),
+                                        "Show QR Code".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           color: Theme.of(context).colorScheme.onPrimary,
@@ -208,12 +202,15 @@ class _ProfileState extends State<Profile> {
                             Container(
                               child: GestureDetector(
                                 onLongPress: () {
-                                  dynamic state = _avatarMenuKey.currentState;
-                                  state.showButtonMenu();
+                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                                    return EditProfile();
+                                  }));
+                                  Feedback.forLongPress(context);
                                 },
                                 onTap: () {
                                   dynamic state = _avatarMenuKey.currentState;
                                   state.showButtonMenu();
+                                  Feedback.forTap(context);
                                 },
                                 child: SizedBox(
                                   height: 60,
@@ -545,6 +542,7 @@ class _ProfileState extends State<Profile> {
           ),
           Expanded(
             child: RefreshIndicator(
+              color: Theme.of(context).primaryColor,
               child: ListView.builder(
                 controller: sessionsController,
                 padding: EdgeInsets.only(
