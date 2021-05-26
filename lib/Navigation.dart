@@ -117,6 +117,8 @@ class _NavigationState extends State<Navigation> {
   ];
 
   void _onItemTapped(int index) async {
+    Feedback.forTap(context);
+
     setState(() {
       _selectedIndex = index;
       _selectedIndex = index;
@@ -246,6 +248,7 @@ class _NavigationState extends State<Navigation> {
                         ),
                         contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                         onTap: () {
+                          Feedback.forTap(context);
                           if (sessionPanelController.isPanelClosed) {
                             sessionPanelController.open();
                             setState(() {

@@ -202,15 +202,16 @@ class _ProfileState extends State<Profile> {
                             Container(
                               child: GestureDetector(
                                 onLongPress: () {
+                                  Feedback.forLongPress(context);
+
                                   navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
                                     return EditProfile();
                                   }));
-                                  Feedback.forLongPress(context);
                                 },
                                 onTap: () {
+                                  Feedback.forTap(context);
                                   dynamic state = _avatarMenuKey.currentState;
                                   state.showButtonMenu();
-                                  Feedback.forTap(context);
                                 },
                                 child: SizedBox(
                                   height: 60,
