@@ -152,6 +152,7 @@ class _TeamState extends State<Team> {
           body: TabBarView(
             children: [
               RefreshIndicator(
+                color: Theme.of(context).primaryColor,
                 child: _isLoadingTeammates
                     ? Container(
                         margin: EdgeInsets.only(top: 25),
@@ -209,6 +210,7 @@ class _TeamState extends State<Team> {
                 },
               ),
               RefreshIndicator(
+                color: Theme.of(context).primaryColor,
                 child: _isLoadingInvites
                     ? Container(
                         margin: EdgeInsets.only(top: 25),
