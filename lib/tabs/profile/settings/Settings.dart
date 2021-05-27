@@ -40,7 +40,11 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
     });
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snapshot) {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get()
+        .then((snapshot) {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
         _publicProfile = u.public;
@@ -93,7 +97,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
           ];
         },
         body: SettingsList(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.primaryVariant,
           sections: [
             SettingsSection(
               title: 'General',
@@ -126,13 +130,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                   ),
                   switchValue: _darkMode,
                   onToggle: (bool value) async {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
                     setState(() {
                       _darkMode = !_darkMode;
                       prefs.setBool('dark_mode', _darkMode);
                     });
 
-                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                    Provider.of<PreferencesStateNotifier>(context,
+                            listen: false)
+                        .updateSettings(
                       Preferences(
                         value,
                         prefs.getInt('puck_count'),
@@ -156,7 +163,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                   ),
                   switchValue: _publicProfile,
                   onToggle: (bool value) async {
-                    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({'public': !_publicProfile}).then((_) {
                       setState(() {
                         _publicProfile = !_publicProfile;
                       });
