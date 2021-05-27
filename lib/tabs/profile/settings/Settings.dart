@@ -98,6 +98,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         },
         body: SettingsList(
           backgroundColor: Theme.of(context).colorScheme.primaryVariant,
+          lightBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
+          darkBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
           sections: [
             SettingsSection(
               title: 'General',

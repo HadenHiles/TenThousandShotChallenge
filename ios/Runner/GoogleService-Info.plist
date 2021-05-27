@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>767649510191-97sumh7rc5jaj2d9d0a7h4ia5hc6dnrd.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.767649510191-97sumh7rc5jaj2d9d0a7h4ia5hc6dnrd</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>767649510191-5l35q1ohi7mae12na45fmr670nalilm8.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBJKvi75HqrrhoTdbi9B9BIktHiJq_HwVs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>767649510191</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.howtohockey.tenthousandshotchallenge</string>
+	<key>PROJECT_ID</key>
+	<string>ten-thousand-puck-challenge</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ten-thousand-puck-challenge.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:767649510191:ios:5a4c6794939fd50407a7da</string>
+</dict>
+</plist>
