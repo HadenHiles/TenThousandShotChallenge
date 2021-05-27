@@ -64,7 +64,8 @@ void main() async {
   // Get the user's FCM token
   firebaseMessaging.getToken().then((token) {
     if (preferences.fcmToken != token) {
-      prefs.setString('fcm_token', token); // Svae the fcm token to local storage (will save to firestore after user authenticates)
+      prefs.setString('fcm_token',
+          token); // Svae the fcm token to local storage (will save to firestore after user authenticates)
     }
 
     print("FCM token: $token"); // Print the Token in Console
@@ -113,7 +114,8 @@ class Home extends StatelessWidget {
         return MaterialApp(
           title: '10,000 Shot Challenge',
           navigatorKey: navigatorKey,
-          theme: preferences.darkMode ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+          theme:
+              preferences.darkMode ? HomeTheme.darkTheme : HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
           navigatorObservers: [
