@@ -88,9 +88,9 @@ class _AddTeammateState extends State<AddTeammate> {
                     onPressed: () {
                       Share.text(
                         'Take the How To Hockey 10,000 Shot Challenge!',
-                        'https://play.google.com/store/apps/developer?id=How+To+Hockey&hl=en_US&gl=US',
+                        'http://hyperurl.co/tenthousandshots',
                         'text/plain',
-                      ); // TODO: Insert app link that directs to appropriate app store
+                      );
                     },
                     icon: Icon(
                       Icons.share,
@@ -349,9 +349,9 @@ class _AddTeammateState extends State<AddTeammate> {
                                     onPressed: () {
                                       Share.text(
                                         'Take the How To Hockey 10,000 Shot Challenge!',
-                                        'https://play.google.com/store/apps/developer?id=How+To+Hockey&hl=en_US&gl=US',
+                                        'http://hyperurl.co/tenthousandshots',
                                         'text/plain',
-                                      ); // TODO: Insert app link that directs to appropriate app store
+                                      );
                                     },
                                     icon: Icon(
                                       Icons.share,
