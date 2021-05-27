@@ -4,6 +4,7 @@ class HomeTheme {
   HomeTheme._();
 
   static final ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
     backgroundColor: Colors.white,
     primaryColor: Color(0xffCC3333),
     accentColor: Color(0xffB82e2e),
@@ -16,6 +17,7 @@ class HomeTheme {
     ),
     buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
+      brightness: Brightness.light,
       primary: Colors.white,
       onPrimary: Colors.black54,
       primaryVariant: Color(0xffF7F7F7),
@@ -64,6 +66,7 @@ class HomeTheme {
   );
 
   static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
     backgroundColor: Color(0xff222222),
     primaryColor: Color(0xffCC3333),
     accentColor: Color(0xffB82e2e),
@@ -76,6 +79,7 @@ class HomeTheme {
     ),
     buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
+      brightness: Brightness.dark,
       primary: Color(0xff1A1A1A),
       onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
       primaryVariant: Color(0xff1D1D1D),
