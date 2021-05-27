@@ -119,8 +119,6 @@ class _NavigationState extends State<Navigation> {
   ];
 
   void _onItemTapped(int index) async {
-    Feedback.forTap(context);
-
     setState(() {
       _selectedIndex = index;
       _selectedIndex = index;
