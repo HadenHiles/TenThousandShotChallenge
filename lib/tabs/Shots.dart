@@ -199,7 +199,7 @@ class _ShotsState extends State<Shots> {
                     return Center(
                       child: LinearProgressIndicator(),
                     );
-                  } else {
+                  } else if (snapshot.data.docs.length > 0) {
                     Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                     int maxIterationTotalForWidth = iteration.total <= 10000 ? iteration.total : 10000;
                     int iterationTotal = iteration.total < 10000 ? 10000 : iteration.total;
@@ -308,6 +308,8 @@ class _ShotsState extends State<Shots> {
                         ),
                       ],
                     );
+                  } else {
+                    return Container();
                   }
                 },
               ),
@@ -330,7 +332,7 @@ class _ShotsState extends State<Shots> {
                         ),
                       ],
                     );
-                  } else {
+                  } else if (snapshot.data.docs.length > 0) {
                     Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                     List<ShotCount> shotCounts = [
                       ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
@@ -367,6 +369,32 @@ class _ShotsState extends State<Shots> {
                               ),
                             )
                           : ShotBreakdownDonut(shotCountSeries),
+                    );
+                  } else {
+                    return Container(
+                      child: Column(
+                        children: [
+                          Text(
+                            "You haven't taken any shots yet".toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 18,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            "Tap \"Start Shooting\" to begin!".toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 28,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
                 },
