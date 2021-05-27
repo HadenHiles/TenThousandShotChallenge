@@ -393,7 +393,7 @@ class _ShotsState extends State<Shots> {
                             StreamBuilder<QuerySnapshot>(
                               stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                               builder: (context, snapshot) {
-                                if (snapshot.hasData) {
+                                if (snapshot.hasData && snapshot.data.docs.length > 0) {
                                   Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
 
                                   return iteration.total < 10000
