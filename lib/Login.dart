@@ -210,6 +210,9 @@ class _LoginState extends State<Login> {
                                                 controller: _signInEmail,
                                                 decoration: InputDecoration(
                                                   labelText: 'Email',
+                                                  labelStyle: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
                                                 ),
                                                 keyboardType: TextInputType.emailAddress,
                                                 validator: (String value) {
@@ -230,6 +233,9 @@ class _LoginState extends State<Login> {
                                                 obscureText: _hidePassword,
                                                 decoration: InputDecoration(
                                                   labelText: 'Password',
+                                                  labelStyle: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
                                                 ),
                                                 keyboardType: TextInputType.visiblePassword,
                                                 validator: (String value) {
@@ -462,6 +468,9 @@ class _LoginState extends State<Login> {
                                                     controller: _signUpEmail,
                                                     decoration: InputDecoration(
                                                       labelText: 'Email',
+                                                      labelStyle: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
                                                     ),
                                                     keyboardType: TextInputType.emailAddress,
                                                     validator: (String value) {
@@ -483,6 +492,9 @@ class _LoginState extends State<Login> {
                                                     obscureText: _hidePassword,
                                                     decoration: InputDecoration(
                                                       labelText: 'Password',
+                                                      labelStyle: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
                                                     validator: (String value) {
@@ -503,6 +515,9 @@ class _LoginState extends State<Login> {
                                                     obscureText: _hidePassword,
                                                     decoration: InputDecoration(
                                                       labelText: 'Confirm Password',
+                                                      labelStyle: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
                                                     validator: (String value) {
