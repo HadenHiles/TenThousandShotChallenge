@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/team/AddTeammate.dart';
 import 'package:tenthousandshotchallenge/tabs/team/Teammate.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Team extends StatefulWidget {
@@ -44,13 +45,7 @@ class _TeamState extends State<Team> {
       _inviteDates = [];
     });
 
-    await FirebaseFirestore.instance
-        .collection('invites')
-        .doc(user.uid)
-        .collection('invites')
-        .orderBy('date', descending: true)
-        .get()
-        .then((snapshot) async {
+    await FirebaseFirestore.instance.collection('invites').doc(user.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
@@ -58,11 +53,7 @@ class _TeamState extends State<Team> {
           Invite invite = Invite.fromSnapshot(doc);
           String fromUid = invite.fromUid;
 
-          FirebaseFirestore.instance
-              .collection('users')
-              .doc(fromUid)
-              .get()
-              .then((uSnap) {
+          FirebaseFirestore.instance.collection('users').doc(fromUid).get().then((uSnap) {
             if (mounted) {
               setState(() {
                 _inviteDates.add(invite);
@@ -93,22 +84,12 @@ class _TeamState extends State<Team> {
       _teammates = [];
     });
 
-    await FirebaseFirestore.instance
-        .collection('teammates')
-        .doc(user.uid)
-        .collection('teammates')
-        .orderBy('display_name', descending: false)
-        .get()
-        .then((snapshot) async {
+    await FirebaseFirestore.instance.collection('teammates').doc(user.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
         await Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
-          FirebaseFirestore.instance
-              .collection('users')
-              .doc(doc.reference.id)
-              .get()
-              .then((uSnap) {
+          FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
             if (mounted) {
               setState(() {
                 _teammates.add(uSnap);
@@ -142,6 +123,9 @@ class _TeamState extends State<Team> {
         child: Column(
           children: [
             Container(
+              decoration: BoxDecoration(
+                color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+              ),
               child: TabBar(
                 labelStyle: TextStyle(
                   fontFamily: 'NovecentoSans',
@@ -150,12 +134,18 @@ class _TeamState extends State<Team> {
                 labelPadding: EdgeInsets.all(0),
                 tabs: [
                   Tab(
-                    icon: Icon(Icons.people),
+                    icon: Icon(
+                      Icons.people,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                     iconMargin: EdgeInsets.all(0),
                     text: "Teammates".toUpperCase(),
                   ),
                   Tab(
-                    icon: Icon(Icons.person_add),
+                    icon: Icon(
+                      Icons.person_add,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                     iconMargin: EdgeInsets.all(0),
                     text: "Invites".toUpperCase(),
                   ),
@@ -191,15 +181,12 @@ class _TeamState extends State<Team> {
                                     Container(
                                       margin: EdgeInsets.only(top: 40),
                                       child: Text(
-                                        "Tap + to invite a teammate"
-                                            .toUpperCase(),
+                                        "Tap + to invite a teammate".toUpperCase(),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                     ),
@@ -208,19 +195,13 @@ class _TeamState extends State<Team> {
                                       child: Center(
                                         child: Ink(
                                           decoration: ShapeDecoration(
-                                            color: Theme.of(context)
-                                                .cardTheme
-                                                .color,
+                                            color: Theme.of(context).cardTheme.color,
                                             shape: CircleBorder(),
                                           ),
                                           child: IconButton(
-                                            color: Theme.of(context)
-                                                .cardTheme
-                                                .color,
+                                            color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              navigatorKey.currentState.push(
-                                                  MaterialPageRoute(builder:
-                                                      (BuildContext context) {
+                                              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
                                                 return AddTeammate();
                                               }));
                                             },
@@ -228,9 +209,7 @@ class _TeamState extends State<Team> {
                                             icon: Icon(
                                               Icons.add,
                                               size: 40,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimary,
+                                              color: Theme.of(context).colorScheme.onPrimary,
                                             ),
                                           ),
                                         ),
@@ -244,11 +223,8 @@ class _TeamState extends State<Team> {
                                 itemCount: _teammates.length + 1,
                                 itemBuilder: (_, int index) {
                                   if (index < _teammates.length) {
-                                    final DocumentSnapshot document =
-                                        _teammates[index];
-                                    return _buildTeammateItem(
-                                        UserProfile.fromSnapshot(document),
-                                        index % 2 == 0 ? true : false);
+                                    final DocumentSnapshot document = _teammates[index];
+                                    return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
                                   }
 
                                   return !_isLoadingTeammates
@@ -258,17 +234,13 @@ class _TeamState extends State<Team> {
                                             child: Container(
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceAround,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
                                                 children: [
                                                   SizedBox(
                                                     height: 25,
                                                     width: 25,
-                                                    child:
-                                                        CircularProgressIndicator(),
+                                                    child: CircularProgressIndicator(),
                                                   ),
                                                 ],
                                               ),
@@ -309,12 +281,8 @@ class _TeamState extends State<Team> {
                                 itemCount: _invites.length + 1,
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
-                                    final DocumentSnapshot document =
-                                        _invites[index];
-                                    return _buildTeammateInviteItem(
-                                        UserProfile.fromSnapshot(document),
-                                        _inviteDates[index],
-                                        index % 2 == 0 ? true : false);
+                                    final DocumentSnapshot document = _invites[index];
+                                    return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
                                   }
 
                                   return !_isLoadingInvites
@@ -324,17 +292,13 @@ class _TeamState extends State<Team> {
                                             child: Container(
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceAround,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
                                                 children: [
                                                   SizedBox(
                                                     height: 25,
                                                     width: 25,
-                                                    child:
-                                                        CircularProgressIndicator(),
+                                                    child: CircularProgressIndicator(),
                                                   ),
                                                 ],
                                               ),
@@ -407,8 +371,7 @@ class _TeamState extends State<Team> {
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context).textTheme.bodyText1.color,
                               ),
                             ),
                           )
@@ -422,13 +385,8 @@ class _TeamState extends State<Team> {
                     Container(
                       width: 135,
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance
-                              .collection('iterations')
-                              .doc(teammate.reference.id)
-                              .collection('iterations')
-                              .snapshots(),
-                          builder: (BuildContext context,
-                              AsyncSnapshot<QuerySnapshot> snapshot) {
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
                                 child: SizedBox(
@@ -450,8 +408,7 @@ class _TeamState extends State<Team> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontFamily: 'NovecentoSans',
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               );
                             }
@@ -459,13 +416,8 @@ class _TeamState extends State<Team> {
                     ),
                     Container(
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance
-                              .collection('iterations')
-                              .doc(teammate.reference.id)
-                              .collection('iterations')
-                              .snapshots(),
-                          builder: (BuildContext context,
-                              AsyncSnapshot<QuerySnapshot> snapshot) {
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
                                 child: SizedBox(
@@ -477,21 +429,17 @@ class _TeamState extends State<Team> {
                             } else {
                               Duration totalDuration = Duration();
                               snapshot.data.docs.forEach((doc) {
-                                totalDuration +=
-                                    Iteration.fromSnapshot(doc).totalDuration;
+                                totalDuration += Iteration.fromSnapshot(doc).totalDuration;
                               });
 
                               return totalDuration > Duration()
                                   ? Text(
-                                      "IN " +
-                                          printDuration(totalDuration, true),
+                                      "IN " + printDuration(totalDuration, true),
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                       ),
                                     )
                                   : Container();
@@ -508,8 +456,7 @@ class _TeamState extends State<Team> {
     );
   }
 
-  Widget _buildTeammateInviteItem(
-      UserProfile teammate, Invite invite, bool bg) {
+  Widget _buildTeammateInviteItem(UserProfile teammate, Invite invite, bool bg) {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
@@ -531,8 +478,7 @@ class _TeamState extends State<Team> {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content:
-                    new Text("Invite from ${teammate.displayName} deleted"),
+                content: new Text("Invite from ${teammate.displayName} deleted"),
                 duration: Duration(milliseconds: 1500),
               ),
             );
@@ -583,9 +529,7 @@ class _TeamState extends State<Team> {
                   onPressed: () => Navigator.of(context).pop(true),
                   child: Text(
                     "Delete".toUpperCase(),
-                    style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        color: Theme.of(context).primaryColor),
+                    style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                   ),
                 ),
               ],
@@ -647,8 +591,7 @@ class _TeamState extends State<Team> {
                     child: GestureDetector(
                       onTap: () {
                         Feedback.forTap(context);
-                        navigatorKey.currentState
-                            .push(MaterialPageRoute(builder: (context) {
+                        navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
                           return Teammate(uid: teammate.reference.id);
                         }));
                       },
@@ -672,8 +615,7 @@ class _TeamState extends State<Team> {
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context).textTheme.bodyText1.color,
                               ),
                             ),
                           )
@@ -689,8 +631,7 @@ class _TeamState extends State<Team> {
                 Container(
                   width: 40,
                   child: AutoSizeText(
-                    printDuration(
-                        DateTime.now().difference(invite.date), false),
+                    printDuration(DateTime.now().difference(invite.date), false),
                     maxLines: 1,
                     textAlign: TextAlign.right,
                   ),
@@ -704,22 +645,18 @@ class _TeamState extends State<Team> {
                   margin: EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
-                      acceptInvite(
-                              Invite(teammate.reference.id, DateTime.now()))
-                          .then((accepted) {
+                      acceptInvite(Invite(teammate.reference.id, DateTime.now())).then((accepted) {
                         if (accepted == null || !accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: new Text(
-                                  "Error accepting invite from ${teammate.displayName} :("),
+                              content: new Text("Error accepting invite from ${teammate.displayName} :("),
                               duration: Duration(milliseconds: 2500),
                             ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: new Text(
-                                  "Invite from ${teammate.displayName} accepted!"),
+                              content: new Text("Invite from ${teammate.displayName} accepted!"),
                               duration: Duration(milliseconds: 1500),
                             ),
                           );
@@ -738,8 +675,7 @@ class _TeamState extends State<Team> {
                       ),
                     ),
                     style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(Colors.blue.shade600),
+                      backgroundColor: MaterialStateProperty.all(Colors.blue.shade600),
                     ),
                   ),
                 ),
