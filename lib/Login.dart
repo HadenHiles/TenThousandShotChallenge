@@ -213,6 +213,10 @@ class _LoginState extends State<Login> {
                                                   labelStyle: TextStyle(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
+                                                  hintText: 'Enter your email',
+                                                  hintStyle: TextStyle(
+                                                    color: Theme.of(context).cardTheme.color,
+                                                  ),
                                                 ),
                                                 keyboardType: TextInputType.emailAddress,
                                                 validator: (String value) {
@@ -235,6 +239,10 @@ class _LoginState extends State<Login> {
                                                   labelText: 'Password',
                                                   labelStyle: TextStyle(
                                                     color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                  hintText: 'Enter your password',
+                                                  hintStyle: TextStyle(
+                                                    color: Theme.of(context).cardTheme.color,
                                                   ),
                                                 ),
                                                 keyboardType: TextInputType.visiblePassword,
@@ -335,6 +343,13 @@ class _LoginState extends State<Login> {
                                                                         controller: _forgotPasswordEmail,
                                                                         decoration: InputDecoration(
                                                                           labelText: 'Email',
+                                                                          labelStyle: TextStyle(
+                                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                                          ),
+                                                                          hintText: 'Confirm your password',
+                                                                          hintStyle: TextStyle(
+                                                                            color: Theme.of(context).cardTheme.color,
+                                                                          ),
                                                                         ),
                                                                         keyboardType: TextInputType.emailAddress,
                                                                         validator: (String value) {
@@ -471,6 +486,10 @@ class _LoginState extends State<Login> {
                                                       labelStyle: TextStyle(
                                                         color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
+                                                      hintText: 'Enter your email',
+                                                      hintStyle: TextStyle(
+                                                        color: Theme.of(context).cardTheme.color,
+                                                      ),
                                                     ),
                                                     keyboardType: TextInputType.emailAddress,
                                                     validator: (String value) {
@@ -495,6 +514,10 @@ class _LoginState extends State<Login> {
                                                       labelStyle: TextStyle(
                                                         color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
+                                                      hintText: 'Enter your password',
+                                                      hintStyle: TextStyle(
+                                                        color: Theme.of(context).cardTheme.color,
+                                                      ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
                                                     validator: (String value) {
@@ -517,6 +540,10 @@ class _LoginState extends State<Login> {
                                                       labelText: 'Confirm Password',
                                                       labelStyle: TextStyle(
                                                         color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                      hintText: 'Confirm your password',
+                                                      hintStyle: TextStyle(
+                                                        color: Theme.of(context).cardTheme.color,
                                                       ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
