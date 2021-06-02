@@ -99,7 +99,12 @@ class _LoginState extends State<Login> {
                             // ignore: deprecated_member_use
                             _scaffoldKey.currentState.showSnackBar(
                               SnackBar(
-                                content: Text(error),
+                                content: Text(
+                                  error,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
                                 duration: Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: "Dismiss",
@@ -131,7 +136,12 @@ class _LoginState extends State<Login> {
                                     // ignore: deprecated_member_use
                                     _scaffoldKey.currentState.showSnackBar(
                                       SnackBar(
-                                        content: Text(error),
+                                        content: Text(
+                                          error,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
                                         duration: Duration(seconds: 10),
                                         action: SnackBarAction(
                                           label: "Dismiss",
@@ -318,7 +328,12 @@ class _LoginState extends State<Login> {
                                                         // ignore: deprecated_member_use
                                                         _scaffoldKey.currentState.showSnackBar(
                                                           SnackBar(
-                                                            content: Text(error),
+                                                            content: Text(
+                                                              error,
+                                                              style: TextStyle(
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                              ),
+                                                            ),
                                                             duration: Duration(seconds: 10),
                                                             action: SnackBarAction(
                                                               label: "Dismiss",
@@ -620,7 +635,12 @@ class _LoginState extends State<Login> {
                                                             // ignore: deprecated_member_use
                                                             _scaffoldKey.currentState.showSnackBar(
                                                               SnackBar(
-                                                                content: Text(error),
+                                                                content: Text(
+                                                                  error,
+                                                                  style: TextStyle(
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                  ),
+                                                                ),
                                                                 duration: Duration(seconds: 10),
                                                                 action: SnackBarAction(
                                                                   label: "Dismiss",
