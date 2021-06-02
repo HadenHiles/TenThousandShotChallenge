@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -53,6 +54,8 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
+    final bool appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false) as bool;
+
     //If user is signed in
     if (_signedIn) {
       return Navigation(title: null, selectedIndex: 0);
@@ -110,6 +113,36 @@ class _LoginState extends State<Login> {
                         },
                       ),
                     ),
+                    !appleSignInAvailable
+                        ? Container()
+                        : SizedBox(
+                            height: 60,
+                            width: 360,
+                            child: SignInButton(
+                              Buttons.AppleDark,
+                              onPressed: () {
+                                socialSignIn(context, 'apple', (error) {
+                                  // ignore: deprecated_member_use
+                                  // ignore: deprecated_member_use
+                                  _scaffoldKey.currentState.hideCurrentSnackBar();
+                                  // ignore: deprecated_member_use
+                                  _scaffoldKey.currentState.showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      duration: Duration(seconds: 10),
+                                      action: SnackBarAction(
+                                        label: "Dismiss",
+                                        onPressed: () {
+                                          // ignore: deprecated_member_use
+                                          _scaffoldKey.currentState.hideCurrentSnackBar();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                });
+                              },
+                            ),
+                          ),
                     Divider(
                       color: Colors.transparent,
                       height: 10,
@@ -735,6 +768,38 @@ class _LoginState extends State<Login> {
         });
       }).catchError((e) async {
         var message = "There was an error signing in with Google";
+        // if (e.code == "user-disabled") {
+        //   message = "Your account has been disabled by the administrator";
+        // } else if (e.code == "account-exists-with-different-credential") {
+        //   message = "An account already exists with the same email address but different sign-in credentials. Please try signing in a different way";
+        // }
+
+        print(e);
+        await error(message);
+      });
+    } else if (provider == 'apple') {
+      signInWithApple().then((appleSignInAccount) async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
+          UserProfile user = UserProfile.fromSnapshot(u);
+
+          // Update/add the user's display name to firestore
+          FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
+            'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
+            'display_name': FirebaseAuth.instance.currentUser.displayName,
+            'email': FirebaseAuth.instance.currentUser.email,
+            'public': user.public ?? true,
+            'fcm_token': prefs.getString('fcm_token'),
+          }).then((value) => () {});
+        });
+
+        bootstrap();
+
+        setState(() {
+          _signedIn = true;
+        });
+      }).catchError((e) async {
+        var message = "There was an error signing in with Apple";
         // if (e.code == "user-disabled") {
         //   message = "Your account has been disabled by the administrator";
         // } else if (e.code == "account-exists-with-different-credential") {
