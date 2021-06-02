@@ -96,7 +96,13 @@ class _EditPuckCountState extends State<EditPuckCount> {
                           ),
                         );
 
-                        new SnackBar(content: new Text('Puck count was saved successfully!'));
+                        new SnackBar(
+                            content: new Text(
+                          'Puck count was saved successfully!',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ));
                         navigatorKey.currentState.pop();
                       }
                     },

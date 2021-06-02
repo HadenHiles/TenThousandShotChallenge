@@ -464,21 +464,36 @@ class _TeamState extends State<Team> {
           if (deleted == null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: new Text("There was an error deleting the invite :("),
+                content: new Text(
+                  "There was an error deleting the invite :(",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 duration: Duration(milliseconds: 1500),
               ),
             );
           } else if (!deleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: new Text("The invite couldn't be deleted"),
+                content: new Text(
+                  "The invite couldn't be deleted",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 duration: Duration(milliseconds: 1500),
               ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: new Text("Invite from ${teammate.displayName} deleted"),
+                content: new Text(
+                  "Invite from ${teammate.displayName} deleted",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 duration: Duration(milliseconds: 1500),
               ),
             );
@@ -649,14 +664,24 @@ class _TeamState extends State<Team> {
                         if (accepted == null || !accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: new Text("Error accepting invite from ${teammate.displayName} :("),
+                              content: new Text(
+                                "Error accepting invite from ${teammate.displayName} :(",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
                               duration: Duration(milliseconds: 2500),
                             ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: new Text("Invite from ${teammate.displayName} accepted!"),
+                              content: new Text(
+                                "Invite from ${teammate.displayName} accepted!",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
                               duration: Duration(milliseconds: 1500),
                             ),
                           );

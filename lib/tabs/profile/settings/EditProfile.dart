@@ -59,7 +59,12 @@ class _EditProfileState extends State<EditProfile> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Avatar saved!'),
+        content: Text(
+          'Avatar saved!',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
       ),
     );
     navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
