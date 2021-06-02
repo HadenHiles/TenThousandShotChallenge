@@ -204,14 +204,24 @@ class _TeammateState extends State<Teammate> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     duration: Duration(milliseconds: 2500),
-                                    content: Text('${_userTeammate.displayName} was removed from your team.'),
+                                    content: Text(
+                                      '${_userTeammate.displayName} was removed from your team.',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     duration: Duration(milliseconds: 4000),
-                                    content: Text('There was an error removing teammate :('),
+                                    content: Text(
+                                      'There was an error removing teammate :(',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 );
 

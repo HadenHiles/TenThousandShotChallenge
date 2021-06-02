@@ -114,7 +114,12 @@ class _AddTeammateState extends State<AddTeammate> {
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!"),
+                                    content: Text(
+                                      UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                     duration: Duration(seconds: 4),
                                   ),
                                 );
@@ -127,7 +132,12 @@ class _AddTeammateState extends State<AddTeammate> {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text("Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :("),
+                                    content: Text(
+                                      "Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :(",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                     duration: Duration(seconds: 4),
                                   ),
                                 );
@@ -269,7 +279,12 @@ class _AddTeammateState extends State<AddTeammate> {
                                   scanBarcodeNormal().then((success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("You are now teammates!"),
+                                        content: Text(
+                                          "You are now teammates!",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                         duration: Duration(milliseconds: 2500),
                                       ),
                                     );
@@ -283,7 +298,12 @@ class _AddTeammateState extends State<AddTeammate> {
                                   }).onError((error, stackTrace) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("There was an error scanning your teammates QR code :("),
+                                        content: Text(
+                                          "There was an error scanning your teammates QR code :(",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                         duration: Duration(milliseconds: 4000),
                                       ),
                                     );

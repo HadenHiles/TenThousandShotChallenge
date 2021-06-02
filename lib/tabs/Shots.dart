@@ -456,14 +456,24 @@ class _ShotsState extends State<Shots> {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                             duration: Duration(milliseconds: 1200),
-                                                            content: Text('Challenge restarted!'),
+                                                            content: Text(
+                                                              'Challenge restarted!',
+                                                              style: TextStyle(
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
                                                           ),
                                                         );
                                                       } else {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                             duration: Duration(milliseconds: 1200),
-                                                            content: Text('There was an error restarting the challenge :('),
+                                                            content: Text(
+                                                              'There was an error restarting the challenge :(',
+                                                              style: TextStyle(
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
                                                           ),
                                                         );
                                                       }

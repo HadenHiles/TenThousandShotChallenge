@@ -27,8 +27,7 @@ class _ProfileState extends State<Profile> {
 
   final GlobalKey _avatarMenuKey = new GlobalKey();
 
-  UserProfile userProfile =
-      UserProfile('', '', FirebaseAuth.instance.currentUser.photoURL, true, '');
+  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser.photoURL, true, '');
   ScrollController sessionsController;
   DocumentSnapshot _lastVisible;
   bool _isLoading = true;
@@ -38,11 +37,7 @@ class _ProfileState extends State<Profile> {
 
   @override
   void initState() {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get()
-        .then((uDoc) {
+    FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
       userProfile = UserProfile.fromSnapshot(uDoc);
     });
 
@@ -56,13 +51,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _getAttempts() async {
-    await FirebaseFirestore.instance
-        .collection('iterations')
-        .doc(user.uid)
-        .collection('iterations')
-        .orderBy('start_date', descending: false)
-        .get()
-        .then((snapshot) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(
@@ -89,20 +78,9 @@ class _ProfileState extends State<Profile> {
     await new Future.delayed(new Duration(milliseconds: 500));
 
     if (_lastVisible == null) {
-      await FirebaseFirestore.instance
-          .collection('iterations')
-          .doc(user.uid)
-          .collection('iterations')
-          .doc(_selectedIterationId)
-          .get()
-          .then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.reference
-            .collection('sessions')
-            .orderBy('date', descending: true)
-            .limit(5)
-            .get()
-            .then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(5).get().then((sSnap) {
           sSnap.docs.forEach((s) {
             sessions.add(s);
           });
@@ -124,21 +102,9 @@ class _ProfileState extends State<Profile> {
         });
       });
     } else {
-      await FirebaseFirestore.instance
-          .collection('iterations')
-          .doc(user.uid)
-          .collection('iterations')
-          .doc(_selectedIterationId)
-          .get()
-          .then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.reference
-            .collection('sessions')
-            .orderBy('date', descending: true)
-            .startAfter([_lastVisible['date']])
-            .limit(5)
-            .get()
-            .then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(5).get().then((sSnap) {
               sSnap.docs.forEach((s) {
                 sessions.add(s);
               });
@@ -188,23 +154,18 @@ class _ProfileState extends State<Profile> {
                               itemBuilder: (_) => <PopupMenuItem<String>>[
                                 new PopupMenuItem<String>(
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Change Avatar".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                       Icon(
                                         Icons.edit,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                       ),
                                     ],
                                   ),
@@ -212,23 +173,18 @@ class _ProfileState extends State<Profile> {
                                 ),
                                 new PopupMenuItem<String>(
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Show QR Code".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                       Icon(
                                         Icons.qr_code_2_rounded,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                       ),
                                     ],
                                   ),
@@ -237,8 +193,7 @@ class _ProfileState extends State<Profile> {
                               ],
                               onSelected: (value) {
                                 if (value == 'edit') {
-                                  navigatorKey.currentState.push(
-                                      MaterialPageRoute(builder: (context) {
+                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
                                     return EditProfile();
                                   }));
                                 } else if (value == 'qr_code') {
@@ -257,8 +212,7 @@ class _ProfileState extends State<Profile> {
                                 onLongPress: () {
                                   Feedback.forLongPress(context);
 
-                                  navigatorKey.currentState.push(
-                                      MaterialPageRoute(builder: (context) {
+                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
                                     return EditProfile();
                                   }));
                                 },
@@ -271,14 +225,7 @@ class _ProfileState extends State<Profile> {
                                   height: 60,
                                   width: 60,
                                   child: UserAvatar(
-                                    user: UserProfile(
-                                        user.displayName,
-                                        user.email,
-                                        userProfile != null
-                                            ? userProfile.photoUrl
-                                            : user.photoURL,
-                                        true,
-                                        preferences.fcmToken),
+                                    user: UserProfile(user.displayName, user.email, userProfile != null ? userProfile.photoUrl : user.photoURL, true, preferences.fcmToken),
                                     backgroundColor: Colors.transparent,
                                   ),
                                 ),
@@ -298,10 +245,7 @@ class _ProfileState extends State<Profile> {
                         width: 190,
                         child: StreamBuilder<DocumentSnapshot>(
                           // ignore: deprecated_member_use
-                          stream: FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(user.uid)
-                              .snapshots(),
+                          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData)
                               return Column(
@@ -319,20 +263,15 @@ class _ProfileState extends State<Profile> {
                                 ],
                               );
 
-                            UserProfile userProfile =
-                                UserProfile.fromSnapshot(snapshot.data);
+                            UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
 
                             return AutoSizeText(
-                              userProfile.displayName != null &&
-                                      userProfile.displayName.isNotEmpty
-                                  ? userProfile.displayName
-                                  : user.displayName,
+                              userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
                               maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context).textTheme.bodyText1.color,
                               ),
                             );
                           },
@@ -340,13 +279,8 @@ class _ProfileState extends State<Profile> {
                       ),
                       Container(
                         child: StreamBuilder(
-                            stream: FirebaseFirestore.instance
-                                .collection('iterations')
-                                .doc(user.uid)
-                                .collection('iterations')
-                                .snapshots(),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<QuerySnapshot> snapshot) {
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
                                   child: SizedBox(
@@ -366,8 +300,7 @@ class _ProfileState extends State<Profile> {
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontFamily: 'NovecentoSans',
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 );
                               }
@@ -375,13 +308,8 @@ class _ProfileState extends State<Profile> {
                       ),
                       Container(
                         child: StreamBuilder(
-                            stream: FirebaseFirestore.instance
-                                .collection('iterations')
-                                .doc(user.uid)
-                                .collection('iterations')
-                                .snapshots(),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<QuerySnapshot> snapshot) {
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
                                   child: SizedBox(
@@ -393,20 +321,16 @@ class _ProfileState extends State<Profile> {
                               } else {
                                 Duration totalDuration = Duration();
                                 snapshot.data.docs.forEach((doc) {
-                                  totalDuration +=
-                                      Iteration.fromSnapshot(doc).totalDuration;
+                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration;
                                 });
 
                                 return totalDuration > Duration()
                                     ? Text(
-                                        "IN " +
-                                            printDuration(totalDuration, true),
+                                        "IN " + printDuration(totalDuration, true),
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       )
                                     : Container();
@@ -433,11 +357,7 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('iterations')
-                          .doc(user.uid)
-                          .collection('iterations')
-                          .snapshots(),
+                      stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return Text(
@@ -637,18 +557,14 @@ class _ProfileState extends State<Profile> {
                 padding: EdgeInsets.only(
                   top: 0,
                   right: 0,
-                  bottom: !sessionService.isRunning
-                      ? AppBar().preferredSize.height
-                      : AppBar().preferredSize.height + 65,
+                  bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
                   left: 0,
                 ),
                 itemCount: _sessions.length + 1,
                 itemBuilder: (_, int index) {
                   if (index < _sessions.length) {
                     final DocumentSnapshot document = _sessions[index];
-                    return _buildSessionItem(
-                        ShootingSession.fromSnapshot(document),
-                        index % 2 == 0 ? true : false);
+                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
                   }
                   return Container(
                     margin: EdgeInsets.only(top: 9, bottom: 35),
@@ -661,18 +577,14 @@ class _ProfileState extends State<Profile> {
                             ? SizedBox(
                                 height: 25,
                                 width: 25,
-                                child: CircularProgressIndicator(
-                                    color: Theme.of(context).primaryColor),
+                                child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                               )
                             : _sessions.length < 1
                                 ? Text(
-                                    "You don't have any sessions yet"
-                                        .toUpperCase(),
+                                    "You don't have any sessions yet".toUpperCase(),
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 16,
                                     ),
                                   )
@@ -702,8 +614,7 @@ class _ProfileState extends State<Profile> {
 
   void _scrollListener() {
     if (!_isLoading) {
-      if (sessionsController.position.pixels ==
-          sessionsController.position.maxScrollExtent) {
+      if (sessionsController.position.pixels == sessionsController.position.maxScrollExtent) {
         setState(() => _isLoading = true);
         _loadHistory();
       }
@@ -712,8 +623,7 @@ class _ProfileState extends State<Profile> {
 
   Widget _buildSessionItem(ShootingSession s, bool showBackground) {
     return AbsorbPointer(
-      absorbing: _selectedIterationId !=
-          _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
+      absorbing: _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
       child: Dismissible(
         key: UniqueKey(),
         onDismissed: (direction) {
@@ -748,15 +658,24 @@ class _ProfileState extends State<Profile> {
                 if (deleted == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          new Text("There was an error deleting the session"),
+                      content: new Text(
+                        "There was an error deleting the session",
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
                       duration: Duration(milliseconds: 1500),
                     ),
                   );
                 } else if (!deleted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: new Text("Sorry this session can't be deleted"),
+                      content: new Text(
+                        "Sorry this session can't be deleted",
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
                       duration: Duration(milliseconds: 1500),
                     ),
                   );
@@ -859,9 +778,7 @@ class _ProfileState extends State<Profile> {
                     onPressed: () => Navigator.of(context).pop(true),
                     child: Text(
                       "Delete".toUpperCase(),
-                      style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          color: Theme.of(context).primaryColor),
+                      style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                     ),
                   ),
                 ],
@@ -900,9 +817,7 @@ class _ProfileState extends State<Profile> {
         child: Container(
           padding: EdgeInsets.only(top: 5, bottom: 15),
           decoration: BoxDecoration(
-            color: showBackground
-                ? Theme.of(context).cardTheme.color
-                : Colors.transparent,
+            color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -1075,9 +990,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "W",
                                         style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -1100,9 +1013,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "SN",
                                         style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -1125,9 +1036,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "B",
                                         style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
@@ -1150,9 +1059,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "SL",
                                         style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 16,
                                           fontFamily: 'NovecentoSans',
                                         ),
