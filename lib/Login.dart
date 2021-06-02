@@ -783,7 +783,7 @@ class _LoginState extends State<Login> {
     } else if (provider == 'apple') {
       signInWithApple().then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
+        await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
           UserProfile user = UserProfile.fromSnapshot(u);
 
           // Update/add the user's display name to firestore
