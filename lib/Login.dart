@@ -430,7 +430,7 @@ class _LoginState extends State<Login> {
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                                 SnackBar(
                                                                                   content: Text(
-                                                                                    "Reset email link sent to ${_forgotPasswordEmail.text.toString()}", 
+                                                                                    "Reset email link sent to ${_forgotPasswordEmail.text.toString()}",
                                                                                     style: TextStyle(
                                                                                       color: Colors.white,
                                                                                     ),
@@ -732,20 +732,26 @@ class _LoginState extends State<Login> {
 
   signIn(BuildContext context, AuthAttempt authAttempt, Function error) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password).then((credential) {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password).then((credential) async {
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) async {
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        await uDoc.get().then((u) async {
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          UserProfile user = UserProfile.fromSnapshot(u);
-          u.reference.update({
-            'display_name_lowercase': UserProfile.fromSnapshot(u).displayName.toLowerCase() ?? FirebaseAuth.instance.currentUser.email.toLowerCase(),
-            'display_name': UserProfile.fromSnapshot(u).displayName ?? FirebaseAuth.instance.currentUser.email,
-            'email': FirebaseAuth.instance.currentUser.email,
-            'public': user.public ?? true,
-            'fcm_token': prefs.getString('fcm_token'),
-          }).then((value) => null);
+          if (u.exists) {
+            u.reference.update({
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => null);
+          } else {
+            uDoc.set({
+              'display_name_lowercase': FirebaseAuth.instance.currentUser.email.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser.email,
+              'email': FirebaseAuth.instance.currentUser.email,
+              'public': true,
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => null);
+          }
         });
 
         bootstrap();
@@ -775,19 +781,24 @@ class _LoginState extends State<Login> {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
-          UserProfile user = UserProfile.fromSnapshot(u);
-          String photoUrl = user.photoUrl;
-
-          // Update/add the user's display name to firestore
-          FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
-            'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
-            'display_name': FirebaseAuth.instance.currentUser.displayName,
-            'email': FirebaseAuth.instance.currentUser.email,
-            'photo_url': photoUrl ?? FirebaseAuth.instance.currentUser.photoURL,
-            'public': user.public ?? true,
-            'fcm_token': prefs.getString('fcm_token'),
-          }).then((value) => () {});
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        await uDoc.get().then((u) {
+          if (u.exists) {
+            // Update/add the user's display name to firestore
+            u.reference.update({
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => () {});
+          } else {
+            // Update/add the user's display name to firestore
+            uDoc.set({
+              'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser.displayName,
+              'email': FirebaseAuth.instance.currentUser.email,
+              'photo_url': FirebaseAuth.instance.currentUser.photoURL,
+              'public': true,
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => () {});
+          }
         });
 
         bootstrap();
@@ -809,17 +820,24 @@ class _LoginState extends State<Login> {
     } else if (provider == 'apple') {
       signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
-          UserProfile user = UserProfile.fromSnapshot(u);
-
-          // Update/add the user's display name to firestore
-          FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
-            'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
-            'display_name': FirebaseAuth.instance.currentUser.displayName,
-            'email': FirebaseAuth.instance.currentUser.email,
-            'public': user.public ?? true,
-            'fcm_token': prefs.getString('fcm_token'),
-          }).then((value) => () {});
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        await uDoc.get().then((u) {
+          if (u.exists) {
+            // Update/add the user's display name to firestore
+            u.reference.update({
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => () {});
+          } else {
+            // Update/add the user's display name to firestore
+            uDoc.set({
+              'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser.displayName,
+              'email': FirebaseAuth.instance.currentUser.email,
+              'photo_url': FirebaseAuth.instance.currentUser.photoURL,
+              'public': true,
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => () {});
+          }
         });
 
         bootstrap();
