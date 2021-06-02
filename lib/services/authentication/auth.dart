@@ -23,7 +23,7 @@ Future<UserCredential> signInWithGoogle() async {
   return await auth.signInWithCredential(credential);
 }
 
-Future<User> signInWithApple({List<Scope> scopes = const []}) async {
+Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
   // 1. perform the sign-in request
   final result = await AppleSignIn.performRequests([AppleIdRequest(requestedScopes: scopes)]);
   // 2. check the result
@@ -35,14 +35,12 @@ Future<User> signInWithApple({List<Scope> scopes = const []}) async {
         idToken: String.fromCharCodes(appleIdCredential.identityToken),
         accessToken: String.fromCharCodes(appleIdCredential.authorizationCode),
       );
-      final authResult = await auth.signInWithCredential(credential);
-      final firebaseUser = authResult.user;
-      if (scopes.contains(Scope.fullName)) {
-        final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
-        await firebaseUser.updateProfile(displayName: displayName);
-        auth.currentUser.reload();
-      }
-      return firebaseUser;
+      return await auth.signInWithCredential(credential).then((authResult) {
+        if (scopes.contains(Scope.fullName)) {
+          final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
+          await authResult.user.updateProfile(displayName: displayName);
+        }
+      );
     case AuthorizationStatus.error:
       throw PlatformException(
         code: 'ERROR_AUTHORIZATION_DENIED',
