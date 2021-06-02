@@ -102,7 +102,7 @@ class _LoginState extends State<Login> {
                                 content: Text(
                                   error,
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 duration: Duration(seconds: 10),
@@ -139,7 +139,7 @@ class _LoginState extends State<Login> {
                                         content: Text(
                                           error,
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Colors.white,
                                           ),
                                         ),
                                         duration: Duration(seconds: 10),
@@ -331,7 +331,7 @@ class _LoginState extends State<Login> {
                                                             content: Text(
                                                               error,
                                                               style: TextStyle(
-                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                color: Colors.white,
                                                               ),
                                                             ),
                                                             duration: Duration(seconds: 10),
@@ -429,7 +429,12 @@ class _LoginState extends State<Login> {
 
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                                 SnackBar(
-                                                                                  content: Text("Reset email link sent to ${_forgotPasswordEmail.text.toString()}"),
+                                                                                  content: Text(
+                                                                                    "Reset email link sent to ${_forgotPasswordEmail.text.toString()}", 
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                    ),
+                                                                                  ),
                                                                                   duration: Duration(seconds: 10),
                                                                                   action: SnackBarAction(
                                                                                     label: "Dismiss",
@@ -638,7 +643,7 @@ class _LoginState extends State<Login> {
                                                                 content: Text(
                                                                   error,
                                                                   style: TextStyle(
-                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                    color: Colors.white,
                                                                   ),
                                                                 ),
                                                                 duration: Duration(seconds: 10),
