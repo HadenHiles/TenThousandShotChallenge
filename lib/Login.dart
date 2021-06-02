@@ -54,7 +54,7 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final bool appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false) as bool;
+    final appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false);
 
     //If user is signed in
     if (_signedIn) {
@@ -113,7 +113,7 @@ class _LoginState extends State<Login> {
                         },
                       ),
                     ),
-                    !appleSignInAvailable
+                    !appleSignInAvailable.isAvailable
                         ? Container()
                         : SizedBox(
                             height: 60,
