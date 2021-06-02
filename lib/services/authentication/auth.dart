@@ -35,12 +35,14 @@ Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
         idToken: String.fromCharCodes(appleIdCredential.identityToken),
         accessToken: String.fromCharCodes(appleIdCredential.authorizationCode),
       );
-      return await auth.signInWithCredential(credential).then((authResult) {
+      return await auth.signInWithCredential(credential).then((authResult) async {
         if (scopes.contains(Scope.fullName)) {
           final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
           await authResult.user.updateProfile(displayName: displayName);
         }
-      );
+
+        return authResult;
+      });
     case AuthorizationStatus.error:
       throw PlatformException(
         code: 'ERROR_AUTHORIZATION_DENIED',
