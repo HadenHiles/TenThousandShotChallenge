@@ -1,3 +1,4 @@
+import 'package:apple_sign_in/scope.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -781,7 +782,7 @@ class _LoginState extends State<Login> {
         await error(message);
       });
     } else if (provider == 'apple') {
-      signInWithApple().then((appleSignInAccount) async {
+      signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).get().then((u) {
           UserProfile user = UserProfile.fromSnapshot(u);
