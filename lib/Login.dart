@@ -115,32 +115,35 @@ class _LoginState extends State<Login> {
                     ),
                     !appleSignInAvailable.isAvailable
                         ? Container()
-                        : SizedBox(
-                            height: 60,
-                            width: 360,
-                            child: SignInButton(
-                              Buttons.AppleDark,
-                              onPressed: () {
-                                socialSignIn(context, 'apple', (error) {
-                                  // ignore: deprecated_member_use
-                                  // ignore: deprecated_member_use
-                                  _scaffoldKey.currentState.hideCurrentSnackBar();
-                                  // ignore: deprecated_member_use
-                                  _scaffoldKey.currentState.showSnackBar(
-                                    SnackBar(
-                                      content: Text(error),
-                                      duration: Duration(seconds: 10),
-                                      action: SnackBarAction(
-                                        label: "Dismiss",
-                                        onPressed: () {
-                                          // ignore: deprecated_member_use
-                                          _scaffoldKey.currentState.hideCurrentSnackBar();
-                                        },
+                        : Container(
+                            margin: EdgeInsets.only(top: 10),
+                            child: SizedBox(
+                              height: 60,
+                              width: 360,
+                              child: SignInButton(
+                                Buttons.AppleDark,
+                                onPressed: () {
+                                  socialSignIn(context, 'apple', (error) {
+                                    // ignore: deprecated_member_use
+                                    // ignore: deprecated_member_use
+                                    _scaffoldKey.currentState.hideCurrentSnackBar();
+                                    // ignore: deprecated_member_use
+                                    _scaffoldKey.currentState.showSnackBar(
+                                      SnackBar(
+                                        content: Text(error),
+                                        duration: Duration(seconds: 10),
+                                        action: SnackBarAction(
+                                          label: "Dismiss",
+                                          onPressed: () {
+                                            // ignore: deprecated_member_use
+                                            _scaffoldKey.currentState.hideCurrentSnackBar();
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                });
-                              },
+                                    );
+                                  });
+                                },
+                              ),
                             ),
                           ),
                     Divider(
