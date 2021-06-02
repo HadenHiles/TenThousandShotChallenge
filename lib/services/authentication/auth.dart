@@ -40,6 +40,7 @@ Future<User> signInWithApple({List<Scope> scopes = const []}) async {
       if (scopes.contains(Scope.fullName)) {
         final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
         await firebaseUser.updateProfile(displayName: displayName);
+        auth.currentUser.reload();
       }
       return firebaseUser;
     case AuthorizationStatus.error:
