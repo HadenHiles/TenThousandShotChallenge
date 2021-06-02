@@ -5,6 +5,8 @@ class HomeTheme {
 
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
+    primaryColorBrightness: Brightness.dark,
+    accentColorBrightness: Brightness.dark,
     backgroundColor: Colors.white,
     primaryColor: Color(0xffCC3333),
     accentColor: Color(0xffB82e2e),
@@ -15,6 +17,7 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
+    toggleableActiveColor: Color(0xffCC3333),
     buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
       brightness: Brightness.light,
@@ -67,6 +70,8 @@ class HomeTheme {
 
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
+    primaryColorBrightness: Brightness.dark,
+    accentColorBrightness: Brightness.dark,
     backgroundColor: Color(0xff222222),
     primaryColor: Color(0xffCC3333),
     accentColor: Color(0xffB82e2e),
@@ -77,8 +82,9 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
+    toggleableActiveColor: Color(0xffCC3333),
     buttonColor: Color(0xffCC3333),
-    colorScheme: ColorScheme.light(
+    colorScheme: ColorScheme.dark(
       brightness: Brightness.dark,
       primary: Color(0xff1A1A1A),
       onPrimary: Color.fromRGBO(255, 255, 255, 0.75),

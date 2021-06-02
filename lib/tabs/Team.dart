@@ -136,7 +136,7 @@ class _TeamState extends State<Team> {
                   Tab(
                     icon: Icon(
                       Icons.people,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Colors.white70,
                     ),
                     iconMargin: EdgeInsets.all(0),
                     text: "Teammates".toUpperCase(),
@@ -144,7 +144,7 @@ class _TeamState extends State<Team> {
                   Tab(
                     icon: Icon(
                       Icons.person_add,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Colors.white70,
                     ),
                     iconMargin: EdgeInsets.all(0),
                     text: "Invites".toUpperCase(),
