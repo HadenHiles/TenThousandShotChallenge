@@ -4,6 +4,7 @@ import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/Shop.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
@@ -80,6 +81,9 @@ class _NavigationState extends State<Navigation> {
         ),
       ],
       body: Team(),
+    ),
+    NavigationTab(
+      body: Shop(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
@@ -278,33 +282,35 @@ class _NavigationState extends State<Navigation> {
           ),
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              return [
-                SliverAppBar(
-                  collapsedHeight: 65,
-                  expandedHeight: 125,
-                  automaticallyImplyLeading: false,
-                  backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                  iconTheme: Theme.of(context).iconTheme,
-                  actionsIconTheme: Theme.of(context).iconTheme,
-                  floating: true,
-                  pinned: true,
-                  flexibleSpace: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: HomeTheme.darkTheme.colorScheme.primaryVariant,
-                    ),
-                    child: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.parallax,
-                      centerTitle: true,
-                      title: _title,
-                      background: Container(
-                        color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+              return _selectedIndex == 2
+                  ? []
+                  : [
+                      SliverAppBar(
+                        collapsedHeight: 65,
+                        expandedHeight: 125,
+                        automaticallyImplyLeading: false,
+                        backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                        iconTheme: Theme.of(context).iconTheme,
+                        actionsIconTheme: Theme.of(context).iconTheme,
+                        floating: true,
+                        pinned: true,
+                        flexibleSpace: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                          ),
+                          child: FlexibleSpaceBar(
+                            collapseMode: CollapseMode.parallax,
+                            centerTitle: true,
+                            title: _title,
+                            background: Container(
+                              color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                            ),
+                          ),
+                        ),
+                        leading: _leading,
+                        actions: _actions,
                       ),
-                    ),
-                  ),
-                  leading: _leading,
-                  actions: _actions,
-                ),
-              ];
+                    ];
             },
             body: Container(
               padding: EdgeInsets.only(bottom: 0),
@@ -325,6 +331,10 @@ class _NavigationState extends State<Navigation> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
                 label: 'Team',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.shopping_bag_outlined),
+                label: 'Shop',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
