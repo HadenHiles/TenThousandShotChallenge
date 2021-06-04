@@ -38,7 +38,7 @@ Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
       return await auth.signInWithCredential(credential).then((authResult) async {
         if (scopes.contains(Scope.fullName)) {
           final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
-          await authResult.user.updateProfile(displayName: displayName);
+          await authResult.user.updateDisplayName(displayName);
           authResult.user.reload();
         }
 

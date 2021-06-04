@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:tenthousandshotchallenge/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -71,8 +72,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState
-                  .push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
                 return AddTeammate();
               }));
             },
@@ -106,8 +106,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState
-                  .push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
                 return ProfileSettings();
               }));
             },
@@ -139,6 +138,12 @@ class _NavigationState extends State<Navigation> {
 
   @override
   void initState() {
+    try {
+      versionCheck(context);
+    } catch (e) {
+      print(e);
+    }
+
     _loadPreferences();
 
     setState(() {
@@ -155,24 +160,19 @@ class _NavigationState extends State<Navigation> {
   // Load shared preferences
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool darkMode =
-        prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
+    bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
     String fcmToken = prefs.getString('fcm_token');
 
     // Potentially update user's FCM Token if stale
     if (preferences.fcmToken != fcmToken) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'fcm_token': fcmToken}).then((_) => null);
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'fcm_token': fcmToken}).then((_) => null);
     }
 
     // Update the preferences reference with the latest settings
     preferences = Preferences(darkMode, puckCount, fcmToken);
 
-    Provider.of<PreferencesStateNotifier>(context, listen: false)
-        .updateSettings(preferences);
+    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
   }
 
   @override
@@ -183,8 +183,7 @@ class _NavigationState extends State<Navigation> {
         body: SlidingUpPanel(
           backdropEnabled: true,
           controller: sessionPanelController,
-          maxHeight: MediaQuery.of(context).size.height -
-              MediaQuery.of(context).padding.top,
+          maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           minHeight: sessionService.isRunning ? 65 : 0,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(10),
@@ -219,16 +218,14 @@ class _NavigationState extends State<Navigation> {
                         color: Theme.of(context).primaryColor,
                       ),
                       child: ListTile(
-                        tileColor: Theme.of(context)
-                            .primaryColor, // This doesn't work in latest flutter upgrade
+                        tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               printWeekday(DateTime.now()) + " Session",
                               style: TextStyle(
-                                color:
-                                    Theme.of(context).colorScheme.onSecondary,
+                                color: Theme.of(context).colorScheme.onSecondary,
                                 fontFamily: "NovecentoSans",
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
@@ -238,12 +235,9 @@ class _NavigationState extends State<Navigation> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
                                 Text(
-                                  printDuration(
-                                      sessionService.currentDuration, true),
+                                  printDuration(sessionService.currentDuration, true),
                                   style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSecondary,
+                                    color: Theme.of(context).colorScheme.onSecondary,
                                     fontFamily: "NovecentoSans",
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -255,14 +249,11 @@ class _NavigationState extends State<Navigation> {
                         ),
                         trailing: InkWell(
                           child: Icon(
-                            _sessionPanelState == PanelState.CLOSED
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
+                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                             color: Theme.of(context).colorScheme.onSecondary,
                           ),
                         ),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                         onTap: () {
                           Feedback.forTap(context);
                           if (sessionPanelController.isPanelClosed) {
@@ -286,8 +277,7 @@ class _NavigationState extends State<Navigation> {
             ),
           ),
           body: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -324,8 +314,7 @@ class _NavigationState extends State<Navigation> {
         ),
         bottomNavigationBar: SizedOverflowBox(
           alignment: AlignmentDirectional.topCenter,
-          size: Size.fromHeight(AppBar().preferredSize.height -
-              (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
+          size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
           child: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const <BottomNavigationBarItem>[
