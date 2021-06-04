@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const APP_URL = 'https://hyperurl.co/tenthousandshots';
+const APP_URL = 'http://hyperurl.co/tenthousandshots';
 
 versionCheck(context) async {
   //Get Current installed version of app
