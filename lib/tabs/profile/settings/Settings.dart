@@ -43,7 +43,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snapshot) {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
-        _publicProfile = u.public;
+        _publicProfile = u.public ?? false;
       });
     });
   }
