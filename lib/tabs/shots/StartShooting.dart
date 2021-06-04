@@ -149,10 +149,11 @@ class _StartShootingState extends State<StartShooting> {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
+                          backgroundColor: Theme.of(context).cardTheme.color,
                           content: new Text(
                             '# of pucks updated successfully!',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                           duration: Duration(milliseconds: 1200),
@@ -377,10 +378,11 @@ class _StartShootingState extends State<StartShooting> {
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
+                                      backgroundColor: Theme.of(context).cardTheme.color,
                                       content: new Text(
                                         'Shooting session saved!',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                       duration: Duration(milliseconds: 1200),
@@ -390,10 +392,11 @@ class _StartShootingState extends State<StartShooting> {
                                   print(error);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
+                                      backgroundColor: Theme.of(context).cardTheme.color,
                                       content: new Text(
                                         'There was an error saving your shooting session :(',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                       duration: Duration(milliseconds: 1500),
@@ -453,11 +456,12 @@ class _StartShootingState extends State<StartShooting> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              backgroundColor: Theme.of(context).cardTheme.color,
               duration: Duration(milliseconds: 800),
               content: Text(
                 "${s.type.toUpperCase()} ${s.count} deleted",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
             ),

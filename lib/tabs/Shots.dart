@@ -455,11 +455,12 @@ class _ShotsState extends State<Shots> {
                                                       if (success) {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
+                                                            backgroundColor: Theme.of(context).cardTheme.color,
                                                             duration: Duration(milliseconds: 1200),
                                                             content: Text(
                                                               'Challenge restarted!',
                                                               style: TextStyle(
-                                                                color: Colors.white,
+                                                                color: Theme.of(context).colorScheme.onPrimary,
                                                               ),
                                                             ),
                                                           ),
@@ -467,11 +468,12 @@ class _ShotsState extends State<Shots> {
                                                       } else {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
+                                                            backgroundColor: Theme.of(context).cardTheme.color,
                                                             duration: Duration(milliseconds: 1200),
                                                             content: Text(
                                                               'There was an error restarting the challenge :(',
                                                               style: TextStyle(
-                                                                color: Colors.white,
+                                                                color: Theme.of(context).colorScheme.onPrimary,
                                                               ),
                                                             ),
                                                           ),
