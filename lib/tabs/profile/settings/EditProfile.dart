@@ -59,10 +59,11 @@ class _EditProfileState extends State<EditProfile> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        backgroundColor: Theme.of(context).cardTheme.color,
         content: Text(
           'Avatar saved!',
           style: TextStyle(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
       ),

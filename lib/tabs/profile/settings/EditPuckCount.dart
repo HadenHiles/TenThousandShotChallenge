@@ -96,13 +96,14 @@ class _EditPuckCountState extends State<EditPuckCount> {
                           ),
                         );
 
-                        new SnackBar(
+                        SnackBar(
+                            backgroundColor: Theme.of(context).cardTheme.color,
                             content: new Text(
-                          'Puck count was saved successfully!',
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ));
+                              'Puck count was saved successfully!',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ));
                         navigatorKey.currentState.pop();
                       }
                     },

@@ -631,10 +631,11 @@ class _ProfileState extends State<Profile> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              backgroundColor: Theme.of(context).cardTheme.color,
               content: Text(
                 '${s.total} shots deleted!',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
               duration: Duration(seconds: 4),
@@ -658,10 +659,11 @@ class _ProfileState extends State<Profile> {
                 if (deleted == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
+                      backgroundColor: Theme.of(context).cardTheme.color,
                       content: new Text(
                         "There was an error deleting the session",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                       duration: Duration(milliseconds: 1500),
@@ -670,10 +672,11 @@ class _ProfileState extends State<Profile> {
                 } else if (!deleted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
+                      backgroundColor: Theme.of(context).cardTheme.color,
                       content: new Text(
                         "Sorry this session can't be deleted",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                       duration: Duration(milliseconds: 1500),
