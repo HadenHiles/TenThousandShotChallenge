@@ -61,3 +61,20 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
         return null;
     });
 });
+
+// export const userSignUp = functions.auth.user().onCreate(async (user) => {
+//     var uDoc = admin.firestore().collection('users').doc(user.uid);
+//     await uDoc.get().then((u) => {
+//         if (!u.exists) {
+//         // Update/add the user's display name to firestore
+//         uDoc.set({
+//             'display_name_lowercase': user.displayName?.toLowerCase(),
+//             'display_name': user.displayName,
+//             'email': user.email,
+//             'photo_url': user.photoURL,
+//             'public': true,
+//             'fcm_token': null,
+//         });
+//         }
+//     });
+// });
