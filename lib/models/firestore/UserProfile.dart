@@ -16,7 +16,7 @@ class UserProfile {
         displayName = map['display_name'],
         email = map['email'],
         photoUrl = map['photo_url'],
-        public = map['public'] ?? true,
+        public = map['public'] ?? false,
         fcmToken = map['fcm_token'];
 
   Map<String, dynamic> toMap() {
@@ -25,7 +25,7 @@ class UserProfile {
       'display_name': displayName,
       'email': email,
       'photo_url': photoUrl,
-      'public': public ?? true,
+      'public': public ?? false,
       'fcm_token': fcmToken,
     };
   }
