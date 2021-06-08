@@ -4,7 +4,7 @@ import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/Shop.dart';
+import 'package:tenthousandshotchallenge/tabs/More.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
@@ -83,7 +83,8 @@ class _NavigationState extends State<Navigation> {
       body: Team(),
     ),
     NavigationTab(
-      body: Shop(),
+      title: NavigationTitle(title: "More".toUpperCase()),
+      body: More(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
@@ -333,8 +334,8 @@ class _NavigationState extends State<Navigation> {
                 label: 'Team',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.shopping_bag_outlined),
-                label: 'Shop',
+                icon: Icon(Icons.more_horiz),
+                label: 'More',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),

@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:global_configuration/global_configuration.dart';
 
 // Setup a navigation key so that we can navigate without context
 final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
@@ -37,7 +38,10 @@ void main() async {
   await Firebase.initializeApp();
   final appleSignInAvailable = await AppleSignInAvailable.check();
 
-  // Load app settings
+  // Load global app configurations
+  await GlobalConfiguration().loadFromAsset("youtube_settings");
+
+  // Load user preferences
   SharedPreferences prefs = await SharedPreferences.getInstance();
   preferences = Preferences(
     prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,

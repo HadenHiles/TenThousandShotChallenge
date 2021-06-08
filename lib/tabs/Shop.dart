@@ -51,7 +51,7 @@ class _ShopState extends State<Shop> {
                 gestureNavigationEnabled: true,
               ),
               onCreated: (_) {
-                Future.delayed(Duration(milliseconds: 1200)).then(
+                Future.delayed(Duration(milliseconds: 2000)).then(
                   (_) => setState(() {
                     _show = true;
                   }),
