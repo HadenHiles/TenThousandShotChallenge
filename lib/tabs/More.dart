@@ -52,7 +52,7 @@ class _MoreState extends State<More> {
     await getVideos(GlobalConfiguration().getValue("coach_jeremy_channel_id")).then((v) {
       setState(() {
         _coachJeremyVideos = v;
-        // _loadingCoachJeremyVideos = false;
+        _loadingCoachJeremyVideos = false;
       });
     });
 
@@ -65,7 +65,7 @@ class _MoreState extends State<More> {
     await getVideos(GlobalConfiguration().getValue("hth_channel_id")).then((v) {
       setState(() {
         _hthVideos = v;
-        // _loadingHthVideos = false;
+        _loadingHthVideos = false;
       });
     });
   }
