@@ -1,12 +1,17 @@
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:global_configuration/global_configuration.dart';
+import 'package:string_unescape/string_unescape.dart';
+import 'package:tenthousandshotchallenge/models/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class More extends StatefulWidget {
   More({Key key}) : super(key: key);
@@ -24,10 +29,15 @@ class _MoreState extends State<More> {
   String _hthPhoto = "";
   bool _loadingHthVideos = true;
   List<YouTubeVideo> _hthVideos = [];
+  bool _loadingMerch = true;
+  List<Merch> _merch = [];
+
+  WebViewController _tempWebController;
 
   @override
   void initState() {
     _loadYoutubeChannels();
+    _loadMerch();
 
     super.initState();
   }
@@ -42,7 +52,7 @@ class _MoreState extends State<More> {
     await getVideos(GlobalConfiguration().getValue("coach_jeremy_channel_id")).then((v) {
       setState(() {
         _coachJeremyVideos = v;
-        _loadingCoachJeremyVideos = false;
+        // _loadingCoachJeremyVideos = false;
       });
     });
 
@@ -55,10 +65,12 @@ class _MoreState extends State<More> {
     await getVideos(GlobalConfiguration().getValue("hth_channel_id")).then((v) {
       setState(() {
         _hthVideos = v;
-        _loadingHthVideos = false;
+        // _loadingHthVideos = false;
       });
     });
   }
+
+  Future<Null> _loadMerch() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -136,9 +148,11 @@ class _MoreState extends State<More> {
                                             clipBehavior: Clip.antiAlias,
                                             child: CircleAvatar(
                                               radius: 50,
-                                              backgroundImage: NetworkImage(
-                                                _coachJeremyPhoto,
-                                              ),
+                                              backgroundImage: _coachJeremyPhoto == null
+                                                  ? AssetImage("assets/images/avatar.png")
+                                                  : NetworkImage(
+                                                      _coachJeremyPhoto,
+                                                    ),
                                               backgroundColor: Theme.of(context).colorScheme.primary,
                                             ),
                                           ),
@@ -261,9 +275,11 @@ class _MoreState extends State<More> {
                                         clipBehavior: Clip.antiAlias,
                                         child: CircleAvatar(
                                           radius: 50,
-                                          backgroundImage: NetworkImage(
-                                            _hthPhoto,
-                                          ),
+                                          backgroundImage: _hthPhoto == null
+                                              ? AssetImage("assets/images/avatar.png")
+                                              : NetworkImage(
+                                                  _hthPhoto,
+                                                ),
                                           backgroundColor: Theme.of(context).colorScheme.primary,
                                         ),
                                       ),
@@ -361,8 +377,142 @@ class _MoreState extends State<More> {
                       ),
                     ],
                   ),
-                  Container(
-                    child: Text("Shop"),
+                  Column(
+                    children: [
+                      Container(
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      String merchLink = "https://merch.howtohockey.com";
+                                      await canLaunch(merchLink).then((can) {
+                                        launch(merchLink).catchError((err) {
+                                          print(err);
+                                        });
+                                      });
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        SizedBox(
+                                          width: 50,
+                                          height: 50,
+                                          child: FittedBox(
+                                            fit: BoxFit.cover,
+                                            clipBehavior: Clip.antiAlias,
+                                            child: CircleAvatar(
+                                              radius: 50,
+                                              backgroundImage: AssetImage("assets/images/avatar.png"),
+                                              backgroundColor: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 15,
+                                        ),
+                                        AutoSizeText(
+                                          "How To Hockey Merch".toUpperCase(),
+                                          maxLines: 2,
+                                          maxFontSize: 22,
+                                          style: TextStyle(
+                                            fontFamily: "NovecentoSans",
+                                            fontSize: 22,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () async {
+                                            String merchLink = "https://merch.howtohockey.com";
+                                            await canLaunch(merchLink).then((can) {
+                                              launch(merchLink).catchError((err) {
+                                                print(err);
+                                              });
+                                            });
+                                          },
+                                          icon: Icon(
+                                            FontAwesomeIcons.shoppingBag,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            _loadingMerch
+                                ? Container(
+                                    margin: EdgeInsets.symmetric(vertical: 25),
+                                    child: Column(
+                                      children: [
+                                        Center(
+                                          child: LinearProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(
+                                    height: 185.0,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: _coachJeremyVideos.length,
+                                      itemBuilder: (BuildContext context, int i) {
+                                        return GestureDetector(
+                                          onTap: () async {
+                                            String link = _merch[i].url;
+                                            await canLaunch(link).then((can) {
+                                              launch(link).catchError((err) {
+                                                print(err);
+                                              });
+                                            });
+                                          },
+                                          child: Card(
+                                            color: Theme.of(context).cardTheme.color,
+                                            elevation: 4,
+                                            child: Container(
+                                              width: 200.0,
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                children: [
+                                                  Image(
+                                                    image: _merch[i].image == null
+                                                        ? AssetImage("assets/images/avatar.png")
+                                                        : NetworkImage(
+                                                            _merch[i].image,
+                                                          ),
+                                                    width: 200,
+                                                  ),
+                                                  Container(
+                                                    padding: EdgeInsets.all(5),
+                                                    child: AutoSizeText(
+                                                      _merch[i].title,
+                                                      maxLines: 2,
+                                                      maxFontSize: 22,
+                                                      style: TextStyle(
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 22,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
