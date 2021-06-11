@@ -113,13 +113,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.0.1"
-  csslib:
-    dependency: transitive
-    description:
-      name: csslib
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.17.0"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -345,13 +338,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.10.0"
-  html:
-    dependency: "direct main"
-    description:
-      name: html
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.15.0"
   http:
     dependency: "direct main"
     description:
@@ -644,13 +630,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.0"
-  string_unescape:
-    dependency: "direct main"
-    description:
-      name: string_unescape
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.5.1"
   term_glyph:
     dependency: transitive
     description:
