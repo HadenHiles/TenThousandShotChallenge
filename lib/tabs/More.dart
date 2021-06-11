@@ -1,17 +1,13 @@
-import 'package:html/dom.dart' as dom;
-import 'package:html/parser.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:global_configuration/global_configuration.dart';
-import 'package:string_unescape/string_unescape.dart';
 import 'package:tenthousandshotchallenge/models/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class More extends StatefulWidget {
   More({Key key}) : super(key: key);
@@ -31,8 +27,6 @@ class _MoreState extends State<More> {
   List<YouTubeVideo> _hthVideos = [];
   bool _loadingMerch = true;
   List<Merch> _merch = [];
-
-  WebViewController _tempWebController;
 
   @override
   void initState() {
