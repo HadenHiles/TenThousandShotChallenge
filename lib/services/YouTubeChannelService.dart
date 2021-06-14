@@ -19,22 +19,27 @@ Future<String> getChannelThumbnail(String id) async {
 }
 
 Future<List<YouTubeVideo>> getVideos(String channelId) async {
-  final String apiKey = GlobalConfiguration().getValue("web_key");
+  final String apiKey = GlobalConfiguration().getValue("android_key");
   Uri uri = Uri.parse("https://www.googleapis.com/youtube/v3/search?key=$apiKey&channelId=$channelId&part=snippet,id&order=date&maxResults=20");
 
   return await http.get(uri).then((response) {
     final Map<String, dynamic> data = json.decode(response.body);
 
-    final List items = data["items"];
     List<YouTubeVideo> videos = [];
 
-    items.forEach((dynamic i) {
-      videos.add(YouTubeVideo(
-        i["id"]["videoId"],
-        i["snippet"]["title"],
-        i["snippet"]["thumbnails"]["medium"]["url"],
-      ));
-    });
+    if (data != null) {
+      final List items = data["items"];
+
+      if (items != null && items.length > 0) {
+        items.forEach((dynamic i) {
+          videos.add(YouTubeVideo(
+            i["id"]["videoId"],
+            i["snippet"]["title"],
+            i["snippet"]["thumbnails"]["medium"]["url"],
+          ));
+        });
+      }
+    }
 
     return videos;
   }).catchError((err) {
