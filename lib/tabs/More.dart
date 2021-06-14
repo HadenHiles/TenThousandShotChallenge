@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart' as dom;
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class More extends StatefulWidget {
   More({Key key}) : super(key: key);
@@ -29,6 +30,11 @@ class _MoreState extends State<More> {
   String _hthPhoto = "";
   bool _loadingHthVideos = true;
   List<YouTubeVideo> _hthVideos = [];
+
+  final PageController _learnPageController = PageController(initialPage: 0);
+  bool _loadingLearnVideos = true;
+  List<YouTubeVideo> _learnVideos = [];
+
   bool _loadingMerch = true;
   List<Merch> _merch = [];
 
@@ -42,6 +48,7 @@ class _MoreState extends State<More> {
   @override
   void initState() {
     _loadYoutubeChannels();
+    _loadLearningVideos();
     _loadMerch();
 
     super.initState();
@@ -75,6 +82,23 @@ class _MoreState extends State<More> {
     });
   }
 
+  Future<Null> _loadLearningVideos() async {
+    await FirebaseFirestore.instance.collection('learn_videos').orderBy('order', descending: false).get().then((snapshot) {
+      List<YouTubeVideo> videos = [];
+      if (snapshot.docs.isNotEmpty) {
+        snapshot.docs.forEach((vDoc) {
+          YouTubeVideo vid = YouTubeVideo.fromSnapshot(vDoc);
+          videos.add(vid);
+        });
+
+        setState(() {
+          _learnVideos = videos;
+          _loadingLearnVideos = false;
+        });
+      }
+    });
+  }
+
   Future<Null> _loadMerch() async {
     await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
       List<Merch> merch = [];
@@ -100,7 +124,7 @@ class _MoreState extends State<More> {
         left: 0,
       ),
       child: DefaultTabController(
-        length: 2,
+        length: 3,
         initialIndex: 0,
         child: Column(
           children: [
@@ -125,7 +149,15 @@ class _MoreState extends State<More> {
                   ),
                   Tab(
                     icon: Icon(
-                      Icons.shopping_bag_outlined,
+                      Icons.school_rounded,
+                      color: Colors.white70,
+                    ),
+                    iconMargin: EdgeInsets.all(0),
+                    text: "Learn".toUpperCase(),
+                  ),
+                  Tab(
+                    icon: Icon(
+                      Icons.shopping_bag_rounded,
                       color: Colors.white70,
                     ),
                     iconMargin: EdgeInsets.all(0),
@@ -208,7 +240,7 @@ class _MoreState extends State<More> {
                                 ),
                               ],
                             ),
-                            _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
+                            _loadingCoachJeremyVideos || _coachJeremyVideos == null || _coachJeremyVideos.length < 1
                                 ? Container(
                                     margin: EdgeInsets.symmetric(vertical: 25),
                                     child: Center(
@@ -386,6 +418,76 @@ class _MoreState extends State<More> {
                                               ),
                                             ),
                                           ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Container(
+                        child: Column(
+                          children: [
+                            _loadingLearnVideos || _learnVideos.length < 1
+                                ? Container(
+                                    margin: EdgeInsets.symmetric(vertical: 25),
+                                    child: Column(
+                                      children: [
+                                        Center(
+                                          child: LinearProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(
+                                    height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + AppBar().preferredSize.height + 60),
+                                    child: PageView.builder(
+                                      controller: _learnPageController,
+                                      scrollDirection: Axis.vertical,
+                                      itemCount: _learnVideos.length,
+                                      itemBuilder: (BuildContext context, int i) {
+                                        YoutubePlayerController _ytController = YoutubePlayerController(
+                                          initialVideoId: _learnVideos[i].id,
+                                          flags: YoutubePlayerFlags(
+                                            autoPlay: false,
+                                            mute: false,
+                                          ),
+                                        );
+
+                                        return Flex(
+                                          direction: Axis.vertical,
+                                          children: [
+                                            YoutubePlayerBuilder(
+                                              player: YoutubePlayer(
+                                                controller: _ytController,
+                                                aspectRatio: 16 / 9,
+                                                showVideoProgressIndicator: true,
+                                                progressIndicatorColor: Theme.of(context).primaryColor,
+                                                progressColors: ProgressBarColors(
+                                                  playedColor: Theme.of(context).primaryColor,
+                                                  handleColor: Theme.of(context).accentColor,
+                                                ),
+                                                actionsPadding: EdgeInsets.all(2),
+                                                liveUIColor: Theme.of(context).primaryColor,
+                                                onReady: () {
+                                                  // _ytController.addListener(listener);
+                                                },
+                                              ),
+                                              builder: (context, player) {
+                                                return Column(
+                                                  children: [
+                                                    player,
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ],
                                         );
                                       },
                                     ),
