@@ -77,6 +77,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                   child: IconButton(
                     icon: Icon(
                       Icons.check,
+                      color: Colors.green.shade600,
                       size: 28,
                     ),
                     onPressed: () async {
