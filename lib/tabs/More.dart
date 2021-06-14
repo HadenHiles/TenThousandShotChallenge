@@ -1,8 +1,9 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:global_configuration/global_configuration.dart';
-import 'package:tenthousandshotchallenge/models/Merch.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -64,7 +65,20 @@ class _MoreState extends State<More> {
     });
   }
 
-  Future<Null> _loadMerch() async {}
+  Future<Null> _loadMerch() async {
+    await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
+      List<Merch> merch = [];
+      snapshot.docs.forEach((mDoc) {
+        Merch product = Merch.fromSnapshot(mDoc);
+        merch.add(product);
+      });
+
+      setState(() {
+        _merch = merch;
+        _loadingMerch = false;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +198,7 @@ class _MoreState extends State<More> {
                                 ),
                               ],
                             ),
-                            _loadingCoachJeremyVideos
+                            _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
                                 ? Container(
                                     margin: EdgeInsets.symmetric(vertical: 25),
                                     child: Center(
@@ -309,7 +323,7 @@ class _MoreState extends State<More> {
                                 ),
                               ),
                             ),
-                            _loadingHthVideos
+                            _loadingHthVideos || _hthVideos.length < 1
                                 ? Container(
                                     margin: EdgeInsets.symmetric(vertical: 25),
                                     child: Center(
@@ -438,7 +452,7 @@ class _MoreState extends State<More> {
                                 ),
                               ],
                             ),
-                            _loadingMerch
+                            _loadingMerch || _merch.length < 1
                                 ? Container(
                                     margin: EdgeInsets.symmetric(vertical: 25),
                                     child: Column(
@@ -452,10 +466,10 @@ class _MoreState extends State<More> {
                                     ),
                                   )
                                 : Container(
-                                    height: 185.0,
+                                    height: 200.0,
                                     child: ListView.builder(
                                       scrollDirection: Axis.horizontal,
-                                      itemCount: _coachJeremyVideos.length,
+                                      itemCount: _merch.length,
                                       itemBuilder: (BuildContext context, int i) {
                                         return GestureDetector(
                                           onTap: () async {
@@ -470,7 +484,7 @@ class _MoreState extends State<More> {
                                             color: Theme.of(context).cardTheme.color,
                                             elevation: 4,
                                             child: Container(
-                                              width: 200.0,
+                                              width: 150.0,
                                               child: Column(
                                                 mainAxisAlignment: MainAxisAlignment.start,
                                                 children: [
@@ -480,7 +494,7 @@ class _MoreState extends State<More> {
                                                         : NetworkImage(
                                                             _merch[i].image,
                                                           ),
-                                                    width: 200,
+                                                    width: 150,
                                                   ),
                                                   Container(
                                                     padding: EdgeInsets.all(5),
@@ -490,7 +504,7 @@ class _MoreState extends State<More> {
                                                       maxFontSize: 22,
                                                       style: TextStyle(
                                                         fontFamily: "NovecentoSans",
-                                                        fontSize: 22,
+                                                        fontSize: 20,
                                                         color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
                                                     ),
