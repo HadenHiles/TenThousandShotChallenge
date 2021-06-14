@@ -69,7 +69,7 @@ class _EditProfileState extends State<EditProfile> {
       ),
     );
     navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
-      return Navigation(selectedIndex: 2);
+      return Navigation(selectedIndex: 3);
     }));
   }
 
