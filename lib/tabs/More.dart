@@ -240,7 +240,7 @@ class _MoreState extends State<More> {
                                 ),
                               ],
                             ),
-                            _loadingCoachJeremyVideos || _coachJeremyVideos == null || _coachJeremyVideos.length < 1
+                            _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
                                 ? Container(
                                     margin: EdgeInsets.symmetric(vertical: 25),
                                     child: Center(
