@@ -1,6 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -13,6 +12,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
+import 'package:wc_flutter_share/wc_flutter_share.dart';
 
 class AddTeammate extends StatefulWidget {
   AddTeammate({Key key}) : super(key: key);
@@ -86,10 +86,11 @@ class _AddTeammateState extends State<AddTeammate> {
                   margin: EdgeInsets.only(top: 10),
                   child: IconButton(
                     onPressed: () {
-                      Share.text(
-                        'Take the How To Hockey 10,000 Shot Challenge!',
-                        'http://hyperurl.co/tenthousandshots',
-                        'text/plain',
+                      WcFlutterShare.share(
+                        sharePopupTitle: 'Share 10,000 Shots App',
+                        subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                        text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                        mimeType: 'text/plain',
                       );
                     },
                     icon: Icon(
@@ -371,10 +372,11 @@ class _AddTeammateState extends State<AddTeammate> {
                                   margin: EdgeInsets.only(top: 5),
                                   child: IconButton(
                                     onPressed: () {
-                                      Share.text(
-                                        'Take the How To Hockey 10,000 Shot Challenge!',
-                                        'http://hyperurl.co/tenthousandshots',
-                                        'text/plain',
+                                      WcFlutterShare.share(
+                                        sharePopupTitle: 'Share 10,000 Shots App',
+                                        subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                                        text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                                        mimeType: 'text/plain',
                                       );
                                     },
                                     icon: Icon(
