@@ -6,7 +6,10 @@ import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
 Future<String> getChannelThumbnail(String id) async {
   final String apiKey = GlobalConfiguration().getValue("web_key");
 
-  return await HttpProvider().getData("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$id&fields=items%2Fsnippet%2Fthumbnails&key=$apiKey", {}).then((response) {
+  return await HttpProvider().getData(
+    "https://www.googleapis.com/youtube/v3/channels?part=snippet&id=$id&fields=items%2Fsnippet%2Fthumbnails&key=$apiKey",
+    {'cache-control': 'private, max-age=86400'},
+  ).then((response) {
     final Map<String, dynamic> data = json.decode(response.body);
 
     return data["items"][0]["snippet"]["thumbnails"]["medium"]["url"];
@@ -19,7 +22,10 @@ Future<String> getChannelThumbnail(String id) async {
 Future<List<YouTubeVideo>> getVideos(String channelId) async {
   final String apiKey = GlobalConfiguration().getValue("android_key");
 
-  return await HttpProvider().getData("https://www.googleapis.com/youtube/v3/search?key=$apiKey&channelId=$channelId&part=snippet,id&order=date&maxResults=20", {}).then((response) {
+  return await HttpProvider().getData(
+    "https://www.googleapis.com/youtube/v3/search?key=$apiKey&channelId=$channelId&part=snippet,id&order=date&maxResults=20",
+    {'cache-control': 'private, max-age=86400'},
+  ).then((response) {
     final Map<String, dynamic> data = json.decode(response.body);
 
     List<YouTubeVideo> videos = [];
