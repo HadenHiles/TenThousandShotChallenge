@@ -3,20 +3,24 @@ import 'package:http/http.dart';
 
 class HttpProvider {
   Future<Response> getData(String url, Map<String, String> headers) async {
-    String key = "youtubeCacheKey";
-    var file = await CacheManager(
-      Config(
-        key,
-        stalePeriod: const Duration(days: 1),
-        maxNrOfCacheObjects: 20,
-        repo: JsonCacheInfoRepository(databaseName: key),
-        fileService: HttpFileService(),
-      ),
-    ).getSingleFile(url, headers: headers);
+    var file = await YouTubeCacheManager.instance.getSingleFile(url, headers: headers);
     if (file != null && await file.exists()) {
       var res = await file.readAsString();
       return Response(res, 200);
     }
     return Response(null, 404);
   }
+}
+
+class YouTubeCacheManager {
+  static const String key = "youtubeCacheKey";
+  static CacheManager instance = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 3),
+      maxNrOfCacheObjects: 1000,
+      repo: JsonCacheInfoRepository(databaseName: key),
+      fileService: HttpFileService(),
+    ),
+  );
 }
