@@ -65,5 +65,11 @@ service cloud.firestore {
         }
       }
     }
+    match /merch/{document=**} {
+    	allow read: if request.auth != null;
+    }
+    match /learn_videos/{document=**} {
+    	allow read: if request.auth != null;
+    }
   }
 }
