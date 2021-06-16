@@ -23,23 +23,37 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
   final String apiKey = GlobalConfiguration().getValue("web_key");
 
   return await HttpProvider().getData(
-    "https://www.googleapis.com/youtube/v3/search?key=$apiKey&channelId=$channelId&part=snippet,id&order=date&maxResults=20",
+    "https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=$channelId&key=$apiKey",
     {'cache-control': 'private, max-age=86400'},
-  ).then((response) {
+  ).then((response) async {
     final Map<String, dynamic> data = json.decode(response.body);
 
     List<YouTubeVideo> videos = [];
 
     if (data != null) {
-      final List items = data["items"];
+      final Map<String, dynamic> channel = data["items"][0];
 
-      if (items != null && items.length > 0) {
-        items.forEach((dynamic i) {
-          videos.add(YouTubeVideo(
-            i["id"]["videoId"],
-            i["snippet"]["title"],
-            i["snippet"]["thumbnails"]["medium"]["url"],
-          ));
+      if (channel != null) {
+        String playlistId = channel['contentDetails']['relatedPlaylists']['uploads'];
+
+        return await HttpProvider().getData(
+          "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=$playlistId&maxResults=10&key=$apiKey",
+          {'cache-control': 'private, max-age=86400'},
+        ).then((response) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List items = data["items"];
+
+          if (items != null && items.length > 0) {
+            items.forEach((dynamic i) {
+              videos.add(YouTubeVideo(
+                i["id"],
+                i["snippet"]["title"],
+                i["snippet"]["thumbnails"]["medium"]["url"],
+              ));
+            });
+          }
+
+          return videos;
         });
       }
     }
