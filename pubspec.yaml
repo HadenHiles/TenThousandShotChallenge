@@ -46,6 +46,7 @@ dependencies:
   url_launcher: ^6.0.6
   webview_flutter: ^2.0.8
   html: ^0.15.0
+  flutter_markdown: ^0.6.2 
   numberpicker: ^2.1.1
   prompt_dialog: ^1.0.0
   sliding_up_panel: ^2.0.0+1

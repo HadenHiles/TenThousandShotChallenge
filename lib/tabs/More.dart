@@ -6,6 +6,7 @@ import 'package:connectivity/connectivity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
@@ -565,6 +566,21 @@ class _MoreState extends State<More> {
                                                         ],
                                                       );
                                                     },
+                                                  ),
+                                                  SizedBox(
+                                                    height: 25,
+                                                  ),
+                                                  Flexible(
+                                                    flex: 2,
+                                                    child: Markdown(
+                                                      data: _learnVideos[i].content,
+                                                      styleSheet: MarkdownStyleSheet(
+                                                        h1: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
                                                 ],
                                               );
