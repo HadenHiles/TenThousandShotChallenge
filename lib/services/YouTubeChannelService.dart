@@ -20,7 +20,7 @@ Future<String> getChannelThumbnail(String id) async {
 }
 
 Future<List<YouTubeVideo>> getVideos(String channelId) async {
-  final String apiKey = GlobalConfiguration().getValue("android_key");
+  final String apiKey = GlobalConfiguration().getValue("web_key");
 
   return await HttpProvider().getData(
     "https://www.googleapis.com/youtube/v3/search?key=$apiKey&channelId=$channelId&part=snippet,id&order=date&maxResults=20",
