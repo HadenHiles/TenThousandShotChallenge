@@ -4,6 +4,7 @@ class YouTubeVideo {
   final String id;
   final String title;
   final String thumbnail;
+  String content;
   DocumentReference reference;
 
   YouTubeVideo(this.id, this.title, this.thumbnail);
@@ -13,13 +14,15 @@ class YouTubeVideo {
         assert(map['title'] != null),
         id = map['id'],
         title = map['title'],
-        thumbnail = map['thumbnail'];
+        thumbnail = map['thumbnail'],
+        content = map['content'];
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'title': title,
       'thumbnail': thumbnail,
+      'content': content,
     };
   }
 
