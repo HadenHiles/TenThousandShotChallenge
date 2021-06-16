@@ -535,7 +535,7 @@ class _MoreState extends State<More> {
                                               YoutubePlayerController _ytController = YoutubePlayerController(
                                                 initialVideoId: _learnVideos[i].id,
                                                 flags: YoutubePlayerFlags(
-                                                  autoPlay: false,
+                                                  autoPlay: true,
                                                   mute: false,
                                                 ),
                                               );
@@ -553,6 +553,16 @@ class _MoreState extends State<More> {
                                                         playedColor: Theme.of(context).primaryColor,
                                                         handleColor: Theme.of(context).accentColor,
                                                       ),
+                                                      bottomActions: [
+                                                        const SizedBox(width: 14.0),
+                                                        CurrentPosition(),
+                                                        const SizedBox(width: 8.0),
+                                                        ProgressBar(
+                                                          isExpanded: true,
+                                                        ),
+                                                        RemainingDuration(),
+                                                        const PlaybackSpeedButton(),
+                                                      ],
                                                       actionsPadding: EdgeInsets.all(2),
                                                       liveUIColor: Theme.of(context).primaryColor,
                                                       onReady: () {
