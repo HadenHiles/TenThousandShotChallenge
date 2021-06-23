@@ -656,7 +656,6 @@ class _MoreState extends State<More> {
                                                                 ),
                                                                 "ul li, ol li": Style(
                                                                   padding: EdgeInsets.symmetric(vertical: 5),
-                                                                  textAlign: TextAlign.center,
                                                                   margin: EdgeInsets.only(bottom: 2),
                                                                 ),
                                                                 "p": Style(
