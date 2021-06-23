@@ -6,7 +6,7 @@ import 'package:connectivity/connectivity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
@@ -43,6 +43,7 @@ class _MoreState extends State<More> {
   final PageController _learnPageController = PageController(initialPage: 0);
   bool _loadingLearnVideos = true;
   List<YouTubeVideo> _learnVideos = [];
+  ScrollController _learnScrollController;
 
   bool _loadingMerch = true;
   List<Merch> _merch = [];
@@ -77,7 +78,11 @@ class _MoreState extends State<More> {
   @override
   void initState() {
     _loadYoutubeChannels();
+
     _loadLearningVideos();
+    _learnScrollController = ScrollController();
+    _learnScrollController.addListener(this.swapPageListener);
+
     _loadMerch();
 
     initConnectivity();
@@ -148,6 +153,22 @@ class _MoreState extends State<More> {
         });
       }
     });
+  }
+
+  void swapPageListener() {
+    if (_learnScrollController.offset > _learnScrollController.position.maxScrollExtent + 50) {
+      _learnPageController.nextPage(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeIn,
+      );
+    }
+
+    if (_learnScrollController.offset < _learnScrollController.position.minScrollExtent - 50) {
+      _learnPageController.previousPage(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeIn,
+      );
+    }
   }
 
   Future<Null> _loadMerch() async {
@@ -535,13 +556,14 @@ class _MoreState extends State<More> {
                                               YoutubePlayerController _ytController = YoutubePlayerController(
                                                 initialVideoId: _learnVideos[i].id,
                                                 flags: YoutubePlayerFlags(
-                                                  autoPlay: true,
+                                                  autoPlay: false,
                                                   mute: false,
                                                 ),
                                               );
 
                                               return Flex(
                                                 direction: Axis.vertical,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
                                                 children: [
                                                   YoutubePlayerBuilder(
                                                     player: YoutubePlayer(
@@ -577,17 +599,73 @@ class _MoreState extends State<More> {
                                                       );
                                                     },
                                                   ),
-                                                  SizedBox(
-                                                    height: 25,
-                                                  ),
                                                   Flexible(
                                                     flex: 2,
-                                                    child: Markdown(
-                                                      data: _learnVideos[i].content,
-                                                      styleSheet: MarkdownStyleSheet(
-                                                        h1: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
+                                                    child: Container(
+                                                      margin: EdgeInsets.symmetric(
+                                                        vertical: 10,
+                                                        horizontal: MediaQuery.of(context).size.width * .1,
+                                                      ),
+                                                      child: SingleChildScrollView(
+                                                        physics: BouncingScrollPhysics(),
+                                                        controller: _learnScrollController,
+                                                        child: Column(
+                                                          children: [
+                                                            Container(
+                                                              margin: EdgeInsets.only(top: 25),
+                                                              child: Text(
+                                                                _learnVideos[i].title.toUpperCase(),
+                                                                textAlign: TextAlign.center,
+                                                                style: TextStyle(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: 42,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Html(
+                                                              data: _learnVideos[i].content,
+                                                              style: {
+                                                                "h1": Style(
+                                                                  textAlign: TextAlign.center,
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: FontSize(36),
+                                                                ),
+                                                                "h2": Style(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: FontSize(30),
+                                                                ),
+                                                                "h3": Style(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: FontSize(24),
+                                                                ),
+                                                                "ul": Style(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: FontSize(24),
+                                                                  listStyleType: ListStyleType.DISC,
+                                                                ),
+                                                                "ol": Style(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: FontSize(24),
+                                                                  listStyleType: ListStyleType.DECIMAL,
+                                                                ),
+                                                                "ul li, ol li": Style(
+                                                                  padding: EdgeInsets.symmetric(vertical: 5),
+                                                                  textAlign: TextAlign.center,
+                                                                  margin: EdgeInsets.only(bottom: 2),
+                                                                ),
+                                                                "p": Style(
+                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                  fontSize: FontSize(16),
+                                                                ),
+                                                              },
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
                                                     ),
@@ -605,292 +683,294 @@ class _MoreState extends State<More> {
                         Column(
                           children: [
                             Container(
-                              child: Column(
-                                children: [
-                                  Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.all(10),
-                                            child: GestureDetector(
-                                              onTap: () async {
-                                                String merchLink = "https://merch.howtohockey.com";
-                                                await canLaunch(merchLink).then((can) {
-                                                  launch(merchLink).catchError((err) {
-                                                    print(err);
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.all(10),
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  String merchLink = "https://merch.howtohockey.com";
+                                                  await canLaunch(merchLink).then((can) {
+                                                    launch(merchLink).catchError((err) {
+                                                      print(err);
+                                                    });
                                                   });
-                                                });
-                                              },
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 50,
-                                                    height: 50,
-                                                    child: FittedBox(
-                                                      fit: BoxFit.cover,
-                                                      clipBehavior: Clip.antiAlias,
-                                                      child: CircleAvatar(
-                                                        radius: 50,
-                                                        backgroundImage: AssetImage("assets/images/avatar.png"),
-                                                        backgroundColor: Theme.of(context).colorScheme.primary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    width: 15,
-                                                  ),
-                                                  AutoSizeText(
-                                                    "How To Hockey Merch".toUpperCase(),
-                                                    maxLines: 2,
-                                                    maxFontSize: 22,
-                                                    style: TextStyle(
-                                                      fontFamily: "NovecentoSans",
-                                                      fontSize: 22,
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  ),
-                                                  IconButton(
-                                                    onPressed: () async {
-                                                      String merchLink = "https://merch.howtohockey.com";
-                                                      await canLaunch(merchLink).then((can) {
-                                                        launch(merchLink).catchError((err) {
-                                                          print(err);
-                                                        });
-                                                      });
-                                                    },
-                                                    icon: Icon(
-                                                      FontAwesomeIcons.shoppingBag,
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      _loadingMerch || _merch.length < 1
-                                          ? Container(
-                                              margin: EdgeInsets.symmetric(vertical: 25),
-                                              child: Column(
-                                                children: [
-                                                  Center(
-                                                    child: LinearProgressIndicator(
-                                                      color: Theme.of(context).primaryColor,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : Container(
-                                              height: 200.0,
-                                              child: ListView.builder(
-                                                scrollDirection: Axis.horizontal,
-                                                itemCount: _merch.length,
-                                                itemBuilder: (BuildContext context, int i) {
-                                                  return GestureDetector(
-                                                    onTap: () async {
-                                                      String link = _merch[i].url;
-                                                      await canLaunch(link).then((can) {
-                                                        launch(link).catchError((err) {
-                                                          print(err);
-                                                        });
-                                                      });
-                                                    },
-                                                    child: Card(
-                                                      color: Theme.of(context).cardTheme.color,
-                                                      elevation: 4,
-                                                      child: Container(
-                                                        width: 150.0,
-                                                        child: Column(
-                                                          mainAxisAlignment: MainAxisAlignment.start,
-                                                          children: [
-                                                            Image(
-                                                              image: _merch[i].image == null
-                                                                  ? AssetImage("assets/images/avatar.png")
-                                                                  : NetworkImage(
-                                                                      _merch[i].image,
-                                                                    ),
-                                                              width: 150,
-                                                            ),
-                                                            Container(
-                                                              padding: EdgeInsets.all(5),
-                                                              child: AutoSizeText(
-                                                                _merch[i].title,
-                                                                maxLines: 2,
-                                                                maxFontSize: 22,
-                                                                style: TextStyle(
-                                                                  fontFamily: "NovecentoSans",
-                                                                  fontSize: 20,
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
+                                                },
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 50,
+                                                      height: 50,
+                                                      child: FittedBox(
+                                                        fit: BoxFit.cover,
+                                                        clipBehavior: Clip.antiAlias,
+                                                        child: CircleAvatar(
+                                                          radius: 50,
+                                                          backgroundImage: AssetImage("assets/images/avatar.png"),
+                                                          backgroundColor: Theme.of(context).colorScheme.primary,
                                                         ),
                                                       ),
                                                     ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 25,
-                                  ),
-                                  Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Opacity(
-                                            opacity: 0,
-                                            child: Container(
-                                              height: 1,
-                                              width: 1,
-                                              child: WebView(
-                                                initialUrl: _hsShootingProductsLink,
-                                                javascriptMode: JavascriptMode.unrestricted,
-                                                javascriptChannels: <JavascriptChannel>[
-                                                  _extractDataJSChannel(context),
-                                                ].toSet(),
-                                                onWebViewCreated: (WebViewController cont) {
-                                                  print('webview was created.');
-                                                  _webviewController = cont;
-                                                },
-                                                onPageFinished: (String url) {
-                                                  _webviewController.evaluateJavascript("(function(){Flutter.postMessage(window.document.body.outerHTML)})();");
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: EdgeInsets.all(10),
-                                            child: GestureDetector(
-                                              onTap: () async {
-                                                String hockeyshotLink = "https://www.hockeyshot.com";
-                                                await canLaunch(hockeyshotLink).then((can) {
-                                                  launch(hockeyshotLink).catchError((err) {
-                                                    print(err);
-                                                  });
-                                                });
-                                              },
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 150,
-                                                    height: 32.25,
-                                                    child: FittedBox(
-                                                      fit: BoxFit.cover,
-                                                      clipBehavior: Clip.antiAlias,
-                                                      child: Image(
-                                                        image: AssetImage("assets/images/shop/logo-hockeyshot.png"),
+                                                    SizedBox(
+                                                      width: 15,
+                                                    ),
+                                                    AutoSizeText(
+                                                      "How To Hockey Merch".toUpperCase(),
+                                                      maxLines: 2,
+                                                      maxFontSize: 22,
+                                                      style: TextStyle(
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 22,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
                                                     ),
-                                                  ),
-                                                  SizedBox(
-                                                    width: 15,
-                                                  ),
-                                                  AutoSizeText(
-                                                    "Shooting Products".toUpperCase(),
-                                                    maxLines: 2,
-                                                    maxFontSize: 22,
-                                                    style: TextStyle(
-                                                      fontFamily: "NovecentoSans",
-                                                      fontSize: 22,
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  ),
-                                                  IconButton(
-                                                    onPressed: () async {
-                                                      String hockeyshotLink = "https://www.hockeyshot.com";
-                                                      await canLaunch(hockeyshotLink).then((can) {
-                                                        launch(hockeyshotLink).catchError((err) {
-                                                          print(err);
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        String merchLink = "https://merch.howtohockey.com";
+                                                        await canLaunch(merchLink).then((can) {
+                                                          launch(merchLink).catchError((err) {
+                                                            print(err);
+                                                          });
                                                         });
-                                                      });
-                                                    },
-                                                    icon: Icon(
-                                                      Icons.link_rounded,
+                                                      },
+                                                      icon: Icon(
+                                                        FontAwesomeIcons.shoppingBag,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      _loadingHockeyshotProducts || _hockeyshotProducts.length < 1
-                                          ? Container(
-                                              margin: EdgeInsets.symmetric(vertical: 25),
-                                              child: Column(
-                                                children: [
-                                                  Center(
-                                                    child: LinearProgressIndicator(
-                                                      color: Theme.of(context).primaryColor,
+                                          ],
+                                        ),
+                                        _loadingMerch || _merch.length < 1
+                                            ? Container(
+                                                margin: EdgeInsets.symmetric(vertical: 25),
+                                                child: Column(
+                                                  children: [
+                                                    Center(
+                                                      child: LinearProgressIndicator(
+                                                        color: Theme.of(context).primaryColor,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : Container(
-                                              height: 205.0,
-                                              child: ListView.builder(
-                                                scrollDirection: Axis.horizontal,
-                                                itemCount: _hockeyshotProducts.length,
-                                                itemBuilder: (BuildContext context, int i) {
-                                                  return GestureDetector(
-                                                    onTap: () async {
-                                                      String link = _hsBaseUrl + _hockeyshotProducts[i].url;
-                                                      await canLaunch(link).then((can) {
-                                                        launch(link).catchError((err) {
-                                                          print(err);
+                                                  ],
+                                                ),
+                                              )
+                                            : Container(
+                                                height: 200.0,
+                                                child: ListView.builder(
+                                                  scrollDirection: Axis.horizontal,
+                                                  itemCount: _merch.length,
+                                                  itemBuilder: (BuildContext context, int i) {
+                                                    return GestureDetector(
+                                                      onTap: () async {
+                                                        String link = _merch[i].url;
+                                                        await canLaunch(link).then((can) {
+                                                          launch(link).catchError((err) {
+                                                            print(err);
+                                                          });
                                                         });
-                                                      });
-                                                    },
-                                                    child: Card(
-                                                      color: Theme.of(context).cardTheme.color,
-                                                      elevation: 4,
-                                                      child: Container(
-                                                        width: 140.0,
-                                                        child: Column(
-                                                          mainAxisAlignment: MainAxisAlignment.start,
-                                                          children: [
-                                                            Image(
-                                                              image: _hockeyshotProducts[i].image == null
-                                                                  ? AssetImage("assets/images/avatar.png")
-                                                                  : NetworkImage(
-                                                                      _hockeyshotProducts[i].image,
-                                                                    ),
-                                                              width: 140,
-                                                            ),
-                                                            Container(
-                                                              padding: EdgeInsets.all(5),
-                                                              child: AutoSizeText(
-                                                                _hockeyshotProducts[i].title,
-                                                                maxLines: 2,
-                                                                maxFontSize: 18,
-                                                                style: TextStyle(
-                                                                  fontFamily: "NovecentoSans",
-                                                                  fontSize: 18,
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                      },
+                                                      child: Card(
+                                                        color: Theme.of(context).cardTheme.color,
+                                                        elevation: 4,
+                                                        child: Container(
+                                                          width: 150.0,
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.start,
+                                                            children: [
+                                                              Image(
+                                                                image: _merch[i].image == null
+                                                                    ? AssetImage("assets/images/avatar.png")
+                                                                    : NetworkImage(
+                                                                        _merch[i].image,
+                                                                      ),
+                                                                width: 150,
+                                                              ),
+                                                              Container(
+                                                                padding: EdgeInsets.all(5),
+                                                                child: AutoSizeText(
+                                                                  _merch[i].title,
+                                                                  maxLines: 2,
+                                                                  maxFontSize: 22,
+                                                                  style: TextStyle(
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 20,
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 5,
+                                    ),
+                                    Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Opacity(
+                                              opacity: 0,
+                                              child: Container(
+                                                height: 1,
+                                                width: 1,
+                                                child: WebView(
+                                                  initialUrl: _hsShootingProductsLink,
+                                                  javascriptMode: JavascriptMode.unrestricted,
+                                                  javascriptChannels: <JavascriptChannel>[
+                                                    _extractDataJSChannel(context),
+                                                  ].toSet(),
+                                                  onWebViewCreated: (WebViewController cont) {
+                                                    print('webview was created.');
+                                                    _webviewController = cont;
+                                                  },
+                                                  onPageFinished: (String url) {
+                                                    _webviewController.evaluateJavascript("(function(){Flutter.postMessage(window.document.body.outerHTML)})();");
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: EdgeInsets.all(10),
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  String hockeyshotLink = "https://www.hockeyshot.com";
+                                                  await canLaunch(hockeyshotLink).then((can) {
+                                                    launch(hockeyshotLink).catchError((err) {
+                                                      print(err);
+                                                    });
+                                                  });
+                                                },
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 150,
+                                                      height: 32.25,
+                                                      child: FittedBox(
+                                                        fit: BoxFit.cover,
+                                                        clipBehavior: Clip.antiAlias,
+                                                        child: Image(
+                                                          image: AssetImage("assets/images/shop/logo-hockeyshot.png"),
                                                         ),
                                                       ),
                                                     ),
-                                                  );
-                                                },
+                                                    SizedBox(
+                                                      width: 15,
+                                                    ),
+                                                    AutoSizeText(
+                                                      "Shooting Products".toUpperCase(),
+                                                      maxLines: 2,
+                                                      maxFontSize: 22,
+                                                      style: TextStyle(
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 22,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () async {
+                                                        String hockeyshotLink = "https://www.hockeyshot.com";
+                                                        await canLaunch(hockeyshotLink).then((can) {
+                                                          launch(hockeyshotLink).catchError((err) {
+                                                            print(err);
+                                                          });
+                                                        });
+                                                      },
+                                                      icon: Icon(
+                                                        Icons.link_rounded,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                    ],
-                                  ),
-                                ],
+                                          ],
+                                        ),
+                                        _loadingHockeyshotProducts || _hockeyshotProducts.length < 1
+                                            ? Container(
+                                                margin: EdgeInsets.symmetric(vertical: 25),
+                                                child: Column(
+                                                  children: [
+                                                    Center(
+                                                      child: LinearProgressIndicator(
+                                                        color: Theme.of(context).primaryColor,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : Container(
+                                                height: 205.0,
+                                                child: ListView.builder(
+                                                  scrollDirection: Axis.horizontal,
+                                                  itemCount: _hockeyshotProducts.length,
+                                                  itemBuilder: (BuildContext context, int i) {
+                                                    return GestureDetector(
+                                                      onTap: () async {
+                                                        String link = _hsBaseUrl + _hockeyshotProducts[i].url;
+                                                        await canLaunch(link).then((can) {
+                                                          launch(link).catchError((err) {
+                                                            print(err);
+                                                          });
+                                                        });
+                                                      },
+                                                      child: Card(
+                                                        color: Theme.of(context).cardTheme.color,
+                                                        elevation: 4,
+                                                        child: Container(
+                                                          width: 140.0,
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.start,
+                                                            children: [
+                                                              Image(
+                                                                image: _hockeyshotProducts[i].image == null
+                                                                    ? AssetImage("assets/images/avatar.png")
+                                                                    : NetworkImage(
+                                                                        _hockeyshotProducts[i].image,
+                                                                      ),
+                                                                width: 140,
+                                                              ),
+                                                              Container(
+                                                                padding: EdgeInsets.all(5),
+                                                                child: AutoSizeText(
+                                                                  _hockeyshotProducts[i].title,
+                                                                  maxLines: 2,
+                                                                  maxFontSize: 18,
+                                                                  style: TextStyle(
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 18,
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
