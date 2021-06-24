@@ -19,7 +19,7 @@ versionCheck(context) async {
     // Using default duration to force fetching from remote server.
     await remoteConfig.setConfigSettings(RemoteConfigSettings(
       fetchTimeout: Duration(seconds: 5),
-      minimumFetchInterval: Duration(hours: 1),
+      minimumFetchInterval: Duration(minutes: 15),
     ));
     await remoteConfig.fetchAndActivate();
     double newVersion = double.parse(remoteConfig.getString('force_update_current_version').trim().replaceAll(".", ""));
