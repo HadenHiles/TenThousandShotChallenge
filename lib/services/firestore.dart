@@ -95,9 +95,12 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
 }
 
 Future<bool> deleteSession(ShootingSession shootingSession) async {
-  return await shootingSession.reference.parent.parent.get().then((iDoc) async {
+  return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').doc(shootingSession.reference.parent.parent.id).get().then((iDoc) async {
     Iteration iteration = Iteration.fromSnapshot(iDoc);
     if (!iteration.complete) {
+      // Get a new write batch
+      var batch = FirebaseFirestore.instance.batch();
+
       Iteration decrementedIteration = Iteration(
         iteration.startDate,
         iteration.endDate,
@@ -109,18 +112,12 @@ Future<bool> deleteSession(ShootingSession shootingSession) async {
         (iteration.totalBackhand - shootingSession.totalBackhand),
         iteration.complete,
       );
-      return await iDoc.reference.update(decrementedIteration.toMap()).then((_) async {
-        return await iDoc.reference
-            .collection('sessions')
-            .doc(shootingSession.reference.id)
-            .delete()
-            .then(
-              (success) => true,
-            )
-            .onError(
-              (error, stackTrace) => null,
-            );
-      });
+
+      batch.update(iDoc.reference, decrementedIteration.toMap());
+
+      batch.delete(iDoc.reference.collection('sessions').doc(shootingSession.reference.id));
+
+      return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
     } else {
       return false;
     }
