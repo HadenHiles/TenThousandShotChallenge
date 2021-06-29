@@ -219,7 +219,7 @@ class _TeamState extends State<Team> {
                                 ),
                               )
                             : ListView.builder(
-                                padding: EdgeInsets.all(0),
+                                padding: EdgeInsets.only(top: 0, right: 0, left: 0, bottom: AppBar().preferredSize.height),
                                 itemCount: _teammates.length + 1,
                                 itemBuilder: (_, int index) {
                                   if (index < _teammates.length) {
@@ -277,7 +277,7 @@ class _TeamState extends State<Team> {
                                 ),
                               )
                             : ListView.builder(
-                                padding: EdgeInsets.all(0),
+                                padding: EdgeInsets.only(top: 0, left: 0, right: 0, bottom: AppBar().preferredSize.height),
                                 itemCount: _invites.length + 1,
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
