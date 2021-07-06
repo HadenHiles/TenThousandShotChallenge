@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 
@@ -39,9 +40,9 @@ Future<void> bootstrapIterations() async {
       DocumentReference ref = iSnap.docs[0].reference;
       Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
 
-      DateTime targetDate = preferences.targetDate != null ? preferences.targetDate : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+      DateTime targetDate = preferences.targetDate != null ? preferences.targetDate : i.targetDate;
 
-      if (i.targetDate == null) {
+      if (i.targetDate == null || preferences.targetDate != null) {
         Iteration updatedIteration = Iteration(
           i.startDate,
           targetDate,
@@ -54,6 +55,10 @@ Future<void> bootstrapIterations() async {
           i.totalBackhand,
           i.complete,
         );
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('target_date', null);
+        preferences.targetDate = null;
 
         await ref.update(updatedIteration.toMap());
       }
