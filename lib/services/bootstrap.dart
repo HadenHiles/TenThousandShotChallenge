@@ -57,7 +57,7 @@ Future<void> bootstrapIterations() async {
         );
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString('target_date', null);
+        prefs.remove('target_date');
         preferences.targetDate = null;
 
         await ref.update(updatedIteration.toMap());

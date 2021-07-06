@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
@@ -296,6 +297,9 @@ class _IntroScreenState extends State<IntroScreen> {
                 width: 200,
                 child: Column(
                   children: [
+                    SizedBox(
+                      height: 15,
+                    ),
                     TextFormField(
                       controller: _targetDateTextFieldController,
                       style: TextStyle(
@@ -376,10 +380,29 @@ class _IntroScreenState extends State<IntroScreen> {
               ),
             ],
           ),
-          image: Icon(
-            Icons.calendar_today_rounded,
-            size: MediaQuery.of(context).size.width * 0.5,
-            color: Colors.white,
+          image: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AutoSizeText(
+                "Set your goal".toUpperCase(),
+                maxFontSize: 44,
+                maxLines: 3,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 44,
+                  fontFamily: "NovecentoSans",
+                ),
+              ),
+              SizedBox(
+                height: 40,
+              ),
+              Icon(
+                FontAwesomeIcons.calendarCheck,
+                size: MediaQuery.of(context).size.width * 0.5,
+                color: Colors.white,
+              ),
+            ],
           ),
           decoration: pageDecoration,
         ),
