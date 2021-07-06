@@ -23,7 +23,7 @@ final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
-Preferences preferences = Preferences(false, 25, null);
+Preferences preferences = Preferences(false, 25, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null);
 final sessionService = SessionService();
 final Color wristShotColor = Color(0xff00BCD4);
 final Color snapShotColor = Color(0xff2296F3);
@@ -46,6 +46,7 @@ void main() async {
   preferences = Preferences(
     prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
     prefs.getInt('puck_count') ?? 25,
+    prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
     prefs.getString('fcm_token'),
   );
 

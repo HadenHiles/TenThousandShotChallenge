@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
@@ -30,8 +31,6 @@ class _ShotsState extends State<Shots> {
   final user = FirebaseAuth.instance.currentUser;
   DateTime _targetDate;
   TextEditingController _targetDateController = TextEditingController();
-  String _shotsPerDayText = "";
-  String _shotsPerWeekText = "";
   bool _showShotsPerDay = true;
 
   @override
@@ -49,20 +48,6 @@ class _ShotsState extends State<Shots> {
         });
 
         _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-
-        int total = i.total >= 10000 ? 10000 : i.total;
-        int shotsRemaining = 10000 - total;
-        int daysRemaining = i.targetDate.difference(DateTime.now()).inDays;
-        double weeksRemaining = daysRemaining / 7;
-        int shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-        int shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining / weeksRemaining).round();
-        String shotsPerDayText = shotsRemaining < 1 ? "Done!".toUpperCase() : "$shotsPerDay / Day".toUpperCase();
-        String shotsPerWeekText = shotsRemaining < 1 ? "Done!".toUpperCase() : "$shotsPerWeek / Week".toUpperCase();
-
-        setState(() {
-          _shotsPerDayText = shotsPerDayText;
-          _shotsPerWeekText = shotsPerWeekText;
-        });
       }
     });
   }
@@ -71,7 +56,7 @@ class _ShotsState extends State<Shots> {
     DatePicker.showDatePicker(
       context,
       showTitleActions: true,
-      minTime: DateTime.now(),
+      minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
       maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
       onChanged: (date) {},
       onConfirm: (date) async {
@@ -107,7 +92,7 @@ class _ShotsState extends State<Shots> {
           Column(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(vertical: 20),
+                padding: EdgeInsets.symmetric(vertical: 10),
                 margin: EdgeInsets.only(
                   bottom: 15,
                   top: 15,
@@ -171,13 +156,74 @@ class _ShotsState extends State<Shots> {
                       ],
                     ),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
                       children: [
-                        Text(
-                          _showShotsPerDay ? _shotsPerDayText : _shotsPerWeekText,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontFamily: "NovecentoSans",
-                            fontSize: 26,
+                        Container(
+                          width: 80,
+                          child: StreamBuilder(
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                );
+                              } else if (snapshot.data.docs.length > 0) {
+                                Iteration i = Iteration.fromSnapshot(snapshot.data.docs[0]);
+                                int total = i.total >= 10000 ? 10000 : i.total;
+                                int shotsRemaining = 10000 - total;
+                                int daysRemaining = i.targetDate.difference(DateTime.now()).inDays;
+                                double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+
+                                int shotsPerDay = 0;
+                                if (daysRemaining <= 1) {
+                                  shotsPerDay = shotsRemaining;
+                                } else {
+                                  shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                }
+
+                                int shotsPerWeek = 0;
+                                if (weeksRemaining <= 1) {
+                                  shotsPerWeek = shotsRemaining;
+                                } else {
+                                  shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                }
+
+                                String shotsPerDayText = shotsRemaining < 1
+                                    ? "Done!".toUpperCase()
+                                    : shotsPerDay <= 999
+                                        ? shotsPerDay.toString() + " / Day".toUpperCase()
+                                        : numberFormat.format(shotsPerDay) + " / Day".toUpperCase();
+                                String shotsPerWeekText = shotsRemaining < 1
+                                    ? "Done!".toUpperCase()
+                                    : shotsPerWeek <= 999
+                                        ? shotsPerWeek.toString() + " / Week".toUpperCase()
+                                        : numberFormat.format(shotsPerWeek) + " / Week".toUpperCase();
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _showShotsPerDay = !_showShotsPerDay;
+                                    });
+                                  },
+                                  child: AutoSizeText(
+                                    _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                    maxFontSize: 26,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 26,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Container();
+                              }
+                            },
                           ),
                         ),
                         InkWell(

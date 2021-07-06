@@ -138,6 +138,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       Preferences(
                         value,
                         prefs.getInt('puck_count'),
+                        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
                         prefs.getString('fcm_token'),
                       ),
                     );
