@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,9 +18,13 @@ class IntroScreen extends StatefulWidget {
 
 class _IntroScreenState extends State<IntroScreen> {
   final introKey = GlobalKey<IntroductionScreenState>();
-  final TextEditingController puckCountTextFieldController = TextEditingController(text: preferences.puckCount.toString());
+  final TextEditingController _puckCountTextFieldController = TextEditingController(text: preferences.puckCount.toString());
+  final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences.targetDate));
 
   bool _darkMode = preferences.darkMode;
+
+  DateTime _targetDate;
+  int _shotsPerDay;
 
   Future<void> _onIntroEnd(context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -37,6 +43,14 @@ class _IntroScreenState extends State<IntroScreen> {
 
   Widget _buildImage(String assetName, [double width = 350]) {
     return Image.asset('assets/images/$assetName', width: width);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _shotsPerDay = 100;
+    _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
   }
 
   @override
@@ -185,7 +199,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: puckCountTextFieldController,
+                      controller: _puckCountTextFieldController,
                       keyboardType: TextInputType.number,
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
@@ -270,6 +284,102 @@ class _IntroScreenState extends State<IntroScreen> {
                 ),
               ],
             ),
+          ),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "I will take $_shotsPerDay shots per day to complete 10,000 shots by".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _targetDateTextFieldController,
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 28,
+                        color: Colors.white,
+                      ),
+                      readOnly: true,
+                      textAlign: TextAlign.center,
+                      onTap: () {
+                        DatePicker.showDatePicker(
+                          context,
+                          showTitleActions: true,
+                          minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
+                          maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                          onChanged: (date) {
+                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
+
+                            int daysRemaining = date.difference(DateTime.now()).inDays;
+
+                            if (daysRemaining <= 1) {
+                              setState(() {
+                                _shotsPerDay = 10000;
+                              });
+                            } else {
+                              setState(() {
+                                _shotsPerDay = (10000 / daysRemaining).round();
+                              });
+                            }
+                          },
+                          onConfirm: (date) async {
+                            setState(() {
+                              _targetDate = date;
+                            });
+
+                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
+
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            prefs.setString('target_date', DateFormat('yyyy-MM-dd').format(date));
+                            preferences.targetDate = date;
+
+                            int daysRemaining = date.difference(DateTime.now()).inDays;
+
+                            if (daysRemaining <= 1) {
+                              setState(() {
+                                _shotsPerDay = 10000;
+                              });
+                            } else {
+                              setState(() {
+                                _shotsPerDay = (10000 / daysRemaining).round();
+                              });
+                            }
+
+                            Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                          },
+                          currentTime: _targetDate,
+                          locale: LocaleType.en,
+                        );
+                      },
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'You can change this later',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          image: Icon(
+            Icons.calendar_today_rounded,
+            size: MediaQuery.of(context).size.width * 0.5,
+            color: Colors.white,
           ),
           decoration: pageDecoration,
         ),
