@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/ShotCount.dart';
@@ -11,6 +13,7 @@ import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
@@ -25,17 +28,180 @@ class Shots extends StatefulWidget {
 class _ShotsState extends State<Shots> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
+  DateTime _targetDate;
+  TextEditingController _targetDateController = TextEditingController();
+  String _shotsPerDayText = "";
+  String _shotsPerWeekText = "";
+  bool _showShotsPerDay = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTargetDate();
+  }
+
+  Future<Null> _loadTargetDate() async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
+      if (iSnap.docs.isNotEmpty) {
+        Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
+        setState(() {
+          _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+        });
+
+        _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+
+        int total = i.total >= 10000 ? 10000 : i.total;
+        int shotsRemaining = 10000 - total;
+        int daysRemaining = i.targetDate.difference(DateTime.now()).inDays;
+        double weeksRemaining = daysRemaining / 7;
+        int shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+        int shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining / weeksRemaining).round();
+        String shotsPerDayText = shotsRemaining < 1 ? "Done!".toUpperCase() : "$shotsPerDay / Day".toUpperCase();
+        String shotsPerWeekText = shotsRemaining < 1 ? "Done!".toUpperCase() : "$shotsPerWeek / Week".toUpperCase();
+
+        setState(() {
+          _shotsPerDayText = shotsPerDayText;
+          _shotsPerWeekText = shotsPerWeekText;
+        });
+      }
+    });
+  }
+
+  void _editTargetDate() {
+    DatePicker.showDatePicker(
+      context,
+      showTitleActions: true,
+      minTime: DateTime.now(),
+      maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+      onChanged: (date) {},
+      onConfirm: (date) async {
+        setState(() {
+          _targetDate = date;
+        });
+
+        _targetDateController.text = DateFormat('MMMM d, y').format(date);
+
+        await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
+          if (iSnap.docs.isNotEmpty) {
+            DocumentReference ref = iSnap.docs[0].reference;
+            Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
+            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete);
+            await ref.update(updated.toMap()).then((_) async {
+              _loadTargetDate();
+            });
+          }
+        });
+      },
+      currentTime: _targetDate,
+      locale: LocaleType.en,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(top: 15),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
         children: [
           Column(
             children: [
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                margin: EdgeInsets.only(
+                  bottom: 15,
+                  top: 15,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Goal".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 26,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Stack(
+                      children: [
+                        Container(
+                          width: 150,
+                          child: TextField(
+                            controller: _targetDateController,
+                            decoration: InputDecoration(
+                              labelText: "10,000 Shots By:".toUpperCase(),
+                              labelStyle: TextStyle(
+                                color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryVariant, 0.3),
+                                fontFamily: "NovecentoSans",
+                                fontSize: 22,
+                              ),
+                              focusColor: Theme.of(context).colorScheme.primary,
+                              border: null,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.all(2),
+                              fillColor: Theme.of(context).colorScheme.primaryVariant,
+                            ),
+                            readOnly: true,
+                            onTap: () {
+                              _editTargetDate();
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          top: -8,
+                          right: 0,
+                          child: InkWell(
+                            child: Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Icon(
+                                Icons.edit,
+                                size: 18,
+                              ),
+                            ),
+                            enableFeedback: true,
+                            focusColor: Theme.of(context).colorScheme.primaryVariant,
+                            onTap: _editTargetDate,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          _showShotsPerDay ? _shotsPerDayText : _shotsPerWeekText,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontFamily: "NovecentoSans",
+                            fontSize: 26,
+                          ),
+                        ),
+                        InkWell(
+                          child: Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Icon(
+                              Icons.swap_vert,
+                              size: 18,
+                            ),
+                          ),
+                          enableFeedback: true,
+                          focusColor: Theme.of(context).colorScheme.primaryVariant,
+                          onTap: () {
+                            setState(() {
+                              _showShotsPerDay = !_showShotsPerDay;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [

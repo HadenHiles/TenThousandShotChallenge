@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Iteration {
   String id;
   final DateTime startDate;
+  final DateTime targetDate;
   final DateTime endDate;
   final Duration totalDuration;
   final int total;
@@ -13,13 +14,14 @@ class Iteration {
   final bool complete;
   DocumentReference reference;
 
-  Iteration(this.startDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
+  Iteration(this.startDate, this.targetDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
 
   Iteration.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['start_date'] != null),
         assert(map['total'] != null),
         id = map['id'],
         startDate = map['start_date'] != null ? map['start_date'].toDate() : null,
+        targetDate = map['target_date'] != null ? map['target_date'].toDate() : null,
         endDate = map['end_date'] != null ? map['end_date'].toDate() : null,
         totalDuration = Duration(seconds: map['total_duration']),
         total = map['total'],
@@ -33,6 +35,13 @@ class Iteration {
     return {
       'id': id,
       'start_date': startDate,
+      'target_date': targetDate != null
+          ? targetDate
+          : DateTime(
+              DateTime.now().year,
+              DateTime.now().month,
+              DateTime.now().day + 100,
+            ),
       'end_date': endDate,
       'total_duration': totalDuration.inSeconds,
       'total': total,
