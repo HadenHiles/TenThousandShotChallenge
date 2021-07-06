@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
@@ -12,6 +13,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Profile extends StatefulWidget {
@@ -378,176 +380,237 @@ class _ProfileState extends State<Profile> {
               ),
             ],
           ),
-          Divider(
-            height: 25,
-            color: Theme.of(context).cardTheme.color,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              DropdownButton(
-                onChanged: (value) {
-                  setState(() {
-                    _isLoading = true;
-                    _sessions.clear();
-                    _lastVisible = null;
-                    _selectedIterationId = value;
-                    _loadHistory();
-                  });
-                },
-                underline: Container(),
-                dropdownColor: Theme.of(context).colorScheme.primary,
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  color: Theme.of(context).colorScheme.onPrimary,
+          Container(
+            decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
+            padding: EdgeInsets.symmetric(vertical: 15),
+            margin: EdgeInsets.only(top: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                DropdownButton(
+                  onChanged: (value) {
+                    setState(() {
+                      _isLoading = true;
+                      _sessions.clear();
+                      _lastVisible = null;
+                      _selectedIterationId = value;
+                      _loadHistory();
+                    });
+                  },
+                  underline: Container(),
+                  dropdownColor: Theme.of(context).colorScheme.primary,
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  value: _selectedIterationId,
+                  items: _attemptDropdownItems,
                 ),
-                value: _selectedIterationId,
-                items: _attemptDropdownItems,
-              ),
-              Column(
-                children: [
-                  Text(
-                    "Wrist".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+                Column(
+                  children: [
+                    Text(
+                      "Wrist".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: 25,
-                    margin: EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(color: wristShotColor),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0.75,
-                          child: Text(
-                            "W",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'NovecentoSans',
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: wristShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "W",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
-                    "Snap".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Snap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: 25,
-                    margin: EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(color: snapShotColor),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0.75,
-                          child: Text(
-                            "SN",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'NovecentoSans',
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: snapShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SN",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
-                    "Backhand".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Backhand".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: 25,
-                    margin: EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(color: backhandShotColor),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0.75,
-                          child: Text(
-                            "B",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'NovecentoSans',
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: backhandShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "B",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
-                    "Slap".toUpperCase(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 18,
-                      fontFamily: 'NovecentoSans',
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Slap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 30,
-                    height: 25,
-                    margin: EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(color: slapShotColor),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0.75,
-                          child: Text(
-                            "SL",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'NovecentoSans',
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(color: slapShotColor),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SL",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-          SizedBox(
-            height: 15,
+          Container(
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  Iteration i = Iteration.fromSnapshot(snapshot.data);
+
+                  if (i.endDate != null) {
+                    int daysTaken = i.startDate.difference(i.endDate).inDays;
+                    daysTaken = daysTaken < 1 ? 1 : daysTaken;
+                    String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
+                    String iterationDescription;
+
+                    if (daysTaken <= 1)
+                      iterationDescription = "${i.total} shots in $daysTaken day.".toUpperCase();
+                    else
+                      iterationDescription = "${i.total} shots in $daysTaken days.".toUpperCase();
+
+                    if (i.targetDate != null) {
+                      int daysBeforeAfterTarget = i.targetDate.difference(i.endDate).inDays;
+
+                      if (daysBeforeAfterTarget < 0) if (daysBeforeAfterTarget <= 1)
+                        iterationDescription += " ${daysBeforeAfterTarget.abs()} day before goal date";
+                      else
+                        iterationDescription += " ${daysBeforeAfterTarget.abs()} days before goal date";
+                      else if (daysBeforeAfterTarget > 0) if (daysBeforeAfterTarget <= 1)
+                        iterationDescription += " ${daysBeforeAfterTarget.abs()} day after goal date";
+                      else
+                        iterationDescription += " ${daysBeforeAfterTarget.abs()} days after goal date";
+                      else
+                        iterationDescription += " by your target date";
+
+                      iterationDescription += " of $targetDate";
+                    }
+
+                    return Container(
+                      width: MediaQuery.of(context).size.width - 20,
+                      height: 60,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          AutoSizeText(
+                            iterationDescription,
+                            maxFontSize: 22,
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontFamily: "NovecentoSans",
+                              fontSize: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                }
+
+                return Container();
+              },
+            ),
           ),
           Expanded(
             child: RefreshIndicator(
