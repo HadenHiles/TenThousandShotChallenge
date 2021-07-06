@@ -114,25 +114,44 @@ class _ShotsState extends State<Shots> {
                       children: [
                         Container(
                           width: 150,
-                          child: TextField(
-                            controller: _targetDateController,
-                            decoration: InputDecoration(
-                              labelText: "10,000 Shots By:".toUpperCase(),
-                              labelStyle: TextStyle(
-                                color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryVariant, 0.3),
-                                fontFamily: "NovecentoSans",
-                                fontSize: 22,
-                              ),
-                              focusColor: Theme.of(context).colorScheme.primary,
-                              border: null,
-                              disabledBorder: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.all(2),
-                              fillColor: Theme.of(context).colorScheme.primaryVariant,
-                            ),
-                            readOnly: true,
-                            onTap: () {
-                              _editTargetDate();
+                          child: StreamBuilder(
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                );
+                              } else if (snapshot.data.docs.length > 0) {
+                                Iteration i = Iteration.fromSnapshot(snapshot.data.docs[0]);
+
+                                _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate);
+
+                                return TextField(
+                                  controller: _targetDateController,
+                                  decoration: InputDecoration(
+                                    labelText: "10,000 Shots By:".toUpperCase(),
+                                    labelStyle: TextStyle(
+                                      color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryVariant, 0.3),
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 22,
+                                    ),
+                                    focusColor: Theme.of(context).colorScheme.primary,
+                                    border: null,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.all(2),
+                                    fillColor: Theme.of(context).colorScheme.primaryVariant,
+                                  ),
+                                  readOnly: true,
+                                  onTap: () {
+                                    _editTargetDate();
+                                  },
+                                );
+                              } else {
+                                return Container();
+                              }
                             },
                           ),
                         ),
