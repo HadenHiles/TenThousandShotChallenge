@@ -685,7 +685,7 @@ class _MoreState extends State<More> {
                                           ),
                                         )
                                       : Container(
-                                          height: 200.0,
+                                          height: 220.0,
                                           child: ListView.builder(
                                             scrollDirection: Axis.horizontal,
                                             itemCount: _merch.length,
@@ -704,6 +704,7 @@ class _MoreState extends State<More> {
                                                   elevation: 4,
                                                   child: Container(
                                                     width: 150.0,
+                                                    height: 32.25,
                                                     child: Column(
                                                       mainAxisAlignment: MainAxisAlignment.start,
                                                       children: [
@@ -715,17 +716,25 @@ class _MoreState extends State<More> {
                                                                 ),
                                                           width: 150,
                                                         ),
-                                                        Container(
-                                                          padding: EdgeInsets.all(5),
-                                                          child: AutoSizeText(
-                                                            _merch[i].title,
-                                                            maxLines: 2,
-                                                            maxFontSize: 22,
-                                                            style: TextStyle(
-                                                              fontFamily: "NovecentoSans",
-                                                              fontSize: 20,
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
+                                                        Expanded(
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              Container(
+                                                                padding: EdgeInsets.all(5),
+                                                                child: AutoSizeText(
+                                                                  _merch[i].title.toUpperCase(),
+                                                                  maxLines: 2,
+                                                                  maxFontSize: 22,
+                                                                  textAlign: TextAlign.center,
+                                                                  style: TextStyle(
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 20,
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ),
                                                       ],
@@ -837,7 +846,7 @@ class _MoreState extends State<More> {
                                           ),
                                         )
                                       : Container(
-                                          height: 205.0,
+                                          height: 210.0,
                                           child: ListView.builder(
                                             scrollDirection: Axis.horizontal,
                                             itemCount: _hockeyshotProducts.length,
@@ -867,17 +876,25 @@ class _MoreState extends State<More> {
                                                                 ),
                                                           width: 140,
                                                         ),
-                                                        Container(
-                                                          padding: EdgeInsets.all(5),
-                                                          child: AutoSizeText(
-                                                            _hockeyshotProducts[i].title,
-                                                            maxLines: 2,
-                                                            maxFontSize: 18,
-                                                            style: TextStyle(
-                                                              fontFamily: "NovecentoSans",
-                                                              fontSize: 18,
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
+                                                        Expanded(
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              Container(
+                                                                padding: EdgeInsets.all(5),
+                                                                child: AutoSizeText(
+                                                                  _hockeyshotProducts[i].title.toUpperCase(),
+                                                                  maxLines: 2,
+                                                                  maxFontSize: 22,
+                                                                  textAlign: TextAlign.center,
+                                                                  style: TextStyle(
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 20,
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ),
                                                       ],
