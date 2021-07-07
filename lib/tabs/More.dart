@@ -586,6 +586,36 @@ class _MoreState extends State<More> {
                                                           ),
                                                         },
                                                       ),
+                                                      _learnVideos[i].buttonUrl != null
+                                                          ? Container(
+                                                              margin: EdgeInsets.only(bottom: 25),
+                                                              child: TextButton(
+                                                                onPressed: () async {
+                                                                  await canLaunch(_learnVideos[i].buttonUrl).then((can) {
+                                                                    launch(_learnVideos[i].buttonUrl).catchError((err) {
+                                                                      print(err);
+                                                                    });
+                                                                  });
+                                                                },
+                                                                child: Text(
+                                                                  _learnVideos[i].buttonText.toUpperCase() ?? "See more".toUpperCase(),
+                                                                  style: TextStyle(
+                                                                    color: Colors.white,
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 24,
+                                                                  ),
+                                                                ),
+                                                                style: ButtonStyle(
+                                                                  padding: MaterialStateProperty.all(
+                                                                    EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                                  ),
+                                                                  backgroundColor: MaterialStateProperty.all(
+                                                                    Theme.of(context).primaryColor,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          : Container(),
                                                     ],
                                                   ),
                                                 ),
