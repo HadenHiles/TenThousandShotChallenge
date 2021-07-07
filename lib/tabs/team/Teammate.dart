@@ -351,7 +351,7 @@ class _TeammateState extends State<Teammate> {
                                           });
 
                                           return Text(
-                                            total.toString() + " Lifetime Shots",
+                                            total.toString() + " Lifetime Shots".toLowerCase(),
                                             style: TextStyle(
                                               fontSize: 20,
                                               fontFamily: 'NovecentoSans',
@@ -419,9 +419,9 @@ class _TeammateState extends State<Teammate> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Container(
-                                    margin: EdgeInsets.only(top: 5, right: 2),
+                                    margin: EdgeInsets.only(top: 10, right: 5),
                                     child: Text(
-                                      "challenge ",
+                                      "challenge ".toUpperCase(),
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimary,
