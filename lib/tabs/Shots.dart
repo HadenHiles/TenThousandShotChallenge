@@ -131,7 +131,7 @@ class _ShotsState extends State<Shots> {
                                 return TextField(
                                   controller: _targetDateController,
                                   decoration: InputDecoration(
-                                    labelText: "10,000 Shots By:".toUpperCase(),
+                                    labelText: "10,000 Shots By:".toLowerCase(),
                                     labelStyle: TextStyle(
                                       color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryVariant, 0.3),
                                       fontFamily: "NovecentoSans",
@@ -212,15 +212,15 @@ class _ShotsState extends State<Shots> {
                                 }
 
                                 String shotsPerDayText = shotsRemaining < 1
-                                    ? "Done!".toUpperCase()
+                                    ? "Done!".toLowerCase()
                                     : shotsPerDay <= 999
-                                        ? shotsPerDay.toString() + " / Day".toUpperCase()
-                                        : numberFormat.format(shotsPerDay) + " / Day".toUpperCase();
+                                        ? shotsPerDay.toString() + " / Day".toLowerCase()
+                                        : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
                                 String shotsPerWeekText = shotsRemaining < 1
-                                    ? "Done!".toUpperCase()
+                                    ? "Done!".toLowerCase()
                                     : shotsPerWeek <= 999
-                                        ? shotsPerWeek.toString() + " / Week".toUpperCase()
-                                        : numberFormat.format(shotsPerWeek) + " / Week".toUpperCase();
+                                        ? shotsPerWeek.toString() + " / Week".toLowerCase()
+                                        : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
 
                                 return GestureDetector(
                                   onTap: () {

@@ -217,7 +217,7 @@ class _NavigationState extends State<Navigation> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
-    DateTime targetDate = DateTime.parse(prefs.getString('target_date')) ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+    DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
     String fcmToken = prefs.getString('fcm_token');
 
     // Potentially update user's FCM Token if stale
