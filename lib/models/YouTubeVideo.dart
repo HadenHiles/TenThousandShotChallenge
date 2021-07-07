@@ -4,6 +4,8 @@ class YouTubeVideo {
   final String id;
   final String title;
   final String thumbnail;
+  String buttonUrl;
+  String buttonText;
   String content;
   DocumentReference reference;
 
@@ -15,6 +17,8 @@ class YouTubeVideo {
         id = map['id'],
         title = map['title'],
         thumbnail = map['thumbnail'],
+        buttonUrl = map['button_url'],
+        buttonText = map['button_text'],
         content = map['content'];
 
   Map<String, dynamic> toMap() {
@@ -22,6 +26,8 @@ class YouTubeVideo {
       'id': id,
       'title': title,
       'thumbnail': thumbnail,
+      'button_url': buttonUrl,
+      'button_text': buttonText,
       'content': content,
     };
   }
