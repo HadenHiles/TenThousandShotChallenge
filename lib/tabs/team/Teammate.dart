@@ -69,7 +69,7 @@ class _TeammateState extends State<Teammate> {
         iterations.add(DropdownMenuItem<String>(
           value: iDoc.reference.id,
           child: Text(
-            "challenge ".toUpperCase() + (i + 1).toString(),
+            "challenge ".toLowerCase() + (i + 1).toString(),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 26,
@@ -657,7 +657,7 @@ class _TeammateState extends State<Teammate> {
                                         )
                                       : _sessions.length < 1
                                           ? Text(
-                                              "${_userTeammate.displayName.substring(0, _userTeammate.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toUpperCase(),
+                                              "${_userTeammate.displayName.substring(0, _userTeammate.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
                                               style: TextStyle(
                                                 fontFamily: 'NovecentoSans',
                                                 color: Theme.of(context).colorScheme.onPrimary,
@@ -732,7 +732,7 @@ class _TeammateState extends State<Teammate> {
                   ),
                 ),
                 Text(
-                  s.total.toString() + " Shots".toUpperCase(),
+                  s.total.toString() + " Shots".toLowerCase(),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 18,
