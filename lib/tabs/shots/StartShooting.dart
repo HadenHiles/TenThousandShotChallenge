@@ -465,7 +465,7 @@ class _StartShootingState extends State<StartShooting> {
                                                             ),
                                                             GestureDetector(
                                                               onTap: () async {
-                                                                String link = "https://teespring.com/10k-shots-club-snapback?pr=TENKSNIPER";
+                                                                String link = "https://teespring.com/sniper-snapback?pr=TENKSNIPER";
                                                                 await canLaunch(link).then((can) {
                                                                   launch(link).catchError((err) {
                                                                     print(err);
