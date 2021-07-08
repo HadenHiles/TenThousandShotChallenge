@@ -15,7 +15,6 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vibration/vibration.dart';
 
 class StartShooting extends StatefulWidget {
   StartShooting({Key key, this.sessionPanelController}) : super(key: key);
