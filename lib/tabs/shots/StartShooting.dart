@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:vibration/vibration.dart';
 
 class StartShooting extends StatefulWidget {
   StartShooting({Key key, this.sessionPanelController}) : super(key: key);
@@ -282,7 +283,7 @@ class _StartShootingState extends State<StartShooting> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width - 150,
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Shots shots = Shots(DateTime.now(), _selectedShotType, _currentShotCount);
                       setState(() {
                         _shots.insert(0, shots);
@@ -640,19 +641,6 @@ class _StartShootingState extends State<StartShooting> {
           setState(() {
             _shots.remove(s);
           });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Theme.of(context).cardTheme.color,
-              duration: Duration(milliseconds: 800),
-              content: Text(
-                "${s.type.toUpperCase()} ${s.count} deleted",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ),
-          );
         },
         background: Container(
           color: Theme.of(context).primaryColor,
