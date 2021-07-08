@@ -566,9 +566,9 @@ class _ProfileState extends State<Profile> {
                     String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysTaken <= 1) {
-                      iterationDescription = "$fTotal shots in $daysTaken day!";
+                      iterationDescription = "$fTotal shots in $daysTaken day";
                     } else {
-                      iterationDescription = "$fTotal shots in $daysTaken days!";
+                      iterationDescription = "$fTotal shots in $daysTaken days";
                     }
 
                     if (i.targetDate != null) {
@@ -713,9 +713,9 @@ class _ProfileState extends State<Profile> {
                     String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysSoFar <= 1 && daysSoFar != 0) {
-                      iterationDescription = "$fTotal shots in $daysSoFar day!";
+                      iterationDescription = "$fTotal shots in $daysSoFar day";
                     } else {
-                      iterationDescription = "$fTotal shots in $daysSoFar days!";
+                      iterationDescription = "$fTotal shots in $daysSoFar days";
                     }
 
                     if (i.targetDate != null && remainingShots > 0) {
