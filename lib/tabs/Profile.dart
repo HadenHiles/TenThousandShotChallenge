@@ -299,7 +299,7 @@ class _ProfileState extends State<Profile> {
                                 });
 
                                 return Text(
-                                  total.toString() + " Lifetime Shots".toLowerCase(),
+                                  total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontFamily: 'NovecentoSans',
@@ -563,44 +563,49 @@ class _ProfileState extends State<Profile> {
                     String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
                     String iterationDescription;
                     String goalDescription = "";
+                    String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysTaken <= 1) {
-                      iterationDescription = "${i.total} shots in $daysTaken day";
+                      iterationDescription = "$fTotal shots in $daysTaken day!";
                     } else {
-                      iterationDescription = "${i.total} shots in $daysTaken days";
+                      iterationDescription = "$fTotal shots in $daysTaken days!";
                     }
 
                     if (i.targetDate != null) {
                       int daysBeforeAfterTarget = i.targetDate.difference(i.endDate).inDays;
 
                       if (daysBeforeAfterTarget > 0) {
-                        if (daysBeforeAfterTarget <= 1) {
+                        if (daysBeforeAfterTarget.abs() <= 1) {
                           goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
                         } else {
                           goalDescription += " ${daysBeforeAfterTarget.abs()} days before goal";
                         }
                       } else if (daysBeforeAfterTarget < 0) {
-                        if (daysBeforeAfterTarget <= 1) {
+                        if (daysBeforeAfterTarget.abs() <= 1) {
                           goalDescription += " ${daysBeforeAfterTarget.abs()} day after goal";
                         } else {
                           goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
                         }
                       }
+
+                      goalDescription += " ($targetDate)";
                     } else {
                       goalDescription += " by your goal ";
                     }
 
-                    goalDescription += " of $targetDate";
-
                     return Container(
-                      width: MediaQuery.of(context).size.width - 20,
+                      width: MediaQuery.of(context).size.width,
                       height: 60,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              SizedBox(
+                                width: 8,
+                              ),
                               Stack(
                                 clipBehavior: Clip.none,
                                 children: [
@@ -654,20 +659,23 @@ class _ProfileState extends State<Profile> {
                               SizedBox(
                                 width: 8,
                               ),
-                              AutoSizeText(
-                                iterationDescription.toLowerCase(),
-                                maxFontSize: 18,
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                              Container(
+                                child: AutoSizeText(
+                                  iterationDescription.toLowerCase(),
+                                  maxFontSize: 18,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 FontAwesomeIcons.calendarCheck,
@@ -676,15 +684,17 @@ class _ProfileState extends State<Profile> {
                               SizedBox(
                                 width: 2,
                               ),
-                              AutoSizeText(
-                                goalDescription.toLowerCase(),
-                                maxFontSize: 18,
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                              Container(
+                                child: AutoSizeText(
+                                  goalDescription.toLowerCase(),
+                                  maxFontSize: 18,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             ],
@@ -699,132 +709,136 @@ class _ProfileState extends State<Profile> {
                     String iterationDescription;
                     String goalDescription = "";
                     int remainingShots = 10000 - i.total;
+                    String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
+                    String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysSoFar <= 1 && daysSoFar != 0) {
-                      iterationDescription = "${i.total} shots in $daysSoFar day";
+                      iterationDescription = "$fTotal shots in $daysSoFar day!";
                     } else {
-                      iterationDescription = "${i.total} shots in $daysSoFar days";
+                      iterationDescription = "$fTotal shots in $daysSoFar days!";
                     }
 
-                    if (i.targetDate != null) {
+                    if (i.targetDate != null && remainingShots > 0) {
                       int daysBeforeAfterTarget = i.targetDate.difference(i.startDate).inDays;
 
                       if (daysBeforeAfterTarget > 0) {
                         if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} day left to take $remainingShots shots";
+                          goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
                         } else {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} days left to take $remainingShots shots";
+                          goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
                         }
                       } else if (daysBeforeAfterTarget < 0) {
                         if (daysBeforeAfterTarget == 1) {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
+                          goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
                         } else {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
+                          goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
                         }
                       } else {
-                        goalDescription += " 1 day left to take $remainingShots shots";
+                        goalDescription += "1 day left to take $fRemainingShots shots";
                       }
-                    } else {
-                      goalDescription += " by your goal ";
                     }
 
                     return Container(
-                      width: MediaQuery.of(context).size.width - 20,
+                      width: MediaQuery.of(context).size.width,
                       height: 60,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
                         children: [
-                          Row(
-                            children: [
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
-                                  // Top Left
-                                  Positioned(
-                                    left: -6,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Colors.white,
+                          remainingShots >= 10000
+                              ? Container()
+                              : Row(
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                        // Top Left
+                                        Positioned(
+                                          left: -6,
+                                          top: -6,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 8,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        // Bottom Left
+                                        Positioned(
+                                          left: -5,
+                                          bottom: -5,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 6,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        // Top right
+                                        Positioned(
+                                          right: -4,
+                                          top: -6,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 6,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        // Bottom right
+                                        Positioned(
+                                          right: -4,
+                                          bottom: -8,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 8,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  // Bottom Left
-                                  Positioned(
-                                    left: -5,
-                                    bottom: -5,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Colors.white,
+                                    SizedBox(
+                                      width: 8,
                                     ),
-                                  ),
-                                  // Top right
-                                  Positioned(
-                                    right: -4,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Colors.white,
+                                    AutoSizeText(
+                                      iterationDescription.toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 2,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                      ),
                                     ),
-                                  ),
-                                  // Bottom right
-                                  Positioned(
-                                    right: -4,
-                                    bottom: -8,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(
-                                width: 8,
-                              ),
-                              AutoSizeText(
-                                iterationDescription.toLowerCase(),
-                                maxFontSize: 18,
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.calendarCheck,
-                                size: 20,
-                              ),
-                              SizedBox(
-                                width: 2,
-                              ),
-                              AutoSizeText(
-                                goalDescription.toLowerCase(),
-                                maxFontSize: 18,
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                          remainingShots <= 0
+                              ? Container()
+                              : Row(
+                                  children: [
+                                    Icon(
+                                      FontAwesomeIcons.calendarCheck,
+                                      size: 20,
+                                    ),
+                                    SizedBox(
+                                      width: 2,
+                                    ),
+                                    AutoSizeText(
+                                      goalDescription.toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 2,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     );
