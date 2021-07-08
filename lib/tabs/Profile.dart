@@ -382,7 +382,6 @@ class _ProfileState extends State<Profile> {
             ],
           ),
           Container(
-            decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
             padding: EdgeInsets.symmetric(vertical: 15),
             margin: EdgeInsets.only(top: 10),
             child: Row(
@@ -551,6 +550,7 @@ class _ProfileState extends State<Profile> {
             ),
           ),
           Container(
+            decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
             child: StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
               builder: (context, snapshot) {
@@ -692,6 +692,142 @@ class _ProfileState extends State<Profile> {
                         ],
                       ),
                     );
+                  } else {
+                    int daysSoFar = i.startDate.difference(DateTime.now()).inDays;
+                    daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
+                    String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
+                    String iterationDescription;
+                    String goalDescription = "";
+                    int remainingShots = 10000 - i.total;
+
+                    if (daysSoFar <= 1 && daysSoFar != 0) {
+                      iterationDescription = "${i.total} shots in $daysSoFar day";
+                    } else {
+                      iterationDescription = "${i.total} shots in $daysSoFar days";
+                    }
+
+                    if (i.targetDate != null) {
+                      int daysBeforeAfterTarget = i.targetDate.difference(i.startDate).inDays;
+
+                      if (daysBeforeAfterTarget > 0) {
+                        if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
+                          goalDescription += " ${daysBeforeAfterTarget.abs()} day left to take $remainingShots shots";
+                        } else {
+                          goalDescription += " ${daysBeforeAfterTarget.abs()} days left to take $remainingShots shots";
+                        }
+                      } else if (daysBeforeAfterTarget < 0) {
+                        if (daysBeforeAfterTarget == 1) {
+                          goalDescription += " ${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
+                        } else {
+                          goalDescription += " ${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
+                        }
+                      } else {
+                        goalDescription += " 1 day left to take $remainingShots shots";
+                      }
+                    } else {
+                      goalDescription += " by your goal ";
+                    }
+
+                    return Container(
+                      width: MediaQuery.of(context).size.width - 20,
+                      height: 60,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Row(
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  // Top Left
+                                  Positioned(
+                                    left: -6,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  // Bottom Left
+                                  Positioned(
+                                    left: -5,
+                                    bottom: -5,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  // Top right
+                                  Positioned(
+                                    right: -4,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  // Bottom right
+                                  Positioned(
+                                    right: -4,
+                                    bottom: -8,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                width: 8,
+                              ),
+                              AutoSizeText(
+                                iterationDescription.toLowerCase(),
+                                maxFontSize: 18,
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                FontAwesomeIcons.calendarCheck,
+                                size: 20,
+                              ),
+                              SizedBox(
+                                width: 2,
+                              ),
+                              AutoSizeText(
+                                goalDescription.toLowerCase(),
+                                maxFontSize: 18,
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
                   }
                 }
 
@@ -714,7 +850,7 @@ class _ProfileState extends State<Profile> {
                 itemBuilder: (_, int index) {
                   if (index < _sessions.length) {
                     final DocumentSnapshot document = _sessions[index];
-                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
+                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? false : true);
                   }
                   return Container(
                     margin: EdgeInsets.only(top: 25, bottom: 35),
