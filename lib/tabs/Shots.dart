@@ -748,6 +748,7 @@ class _ShotsState extends State<Shots> {
                                       ),
                                       onPressed: () {
                                         if (!sessionService.isRunning) {
+                                          Feedback.forTap(context);
                                           sessionService.start();
                                           widget.sessionPanelController.open();
                                         } else {
@@ -767,6 +768,7 @@ class _ShotsState extends State<Shots> {
                                               },
                                               "Continue",
                                               () {
+                                                Feedback.forTap(context);
                                                 sessionService.reset();
                                                 Navigator.of(context).pop();
                                                 sessionService.start();

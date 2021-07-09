@@ -331,6 +331,8 @@ class _NavigationState extends State<Navigation> {
                                     children: [
                                       InkWell(
                                         onTap: () {
+                                          Feedback.forLongPress(context);
+
                                           if (!sessionService.isPaused) {
                                             sessionService.pause();
                                           } else {
@@ -376,6 +378,8 @@ class _NavigationState extends State<Navigation> {
                                   color: Theme.of(context).colorScheme.onSecondary,
                                 ),
                                 onTap: () {
+                                  Feedback.forLongPress(context);
+
                                   if (sessionPanelController.isPanelClosed) {
                                     sessionPanelController.open();
                                     setState(() {

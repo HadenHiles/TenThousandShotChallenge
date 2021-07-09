@@ -88,6 +88,7 @@ class _StartShootingState extends State<StartShooting> {
                         type: 'wrist',
                         active: _selectedShotType == 'wrist',
                         onPressed: () {
+                          Feedback.forLongPress(context);
                           setState(() {
                             _selectedShotType = 'wrist';
                           });
@@ -97,6 +98,7 @@ class _StartShootingState extends State<StartShooting> {
                         type: 'snap',
                         active: _selectedShotType == 'snap',
                         onPressed: () {
+                          Feedback.forLongPress(context);
                           setState(() {
                             _selectedShotType = 'snap';
                           });
@@ -106,6 +108,7 @@ class _StartShootingState extends State<StartShooting> {
                         type: 'slap',
                         active: _selectedShotType == 'slap',
                         onPressed: () {
+                          Feedback.forLongPress(context);
                           setState(() {
                             _selectedShotType = 'slap';
                           });
@@ -115,6 +118,7 @@ class _StartShootingState extends State<StartShooting> {
                         type: 'backhand',
                         active: _selectedShotType == 'backhand',
                         onPressed: () {
+                          Feedback.forLongPress(context);
                           setState(() {
                             _selectedShotType = 'backhand';
                           });
@@ -128,7 +132,7 @@ class _StartShootingState extends State<StartShooting> {
                 ),
                 GestureDetector(
                   onTap: () async {
-                    Feedback.forTap(context);
+                    Feedback.forLongPress(context);
 
                     setState(() {
                       _puckCountUpdating = true;
@@ -284,6 +288,8 @@ class _StartShootingState extends State<StartShooting> {
                   width: MediaQuery.of(context).size.width - 150,
                   child: TextButton(
                     onPressed: () async {
+                      Feedback.forLongPress(context);
+
                       Shots shots = Shots(DateTime.now(), _selectedShotType, _currentShotCount);
                       setState(() {
                         _shots.insert(0, shots);
@@ -346,6 +352,8 @@ class _StartShootingState extends State<StartShooting> {
                       child: _shots.length < 1
                           ? TextButton(
                               onPressed: () {
+                                Feedback.forLongPress(context);
+
                                 sessionService.reset();
                                 widget.sessionPanelController.close();
                                 this.reset();
