@@ -121,6 +121,83 @@ Future<bool> deleteSession(ShootingSession shootingSession) async {
   });
 }
 
+Future<bool> recalculateIterationTotals() async {
+  return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').get().then((iSnap) async {
+    if (iSnap.docs.isNotEmpty) {
+      // Get a new write batch
+      var batch = FirebaseFirestore.instance.batch();
+
+      await Future.forEach(iSnap.docs, (iDoc) async {
+        int iTotal = 0;
+        int totalWrist = 0;
+        int totalSnap = 0;
+        int totalSlap = 0;
+        int totalBackhand = 0;
+        Iteration i = Iteration.fromSnapshot(iDoc);
+
+        await i.reference.collection('sessions').get().then((sSnap) async {
+          if (sSnap.docs.isNotEmpty) {
+            int sTotal = 0;
+            int tWrist = 0;
+            int tSnap = 0;
+            int tSlap = 0;
+            int tBackhand = 0;
+
+            await Future.forEach(sSnap.docs, (sDoc) async {
+              ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+
+              await sDoc.reference.collection('shots').get().then((shotsSnapshot) async {
+                if (shotsSnapshot.docs.isNotEmpty) {
+                  await Future.forEach(shotsSnapshot.docs, (shotsDoc) {
+                    Shots shots = Shots.fromSnapshot(shotsDoc);
+                    // Get the total number of shots for the session
+                    sTotal += shots.count;
+
+                    switch (shots.type) {
+                      case "wrist":
+                        tWrist += shots.count;
+                        break;
+                      case "snap":
+                        tSnap += shots.count;
+                        break;
+                      case "slap":
+                        tSlap += shots.count;
+                        break;
+                      case "backhand":
+                        tBackhand += shots.count;
+                        break;
+                      default:
+                    }
+                  }).then((_) {
+                    // Update the session shot totals
+                    ShootingSession updatedSession = ShootingSession(sTotal, tWrist, tSnap, tSlap, tBackhand, s.date, s.duration);
+                    batch.update(s.reference, updatedSession.toMap());
+                  });
+                }
+              });
+            }).then((_) {
+              iTotal += sTotal;
+              totalWrist += tWrist;
+              totalSnap += tSnap;
+              totalSlap += tSlap;
+              totalBackhand += tBackhand;
+
+              // Update the iteration total
+              Iteration updatedIteration = Iteration(i.startDate, i.targetDate, i.endDate, i.totalDuration, iTotal, totalWrist, totalSnap, totalSlap, totalBackhand, i.complete);
+              batch.update(i.reference, updatedIteration.toMap());
+            });
+          }
+        });
+      }).then((_) async {
+        // Commit the changes
+        return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
+      });
+    }
+
+    return false;
+  });
+}
+
 Future<bool> startNewIteration() async {
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {

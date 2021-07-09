@@ -60,6 +60,7 @@ dependencies:
   vibration: ^1.7.3 
   flutter_datetime_picker: ^1.5.1
   fluttertoast: ^8.0.7
+  flutter_local_notifications: ^6.0.0
   # font_awesome_flutter: ^8.8.1 # Included in flutter_signin_button but has dependency conflict
 
 
