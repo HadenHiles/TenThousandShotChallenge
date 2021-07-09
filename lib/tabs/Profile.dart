@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -926,69 +927,49 @@ class _ProfileState extends State<Profile> {
       absorbing: _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
       child: Dismissible(
         key: UniqueKey(),
-        onDismissed: (direction) {
-          bool proceedWithDelete = true;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Theme.of(context).cardTheme.color,
-              content: Text(
-                '${s.total} shots deleted!',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-              duration: Duration(seconds: 4),
-              action: SnackBarAction(
-                label: "UNDO",
-                textColor: Theme.of(context).primaryColor,
-                onPressed: () {
-                  proceedWithDelete = false;
-
-                  _sessions.clear();
-                  _lastVisible = null;
-                  _loadHistory();
-                },
-              ),
-            ),
+        onDismissed: (direction) async {
+          Fluttertoast.showToast(
+            msg: '${s.total} shots deleted',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Theme.of(context).cardTheme.color,
+            textColor: Theme.of(context).colorScheme.onPrimary,
+            fontSize: 16.0,
           );
 
-          Timer(Duration(seconds: 4), () async {
-            if (proceedWithDelete) {
-              await deleteSession(s).then((deleted) {
-                if (deleted == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Theme.of(context).cardTheme.color,
-                      content: new Text(
-                        "There was an error deleting the session",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                      duration: Duration(milliseconds: 1500),
+          await deleteSession(s).then((deleted) {
+            if (deleted == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: new Text(
+                    "There was an error deleting the session",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
-                  );
-                } else if (!deleted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Theme.of(context).cardTheme.color,
-                      content: new Text(
-                        "Sorry this session can't be deleted",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                      duration: Duration(milliseconds: 1500),
+                  ),
+                  duration: Duration(milliseconds: 1500),
+                ),
+              );
+            } else if (!deleted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: new Text(
+                    "Sorry this session can't be deleted",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
-                  );
-                }
-
-                _sessions.clear();
-                _lastVisible = null;
-                _loadHistory();
-              });
+                  ),
+                  duration: Duration(milliseconds: 1500),
+                ),
+              );
             }
+
+            _sessions.clear();
+            _lastVisible = null;
+            _loadHistory();
           });
         },
         confirmDismiss: (DismissDirection direction) async {

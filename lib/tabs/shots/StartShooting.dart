@@ -1,6 +1,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:prompt_dialog/prompt_dialog.dart';
 import 'package:provider/provider.dart';
@@ -394,17 +395,14 @@ class _StartShootingState extends State<StartShooting> {
                                       Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
                                       if ((i.total + totalShots) < 10000) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                            content: new Text(
-                                              'Shooting session saved!',
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 1200),
-                                          ),
+                                        Fluttertoast.showToast(
+                                          msg: 'Shooting session saved!',
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.BOTTOM,
+                                          timeInSecForIosWeb: 1,
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          textColor: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16.0,
                                         );
                                       } else {
                                         showDialog(
@@ -637,6 +635,15 @@ class _StartShootingState extends State<StartShooting> {
       Dismissible tile = Dismissible(
         key: UniqueKey(),
         onDismissed: (direction) {
+          Fluttertoast.showToast(
+            msg: '${s.count} ${s.type} shots deleted',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Theme.of(context).cardTheme.color,
+            textColor: Theme.of(context).colorScheme.onPrimary,
+            fontSize: 16.0,
+          );
           setState(() {
             _shots.remove(s);
           });
