@@ -193,18 +193,149 @@ class _MoreState extends State<More> {
             Expanded(
               child: TabBarView(
                 children: [
+                  //TODO: add vertical scrolling to applicable tabs so smaller screens can scroll instead of content getting cut off
                   Column(
+                    mainAxisSize: MainAxisSize.max,
                     children: [
-                      Container(
-                        child: Column(
-                          children: [
-                            Row(
+                      Column(
+                        children: [
+                          Container(
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(10),
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          String channelLink = "https://www.youtube.com/CoachJeremy";
+                                          await canLaunch(channelLink).then((can) {
+                                            launch(channelLink).catchError((err) {
+                                              print(err);
+                                            });
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              width: 50,
+                                              height: 50,
+                                              child: FittedBox(
+                                                fit: BoxFit.cover,
+                                                clipBehavior: Clip.antiAlias,
+                                                child: CircleAvatar(
+                                                  radius: 50,
+                                                  backgroundImage: _coachJeremyPhoto == null
+                                                      ? AssetImage("assets/images/avatar.png")
+                                                      : NetworkImage(
+                                                          _coachJeremyPhoto,
+                                                        ),
+                                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            AutoSizeText(
+                                              "Coach Jeremy".toUpperCase(),
+                                              maxLines: 2,
+                                              maxFontSize: 22,
+                                              style: TextStyle(
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 22,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () async {
+                                                String channelLink = "https://www.youtube.com/CoachJeremy";
+                                                await canLaunch(channelLink).then((can) {
+                                                  launch(channelLink).catchError((err) {
+                                                    print(err);
+                                                  });
+                                                });
+                                              },
+                                              icon: Icon(
+                                                FontAwesomeIcons.youtube,
+                                                color: Colors.red.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
+                                    ? Container(
+                                        margin: EdgeInsets.symmetric(vertical: 25),
+                                        child: Center(
+                                          child: LinearProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        height: 185.0,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _coachJeremyVideos.length,
+                                          itemBuilder: (BuildContext context, int i) {
+                                            return GestureDetector(
+                                              onTap: () async {
+                                                String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
+                                                await canLaunch(videoLink).then((can) {
+                                                  launch(videoLink).catchError((err) {
+                                                    print(err);
+                                                  });
+                                                });
+                                              },
+                                              child: Card(
+                                                color: Theme.of(context).cardTheme.color,
+                                                elevation: 4,
+                                                child: Container(
+                                                  width: 200.0,
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                    children: [
+                                                      Image(
+                                                        image: NetworkImage(_coachJeremyVideos[i].thumbnail),
+                                                        width: 200,
+                                                      ),
+                                                      Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        child: AutoSizeText(
+                                                          _coachJeremyVideos[i].title,
+                                                          maxLines: 2,
+                                                          maxFontSize: 22,
+                                                          style: TextStyle(
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 22,
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            child: Column(
                               children: [
                                 Container(
                                   padding: EdgeInsets.all(10),
                                   child: GestureDetector(
                                     onTap: () async {
-                                      String channelLink = "https://www.youtube.com/CoachJeremy";
+                                      String channelLink = "https://www.youtube.com/howtohockeydotcom";
                                       await canLaunch(channelLink).then((can) {
                                         launch(channelLink).catchError((err) {
                                           print(err);
@@ -222,10 +353,10 @@ class _MoreState extends State<More> {
                                             clipBehavior: Clip.antiAlias,
                                             child: CircleAvatar(
                                               radius: 50,
-                                              backgroundImage: _coachJeremyPhoto == null
+                                              backgroundImage: _hthPhoto == null
                                                   ? AssetImage("assets/images/avatar.png")
                                                   : NetworkImage(
-                                                      _coachJeremyPhoto,
+                                                      _hthPhoto,
                                                     ),
                                               backgroundColor: Theme.of(context).colorScheme.primary,
                                             ),
@@ -235,7 +366,7 @@ class _MoreState extends State<More> {
                                           width: 15,
                                         ),
                                         AutoSizeText(
-                                          "Coach Jeremy".toUpperCase(),
+                                          "How To Hockey".toUpperCase(),
                                           maxLines: 2,
                                           maxFontSize: 22,
                                           style: TextStyle(
@@ -246,7 +377,7 @@ class _MoreState extends State<More> {
                                         ),
                                         IconButton(
                                           onPressed: () async {
-                                            String channelLink = "https://www.youtube.com/CoachJeremy";
+                                            String channelLink = "https://www.youtube.com/howtohockeydotcom";
                                             await canLaunch(channelLink).then((can) {
                                               launch(channelLink).catchError((err) {
                                                 print(err);
@@ -262,192 +393,256 @@ class _MoreState extends State<More> {
                                     ),
                                   ),
                                 ),
+                                _loadingHthVideos || _hthVideos.length < 1
+                                    ? Container(
+                                        margin: EdgeInsets.symmetric(vertical: 25),
+                                        child: Center(
+                                          child: LinearProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        height: 185.0,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _hthVideos.length,
+                                          itemBuilder: (BuildContext context, int i) {
+                                            return GestureDetector(
+                                              onTap: () async {
+                                                String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
+                                                await canLaunch(videoLink).then((can) {
+                                                  launch(videoLink).catchError((err) {
+                                                    print(err);
+                                                  });
+                                                });
+                                              },
+                                              child: Card(
+                                                color: Theme.of(context).cardTheme.color,
+                                                elevation: 4,
+                                                child: Container(
+                                                  width: 200.0,
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                    children: [
+                                                      Image(
+                                                        image: NetworkImage(_hthVideos[i].thumbnail),
+                                                        width: 200,
+                                                      ),
+                                                      Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        child: AutoSizeText(
+                                                          _hthVideos[i].title,
+                                                          maxLines: 2,
+                                                          maxFontSize: 22,
+                                                          style: TextStyle(
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 22,
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
                               ],
                             ),
-                            _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
-                                ? Container(
-                                    margin: EdgeInsets.symmetric(vertical: 25),
-                                    child: Center(
-                                      child: LinearProgressIndicator(
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 185.0,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: _coachJeremyVideos.length,
-                                      itemBuilder: (BuildContext context, int i) {
-                                        return GestureDetector(
-                                          onTap: () async {
-                                            String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
-                                            await canLaunch(videoLink).then((can) {
-                                              launch(videoLink).catchError((err) {
-                                                print(err);
-                                              });
+                          ),
+                          SizedBox(
+                            height: 15,
+                          ),
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: 25),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.instagram.com/howtohockey";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
                                             });
-                                          },
-                                          child: Card(
-                                            color: Theme.of(context).cardTheme.color,
-                                            elevation: 4,
-                                            child: Container(
-                                              width: 200.0,
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image(
-                                                    image: NetworkImage(_coachJeremyVideos[i].thumbnail),
-                                                    width: 200,
-                                                  ),
-                                                  Container(
-                                                    padding: EdgeInsets.all(5),
-                                                    child: AutoSizeText(
-                                                      _coachJeremyVideos[i].title,
-                                                      maxLines: 2,
-                                                      maxFontSize: 22,
-                                                      style: TextStyle(
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 22,
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              height: 40,
+                                              child: FittedBox(
+                                                fit: BoxFit.cover,
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Image(
+                                                  image: AssetImage("assets/images/instagram.png"),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(10),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                  await canLaunch(channelLink).then((can) {
-                                    launch(channelLink).catchError((err) {
-                                      print(err);
-                                    });
-                                  });
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 50,
-                                      height: 50,
-                                      child: FittedBox(
-                                        fit: BoxFit.cover,
-                                        clipBehavior: Clip.antiAlias,
-                                        child: CircleAvatar(
-                                          radius: 50,
-                                          backgroundImage: _hthPhoto == null
-                                              ? AssetImage("assets/images/avatar.png")
-                                              : NetworkImage(
-                                                  _hthPhoto,
-                                                ),
-                                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            AutoSizeText(
+                                              "@howtohockey".toUpperCase(),
+                                              maxLines: 1,
+                                              maxFontSize: 20,
+                                              style: TextStyle(
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 20,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                    SizedBox(
-                                      width: 15,
-                                    ),
-                                    AutoSizeText(
-                                      "How To Hockey".toUpperCase(),
-                                      maxLines: 2,
-                                      maxFontSize: 22,
-                                      style: TextStyle(
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 22,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                        await canLaunch(channelLink).then((can) {
-                                          launch(channelLink).catchError((err) {
-                                            print(err);
+                                    Container(
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.facebook.com/howtohockey";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
+                                            });
                                           });
-                                        });
-                                      },
-                                      icon: Icon(
-                                        FontAwesomeIcons.youtube,
-                                        color: Colors.red.shade600,
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              height: 40,
+                                              child: FittedBox(
+                                                fit: BoxFit.cover,
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Image(
+                                                  image: AssetImage("assets/images/facebook.png"),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            AutoSizeText(
+                                              "How To Hockey".toUpperCase(),
+                                              maxLines: 1,
+                                              maxFontSize: 20,
+                                              style: TextStyle(
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 20,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                            _loadingHthVideos || _hthVideos.length < 1
-                                ? Container(
-                                    margin: EdgeInsets.symmetric(vertical: 25),
-                                    child: Center(
-                                      child: LinearProgressIndicator(
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 185.0,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: _hthVideos.length,
-                                      itemBuilder: (BuildContext context, int i) {
-                                        return GestureDetector(
-                                          onTap: () async {
-                                            String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
-                                            await canLaunch(videoLink).then((can) {
-                                              launch(videoLink).catchError((err) {
-                                                print(err);
-                                              });
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.tiktok.com/@coachjeremyhth";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
                                             });
-                                          },
-                                          child: Card(
-                                            color: Theme.of(context).cardTheme.color,
-                                            elevation: 4,
-                                            child: Container(
-                                              width: 200.0,
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image(
-                                                    image: NetworkImage(_hthVideos[i].thumbnail),
-                                                    width: 200,
-                                                  ),
-                                                  Container(
-                                                    padding: EdgeInsets.all(5),
-                                                    child: AutoSizeText(
-                                                      _hthVideos[i].title,
-                                                      maxLines: 2,
-                                                      maxFontSize: 22,
-                                                      style: TextStyle(
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 22,
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              height: 40,
+                                              child: FittedBox(
+                                                fit: BoxFit.cover,
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Image(
+                                                  image: AssetImage("assets/images/tiktok.png"),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            AutoSizeText(
+                                              "@coachjeremyhth".toUpperCase(),
+                                              maxLines: 1,
+                                              maxFontSize: 20,
+                                              style: TextStyle(
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 20,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                          ],
-                        ),
+                                    Container(
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.twitter.com/howtohockey";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
+                                            });
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              height: 40,
+                                              child: FittedBox(
+                                                fit: BoxFit.cover,
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Image(
+                                                  image: AssetImage("assets/images/twitter.png"),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            AutoSizeText(
+                                              "@howtohockey".toUpperCase(),
+                                              maxLines: 1,
+                                              maxFontSize: 20,
+                                              style: TextStyle(
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 20,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
