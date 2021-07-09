@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
@@ -469,7 +470,7 @@ class _MoreState extends State<More> {
                                     ),
                                   )
                                 : Container(
-                                    height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + AppBar().preferredSize.height + 60),
+                                    height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + AppBar().preferredSize.height + 60) - (sessionService.isRunning ? 60 : 0),
                                     child: PageView.builder(
                                       controller: _learnPageController,
                                       scrollDirection: Axis.vertical,

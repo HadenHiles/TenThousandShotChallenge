@@ -388,6 +388,8 @@ class _StartShootingState extends State<StartShooting> {
                             )
                           : TextButton(
                               onPressed: () async {
+                                Feedback.forLongPress(context);
+
                                 int totalShots = 0;
                                 _shots.forEach((s) {
                                   totalShots += s.count;
