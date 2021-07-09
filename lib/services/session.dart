@@ -9,6 +9,7 @@ class SessionService extends ChangeNotifier {
   Duration _currentDuration = Duration.zero;
 
   bool get isRunning => _timer != null;
+  bool get isPaused => !_watch.isRunning;
 
   SessionService() {
     _watch = Stopwatch();
@@ -28,6 +29,21 @@ class SessionService extends ChangeNotifier {
     _watch.start();
 
     notifyListeners();
+  }
+
+  void resume() {
+    if (isPaused) {
+      _watch.start();
+      _currentDuration = _watch.elapsed;
+      notifyListeners();
+    }
+  }
+
+  void pause() {
+    if (!isPaused) {
+      _watch.stop();
+      _currentDuration = _watch.elapsed;
+    }
   }
 
   void stop() {
