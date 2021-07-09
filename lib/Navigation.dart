@@ -283,11 +283,13 @@ class _NavigationState extends State<Navigation> {
                   topRight: Radius.circular(10),
                 ),
                 onPanelOpened: () {
+                  sessionService.resume();
                   setState(() {
                     _sessionPanelState = PanelState.OPEN;
                   });
                 },
                 onPanelClosed: () {
+                  sessionService.pause();
                   setState(() {
                     _sessionPanelState = PanelState.CLOSED;
                   });
@@ -324,31 +326,71 @@ class _NavigationState extends State<Navigation> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      Text(
-                                        printDuration(sessionService.currentDuration, true),
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSecondary,
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          if (!sessionService.isPaused) {
+                                            sessionService.pause();
+                                          } else {
+                                            sessionService.resume();
+                                          }
+                                        },
+                                        child: Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Icon(
+                                            sessionService.isPaused ? Icons.play_arrow : Icons.pause,
+                                            size: 30,
+                                            color: Colors.white,
+                                          ),
                                         ),
+                                        focusColor: darken(Theme.of(context).primaryColor, 0.2),
+                                        enableFeedback: true,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Text(
+                                            printDuration(sessionService.currentDuration, true),
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSecondary,
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
                               trailing: InkWell(
+                                focusColor: darken(Theme.of(context).primaryColor, 0.6),
+                                enableFeedback: true,
+                                borderRadius: BorderRadius.circular(30),
                                 child: Icon(
                                   _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                   color: Theme.of(context).colorScheme.onSecondary,
                                 ),
+                                onTap: () {
+                                  if (sessionPanelController.isPanelClosed) {
+                                    sessionPanelController.open();
+                                    setState(() {
+                                      _sessionPanelState = PanelState.OPEN;
+                                    });
+                                  } else {
+                                    sessionPanelController.close();
+                                    setState(() {
+                                      _sessionPanelState = PanelState.CLOSED;
+                                    });
+                                  }
+                                },
                               ),
                               contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                               onTap: () {
-                                Feedback.forTap(context);
                                 if (sessionPanelController.isPanelClosed) {
                                   sessionPanelController.open();
                                   setState(() {
