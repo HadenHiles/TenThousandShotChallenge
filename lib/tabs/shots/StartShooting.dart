@@ -18,9 +18,10 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StartShooting extends StatefulWidget {
-  StartShooting({Key key, this.sessionPanelController}) : super(key: key);
+  StartShooting({Key key, this.sessionPanelController, this.shots}) : super(key: key);
 
   final PanelController sessionPanelController;
+  final List<Shots> shots;
 
   @override
   _StartShootingState createState() => _StartShootingState();
@@ -35,7 +36,7 @@ class _StartShootingState extends State<StartShooting> {
 
   @override
   void initState() {
-    _shots = [];
+    _shots = widget.shots ?? [];
     _currentShotCount = preferences.puckCount;
 
     super.initState();
