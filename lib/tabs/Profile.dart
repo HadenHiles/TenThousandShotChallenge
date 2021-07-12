@@ -4,7 +4,9 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -14,12 +16,16 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Profile extends StatefulWidget {
-  Profile({Key key}) : super(key: key);
+  Profile({Key key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+
+  final PanelController sessionPanelController;
+  final Function updateSessionShotsCB;
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -875,7 +881,7 @@ class _ProfileState extends State<Profile> {
                 itemBuilder: (_, int index) {
                   if (index < _sessions.length) {
                     final DocumentSnapshot document = _sessions[index];
-                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? false : true);
+                    return _buildSessionItem(ShootingSession.fromSnapshot(document), index);
                   }
                   return Container(
                     margin: EdgeInsets.only(top: 25, bottom: 35),
@@ -932,7 +938,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  Widget _buildSessionItem(ShootingSession s, bool showBackground) {
+  Widget _buildSessionItem(ShootingSession s, int i) {
     return AbsorbPointer(
       absorbing: _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
       child: Dismissible(
@@ -1111,7 +1117,7 @@ class _ProfileState extends State<Profile> {
         child: Container(
           padding: EdgeInsets.only(top: 5, bottom: 15),
           decoration: BoxDecoration(
-            color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
+            color: i % 2 == 0 ? Colors.transparent : Theme.of(context).cardTheme.color,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -1139,13 +1145,250 @@ class _ProfileState extends State<Profile> {
                         fontFamily: 'NovecentoSans',
                       ),
                     ),
-                    Text(
-                      s.total.toString() + " Shots".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 18,
-                        fontFamily: 'NovecentoSans',
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          s.total.toString() + " Shots".toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                        Container(
+                          height: 24,
+                          width: 24,
+                          child: PopupMenuButton(
+                            key: UniqueKey(),
+                            color: Theme.of(context).colorScheme.primary,
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+                            icon: Icon(
+                              Icons.more_horiz_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 24,
+                            ),
+                            itemBuilder: (_) => <PopupMenuItem<String>>[
+                              i >= 0
+                                  ? null
+                                  : PopupMenuItem<String>(
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Resume".toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.play_arrow,
+                                            color: wristShotColor,
+                                          ),
+                                        ],
+                                      ),
+                                      value: 'resume',
+                                    ),
+                              PopupMenuItem<String>(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Delete".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.red.shade600,
+                                    ),
+                                  ],
+                                ),
+                                value: 'delete',
+                              ),
+                            ],
+                            onSelected: (value) async {
+                              if (value == 'resume') {
+                                if (!sessionService.isRunning) {
+                                  Feedback.forTap(context);
+                                  sessionService.start();
+                                  widget.sessionPanelController.open();
+                                  widget.updateSessionShotsCB();
+                                } else {
+                                  dialog(
+                                    context,
+                                    ConfirmDialog(
+                                      "Override current session?",
+                                      Text(
+                                        "Starting a new session will override your existing one.\n\nWould you like to continue?",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onBackground,
+                                        ),
+                                      ),
+                                      "Cancel",
+                                      () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      "Continue",
+                                      () {
+                                        Feedback.forTap(context);
+                                        sessionService.reset();
+                                        Navigator.of(context).pop();
+                                        sessionService.start();
+                                        widget.sessionPanelController.show();
+                                      },
+                                    ),
+                                  );
+                                }
+                              } else if (value == 'delete') {
+                                return await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                        "Delete Session?".toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 24,
+                                        ),
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Are you sure you want to delete this shooting session forever?",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 120,
+                                            margin: EdgeInsets.only(top: 15),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "You will lose:",
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  s.total.toString() + " Shots".toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 20,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  "Taken on:",
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  printDate(s.date),
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 20,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: Text(
+                                            "Cancel".toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+                                            Fluttertoast.showToast(
+                                              msg: '${s.total} shots deleted',
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+
+                                            await deleteSession(s).then((deleted) {
+                                              if (deleted == null) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                                    content: new Text(
+                                                      "There was an error deleting the session",
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                    duration: Duration(milliseconds: 1500),
+                                                  ),
+                                                );
+                                              } else if (!deleted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                                    content: new Text(
+                                                      "Sorry this session can't be deleted",
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                    duration: Duration(milliseconds: 1500),
+                                                  ),
+                                                );
+                                              }
+
+                                              _sessions.clear();
+                                              _lastVisible = null;
+                                              _loadHistory();
+                                            });
+                                          },
+                                          child: Text(
+                                            "Delete".toUpperCase(),
+                                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
