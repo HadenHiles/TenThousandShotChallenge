@@ -570,7 +570,7 @@ class _StartShootingState extends State<StartShooting> {
                                                         width: 100,
                                                         height: 100,
                                                         child: Image(
-                                                          image: AssetImage("assets/images/goal-light-1.gif"),
+                                                          image: AssetImage("assets/images/GoalLight.gif"),
                                                         ),
                                                       ),
                                                     ),
