@@ -226,6 +226,13 @@ class _ShotsState extends State<Shots> {
                                               ? shotsPerWeek.toString() + " / Week".toLowerCase()
                                               : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
 
+                                      if (i.targetDate.compareTo(DateTime.now()) < 0) {
+                                        daysRemaining = DateTime.now().difference(i.targetDate).inDays * -1;
+
+                                        shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                        shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                      }
+
                                       return GestureDetector(
                                         onTap: () {
                                           setState(() {
