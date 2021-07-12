@@ -727,7 +727,10 @@ class _ProfileState extends State<Profile> {
                     }
 
                     if (i.targetDate != null && remainingShots > 0) {
-                      int daysBeforeAfterTarget = i.targetDate.difference(i.startDate).inDays;
+                      int daysBeforeAfterTarget = i.targetDate.difference(DateTime.now()).inDays;
+                      if (i.targetDate.compareTo(DateTime.now()) < 0) {
+                        daysBeforeAfterTarget = DateTime.now().difference(i.targetDate).inDays * -1;
+                      }
 
                       if (daysBeforeAfterTarget > 0) {
                         if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
@@ -736,7 +739,7 @@ class _ProfileState extends State<Profile> {
                           goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
                         }
                       } else if (daysBeforeAfterTarget < 0) {
-                        if (daysBeforeAfterTarget == 1) {
+                        if (daysBeforeAfterTarget == -1) {
                           goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
                         } else {
                           goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
