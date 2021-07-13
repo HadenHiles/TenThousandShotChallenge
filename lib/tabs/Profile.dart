@@ -574,7 +574,7 @@ class _ProfileState extends State<Profile> {
                   if (i.endDate != null) {
                     int daysTaken = i.startDate.difference(i.endDate).inDays;
                     daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                    String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
+                    String endDate = DateFormat('MMMM d, y').format(i.endDate);
                     String iterationDescription;
                     String goalDescription = "";
                     String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
@@ -586,6 +586,7 @@ class _ProfileState extends State<Profile> {
                     }
 
                     if (i.targetDate != null) {
+                      String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
                       int daysBeforeAfterTarget = i.targetDate.difference(i.endDate).inDays;
 
                       if (daysBeforeAfterTarget > 0) {
@@ -604,7 +605,7 @@ class _ProfileState extends State<Profile> {
 
                       goalDescription += " ($targetDate)";
                     } else {
-                      goalDescription += " by your goal ";
+                      goalDescription += "completed on $endDate";
                     }
 
                     return Container(
@@ -696,7 +697,7 @@ class _ProfileState extends State<Profile> {
                                 size: 20,
                               ),
                               SizedBox(
-                                width: 2,
+                                width: 4,
                               ),
                               Container(
                                 child: AutoSizeText(
