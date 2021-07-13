@@ -252,7 +252,7 @@ class _ProfileState extends State<Profile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 190,
+                        width: (MediaQuery.of(context).size.width - 100) * 0.6,
                         child: StreamBuilder<DocumentSnapshot>(
                           // ignore: deprecated_member_use
                           stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
