@@ -32,7 +32,7 @@ dependencies:
   firebase_remote_config: ^0.10.0+1
   package_info: ^2.0.2
   introduction_screen: ^2.1.0
-  connectivity: ^3.0.6
+  connectivity_plus: ^1.0.5
   http: ^0.13.3
   flutter_cache_manager: ^3.1.1 
   provider: ^5.0.0
