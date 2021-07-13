@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -130,14 +131,57 @@ class Home extends StatelessWidget {
           navigatorObservers: [
             FirebaseAnalyticsObserver(analytics: analytics),
           ],
-          home: !introShown
-              ? IntroScreen()
-              : (user != null
-                  ? Navigation(
-                      title: null,
-                      selectedIndex: 0,
+          home: StreamBuilder(
+            stream: Connectivity().onConnectivityChanged,
+            builder: (context, snapshot) {
+              ConnectivityResult status = snapshot.data;
+              return (status != ConnectivityResult.mobile && status != ConnectivityResult.wifi)
+                  ? Scaffold(
+                      body: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        margin: EdgeInsets.only(
+                          top: MediaQuery.of(context).padding.top,
+                          right: 0,
+                          bottom: 0,
+                          left: 0,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image(
+                              image: AssetImage('assets/images/logo.png'),
+                            ),
+                            Text(
+                              "Where's the wifi bud?".toUpperCase(),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 24,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 25,
+                            ),
+                            CircularProgressIndicator(
+                              color: Colors.white70,
+                            ),
+                          ],
+                        ),
+                      ),
                     )
-                  : Login()),
+                  : !introShown
+                      ? IntroScreen()
+                      : (user != null
+                          ? Navigation(
+                              title: null,
+                              selectedIndex: 0,
+                            )
+                          : Login());
+            },
+          ),
         );
       },
     );

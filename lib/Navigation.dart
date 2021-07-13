@@ -1,8 +1,4 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:connectivity/connectivity.dart';
-import 'package:flutter/services.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -40,10 +36,6 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
-  String _connectionStatus = 'Unknown';
-  final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult> _connectivitySubscription;
-
   // State variables
   Widget _title;
   Widget _leading;
@@ -149,26 +141,6 @@ class _NavigationState extends State<Navigation> {
     }
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initConnectivity() async {
-    ConnectivityResult result = ConnectivityResult.none;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      result = await _connectivity.checkConnectivity();
-    } on PlatformException catch (e) {
-      print(e.toString());
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) {
-      return Future.value(null);
-    }
-
-    return _updateConnectionStatus(result);
-  }
-
   @override
   void initState() {
     try {
@@ -187,29 +159,7 @@ class _NavigationState extends State<Navigation> {
       _onItemTapped(widget.selectedIndex);
     });
 
-    initConnectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
-
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
-  }
-
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
-    switch (result) {
-      case ConnectivityResult.wifi:
-      case ConnectivityResult.mobile:
-      case ConnectivityResult.none:
-        setState(() => _connectionStatus = result.toString());
-        break;
-      default:
-        setState(() => _connectionStatus = 'Failed to get connectivity.');
-        break;
-    }
   }
 
   // Load shared preferences
@@ -233,257 +183,220 @@ class _NavigationState extends State<Navigation> {
 
   @override
   Widget build(BuildContext context) {
-    return _connectionStatus != "ConnectivityResult.mobile" && _connectionStatus != "ConnectivityResult.wifi"
-        ? Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              margin: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-                right: 0,
-                bottom: 0,
-                left: 0,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image(
-                    image: AssetImage('assets/images/logo.png'),
-                  ),
-                  Text(
-                    "Where's the wifi bud?".toUpperCase(),
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontFamily: "NovecentoSans",
-                      fontSize: 24,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  CircularProgressIndicator(
-                    color: Colors.white70,
-                  ),
-                ],
-              ),
+    return SessionServiceProvider(
+      service: sessionService,
+      child: Scaffold(
+        body: SlidingUpPanel(
+          backdropEnabled: true,
+          controller: sessionPanelController,
+          maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+          minHeight: sessionService.isRunning ? 65 : 0,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+          onPanelOpened: () {
+            sessionService.resume();
+            setState(() {
+              _sessionPanelState = PanelState.OPEN;
+            });
+          },
+          onPanelClosed: () {
+            sessionService.pause();
+            setState(() {
+              _sessionPanelState = PanelState.CLOSED;
+            });
+          },
+          onPanelSlide: (double offset) {
+            setState(() {
+              _bottomNavOffsetPercentage = offset;
+            });
+          },
+          panel: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryVariant,
             ),
-          )
-        : SessionServiceProvider(
-            service: sessionService,
-            child: Scaffold(
-              body: SlidingUpPanel(
-                backdropEnabled: true,
-                controller: sessionPanelController,
-                maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-                minHeight: sessionService.isRunning ? 65 : 0,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-                onPanelOpened: () {
-                  sessionService.resume();
-                  setState(() {
-                    _sessionPanelState = PanelState.OPEN;
-                  });
-                },
-                onPanelClosed: () {
-                  sessionService.pause();
-                  setState(() {
-                    _sessionPanelState = PanelState.CLOSED;
-                  });
-                },
-                onPanelSlide: (double offset) {
-                  setState(() {
-                    _bottomNavOffsetPercentage = offset;
-                  });
-                },
-                panel: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryVariant,
-                  ),
-                  child: Column(
-                    children: [
-                      AnimatedBuilder(
-                        animation: sessionService, // listen to ChangeNotifier
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
+            child: Column(
+              children: [
+                AnimatedBuilder(
+                  animation: sessionService, // listen to ChangeNotifier
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      child: ListTile(
+                        tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              printWeekday(DateTime.now()) + " Session",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondary,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                            child: ListTile(
-                              tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
-                              title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    printWeekday(DateTime.now()) + " Session",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSecondary,
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    Feedback.forLongPress(context);
+
+                                    if (!sessionService.isPaused) {
+                                      sessionService.pause();
+                                    } else {
+                                      sessionService.resume();
+                                    }
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Icon(
+                                      sessionService.isPaused ? Icons.play_arrow : Icons.pause,
+                                      size: 30,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Feedback.forLongPress(context);
-
-                                          if (!sessionService.isPaused) {
-                                            sessionService.pause();
-                                          } else {
-                                            sessionService.resume();
-                                          }
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: Icon(
-                                            sessionService.isPaused ? Icons.play_arrow : Icons.pause,
-                                            size: 30,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        focusColor: darken(Theme.of(context).primaryColor, 0.2),
-                                        enableFeedback: true,
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Text(
-                                            printDuration(sessionService.currentDuration, true),
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSecondary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: InkWell(
-                                focusColor: darken(Theme.of(context).primaryColor, 0.6),
-                                enableFeedback: true,
-                                borderRadius: BorderRadius.circular(30),
-                                child: Icon(
-                                  _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onSecondary,
+                                  focusColor: darken(Theme.of(context).primaryColor, 0.2),
+                                  enableFeedback: true,
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
-                                onTap: () {
-                                  Feedback.forLongPress(context);
-
-                                  if (sessionPanelController.isPanelClosed) {
-                                    sessionPanelController.open();
-                                    setState(() {
-                                      _sessionPanelState = PanelState.OPEN;
-                                    });
-                                  } else {
-                                    sessionPanelController.close();
-                                    setState(() {
-                                      _sessionPanelState = PanelState.CLOSED;
-                                    });
-                                  }
-                                },
-                              ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                              onTap: () {
-                                if (sessionPanelController.isPanelClosed) {
-                                  sessionPanelController.open();
-                                  setState(() {
-                                    _sessionPanelState = PanelState.OPEN;
-                                  });
-                                } else {
-                                  sessionPanelController.close();
-                                  setState(() {
-                                    _sessionPanelState = PanelState.CLOSED;
-                                  });
-                                }
-                              },
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: <Widget>[
+                                    Text(
+                                      printDuration(sessionService.currentDuration, true),
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSecondary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
+                          ],
+                        ),
+                        trailing: InkWell(
+                          focusColor: darken(Theme.of(context).primaryColor, 0.6),
+                          enableFeedback: true,
+                          borderRadius: BorderRadius.circular(30),
+                          child: Icon(
+                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: Theme.of(context).colorScheme.onSecondary,
+                          ),
+                          onTap: () {
+                            Feedback.forLongPress(context);
+
+                            if (sessionPanelController.isPanelClosed) {
+                              sessionPanelController.open();
+                              setState(() {
+                                _sessionPanelState = PanelState.OPEN;
+                              });
+                            } else {
+                              sessionPanelController.close();
+                              setState(() {
+                                _sessionPanelState = PanelState.CLOSED;
+                              });
+                            }
+                          },
+                        ),
+                        contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        onTap: () {
+                          if (sessionPanelController.isPanelClosed) {
+                            sessionPanelController.open();
+                            setState(() {
+                              _sessionPanelState = PanelState.OPEN;
+                            });
+                          } else {
+                            sessionPanelController.close();
+                            setState(() {
+                              _sessionPanelState = PanelState.CLOSED;
+                            });
+                          }
                         },
                       ),
-                      StartShooting(sessionPanelController: sessionPanelController),
-                    ],
-                  ),
-                ),
-                body: NestedScrollView(
-                  headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                    return _selectedIndex == 2
-                        ? []
-                        : [
-                            SliverAppBar(
-                              collapsedHeight: 65,
-                              expandedHeight: 125,
-                              automaticallyImplyLeading: false,
-                              backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                              iconTheme: Theme.of(context).iconTheme,
-                              actionsIconTheme: Theme.of(context).iconTheme,
-                              floating: true,
-                              pinned: true,
-                              flexibleSpace: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: HomeTheme.darkTheme.colorScheme.primaryVariant,
-                                ),
-                                child: FlexibleSpaceBar(
-                                  collapseMode: CollapseMode.parallax,
-                                  centerTitle: true,
-                                  title: _title,
-                                  background: Container(
-                                    color: HomeTheme.darkTheme.colorScheme.primaryVariant,
-                                  ),
-                                ),
-                              ),
-                              leading: _leading,
-                              actions: _actions,
-                            ),
-                          ];
+                    );
                   },
-                  body: Container(
-                    padding: EdgeInsets.only(bottom: 0),
-                    child: _tabs.elementAt(_selectedIndex),
-                  ),
                 ),
-              ),
-              bottomNavigationBar: SizedOverflowBox(
-                alignment: AlignmentDirectional.topCenter,
-                size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
-                child: BottomNavigationBar(
-                  type: BottomNavigationBarType.fixed,
-                  items: const <BottomNavigationBarItem>[
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.sports_hockey),
-                      label: 'Shots',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.people),
-                      label: 'Team',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.more_horiz),
-                      label: 'More',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.person),
-                      label: 'Profile',
-                    ),
-                  ],
-                  currentIndex: _selectedIndex,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  selectedItemColor: Theme.of(context).primaryColor,
-                  unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
-                  onTap: _onItemTapped,
-                ),
-              ),
+                StartShooting(sessionPanelController: sessionPanelController),
+              ],
             ),
-          );
+          ),
+          body: NestedScrollView(
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+              return _selectedIndex == 2
+                  ? []
+                  : [
+                      SliverAppBar(
+                        collapsedHeight: 65,
+                        expandedHeight: 125,
+                        automaticallyImplyLeading: false,
+                        backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                        iconTheme: Theme.of(context).iconTheme,
+                        actionsIconTheme: Theme.of(context).iconTheme,
+                        floating: true,
+                        pinned: true,
+                        flexibleSpace: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                          ),
+                          child: FlexibleSpaceBar(
+                            collapseMode: CollapseMode.parallax,
+                            centerTitle: true,
+                            title: _title,
+                            background: Container(
+                              color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                            ),
+                          ),
+                        ),
+                        leading: _leading,
+                        actions: _actions,
+                      ),
+                    ];
+            },
+            body: Container(
+              padding: EdgeInsets.only(bottom: 0),
+              child: _tabs.elementAt(_selectedIndex),
+            ),
+          ),
+        ),
+        bottomNavigationBar: SizedOverflowBox(
+          alignment: AlignmentDirectional.topCenter,
+          size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.sports_hockey),
+                label: 'Shots',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.people),
+                label: 'Team',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.more_horiz),
+                label: 'More',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            selectedItemColor: Theme.of(context).primaryColor,
+            unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
+            onTap: _onItemTapped,
+          ),
+        ),
+      ),
+    );
   }
 }
