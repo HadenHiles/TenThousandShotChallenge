@@ -3,14 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:wc_flutter_share/wc_flutter_share.dart';
 
@@ -43,313 +46,273 @@ class _AddTeammateState extends State<AddTeammate> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).backgroundColor,
-      body: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              collapsedHeight: 65,
-              expandedHeight: 65,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              floating: true,
-              pinned: true,
-              leading: Container(
-                margin: EdgeInsets.only(top: 10),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    navigatorKey.currentState.pop();
-                  },
+    return StreamProvider<NetworkStatus>(
+      create: (context) {
+        return NetworkStatusService().networkStatusController.stream;
+      },
+      initialData: NetworkStatus.Online,
+      child: NetworkAwareWidget(
+        offlineChild: Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
+            margin: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top,
+              right: 0,
+              bottom: 0,
+              left: 0,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image(
+                  image: AssetImage('assets/images/logo.png'),
                 ),
-              ),
-              flexibleSpace: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).backgroundColor,
-                ),
-                child: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.parallax,
-                  titlePadding: null,
-                  centerTitle: false,
-                  title: BasicTitle(title: "Invite Teammate"),
-                  background: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                Text(
+                  "Where's the wifi bud?".toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: "NovecentoSans",
+                    fontSize: 24,
                   ),
                 ),
-              ),
-              actions: [
-                Container(
-                  margin: EdgeInsets.only(top: 10),
-                  child: IconButton(
-                    onPressed: () {
-                      WcFlutterShare.share(
-                        sharePopupTitle: 'Share 10,000 Shots App',
-                        subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                        text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                        mimeType: 'text/plain',
-                      );
-                    },
-                    icon: Icon(
-                      Icons.share,
-                      size: 28,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+                SizedBox(
+                  height: 25,
                 ),
-                _selectedTeammate == null
-                    ? Container()
-                    : Container(
-                        margin: EdgeInsets.only(top: 10),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.send,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            sendInvite(user.uid, _teammates[_selectedTeammate].id).then((success) {
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                    content: Text(
-                                      UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    duration: Duration(seconds: 4),
-                                  ),
-                                );
-
-                                setState(() {
-                                  _selectedTeammate = null;
-                                  _teammates = [];
-                                });
-                                searchFieldController.text = "";
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                    content: Text(
-                                      "Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :(",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    duration: Duration(seconds: 4),
-                                  ),
-                                );
-                              }
-                            });
-                          },
-                        ),
-                      ),
+                CircularProgressIndicator(
+                  color: Colors.white70,
+                ),
               ],
             ),
-          ];
-        },
-        body: GestureDetector(
-          onTap: () {
-            Feedback.forTap(context);
-
-            FocusScopeNode currentFocus = FocusScope.of(context);
-
-            if (!currentFocus.hasPrimaryFocus) {
-              currentFocus.unfocus();
-            }
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
-                        width: MediaQuery.of(context).size.width * 0.7,
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                keyboardType: TextInputType.text,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter Name or Email'.toUpperCase(),
-                                  labelText: "Find a teammate".toUpperCase(),
-                                  alignLabelWithHint: true,
-                                  labelStyle: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 20,
-                                    color: Theme.of(context).cardTheme.color,
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontFamily: 'NovecentoSans',
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                                onChanged: (value) async {
-                                  if (value.length >= 1) {
-                                    setState(() {
-                                      _isSearching = true;
-                                    });
-
-                                    List<DocumentSnapshot> users = [];
-                                    if (value.isNotEmpty) {
-                                      await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                            uSnaps.docs.forEach((uDoc) {
-                                              if (uDoc.reference.id != user.uid) {
-                                                users.add(uDoc);
-                                              }
-                                            });
-                                          });
-                                      if (users.length < 1) {
-                                        await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                              uSnaps.docs.forEach((uDoc) {
-                                                if (uDoc.reference.id != user.uid) {
-                                                  users.add(uDoc);
-                                                }
-                                              });
-                                            });
-                                      }
-
-                                      await new Future.delayed(new Duration(milliseconds: 500));
-
-                                      setState(() {
-                                        _teammates = users;
-                                        _isSearching = false;
-                                      });
-                                    }
-
-                                    setState(() {
-                                      _teammates = users;
-                                      _isSearching = false;
-                                    });
-                                  } else {
-                                    setState(() {
-                                      _teammates = [];
-                                      _isSearching = false;
-                                    });
-                                  }
-                                },
-                                controller: searchFieldController,
-                                validator: (value) {
-                                  if (value.isEmpty) {
-                                    return 'Enter a name or email address';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+          ),
+        ),
+        onlineChild: Scaffold(
+          backgroundColor: Theme.of(context).backgroundColor,
+          body: NestedScrollView(
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  collapsedHeight: 65,
+                  expandedHeight: 65,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  floating: true,
+                  pinned: true,
+                  leading: Container(
+                    margin: EdgeInsets.only(top: 10),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        size: 28,
                       ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 15),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              child: Text(
-                                "Scan".toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.only(right: 15),
-                              child: IconButton(
-                                onPressed: () {
-                                  scanBarcodeNormal().then((success) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                        content: Text(
-                                          "You are now teammates!",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        duration: Duration(milliseconds: 2500),
-                                      ),
-                                    );
-
-                                    navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
-                                      return Navigation(
-                                        title: NavigationTitle(title: "Team".toUpperCase()),
-                                        selectedIndex: 1,
-                                      );
-                                    }));
-                                  }).onError((error, stackTrace) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                        content: Text(
-                                          "There was an error scanning your teammates QR code :(",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        duration: Duration(milliseconds: 4000),
-                                      ),
-                                    );
-                                  });
-                                },
-                                icon: Icon(
-                                  Icons.qr_code_2_rounded,
-                                  size: 50,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      onPressed: () {
+                        navigatorKey.currentState.pop();
+                      },
+                    ),
                   ),
+                  flexibleSpace: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).backgroundColor,
+                    ),
+                    child: FlexibleSpaceBar(
+                      collapseMode: CollapseMode.parallax,
+                      titlePadding: null,
+                      centerTitle: false,
+                      title: BasicTitle(title: "Invite Teammate"),
+                      background: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    Container(
+                      margin: EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        onPressed: () {
+                          WcFlutterShare.share(
+                            sharePopupTitle: 'Share 10,000 Shots App',
+                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                            text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                            mimeType: 'text/plain',
+                          );
+                        },
+                        icon: Icon(
+                          Icons.share,
+                          size: 28,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                    _selectedTeammate == null
+                        ? Container()
+                        : Container(
+                            margin: EdgeInsets.only(top: 10),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.send,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 28,
+                              ),
+                              onPressed: () {
+                                sendInvite(user.uid, _teammates[_selectedTeammate].id).then((success) {
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        content: Text(
+                                          UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        duration: Duration(seconds: 4),
+                                      ),
+                                    );
+
+                                    setState(() {
+                                      _selectedTeammate = null;
+                                      _teammates = [];
+                                    });
+                                    searchFieldController.text = "";
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        content: Text(
+                                          "Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :(",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        duration: Duration(seconds: 4),
+                                      ),
+                                    );
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                  ],
                 ),
-                Flexible(
-                  child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
-                      ? Column(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Center(
-                              child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                            )
-                          ],
-                        )
-                      : _teammates.length < 1 && searchFieldController.text.length > 0
-                          ? Column(
-                              mainAxisSize: MainAxisSize.max,
+              ];
+            },
+            body: GestureDetector(
+              onTap: () {
+                Feedback.forTap(context);
+
+                FocusScopeNode currentFocus = FocusScope.of(context);
+
+                if (!currentFocus.hasPrimaryFocus) {
+                  currentFocus.unfocus();
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Container(
+                            margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                            width: MediaQuery.of(context).size.width * 0.7,
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    keyboardType: TextInputType.text,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter Name or Email'.toUpperCase(),
+                                      labelText: "Find a teammate".toUpperCase(),
+                                      alignLabelWithHint: true,
+                                      labelStyle: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                      hintStyle: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 20,
+                                        color: Theme.of(context).cardTheme.color,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                    onChanged: (value) async {
+                                      if (value.length >= 1) {
+                                        setState(() {
+                                          _isSearching = true;
+                                        });
+
+                                        List<DocumentSnapshot> users = [];
+                                        if (value.isNotEmpty) {
+                                          await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                                uSnaps.docs.forEach((uDoc) {
+                                                  if (uDoc.reference.id != user.uid) {
+                                                    users.add(uDoc);
+                                                  }
+                                                });
+                                              });
+                                          if (users.length < 1) {
+                                            await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
+                                                  uSnaps.docs.forEach((uDoc) {
+                                                    if (uDoc.reference.id != user.uid) {
+                                                      users.add(uDoc);
+                                                    }
+                                                  });
+                                                });
+                                          }
+
+                                          await new Future.delayed(new Duration(milliseconds: 500));
+
+                                          setState(() {
+                                            _teammates = users;
+                                            _isSearching = false;
+                                          });
+                                        }
+
+                                        setState(() {
+                                          _teammates = users;
+                                          _isSearching = false;
+                                        });
+                                      } else {
+                                        setState(() {
+                                          _teammates = [];
+                                          _isSearching = false;
+                                        });
+                                      }
+                                    },
+                                    controller: searchFieldController,
+                                    validator: (value) {
+                                      if (value.isEmpty) {
+                                        return 'Enter a name or email address';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 15),
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  margin: EdgeInsets.only(top: 40),
                                   child: Text(
-                                    "Couldn't find your teammate?",
+                                    "Scan".toUpperCase(),
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 20,
@@ -358,41 +321,125 @@ class _AddTeammateState extends State<AddTeammate> {
                                   ),
                                 ),
                                 Container(
-                                  margin: EdgeInsets.only(top: 25),
-                                  child: Text(
-                                    "Challenge them!".toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 26,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  margin: EdgeInsets.only(top: 5),
+                                  margin: EdgeInsets.only(right: 15),
                                   child: IconButton(
                                     onPressed: () {
-                                      WcFlutterShare.share(
-                                        sharePopupTitle: 'Share 10,000 Shots App',
-                                        subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                                        text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                                        mimeType: 'text/plain',
-                                      );
+                                      scanBarcodeNormal().then((success) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            content: Text(
+                                              "You are now teammates!",
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            duration: Duration(milliseconds: 2500),
+                                          ),
+                                        );
+
+                                        navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+                                          return Navigation(
+                                            title: NavigationTitle(title: "Team".toUpperCase()),
+                                            selectedIndex: 1,
+                                          );
+                                        }));
+                                      }).onError((error, stackTrace) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            content: Text(
+                                              "There was an error scanning your teammates QR code :(",
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            duration: Duration(milliseconds: 4000),
+                                          ),
+                                        );
+                                      });
                                     },
                                     icon: Icon(
-                                      Icons.share,
-                                      size: 40,
+                                      Icons.qr_code_2_rounded,
+                                      size: 50,
                                       color: Theme.of(context).colorScheme.onPrimary,
                                     ),
+                                    color: Theme.of(context).primaryColor,
                                   ),
                                 ),
                               ],
-                            )
-                          : ListView(
-                              children: _buildTeammateResults(),
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
+                          ? Column(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Center(
+                                  child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                                )
+                              ],
+                            )
+                          : _teammates.length < 1 && searchFieldController.text.length > 0
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.only(top: 40),
+                                      child: Text(
+                                        "Couldn't find your teammate?",
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 20,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: EdgeInsets.only(top: 25),
+                                      child: Text(
+                                        "Challenge them!".toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 26,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: EdgeInsets.only(top: 5),
+                                      child: IconButton(
+                                        onPressed: () {
+                                          WcFlutterShare.share(
+                                            sharePopupTitle: 'Share 10,000 Shots App',
+                                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                                            text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                                            mimeType: 'text/plain',
+                                          );
+                                        },
+                                        icon: Icon(
+                                          Icons.share,
+                                          size: 40,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : ListView(
+                                  children: _buildTeammateResults(),
+                                ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
