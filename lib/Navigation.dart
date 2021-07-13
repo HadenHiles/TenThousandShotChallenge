@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
@@ -39,8 +38,6 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
-  NetworkStatus _networkStatus;
-
   // State variables
   Widget _title;
   Widget _leading;
@@ -164,16 +161,7 @@ class _NavigationState extends State<Navigation> {
       _onItemTapped(widget.selectedIndex);
     });
 
-    _initConnectivity();
-
     super.initState();
-  }
-
-  Future<Null> _initConnectivity() async {
-    ConnectivityResult result = await (Connectivity().checkConnectivity());
-    setState(() {
-      _networkStatus = result == ConnectivityResult.mobile || result == ConnectivityResult.wifi ? NetworkStatus.Online : NetworkStatus.Offline;
-    });
   }
 
   // Load shared preferences
@@ -346,7 +334,7 @@ class _NavigationState extends State<Navigation> {
             create: (context) {
               return NetworkStatusService().networkStatusController.stream;
             },
-            initialData: _networkStatus,
+            initialData: NetworkStatus.Online,
             child: NetworkAwareWidget(
               onlineChild: NestedScrollView(
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {

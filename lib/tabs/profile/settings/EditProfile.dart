@@ -1,13 +1,17 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class EditProfile extends StatefulWidget {
@@ -57,16 +61,14 @@ class _EditProfileState extends State<EditProfile> {
       'photo_url': _avatar,
     }).then((value) {});
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        content: Text(
-          'Avatar saved!',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
-        ),
-      ),
+    Fluttertoast.showToast(
+      msg: 'Avatar saved!'.toLowerCase(),
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      textColor: Theme.of(context).colorScheme.onPrimary,
+      fontSize: 16.0,
     );
     navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
       return Navigation(selectedIndex: 3);
@@ -75,115 +77,159 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).backgroundColor,
-      body: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              collapsedHeight: 65,
-              expandedHeight: 65,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              floating: true,
-              pinned: true,
-              leading: Container(
-                margin: EdgeInsets.only(top: 10),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    navigatorKey.currentState.pop();
-                  },
+    return StreamProvider<NetworkStatus>(
+      create: (context) {
+        return NetworkStatusService().networkStatusController.stream;
+      },
+      initialData: NetworkStatus.Online,
+      child: NetworkAwareWidget(
+        offlineChild: Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
+            margin: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top,
+              right: 0,
+              bottom: 0,
+              left: 0,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image(
+                  image: AssetImage('assets/images/logo.png'),
                 ),
-              ),
-              flexibleSpace: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).backgroundColor,
-                ),
-                child: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.parallax,
-                  titlePadding: null,
-                  centerTitle: false,
-                  title: BasicTitle(title: "Edit Profile"),
-                  background: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                Text(
+                  "Where's the wifi bud?".toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: "NovecentoSans",
+                    fontSize: 24,
                   ),
                 ),
-              ),
-              actions: [
-                Container(
-                  margin: EdgeInsets.only(top: 10),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.check,
-                      color: Colors.green.shade600,
-                      size: 28,
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState.validate()) {
-                        _saveProfile();
-                      }
-                    },
-                  ),
+                SizedBox(
+                  height: 25,
+                ),
+                CircularProgressIndicator(
+                  color: Colors.white70,
                 ),
               ],
             ),
-          ];
-        },
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                padding: EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: BasicTextField(
-                          keyboardType: TextInputType.text,
-                          hintText: 'Enter a display name',
-                          controller: displayNameTextFieldController,
-                          validator: (value) {
-                            if (value.isEmpty) {
-                              return 'Please enter a display name';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Choose an Avatar".toUpperCase(),
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 20,
+          ),
+        ),
+        onlineChild: Scaffold(
+          backgroundColor: Theme.of(context).backgroundColor,
+          body: NestedScrollView(
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  collapsedHeight: 65,
+                  expandedHeight: 65,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  floating: true,
+                  pinned: true,
+                  leading: Container(
+                    margin: EdgeInsets.only(top: 10),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back,
                         color: Theme.of(context).colorScheme.onPrimary,
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        navigatorKey.currentState.pop();
+                      },
+                    ),
+                  ),
+                  flexibleSpace: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).backgroundColor,
+                    ),
+                    child: FlexibleSpaceBar(
+                      collapseMode: CollapseMode.parallax,
+                      titlePadding: null,
+                      centerTitle: false,
+                      title: BasicTitle(title: "Edit Profile"),
+                      background: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
                       ),
                     ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    Wrap(
-                      children: _buildAvatars(),
+                  ),
+                  actions: [
+                    Container(
+                      margin: EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.check,
+                          color: Colors.green.shade600,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          if (_formKey.currentState.validate()) {
+                            _saveProfile();
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
+              ];
+            },
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            child: BasicTextField(
+                              keyboardType: TextInputType.text,
+                              hintText: 'Enter a display name',
+                              controller: displayNameTextFieldController,
+                              validator: (value) {
+                                if (value.isEmpty) {
+                                  return 'Please enter a display name';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Choose an Avatar".toUpperCase(),
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 20,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 15,
+                        ),
+                        Wrap(
+                          children: _buildAvatars(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

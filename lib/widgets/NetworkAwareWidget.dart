@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 class NetworkAwareWidget extends StatelessWidget {
@@ -15,12 +14,7 @@ class NetworkAwareWidget extends StatelessWidget {
     if (networkStatus == NetworkStatus.Online) {
       return onlineChild;
     } else {
-      // _showToastMessage("Offline");
       return offlineChild;
     }
-  }
-
-  void _showToastMessage(String message) {
-    Fluttertoast.showToast(msg: message, toastLength: Toast.LENGTH_SHORT, gravity: ToastGravity.BOTTOM);
   }
 }
