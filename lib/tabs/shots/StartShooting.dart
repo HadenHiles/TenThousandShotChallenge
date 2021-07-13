@@ -1,6 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:numberpicker/numberpicker.dart';
@@ -12,10 +11,12 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StartShooting extends StatefulWidget {
@@ -388,283 +389,284 @@ class _StartShootingState extends State<StartShooting> {
                                 shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                               ),
                             )
-                          : StreamBuilder(
-                              stream: Connectivity().onConnectivityChanged,
-                              builder: (context, snapshot) {
-                                ConnectivityResult status = snapshot.data;
-                                return (status != ConnectivityResult.mobile && status != ConnectivityResult.wifi)
-                                    ? Container(
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "You need wifi to save, bud.".toLowerCase(),
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 24,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: 10,
-                                            ),
-                                            Container(
-                                              width: 16,
-                                              height: 16,
-                                              margin: EdgeInsets.only(top: 5),
-                                              child: CircularProgressIndicator(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : TextButton(
-                                        onPressed: () async {
-                                          Feedback.forLongPress(context);
+                          : StreamProvider<NetworkStatus>(
+                              create: (context) {
+                                return NetworkStatusService().networkStatusController.stream;
+                              },
+                              initialData: NetworkStatus.Online,
+                              child: NetworkAwareWidget(
+                                onlineChild: TextButton(
+                                  onPressed: () async {
+                                    Feedback.forLongPress(context);
 
-                                          int totalShots = 0;
-                                          _shots.forEach((s) {
-                                            totalShots += s.count;
-                                          });
+                                    int totalShots = 0;
+                                    _shots.forEach((s) {
+                                      totalShots += s.count;
+                                    });
 
-                                          await saveShootingSession(_shots).then((success) async {
-                                            sessionService.reset();
-                                            widget.sessionPanelController.close();
-                                            this.reset();
+                                    await saveShootingSession(_shots).then((success) async {
+                                      sessionService.reset();
+                                      widget.sessionPanelController.close();
+                                      this.reset();
 
-                                            await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
-                                              if (snapshot.docs.isNotEmpty) {
-                                                Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
+                                      await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                                        if (snapshot.docs.isNotEmpty) {
+                                          Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
-                                                if ((i.total + totalShots) < 10000) {
-                                                  Fluttertoast.showToast(
-                                                    msg: 'Shooting session saved!',
-                                                    toastLength: Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.BOTTOM,
-                                                    timeInSecForIosWeb: 1,
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    textColor: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 16.0,
-                                                  );
-                                                } else {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return Dialog(
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-                                                        child: SingleChildScrollView(
-                                                          clipBehavior: Clip.none,
-                                                          child: Stack(
-                                                            clipBehavior: Clip.none,
-                                                            alignment: Alignment.topCenter,
-                                                            children: [
-                                                              Container(
-                                                                height: 530,
-                                                                child: Padding(
-                                                                  padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
-                                                                  child: Column(
-                                                                    children: [
-                                                                      Text(
-                                                                        "Challenge Complete!".toUpperCase(),
-                                                                        textAlign: TextAlign.center,
-                                                                        style: TextStyle(
-                                                                          color: Theme.of(context).primaryColor,
-                                                                          fontFamily: "NovecentoSans",
-                                                                          fontSize: 32,
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        height: 5,
-                                                                      ),
-                                                                      Text(
-                                                                        "Nice job, ya beauty!\n10,000 shots isn\'t easy.",
-                                                                        textAlign: TextAlign.center,
-                                                                        style: TextStyle(
-                                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                                          fontFamily: "NovecentoSans",
-                                                                          fontSize: 22,
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        height: 5,
-                                                                      ),
-                                                                      Opacity(
-                                                                        opacity: 0.8,
-                                                                        child: Text(
-                                                                          "To celebrate, here\'s a coupon code for our special snapback only available to snipers like yourself.",
-                                                                          textAlign: TextAlign.center,
-                                                                          style: TextStyle(
-                                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                                            fontFamily: "NovecentoSans",
-                                                                            fontSize: 18,
+                                          if ((i.total + totalShots) < 10000) {
+                                            Fluttertoast.showToast(
+                                              msg: 'Shooting session saved!',
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+                                          } else {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return Dialog(
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                                  child: SingleChildScrollView(
+                                                    clipBehavior: Clip.none,
+                                                    child: Stack(
+                                                      clipBehavior: Clip.none,
+                                                      alignment: Alignment.topCenter,
+                                                      children: [
+                                                        Container(
+                                                          height: 530,
+                                                          child: Padding(
+                                                            padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                            child: Column(
+                                                              children: [
+                                                                Text(
+                                                                  "Challenge Complete!".toUpperCase(),
+                                                                  textAlign: TextAlign.center,
+                                                                  style: TextStyle(
+                                                                    color: Theme.of(context).primaryColor,
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 32,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: 5,
+                                                                ),
+                                                                Text(
+                                                                  "Nice job, ya beauty!\n10,000 shots isn\'t easy.",
+                                                                  textAlign: TextAlign.center,
+                                                                  style: TextStyle(
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                                    fontFamily: "NovecentoSans",
+                                                                    fontSize: 22,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: 5,
+                                                                ),
+                                                                Opacity(
+                                                                  opacity: 0.8,
+                                                                  child: Text(
+                                                                    "To celebrate, here\'s a coupon code for our special snapback only available to snipers like yourself.",
+                                                                    textAlign: TextAlign.center,
+                                                                    style: TextStyle(
+                                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                                      fontFamily: "NovecentoSans",
+                                                                      fontSize: 18,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: 15,
+                                                                ),
+                                                                GestureDetector(
+                                                                  onTap: () async {
+                                                                    String link = "https://teespring.com/sniper-snapback?pr=TENKSNIPER";
+                                                                    await canLaunch(link).then((can) {
+                                                                      launch(link).catchError((err) {
+                                                                        print(err);
+                                                                      });
+                                                                    });
+                                                                  },
+                                                                  child: Card(
+                                                                    color: Theme.of(context).cardTheme.color,
+                                                                    elevation: 4,
+                                                                    child: Container(
+                                                                      width: 125,
+                                                                      height: 180,
+                                                                      child: Column(
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        children: [
+                                                                          Image(
+                                                                            image: NetworkImage(
+                                                                              "https://mockup-api.teespring.com/static.jpg?height=560&image_url=https%3A%2F%2Fteespring-pub-custom.s3.amazonaws.com%2F4a4_110354429_product_762_103363_front.png&padded=false&signature=BiR0YcAkTV7e48t07B2zTnZ4HoEQRz5u3s50Y2hIaXw%3D&version=2021-06-13-21-51-49&width=480",
+                                                                            ),
+                                                                            width: 150,
                                                                           ),
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        height: 15,
-                                                                      ),
-                                                                      GestureDetector(
-                                                                        onTap: () async {
-                                                                          String link = "https://teespring.com/sniper-snapback?pr=TENKSNIPER";
-                                                                          await canLaunch(link).then((can) {
-                                                                            launch(link).catchError((err) {
-                                                                              print(err);
-                                                                            });
-                                                                          });
-                                                                        },
-                                                                        child: Card(
-                                                                          color: Theme.of(context).cardTheme.color,
-                                                                          elevation: 4,
-                                                                          child: Container(
-                                                                            width: 125,
-                                                                            height: 180,
+                                                                          Expanded(
                                                                             child: Column(
-                                                                              mainAxisAlignment: MainAxisAlignment.start,
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
                                                                               children: [
-                                                                                Image(
-                                                                                  image: NetworkImage(
-                                                                                    "https://mockup-api.teespring.com/static.jpg?height=560&image_url=https%3A%2F%2Fteespring-pub-custom.s3.amazonaws.com%2F4a4_110354429_product_762_103363_front.png&padded=false&signature=BiR0YcAkTV7e48t07B2zTnZ4HoEQRz5u3s50Y2hIaXw%3D&version=2021-06-13-21-51-49&width=480",
-                                                                                  ),
-                                                                                  width: 150,
-                                                                                ),
-                                                                                Expanded(
-                                                                                  child: Column(
-                                                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                                                    children: [
-                                                                                      Container(
-                                                                                        padding: EdgeInsets.all(5),
-                                                                                        child: AutoSizeText(
-                                                                                          "10,000 Shot Sniper Snapback".toUpperCase(),
-                                                                                          maxLines: 2,
-                                                                                          maxFontSize: 20,
-                                                                                          textAlign: TextAlign.center,
-                                                                                          style: TextStyle(
-                                                                                            fontFamily: "NovecentoSans",
-                                                                                            fontSize: 18,
-                                                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
+                                                                                Container(
+                                                                                  padding: EdgeInsets.all(5),
+                                                                                  child: AutoSizeText(
+                                                                                    "10,000 Shot Sniper Snapback".toUpperCase(),
+                                                                                    maxLines: 2,
+                                                                                    maxFontSize: 20,
+                                                                                    textAlign: TextAlign.center,
+                                                                                    style: TextStyle(
+                                                                                      fontFamily: "NovecentoSans",
+                                                                                      fontSize: 18,
+                                                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                                                    ),
                                                                                   ),
                                                                                 ),
                                                                               ],
                                                                             ),
                                                                           ),
-                                                                        ),
+                                                                        ],
                                                                       ),
-                                                                      SizedBox(
-                                                                        height: 5,
-                                                                      ),
-                                                                      Container(
-                                                                        decoration: BoxDecoration(
-                                                                          color: Theme.of(context).colorScheme.primaryVariant,
-                                                                        ),
-                                                                        padding: EdgeInsets.all(5),
-                                                                        child: SelectableText(
-                                                                          "TENKSNIPER",
-                                                                          style: TextStyle(
-                                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                                            fontFamily: "NovecentoSans",
-                                                                            fontSize: 24,
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                        height: 5,
-                                                                      ),
-                                                                      TextButton(
-                                                                        onPressed: () {
-                                                                          Navigator.of(context).pop();
-                                                                        },
-                                                                        style: ButtonStyle(
-                                                                          backgroundColor: MaterialStateProperty.all(
-                                                                            Theme.of(context).primaryColor,
-                                                                          ),
-                                                                          padding: MaterialStateProperty.all(EdgeInsets.all(4)),
-                                                                        ),
-                                                                        child: Text(
-                                                                          "OK",
-                                                                          style: TextStyle(
-                                                                            fontFamily: "NovecentoSans",
-                                                                            fontSize: 30,
-                                                                            color: Colors.white,
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ],
+                                                                    ),
                                                                   ),
                                                                 ),
-                                                              ),
-                                                              Positioned(
-                                                                top: -40,
-                                                                child: Container(
-                                                                  width: 100,
-                                                                  height: 100,
-                                                                  child: Image(
-                                                                    image: AssetImage("assets/images/GoalLight.gif"),
+                                                                SizedBox(
+                                                                  height: 5,
+                                                                ),
+                                                                Container(
+                                                                  decoration: BoxDecoration(
+                                                                    color: Theme.of(context).colorScheme.primaryVariant,
+                                                                  ),
+                                                                  padding: EdgeInsets.all(5),
+                                                                  child: SelectableText(
+                                                                    "TENKSNIPER",
+                                                                    style: TextStyle(
+                                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                                      fontFamily: "NovecentoSans",
+                                                                      fontSize: 24,
+                                                                    ),
                                                                   ),
                                                                 ),
-                                                              ),
-                                                            ],
+                                                                SizedBox(
+                                                                  height: 5,
+                                                                ),
+                                                                TextButton(
+                                                                  onPressed: () {
+                                                                    Navigator.of(context).pop();
+                                                                  },
+                                                                  style: ButtonStyle(
+                                                                    backgroundColor: MaterialStateProperty.all(
+                                                                      Theme.of(context).primaryColor,
+                                                                    ),
+                                                                    padding: MaterialStateProperty.all(EdgeInsets.all(4)),
+                                                                  ),
+                                                                  child: Text(
+                                                                    "OK",
+                                                                    style: TextStyle(
+                                                                      fontFamily: "NovecentoSans",
+                                                                      fontSize: 30,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
                                                           ),
                                                         ),
-                                                      );
-                                                    },
-                                                  );
-                                                }
-                                              }
-                                            });
-                                          }).onError((error, stackTrace) {
-                                            print(error);
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                backgroundColor: Theme.of(context).cardTheme.color,
-                                                content: new Text(
-                                                  'There was an error saving your shooting session :(',
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                        Positioned(
+                                                          top: -40,
+                                                          child: Container(
+                                                            width: 100,
+                                                            height: 100,
+                                                            child: Image(
+                                                              image: AssetImage("assets/images/GoalLight.gif"),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                                duration: Duration(milliseconds: 1500),
-                                              ),
+                                                );
+                                              },
                                             );
-                                          });
-                                        },
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "Finish".toUpperCase(),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontFamily: 'NovecentoSans',
-                                                fontSize: 20,
-                                              ),
+                                          }
+                                        }
+                                      });
+                                    }).onError((error, stackTrace) {
+                                      print(error);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          content: new Text(
+                                            'There was an error saving your shooting session :(',
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
                                             ),
-                                            Container(
-                                              margin: EdgeInsets.only(top: 3, left: 4),
-                                              child: Icon(
-                                                Icons.save_alt_rounded,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        style: TextButton.styleFrom(
-                                          primary: Theme.of(context).primaryColor,
-                                          backgroundColor: Theme.of(context).primaryColor,
-                                          onSurface: Colors.white,
-                                          shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                          ),
+                                          duration: Duration(milliseconds: 1500),
                                         ),
                                       );
-                              },
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Finish".toUpperCase(),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: EdgeInsets.only(top: 3, left: 4),
+                                        child: Icon(
+                                          Icons.save_alt_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    primary: Theme.of(context).primaryColor,
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    onSurface: Colors.white,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                  ),
+                                ),
+                                offlineChild: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "You need wifi to save, bud.".toLowerCase(),
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 24,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        margin: EdgeInsets.only(top: 5),
+                                        child: CircularProgressIndicator(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                     ),
                   ],
