@@ -402,7 +402,7 @@ class _StartShootingState extends State<StartShooting> {
                                           crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
                                             Text(
-                                              "Where's the wifi bud?".toUpperCase(),
+                                              "You need wifi to save, bud.".toLowerCase(),
                                               style: TextStyle(
                                                 color: Theme.of(context).colorScheme.onPrimary,
                                                 fontFamily: "NovecentoSans",
