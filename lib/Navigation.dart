@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -328,42 +329,85 @@ class _NavigationState extends State<Navigation> {
               ],
             ),
           ),
-          body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              return _selectedIndex == 2
-                  ? []
-                  : [
-                      SliverAppBar(
-                        collapsedHeight: 65,
-                        expandedHeight: 125,
-                        automaticallyImplyLeading: false,
-                        backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                        iconTheme: Theme.of(context).iconTheme,
-                        actionsIconTheme: Theme.of(context).iconTheme,
-                        floating: true,
-                        pinned: true,
-                        flexibleSpace: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: HomeTheme.darkTheme.colorScheme.primaryVariant,
-                          ),
-                          child: FlexibleSpaceBar(
-                            collapseMode: CollapseMode.parallax,
-                            centerTitle: true,
-                            title: _title,
-                            background: Container(
-                              color: HomeTheme.darkTheme.colorScheme.primaryVariant,
-                            ),
-                          ),
+          body: StreamBuilder(
+            stream: Connectivity().onConnectivityChanged,
+            builder: (context, snapshot) {
+              ConnectivityResult status = snapshot.data;
+              return (status != ConnectivityResult.mobile && status != ConnectivityResult.wifi)
+                  ? Scaffold(
+                      body: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
                         ),
-                        leading: _leading,
-                        actions: _actions,
+                        margin: EdgeInsets.only(
+                          top: MediaQuery.of(context).padding.top,
+                          right: 0,
+                          bottom: 0,
+                          left: 0,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image(
+                              image: AssetImage('assets/images/logo.png'),
+                            ),
+                            Text(
+                              "Where's the wifi bud?".toUpperCase(),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 24,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 25,
+                            ),
+                            CircularProgressIndicator(
+                              color: Colors.white70,
+                            ),
+                          ],
+                        ),
                       ),
-                    ];
+                    )
+                  : NestedScrollView(
+                      headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                        return _selectedIndex == 2
+                            ? []
+                            : [
+                                SliverAppBar(
+                                  collapsedHeight: 65,
+                                  expandedHeight: 125,
+                                  automaticallyImplyLeading: false,
+                                  backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                                  iconTheme: Theme.of(context).iconTheme,
+                                  actionsIconTheme: Theme.of(context).iconTheme,
+                                  floating: true,
+                                  pinned: true,
+                                  flexibleSpace: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                                    ),
+                                    child: FlexibleSpaceBar(
+                                      collapseMode: CollapseMode.parallax,
+                                      centerTitle: true,
+                                      title: _title,
+                                      background: Container(
+                                        color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  leading: _leading,
+                                  actions: _actions,
+                                ),
+                              ];
+                      },
+                      body: Container(
+                        padding: EdgeInsets.only(bottom: 0),
+                        child: _tabs.elementAt(_selectedIndex),
+                      ),
+                    );
             },
-            body: Container(
-              padding: EdgeInsets.only(bottom: 0),
-              child: _tabs.elementAt(_selectedIndex),
-            ),
           ),
         ),
         bottomNavigationBar: SizedOverflowBox(
