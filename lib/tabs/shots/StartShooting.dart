@@ -352,50 +352,50 @@ class _StartShootingState extends State<StartShooting> {
                     SizedBox(
                       height: 50,
                       width: MediaQuery.of(context).size.width,
-                      child: _shots.length < 1
-                          ? TextButton(
-                              onPressed: () {
-                                Feedback.forLongPress(context);
+                      child: StreamProvider<NetworkStatus>(
+                        create: (context) {
+                          return NetworkStatusService().networkStatusController.stream;
+                        },
+                        initialData: NetworkStatus.Online,
+                        child: NetworkAwareWidget(
+                          onlineChild: _shots.length < 1
+                              ? TextButton(
+                                  onPressed: () {
+                                    Feedback.forLongPress(context);
 
-                                sessionService.reset();
-                                widget.sessionPanelController.close();
-                                this.reset();
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Cancel".toUpperCase(),
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 20,
-                                    ),
+                                    sessionService.reset();
+                                    widget.sessionPanelController.close();
+                                    this.reset();
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Cancel".toUpperCase(),
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: EdgeInsets.only(top: 3, left: 4),
+                                        child: Icon(
+                                          Icons.delete_forever,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Container(
-                                    margin: EdgeInsets.only(top: 3, left: 4),
-                                    child: Icon(
-                                      Icons.delete_forever,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      size: 20,
-                                    ),
+                                  style: TextButton.styleFrom(
+                                    primary: Theme.of(context).cardTheme.color,
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    onSurface: Theme.of(context).colorScheme.onPrimary,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                                   ),
-                                ],
-                              ),
-                              style: TextButton.styleFrom(
-                                primary: Theme.of(context).cardTheme.color,
-                                backgroundColor: Theme.of(context).cardTheme.color,
-                                onSurface: Theme.of(context).colorScheme.onPrimary,
-                                shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                              ),
-                            )
-                          : StreamProvider<NetworkStatus>(
-                              create: (context) {
-                                return NetworkStatusService().networkStatusController.stream;
-                              },
-                              initialData: NetworkStatus.Online,
-                              child: NetworkAwareWidget(
-                                onlineChild: TextButton(
+                                )
+                              : TextButton(
                                   onPressed: () async {
                                     Feedback.forLongPress(context);
 
@@ -636,38 +636,38 @@ class _StartShootingState extends State<StartShooting> {
                                     shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                                   ),
                                 ),
-                                offlineChild: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "You need wifi to save, bud.".toLowerCase(),
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 24,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Container(
-                                        width: 16,
-                                        height: 16,
-                                        margin: EdgeInsets.only(top: 5),
-                                        child: CircularProgressIndicator(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ],
+                          offlineChild: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "You need wifi to save, bud.".toLowerCase(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 24,
                                   ),
                                 ),
-                              ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  margin: EdgeInsets.only(top: 5),
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
