@@ -280,8 +280,9 @@ class _ShotsState extends State<Shots> {
                       ),
                     ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
+                  SizedBox(width: 25),
                   Text(
                     "Progress".toUpperCase(),
                     style: TextStyle(
@@ -290,150 +291,10 @@ class _ShotsState extends State<Shots> {
                       fontFamily: 'NovecentoSans',
                     ),
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        "Wrist".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(color: wristShotColor),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "W",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Snap".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(color: snapShotColor),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "SN",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Backhand".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(color: backhandShotColor),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "B",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Slap".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(color: slapShotColor),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "SL",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               SizedBox(
-                height: 25,
+                height: 5,
               ),
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
@@ -463,36 +324,60 @@ class _ShotsState extends State<Shots> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              Container(
-                                height: 40,
-                                width: (iteration.totalWrist / iterationTotal) * totalShotsWidth,
-                                padding: EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: wristShotColor,
+                              Tooltip(
+                                message: "${iteration.totalWrist} Wrist Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalWrist / iterationTotal) * totalShotsWidth,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: wristShotColor,
+                                  ),
                                 ),
                               ),
-                              Container(
-                                height: 40,
-                                width: (iteration.totalSnap / iterationTotal) * totalShotsWidth,
-                                padding: EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: snapShotColor,
+                              Tooltip(
+                                message: "${iteration.totalSnap} Snap Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalSnap / iterationTotal) * totalShotsWidth,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: snapShotColor,
+                                  ),
                                 ),
                               ),
-                              Container(
-                                height: 40,
-                                width: (iteration.totalBackhand / iterationTotal) * totalShotsWidth,
-                                padding: EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: backhandShotColor,
+                              Tooltip(
+                                message: "${iteration.totalBackhand} Backhands".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalBackhand / iterationTotal) * totalShotsWidth,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: backhandShotColor,
+                                  ),
                                 ),
                               ),
-                              Container(
-                                height: 40,
-                                width: (iteration.totalSlap / iterationTotal) * totalShotsWidth,
-                                padding: EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: slapShotColor,
+                              Tooltip(
+                                message: "${iteration.totalSlap} Slap Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalSlap / iterationTotal) * totalShotsWidth,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(
+                                    color: slapShotColor,
+                                  ),
                                 ),
                               ),
                             ],
@@ -557,7 +442,7 @@ class _ShotsState extends State<Shots> {
                 },
               ),
               SizedBox(
-                height: 25,
+                height: 5,
               ),
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
@@ -607,83 +492,235 @@ class _ShotsState extends State<Shots> {
                       ),
                     ];
 
-                    return Container(
-                      height: MediaQuery.of(context).size.height * 0.35,
-                      width: MediaQuery.of(context).size.width * 0.75,
-                      child: iteration.total < 1
-                          ? Container(
-                              child: Text(
-                                "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            )
-                          : Stack(
-                              children: [
-                                Positioned(
-                                  top: MediaQuery.of(context).size.height * (0.35 / 2),
-                                  left: MediaQuery.of(context).size.width * (0.75 / 2),
-                                  child: Transform.translate(
-                                    offset: Offset(-16, -4),
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
+                    return Column(
+                      children: [
+                        Container(
+                          margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * .1, vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  Text(
+                                    "Wrist".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 18,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    height: 25,
+                                    margin: EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(color: wristShotColor),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Icon(
-                                          FontAwesomeIcons.hockeyPuck,
-                                          size: 30,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                        // Top Left
-                                        Positioned(
-                                          left: -13,
-                                          top: -13,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 18,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Bottom Left
-                                        Positioned(
-                                          left: -12,
-                                          bottom: -12,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 14,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Top right
-                                        Positioned(
-                                          right: -12,
-                                          top: -12,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 14,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Bottom right
-                                        Positioned(
-                                          right: -12,
-                                          bottom: -14,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 18,
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                        Opacity(
+                                          opacity: 0.75,
+                                          child: Text(
+                                            "W",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    "Snap".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 18,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    height: 25,
+                                    margin: EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(color: snapShotColor),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(
+                                          opacity: 0.75,
+                                          child: Text(
+                                            "SN",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    "Backhand".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 18,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    height: 25,
+                                    margin: EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(color: backhandShotColor),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(
+                                          opacity: 0.75,
+                                          child: Text(
+                                            "B",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    "Slap".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 18,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    height: 25,
+                                    margin: EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(color: slapShotColor),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(
+                                          opacity: 0.75,
+                                          child: Text(
+                                            "SL",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: iteration.total < 1
+                              ? Container(
+                                  child: Text(
+                                    "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 16,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                )
+                              : Stack(
+                                  children: [
+                                    Positioned(
+                                      top: MediaQuery.of(context).size.height * (0.3 / 2),
+                                      left: MediaQuery.of(context).size.width * (0.7 / 2),
+                                      child: Transform.translate(
+                                        offset: Offset(-14, -16),
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Icon(
+                                              FontAwesomeIcons.hockeyPuck,
+                                              size: 30,
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                            // Top Left
+                                            Positioned(
+                                              left: -13,
+                                              top: -13,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            // Bottom Left
+                                            Positioned(
+                                              left: -12,
+                                              bottom: -12,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 14,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            // Top right
+                                            Positioned(
+                                              right: -12,
+                                              top: -12,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 14,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            // Bottom right
+                                            Positioned(
+                                              right: -12,
+                                              bottom: -14,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    ShotBreakdownDonut(shotCountSeries),
+                                  ],
                                 ),
-                                ShotBreakdownDonut(shotCountSeries),
-                              ],
-                            ),
+                        ),
+                      ],
                     );
                   } else {
                     return Container(
