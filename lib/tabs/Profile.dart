@@ -1419,14 +1419,20 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      s.totalWrist.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    Container(
+                                      width: calculateSessionShotWidth(s, s.totalWrist),
+                                      child: AutoSizeText(
+                                        s.totalWrist.toString(),
+                                        maxFontSize: 14,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.clip,
                                       ),
-                                      overflow: TextOverflow.clip,
                                     ),
                                   ],
                                 ),
@@ -1434,6 +1440,7 @@ class _ProfileState extends State<Profile> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalSnap),
                           height: 30,
+                          clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             color: snapShotColor,
                           ),
@@ -1443,14 +1450,20 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      s.totalSnap.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    Container(
+                                      width: calculateSessionShotWidth(s, s.totalSnap),
+                                      child: AutoSizeText(
+                                        s.totalSnap.toString(),
+                                        maxFontSize: 14,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.clip,
                                       ),
-                                      overflow: TextOverflow.clip,
                                     ),
                                   ],
                                 ),
@@ -1467,14 +1480,20 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      s.totalBackhand.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    Container(
+                                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                                      child: AutoSizeText(
+                                        s.totalBackhand.toString(),
+                                        maxFontSize: 14,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.clip,
                                       ),
-                                      overflow: TextOverflow.clip,
                                     ),
                                   ],
                                 ),
@@ -1491,14 +1510,20 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      s.totalSlap.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    Container(
+                                      width: calculateSessionShotWidth(s, s.totalSlap),
+                                      child: AutoSizeText(
+                                        s.totalSlap.toString(),
+                                        maxFontSize: 14,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.clip,
                                       ),
-                                      overflow: TextOverflow.clip,
                                     ),
                                   ],
                                 ),
