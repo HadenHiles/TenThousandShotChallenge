@@ -275,13 +275,17 @@ class _ProfileState extends State<Profile> {
 
                             UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
 
-                            return AutoSizeText(
-                              userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyText1.color,
+                            return Container(
+                              width: (MediaQuery.of(context).size.width - 100) * 0.5,
+                              child: AutoSizeText(
+                                userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
+                                maxLines: 1,
+                                maxFontSize: 22,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).textTheme.bodyText1.color,
+                                ),
                               ),
                             );
                           },
@@ -294,7 +298,7 @@ class _ProfileState extends State<Profile> {
                               if (!snapshot.hasData) {
                                 return Center(
                                   child: SizedBox(
-                                    width: 120,
+                                    width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                     height: 2,
                                     child: LinearProgressIndicator(),
                                   ),
@@ -312,12 +316,17 @@ class _ProfileState extends State<Profile> {
                                   recalculateIterationTotals();
                                 }
 
-                                return Text(
-                                  total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                return Container(
+                                  width: (MediaQuery.of(context).size.width - 100) * 0.5,
+                                  child: AutoSizeText(
+                                    total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
+                                    maxFontSize: 20,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
                                   ),
                                 );
                               }
@@ -330,7 +339,7 @@ class _ProfileState extends State<Profile> {
                               if (!snapshot.hasData) {
                                 return Center(
                                   child: SizedBox(
-                                    width: 120,
+                                    width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                     height: 2,
                                     child: LinearProgressIndicator(),
                                   ),
@@ -362,27 +371,21 @@ class _ProfileState extends State<Profile> {
                 margin: EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
                   children: [
-                    Container(
-                      margin: EdgeInsets.only(top: 8, right: 2),
-                      child: Text(
-                        "challenge ".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 20,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                    ),
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          return Text(
-                            (snapshot.data.docs.length).toString(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 34,
-                              fontFamily: 'NovecentoSans',
+                          return Container(
+                            width: (MediaQuery.of(context).size.width - 100) * 0.3,
+                            child: AutoSizeText(
+                              "challenge ".toLowerCase() + (snapshot.data.docs.length).toString().toLowerCase(),
+                              maxFontSize: 34,
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 34,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           );
                         }
@@ -820,15 +823,18 @@ class _ProfileState extends State<Profile> {
                                     SizedBox(
                                       width: 8,
                                     ),
-                                    AutoSizeText(
-                                      iterationDescription.toLowerCase(),
-                                      maxFontSize: 18,
-                                      maxLines: 2,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 18,
+                                    Container(
+                                      width: MediaQuery.of(context).size.width * .3,
+                                      child: AutoSizeText(
+                                        iterationDescription.toLowerCase(),
+                                        maxFontSize: 18,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 18,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -844,15 +850,18 @@ class _ProfileState extends State<Profile> {
                                     SizedBox(
                                       width: 2,
                                     ),
-                                    AutoSizeText(
-                                      goalDescription.toLowerCase(),
-                                      maxFontSize: 18,
-                                      maxLines: 2,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 18,
+                                    Container(
+                                      width: MediaQuery.of(context).size.width * .4,
+                                      child: AutoSizeText(
+                                        goalDescription.toLowerCase(),
+                                        maxFontSize: 18,
+                                        maxLines: 1,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 18,
+                                        ),
                                       ),
                                     ),
                                   ],
