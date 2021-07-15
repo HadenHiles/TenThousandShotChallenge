@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
@@ -577,10 +578,10 @@ class _ShotsState extends State<Shots> {
                   } else if (snapshot.data.docs.length > 0) {
                     Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                     List<ShotCount> shotCounts = [
-                      ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
-                      ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
-                      ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
-                      ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
+                      ShotCount('W'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
+                      ShotCount('SN'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
+                      ShotCount('B'.toUpperCase(), iteration.totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
+                      ShotCount('SL'.toUpperCase(), iteration.totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
                     ];
 
                     List<charts.Series<ShotCount, dynamic>> shotCountSeries = [
@@ -590,13 +591,24 @@ class _ShotsState extends State<Shots> {
                         measureFn: (ShotCount shot, _) => shot.count,
                         data: shotCounts,
                         colorFn: (ShotCount shot, _) => shot.color,
+                        strokeWidthPxFn: (ShotCount row, _) => 0,
                         // Set a label accessor to control the text of the arc label.
-                        labelAccessorFn: (ShotCount row, _) => '${row.type}\n${row.count}',
+                        labelAccessorFn: (ShotCount row, _) => '${row.count}',
+                        outsideLabelStyleAccessorFn: (ShotCount row, _) => charts.TextStyleSpec(
+                          fontFamily: "NovecentoSans",
+                          color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
+                          fontSize: 18,
+                        ),
+                        insideLabelStyleAccessorFn: (ShotCount row, _) => charts.TextStyleSpec(
+                          fontFamily: "NovecentoSans",
+                          color: charts.Color.white,
+                          fontSize: 16,
+                        ),
                       ),
                     ];
 
                     return Container(
-                      height: MediaQuery.of(context).size.height * 0.3,
+                      height: MediaQuery.of(context).size.height * 0.35,
                       width: MediaQuery.of(context).size.width * 0.75,
                       child: iteration.total < 1
                           ? Container(
@@ -610,7 +622,68 @@ class _ShotsState extends State<Shots> {
                                 ),
                               ),
                             )
-                          : ShotBreakdownDonut(shotCountSeries),
+                          : Stack(
+                              children: [
+                                Positioned(
+                                  top: MediaQuery.of(context).size.height * (0.35 / 2),
+                                  left: MediaQuery.of(context).size.width * (0.75 / 2),
+                                  child: Transform.translate(
+                                    offset: Offset(-16, -4),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 30,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                        // Top Left
+                                        Positioned(
+                                          left: -13,
+                                          top: -13,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 18,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        // Bottom Left
+                                        Positioned(
+                                          left: -12,
+                                          bottom: -12,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 14,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        // Top right
+                                        Positioned(
+                                          right: -12,
+                                          top: -12,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 14,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        // Bottom right
+                                        Positioned(
+                                          right: -12,
+                                          bottom: -14,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 18,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                ShotBreakdownDonut(shotCountSeries),
+                              ],
+                            ),
                     );
                   } else {
                     return Container(
