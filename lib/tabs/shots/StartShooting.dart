@@ -77,7 +77,7 @@ class _StartShootingState extends State<StartShooting> {
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(height: 15),
+                SizedBox(height: 5),
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 5),
                   decoration: BoxDecoration(
@@ -130,9 +130,11 @@ class _StartShootingState extends State<StartShooting> {
                     ],
                   ),
                 ),
-                SizedBox(
-                  height: 15,
-                ),
+                preferences.puckCount != _currentShotCount
+                    ? SizedBox(
+                        height: 10,
+                      )
+                    : Container(),
                 GestureDetector(
                   onTap: () async {
                     Feedback.forLongPress(context);
@@ -208,9 +210,11 @@ class _StartShootingState extends State<StartShooting> {
                     ],
                   ),
                 ),
-                SizedBox(
-                  height: 15,
-                ),
+                preferences.puckCount != _currentShotCount
+                    ? SizedBox(
+                        height: 5,
+                      )
+                    : Container(),
                 Text(
                   "# of Shots".toUpperCase(),
                   style: TextStyle(
