@@ -375,6 +375,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                   bottom: 0,
                   child: Container(
                     height: 100,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryVariant,
+                    ),
                     width: MediaQuery.of(context).size.width,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
