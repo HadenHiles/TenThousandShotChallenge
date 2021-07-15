@@ -627,7 +627,7 @@ class _ProfileState extends State<Profile> {
                                   Icon(
                                     FontAwesomeIcons.hockeyPuck,
                                     size: 14,
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   // Top Left
                                   Positioned(
@@ -636,7 +636,7 @@ class _ProfileState extends State<Profile> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 8,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Bottom Left
@@ -646,7 +646,7 @@ class _ProfileState extends State<Profile> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 6,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Top right
@@ -656,7 +656,7 @@ class _ProfileState extends State<Profile> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 6,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Bottom right
@@ -666,7 +666,7 @@ class _ProfileState extends State<Profile> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 8,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                 ],
@@ -773,7 +773,7 @@ class _ProfileState extends State<Profile> {
                                         Icon(
                                           FontAwesomeIcons.hockeyPuck,
                                           size: 14,
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                         // Top Left
                                         Positioned(
@@ -782,7 +782,7 @@ class _ProfileState extends State<Profile> {
                                           child: Icon(
                                             FontAwesomeIcons.hockeyPuck,
                                             size: 8,
-                                            color: Colors.white,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                         // Bottom Left
@@ -792,7 +792,7 @@ class _ProfileState extends State<Profile> {
                                           child: Icon(
                                             FontAwesomeIcons.hockeyPuck,
                                             size: 6,
-                                            color: Colors.white,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                         // Top right
@@ -802,7 +802,7 @@ class _ProfileState extends State<Profile> {
                                           child: Icon(
                                             FontAwesomeIcons.hockeyPuck,
                                             size: 6,
-                                            color: Colors.white,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                         // Bottom right
@@ -812,7 +812,7 @@ class _ProfileState extends State<Profile> {
                                           child: Icon(
                                             FontAwesomeIcons.hockeyPuck,
                                             size: 8,
-                                            color: Colors.white,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                       ],

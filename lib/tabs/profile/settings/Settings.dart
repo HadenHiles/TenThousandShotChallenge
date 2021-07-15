@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,11 +10,13 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
-import 'EditProfile.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ProfileSettings extends StatefulWidget {
   ProfileSettings({Key key}) : super(key: key);
@@ -26,6 +29,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   // State settings values
   bool _darkMode = false;
   bool _publicProfile = true;
+  bool _refreshingShots = false;
+  bool _shotsRefreshedOnce = false;
 
   @override
   void initState() {
@@ -149,9 +154,58 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       title: 'How many pucks do you have?',
                       titleTextStyle: Theme.of(context).textTheme.bodyText1,
                       subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                      leading: Icon(
-                        Icons.bubble_chart_rounded,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                      leading: Container(
+                        margin: EdgeInsets.only(left: 10),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.hockeyPuck,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            // Top Left
+                            Positioned(
+                              left: -6,
+                              top: -6,
+                              child: Icon(
+                                FontAwesomeIcons.hockeyPuck,
+                                size: 8,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            // Bottom Left
+                            Positioned(
+                              left: -5,
+                              bottom: -5,
+                              child: Icon(
+                                FontAwesomeIcons.hockeyPuck,
+                                size: 6,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            // Top right
+                            Positioned(
+                              right: -4,
+                              top: -6,
+                              child: Icon(
+                                FontAwesomeIcons.hockeyPuck,
+                                size: 6,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            // Bottom right
+                            Positioned(
+                              right: -4,
+                              bottom: -8,
+                              child: Icon(
+                                FontAwesomeIcons.hockeyPuck,
+                                size: 8,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       onPressed: (BuildContext context) {
                         navigatorKey.currentState.push(
@@ -186,6 +240,62 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             prefs.getString('fcm_token'),
                           ),
                         );
+                      },
+                    ),
+                    SettingsTile(
+                      title: "Recalculate Shot Totals",
+                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                      subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                      subtitle: "Use this if your shot count is out of sync",
+                      enabled: true,
+                      leading: _refreshingShots
+                          ? Container(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            )
+                          : Icon(
+                              Icons.refresh_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                      onPressed: (context) async {
+                        if (_shotsRefreshedOnce) {
+                          setState(() {
+                            _refreshingShots = true;
+                          });
+
+                          Future.delayed(Duration(milliseconds: 800)).then(
+                            (value) => setState(() {
+                              _refreshingShots = false;
+                            }),
+                          );
+                        } else {
+                          setState(() {
+                            _refreshingShots = true;
+                          });
+                          await recalculateIterationTotals().then((_) {
+                            Future.delayed(Duration(milliseconds: 200)).then(
+                              (value) {
+                                setState(() {
+                                  _refreshingShots = false;
+                                  _shotsRefreshedOnce = true;
+                                });
+
+                                Fluttertoast.showToast(
+                                  msg: 'Finished recalculating shot totals',
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  timeInSecForIosWeb: 1,
+                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                  textColor: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16.0,
+                                );
+                              },
+                            );
+                          });
+                        }
                       },
                     ),
                   ],
