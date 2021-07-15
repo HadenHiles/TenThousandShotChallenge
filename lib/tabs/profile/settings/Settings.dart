@@ -374,8 +374,18 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                 Positioned(
                   bottom: 0,
                   child: Container(
-                    height: 100,
+                    padding: EdgeInsets.only(top: 0, bottom: 5),
                     decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3), //color of shadow
+                          spreadRadius: 2, //spread radius
+                          blurRadius: 10, // blur radius
+                          offset: Offset(0, 0), // changes position of shadow
+                          //first paramerter of offset is left-right
+                          //second parameter is top to down
+                        ),
+                      ],
                       color: Theme.of(context).colorScheme.primaryVariant,
                     ),
                     width: MediaQuery.of(context).size.width,
