@@ -99,9 +99,9 @@ class _ShotsState extends State<Shots> {
                       margin: EdgeInsets.only(top: 10),
                     )
                   : Container(
-                      padding: EdgeInsets.symmetric(vertical: 10),
+                      padding: EdgeInsets.only(top: 5, bottom: 0),
                       margin: EdgeInsets.only(
-                        bottom: 15,
+                        bottom: 10,
                         top: 15,
                       ),
                       child: Row(
@@ -280,14 +280,13 @@ class _ShotsState extends State<Shots> {
                       ),
                     ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(width: 25),
                   Text(
                     "Progress".toUpperCase(),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 26,
+                      fontSize: 22,
                       fontFamily: 'NovecentoSans',
                     ),
                   ),
@@ -495,7 +494,11 @@ class _ShotsState extends State<Shots> {
                     return Column(
                       children: [
                         Container(
-                          margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * .1, vertical: 10),
+                          margin: EdgeInsets.only(
+                            left: MediaQuery.of(context).size.width * .1,
+                            right: MediaQuery.of(context).size.width * .1,
+                            bottom: 5,
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
