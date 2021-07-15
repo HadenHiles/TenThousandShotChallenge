@@ -36,18 +36,39 @@ class ShotBreakdownDonut extends StatelessWidget {
       //          insideLabelStyleSpec: new charts.TextStyleSpec(...),
       //          outsideLabelStyleSpec: new charts.TextStyleSpec(...)),
       defaultRenderer: new charts.ArcRendererConfig(
-        arcWidth: 30,
-        startAngle: 4 / 5 * pi,
-        arcLength: 7 / 5 * pi,
+        startAngle: 5 / 5 * pi,
+        arcLength: 10 / 5 * pi,
+        arcRatio: 0.4,
         arcRendererDecorators: [
           new charts.ArcLabelDecorator(
               outsideLabelStyleSpec: TextStyleSpec(
             fontFamily: 'NovecentoSans',
-            fontSize: 16,
+            fontSize: 18,
             color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
           ))
         ],
       ),
+      behaviors: [
+        new charts.DatumLegend(
+          position: charts.BehaviorPosition.top,
+          outsideJustification: charts.OutsideJustification.endDrawArea,
+          horizontalFirst: true,
+          cellPadding: EdgeInsets.only(right: 10.0, bottom: 5.0),
+          showMeasures: false,
+          desiredMaxColumns: 4,
+          desiredMaxRows: 1,
+          legendDefaultMeasure: charts.LegendDefaultMeasure.firstValue,
+          insideJustification: charts.InsideJustification.topStart,
+          measureFormatter: (num value) {
+            return value == null ? '-' : "$value";
+          },
+          entryTextStyle: charts.TextStyleSpec(
+            color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
+            fontFamily: 'NovecentoSans',
+            fontSize: 18,
+          ),
+        ),
+      ],
     );
   }
 }
