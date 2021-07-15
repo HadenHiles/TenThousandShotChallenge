@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:tenthousandshotchallenge/services/bootstrap.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 
 class Login extends StatefulWidget {
@@ -79,15 +80,15 @@ class _LoginState extends State<Login> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
-                      margin: EdgeInsets.only(bottom: 50),
-                      height: 280,
+                      margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * .05),
+                      height: MediaQuery.of(context).size.height * .35,
                       child: Image.asset(
                         'assets/images/logo-small.png',
                       ),
                     ),
                     SizedBox(
-                      height: 60,
-                      width: 360,
+                      height: 50,
+                      width: 300,
                       child: SignInButton(
                         Buttons.Google,
                         onPressed: () {
@@ -119,13 +120,13 @@ class _LoginState extends State<Login> {
                         },
                       ),
                     ),
-                    !appleSignInAvailable.isAvailable
+                    appleSignInAvailable.isAvailable
                         ? Container()
                         : Container(
                             margin: EdgeInsets.only(top: 10),
                             child: SizedBox(
-                              height: 60,
-                              width: 360,
+                              height: 50,
+                              width: 300,
                               child: SignInButton(
                                 Buttons.AppleDark,
                                 onPressed: () {
@@ -160,7 +161,7 @@ class _LoginState extends State<Login> {
                           ),
                     Divider(
                       color: Colors.transparent,
-                      height: 10,
+                      height: 5,
                     ),
                     SizedBox(
                       width: 220,
@@ -169,8 +170,8 @@ class _LoginState extends State<Login> {
                         children: [
                           Container(
                             margin: EdgeInsets.only(
-                              top: 30,
-                              bottom: 30,
+                              top: 15,
+                              bottom: 15,
                             ),
                             child: Text(
                               'Or'.toUpperCase(),
@@ -185,8 +186,8 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                     SizedBox(
-                      height: 60,
-                      width: 360,
+                      height: 50,
+                      width: 300,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           primary: Colors.white,
@@ -480,14 +481,14 @@ class _LoginState extends State<Login> {
                     Container(
                       margin: EdgeInsets.only(
                         top: 10,
-                        bottom: 20,
+                        bottom: MediaQuery.of(context).size.height * .025,
                       ),
                       child: SizedBox(
-                        height: 60,
-                        width: 360,
+                        height: 50,
+                        width: 300,
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: darken(Theme.of(context).primaryColor, 0.1),
                           ),
                           child: Text(
                             'Sign up'.toUpperCase(),
