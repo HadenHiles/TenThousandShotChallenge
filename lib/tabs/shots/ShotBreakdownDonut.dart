@@ -48,27 +48,27 @@ class ShotBreakdownDonut extends StatelessWidget {
           ))
         ],
       ),
-      behaviors: [
-        new charts.DatumLegend(
-          position: charts.BehaviorPosition.top,
-          outsideJustification: charts.OutsideJustification.endDrawArea,
-          horizontalFirst: true,
-          cellPadding: EdgeInsets.only(right: 10.0, bottom: 5.0),
-          showMeasures: false,
-          desiredMaxColumns: 4,
-          desiredMaxRows: 1,
-          legendDefaultMeasure: charts.LegendDefaultMeasure.firstValue,
-          insideJustification: charts.InsideJustification.topStart,
-          measureFormatter: (num value) {
-            return value == null ? '-' : "$value";
-          },
-          entryTextStyle: charts.TextStyleSpec(
-            color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
-            fontFamily: 'NovecentoSans',
-            fontSize: 18,
-          ),
-        ),
-      ],
+      // behaviors: [
+      //   new charts.DatumLegend(
+      //     position: charts.BehaviorPosition.top,
+      //     outsideJustification: charts.OutsideJustification.endDrawArea,
+      //     horizontalFirst: true,
+      //     cellPadding: EdgeInsets.only(right: 10.0, bottom: 5.0),
+      //     showMeasures: false,
+      //     desiredMaxColumns: 4,
+      //     desiredMaxRows: 1,
+      //     legendDefaultMeasure: charts.LegendDefaultMeasure.firstValue,
+      //     insideJustification: charts.InsideJustification.topStart,
+      //     measureFormatter: (num value) {
+      //       return value == null ? '-' : "$value";
+      //     },
+      //     entryTextStyle: charts.TextStyleSpec(
+      //       color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
+      //       fontFamily: 'NovecentoSans',
+      //       fontSize: 18,
+      //     ),
+      //   ),
+      // ],
     );
   }
 }
