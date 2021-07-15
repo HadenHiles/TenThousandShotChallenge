@@ -17,6 +17,7 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileSettings extends StatefulWidget {
   ProfileSettings({Key key}) : super(key: key);
@@ -141,228 +142,316 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                 ),
               ];
             },
-            body: SettingsList(
-              backgroundColor: Theme.of(context).colorScheme.primaryVariant,
-              lightBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
-              darkBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
-              sections: [
-                SettingsSection(
-                  title: 'General',
-                  titleTextStyle: Theme.of(context).textTheme.headline6,
-                  tiles: [
-                    SettingsTile(
-                      title: 'How many pucks do you have?',
-                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                      subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                      leading: Container(
-                        margin: EdgeInsets.only(left: 10),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Icon(
-                              FontAwesomeIcons.hockeyPuck,
-                              size: 14,
+            body: Stack(
+              children: [
+                Container(
+                  child: SettingsList(
+                    backgroundColor: Theme.of(context).colorScheme.primaryVariant,
+                    lightBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
+                    darkBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
+                    sections: [
+                      SettingsSection(
+                        title: 'General',
+                        titleTextStyle: Theme.of(context).textTheme.headline6,
+                        tiles: [
+                          SettingsTile(
+                            title: 'How many pucks do you have?',
+                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            leading: Container(
+                              margin: EdgeInsets.only(left: 10),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 14,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  // Top Left
+                                  Positioned(
+                                    left: -6,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Bottom Left
+                                  Positioned(
+                                    left: -5,
+                                    bottom: -5,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Top right
+                                  Positioned(
+                                    right: -4,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Bottom right
+                                  Positioned(
+                                    right: -4,
+                                    bottom: -8,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            onPressed: (BuildContext context) {
+                              navigatorKey.currentState.push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return EditPuckCount();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          SettingsTile.switchTile(
+                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                            title: 'Dark Mode',
+                            leading: Icon(
+                              Icons.brightness_2,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            // Top Left
-                            Positioned(
-                              left: -6,
-                              top: -6,
-                              child: Icon(
-                                FontAwesomeIcons.hockeyPuck,
-                                size: 8,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
+                            switchValue: _darkMode,
+                            onToggle: (bool value) async {
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              setState(() {
+                                _darkMode = !_darkMode;
+                                prefs.setBool('dark_mode', _darkMode);
+                              });
+
+                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                                Preferences(
+                                  value,
+                                  prefs.getInt('puck_count'),
+                                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                                  prefs.getString('fcm_token'),
+                                ),
+                              );
+                            },
+                          ),
+                          SettingsTile(
+                            title: "Recalculate Shot Totals",
+                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            subtitle: "Use this if your shot count is out of sync",
+                            enabled: true,
+                            leading: _refreshingShots
+                                ? Container(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.refresh_rounded,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                            onPressed: (context) async {
+                              if (_shotsRefreshedOnce) {
+                                setState(() {
+                                  _refreshingShots = true;
+                                });
+
+                                Future.delayed(Duration(milliseconds: 800)).then(
+                                  (value) => setState(() {
+                                    _refreshingShots = false;
+                                  }),
+                                );
+                              } else {
+                                setState(() {
+                                  _refreshingShots = true;
+                                });
+                                await recalculateIterationTotals().then((_) {
+                                  Future.delayed(Duration(milliseconds: 200)).then(
+                                    (value) {
+                                      setState(() {
+                                        _refreshingShots = false;
+                                        _shotsRefreshedOnce = true;
+                                      });
+
+                                      Fluttertoast.showToast(
+                                        msg: 'Finished recalculating shot totals',
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 1,
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        textColor: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 16.0,
+                                      );
+                                    },
+                                  );
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      SettingsSection(
+                        titleTextStyle: Theme.of(context).textTheme.headline6,
+                        title: 'Account',
+                        tiles: [
+                          SettingsTile.switchTile(
+                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                            title: 'Public',
+                            leading: Icon(
+                              Icons.privacy_tip_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            // Bottom Left
-                            Positioned(
-                              left: -5,
-                              bottom: -5,
-                              child: Icon(
-                                FontAwesomeIcons.hockeyPuck,
-                                size: 6,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
+                            switchValue: _publicProfile,
+                            onToggle: (bool value) async {
+                              await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
+                                setState(() {
+                                  _publicProfile = !_publicProfile;
+                                });
+                              });
+                            },
+                          ),
+                          SettingsTile(
+                            title: 'Edit Profile',
+                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
+                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            leading: Icon(
+                              Icons.person,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            // Top right
-                            Positioned(
-                              right: -4,
-                              top: -6,
-                              child: Icon(
-                                FontAwesomeIcons.hockeyPuck,
-                                size: 6,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
+                            onPressed: (BuildContext context) {
+                              navigatorKey.currentState.push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return EditProfile();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          SettingsTile(
+                            title: 'Logout',
+                            titleTextStyle: TextStyle(
+                              color: Colors.red,
+                              fontSize: Theme.of(context).textTheme.bodyText1.fontSize,
                             ),
-                            // Bottom right
-                            Positioned(
-                              right: -4,
-                              bottom: -8,
-                              child: Icon(
-                                FontAwesomeIcons.hockeyPuck,
-                                size: 8,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            leading: Icon(
+                              Icons.logout,
+                              color: Colors.red,
+                            ),
+                            onPressed: (BuildContext context) {
+                              signOut();
+
+                              navigatorKey.currentState.pop();
+                              navigatorKey.currentState.pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return Login();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  child: Container(
+                    height: 100,
+                    width: MediaQuery.of(context).size.width,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.github,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 16,
+                            ),
+                            TextButton(
+                              child: Text(
+                                "Developed by Haden Hiles".toLowerCase(),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16,
+                                  fontFamily: "NovecentoSans",
+                                ),
                               ),
+                              style: ButtonStyle(
+                                padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
+                                backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                              ),
+                              onPressed: () async {
+                                String link = "https://github.com/HadenHiles";
+                                await canLaunch(link).then((can) {
+                                  launch(link).catchError((err) {
+                                    print(err);
+                                  });
+                                });
+                              },
                             ),
                           ],
                         ),
-                      ),
-                      onPressed: (BuildContext context) {
-                        navigatorKey.currentState.push(
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return EditPuckCount();
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    SettingsTile.switchTile(
-                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                      title: 'Dark Mode',
-                      leading: Icon(
-                        Icons.brightness_2,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      switchValue: _darkMode,
-                      onToggle: (bool value) async {
-                        SharedPreferences prefs = await SharedPreferences.getInstance();
-                        setState(() {
-                          _darkMode = !_darkMode;
-                          prefs.setBool('dark_mode', _darkMode);
-                        });
-
-                        Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                          Preferences(
-                            value,
-                            prefs.getInt('puck_count'),
-                            DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                            prefs.getString('fcm_token'),
-                          ),
-                        );
-                      },
-                    ),
-                    SettingsTile(
-                      title: "Recalculate Shot Totals",
-                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                      subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                      subtitle: "Use this if your shot count is out of sync",
-                      enabled: true,
-                      leading: _refreshingShots
-                          ? Container(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Theme.of(context).primaryColor,
+                        Container(
+                          margin: EdgeInsets.all(0),
+                          height: 20,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                FontAwesomeIcons.copyright,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 10,
                               ),
-                            )
-                          : Icon(
-                              Icons.refresh_rounded,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                      onPressed: (context) async {
-                        if (_shotsRefreshedOnce) {
-                          setState(() {
-                            _refreshingShots = true;
-                          });
-
-                          Future.delayed(Duration(milliseconds: 800)).then(
-                            (value) => setState(() {
-                              _refreshingShots = false;
-                            }),
-                          );
-                        } else {
-                          setState(() {
-                            _refreshingShots = true;
-                          });
-                          await recalculateIterationTotals().then((_) {
-                            Future.delayed(Duration(milliseconds: 200)).then(
-                              (value) {
-                                setState(() {
-                                  _refreshingShots = false;
-                                  _shotsRefreshedOnce = true;
-                                });
-
-                                Fluttertoast.showToast(
-                                  msg: 'Finished recalculating shot totals',
-                                  toastLength: Toast.LENGTH_SHORT,
-                                  gravity: ToastGravity.BOTTOM,
-                                  timeInSecForIosWeb: 1,
-                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                  textColor: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16.0,
-                                );
-                              },
-                            );
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                SettingsSection(
-                  titleTextStyle: Theme.of(context).textTheme.headline6,
-                  title: 'Account',
-                  tiles: [
-                    SettingsTile.switchTile(
-                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                      title: 'Public',
-                      leading: Icon(
-                        Icons.privacy_tip_rounded,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      switchValue: _publicProfile,
-                      onToggle: (bool value) async {
-                        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
-                          setState(() {
-                            _publicProfile = !_publicProfile;
-                          });
-                        });
-                      },
-                    ),
-                    SettingsTile(
-                      title: 'Edit Profile',
-                      titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                      subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                      leading: Icon(
-                        Icons.person,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      onPressed: (BuildContext context) {
-                        navigatorKey.currentState.push(
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return EditProfile();
-                            },
+                              TextButton(
+                                child: Text(
+                                  "How To Hockey Inc.".toLowerCase(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 14,
+                                    fontFamily: "NovecentoSans",
+                                  ),
+                                ),
+                                style: ButtonStyle(
+                                  padding: MaterialStateProperty.all(EdgeInsets.only(bottom: 2, left: 5)),
+                                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                                ),
+                                onPressed: () async {
+                                  String link = "https://howtohockey.com";
+                                  await canLaunch(link).then((can) {
+                                    launch(link).catchError((err) {
+                                      print(err);
+                                    });
+                                  });
+                                },
+                              ),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
-                    SettingsTile(
-                      title: 'Logout',
-                      titleTextStyle: TextStyle(
-                        color: Colors.red,
-                        fontSize: Theme.of(context).textTheme.bodyText1.fontSize,
-                      ),
-                      subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                      leading: Icon(
-                        Icons.logout,
-                        color: Colors.red,
-                      ),
-                      onPressed: (BuildContext context) {
-                        signOut();
-
-                        navigatorKey.currentState.pop();
-                        navigatorKey.currentState.pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return Login();
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
