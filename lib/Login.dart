@@ -120,7 +120,7 @@ class _LoginState extends State<Login> {
                         },
                       ),
                     ),
-                    appleSignInAvailable.isAvailable
+                    !appleSignInAvailable.isAvailable
                         ? Container()
                         : Container(
                             margin: EdgeInsets.only(top: 10),
