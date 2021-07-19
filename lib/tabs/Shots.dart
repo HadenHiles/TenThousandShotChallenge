@@ -535,6 +535,20 @@ class _ShotsState extends State<Shots> {
                                       ],
                                     ),
                                   ),
+                                  Container(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      iteration.totalWrist > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 18,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                               Column(
@@ -568,6 +582,20 @@ class _ShotsState extends State<Shots> {
                                           ),
                                         ),
                                       ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      iteration.totalSnap > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 18,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -605,6 +633,20 @@ class _ShotsState extends State<Shots> {
                                       ],
                                     ),
                                   ),
+                                  Container(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      iteration.totalBackhand > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 18,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                               Column(
@@ -638,6 +680,20 @@ class _ShotsState extends State<Shots> {
                                           ),
                                         ),
                                       ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      iteration.totalSlap > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 18,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
                                     ),
                                   ),
                                 ],
