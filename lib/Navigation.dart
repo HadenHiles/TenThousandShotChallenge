@@ -6,6 +6,7 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/More.dart';
+import 'package:tenthousandshotchallenge/tabs/Learn.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
@@ -83,6 +84,10 @@ class _NavigationState extends State<Navigation> {
         ),
       ],
       body: Team(),
+    ),
+    NavigationTab(
+      title: NavigationTitle(title: "Learn".toUpperCase()),
+      body: Learn(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "More".toUpperCase()),
@@ -338,7 +343,7 @@ class _NavigationState extends State<Navigation> {
             child: NetworkAwareWidget(
               onlineChild: NestedScrollView(
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return _selectedIndex == 2
+                  return _selectedIndex == 2 || _selectedIndex == 3
                       ? []
                       : [
                           SliverAppBar(
@@ -427,7 +432,11 @@ class _NavigationState extends State<Navigation> {
                 label: 'Team',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.more_horiz),
+                icon: Icon(Icons.school_rounded),
+                label: 'Learn',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.add_box_rounded),
                 label: 'More',
               ),
               BottomNavigationBarItem(

@@ -309,13 +309,6 @@ class _ProfileState extends State<Profile> {
                                   total += Iteration.fromSnapshot(doc).total;
                                 });
 
-                                // TODO: Revisit this and whether or not it's necessary
-                                // For users that happen to get their lifetime shot total in the negatives
-                                // it will automatically recalculate from the ground up for all of their challenges, sessions, shots.
-                                if (total < 0) {
-                                  recalculateIterationTotals();
-                                }
-
                                 return Container(
                                   width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                   child: AutoSizeText(
