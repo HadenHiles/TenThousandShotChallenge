@@ -472,7 +472,7 @@ class _MoreState extends State<More> {
                     child: Column(
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
@@ -489,29 +489,13 @@ class _MoreState extends State<More> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
-                                      width: 30,
-                                      height: 30,
+                                      width: 50,
+                                      height: 50,
                                       child: FittedBox(
                                         fit: BoxFit.cover,
                                         clipBehavior: Clip.antiAlias,
                                         child: Image(
                                           image: AssetImage("assets/images/instagram.png"),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: AutoSizeText(
-                                        "@howtohockey".toUpperCase(),
-                                        maxLines: 1,
-                                        maxFontSize: 20,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                     ),
@@ -533,8 +517,8 @@ class _MoreState extends State<More> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     SizedBox(
-                                      width: 30,
-                                      height: 30,
+                                      width: 50,
+                                      height: 50,
                                       child: FittedBox(
                                         fit: BoxFit.cover,
                                         clipBehavior: Clip.antiAlias,
@@ -543,35 +527,10 @@ class _MoreState extends State<More> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: AutoSizeText(
-                                        "How To Hockey".toUpperCase(),
-                                        maxLines: 1,
-                                        maxFontSize: 20,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
                             Container(
                               child: GestureDetector(
                                 onTap: () async {
@@ -586,29 +545,13 @@ class _MoreState extends State<More> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     SizedBox(
-                                      width: 30,
-                                      height: 30,
+                                      width: 50,
+                                      height: 50,
                                       child: FittedBox(
                                         fit: BoxFit.cover,
                                         clipBehavior: Clip.antiAlias,
                                         child: Image(
                                           image: AssetImage("assets/images/tiktok.png"),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: AutoSizeText(
-                                        "@coachjeremyhth".toUpperCase(),
-                                        maxLines: 1,
-                                        maxFontSize: 20,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                     ),
@@ -630,29 +573,13 @@ class _MoreState extends State<More> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     SizedBox(
-                                      width: 30,
-                                      height: 30,
+                                      width: 50,
+                                      height: 50,
                                       child: FittedBox(
                                         fit: BoxFit.cover,
                                         clipBehavior: Clip.antiAlias,
                                         child: Image(
                                           image: AssetImage("assets/images/twitter.png"),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: AutoSizeText(
-                                        "@howtohockey".toUpperCase(),
-                                        maxLines: 1,
-                                        maxFontSize: 20,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                     ),
