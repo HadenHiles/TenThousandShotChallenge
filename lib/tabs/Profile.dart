@@ -716,7 +716,7 @@ class _ProfileState extends State<Profile> {
                   } else {
                     int daysSoFar = i.startDate.difference(DateTime.now()).inDays;
                     daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                    String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
+                    String targetDate;
                     String iterationDescription;
                     String goalDescription = "";
                     int remainingShots = 10000 - i.total;
@@ -846,7 +846,7 @@ class _ProfileState extends State<Profile> {
                                     Container(
                                       width: MediaQuery.of(context).size.width * .4,
                                       child: AutoSizeText(
-                                        goalDescription.toLowerCase(),
+                                        goalDescription != "" ? goalDescription.toLowerCase() : "N/A".toLowerCase(),
                                         maxFontSize: 18,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,

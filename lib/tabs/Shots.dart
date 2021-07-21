@@ -50,6 +50,10 @@ class _ShotsState extends State<Shots> {
 
         _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
       } else {
+        setState(() {
+          _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+        });
+
         _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
       }
     });
@@ -199,7 +203,7 @@ class _ShotsState extends State<Shots> {
                                       Iteration i = Iteration.fromSnapshot(snapshot.data.docs[0]);
                                       int total = i.total >= 10000 ? 10000 : i.total;
                                       int shotsRemaining = 10000 - total;
-                                      int daysRemaining = i.targetDate.difference(DateTime.now()).inDays;
+                                      int daysRemaining = _targetDate.difference(DateTime.now()).inDays;
                                       double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
 
                                       int shotsPerDay = 0;
@@ -227,7 +231,7 @@ class _ShotsState extends State<Shots> {
                                               ? shotsPerWeek.toString() + " / Week".toLowerCase()
                                               : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
 
-                                      if (i.targetDate.compareTo(DateTime.now()) < 0) {
+                                      if (_targetDate.compareTo(DateTime.now()) < 0) {
                                         daysRemaining = DateTime.now().difference(i.targetDate).inDays * -1;
 
                                         shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
