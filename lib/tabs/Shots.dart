@@ -309,7 +309,7 @@ class _ShotsState extends State<Shots> {
                   } else if (snapshot.data.docs.length > 0) {
                     Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
                     int maxIterationTotalForWidth = iteration.total <= 10000 ? iteration.total : 10000;
-                    int iterationTotal = iteration.total < 10000 ? 10000 : iteration.total;
+                    int iterationTotal = iteration.total;
                     double totalShotsWidth = (maxIterationTotalForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
 
                     return Column(
@@ -334,7 +334,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
                                 child: Container(
                                   height: 40,
-                                  width: (iteration.totalWrist / iterationTotal) * totalShotsWidth,
+                                  width: iteration.totalWrist > 0 ? (iteration.totalWrist / iterationTotal) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: wristShotColor,
@@ -348,7 +348,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
                                 child: Container(
                                   height: 40,
-                                  width: (iteration.totalSnap / iterationTotal) * totalShotsWidth,
+                                  width: iteration.totalSnap > 0 ? (iteration.totalSnap / iterationTotal) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: snapShotColor,
@@ -362,7 +362,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
                                 child: Container(
                                   height: 40,
-                                  width: (iteration.totalBackhand / iterationTotal) * totalShotsWidth,
+                                  width: iteration.totalBackhand > 0 ? (iteration.totalBackhand / iterationTotal) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: backhandShotColor,
@@ -376,7 +376,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
                                 child: Container(
                                   height: 40,
-                                  width: (iteration.totalSlap / iterationTotal) * totalShotsWidth,
+                                  width: iteration.totalSlap > 0 ? (iteration.totalSlap / iterationTotal) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: slapShotColor,
