@@ -148,29 +148,40 @@ Future<bool> recalculateIterationTotals() async {
 
               await sDoc.reference.collection('shots').get().then((shotsSnapshot) async {
                 if (shotsSnapshot.docs.isNotEmpty) {
+                  int sessionTotal = 0;
+                  int sessionTotalWrist = 0;
+                  int sessionTotalSnap = 0;
+                  int sessionTotalSlap = 0;
+                  int sessionTotalBackhand = 0;
+
                   await Future.forEach(shotsSnapshot.docs, (shotsDoc) {
                     Shots shots = Shots.fromSnapshot(shotsDoc);
                     // Get the total number of shots for the session
                     sTotal += shots.count;
+                    sessionTotal += shots.count;
 
                     switch (shots.type) {
                       case "wrist":
                         tWrist += shots.count;
+                        sessionTotalWrist += shots.count;
                         break;
                       case "snap":
                         tSnap += shots.count;
+                        sessionTotalSnap += shots.count;
                         break;
                       case "slap":
                         tSlap += shots.count;
+                        sessionTotalSlap += shots.count;
                         break;
                       case "backhand":
                         tBackhand += shots.count;
+                        sessionTotalBackhand += shots.count;
                         break;
                       default:
                     }
                   }).then((_) {
                     // Update the session shot totals
-                    ShootingSession updatedSession = ShootingSession(sTotal, tWrist, tSnap, tSlap, tBackhand, s.date, s.duration);
+                    ShootingSession updatedSession = ShootingSession(sessionTotal, sessionTotalWrist, sessionTotalSnap, sessionTotalSlap, sessionTotalBackhand, s.date, s.duration);
                     batch.update(s.reference, updatedSession.toMap());
                   });
                 }
