@@ -6,10 +6,8 @@ class HomeTheme {
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
     primaryColorBrightness: Brightness.dark,
-    accentColorBrightness: Brightness.dark,
     backgroundColor: Colors.white,
     primaryColor: Color(0xffCC3333),
-    accentColor: Color(0xffB82e2e),
     scaffoldBackgroundColor: Color(0xffF7F7F7),
     appBarTheme: AppBarTheme(
       color: Colors.grey.shade400,
@@ -18,7 +16,6 @@ class HomeTheme {
       ),
     ),
     toggleableActiveColor: Color(0xffCC3333),
-    buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.light(
       brightness: Brightness.light,
       primary: Colors.white,
@@ -71,10 +68,8 @@ class HomeTheme {
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
     primaryColorBrightness: Brightness.dark,
-    accentColorBrightness: Brightness.dark,
     backgroundColor: Color(0xff222222),
     primaryColor: Color(0xffCC3333),
-    accentColor: Color(0xffB82e2e),
     scaffoldBackgroundColor: Color(0xff1A1A1A),
     appBarTheme: AppBarTheme(
       color: Colors.white,
@@ -83,7 +78,6 @@ class HomeTheme {
       ),
     ),
     toggleableActiveColor: Color(0xffCC3333),
-    buttonColor: Color(0xffCC3333),
     colorScheme: ColorScheme.dark(
       brightness: Brightness.dark,
       primary: Color(0xff1A1A1A),

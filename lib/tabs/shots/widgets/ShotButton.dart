@@ -13,7 +13,7 @@ class ShotTypeButton extends StatelessWidget {
     return TextButton(
       style: TextButton.styleFrom(
         primary: active ? Colors.white : Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: active ? Theme.of(context).buttonColor : Theme.of(context).cardTheme.color,
+        backgroundColor: active ? Theme.of(context).primaryColor : Theme.of(context).cardTheme.color,
         padding: EdgeInsets.symmetric(vertical: 20, horizontal: 5),
       ),
       onPressed: onPressed,
