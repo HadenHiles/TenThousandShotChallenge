@@ -924,7 +924,7 @@ class _ShotsState extends State<Shots> {
                                       style: TextButton.styleFrom(
                                         primary: Colors.white,
                                         padding: EdgeInsets.all(10),
-                                        backgroundColor: Theme.of(context).buttonColor,
+                                        backgroundColor: Theme.of(context).primaryColor,
                                       ),
                                       onPressed: () {
                                         if (!sessionService.isRunning) {

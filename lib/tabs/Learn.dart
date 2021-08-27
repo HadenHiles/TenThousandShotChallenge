@@ -122,7 +122,7 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
                                   progressIndicatorColor: Theme.of(context).primaryColor,
                                   progressColors: ProgressBarColors(
                                     playedColor: Theme.of(context).primaryColor,
-                                    handleColor: Theme.of(context).accentColor,
+                                    handleColor: Theme.of(context).primaryColor,
                                   ),
                                   bottomActions: [
                                     const SizedBox(width: 14.0),
