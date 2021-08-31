@@ -292,7 +292,7 @@ class _StartShootingState extends State<StartShooting> {
                   height: 15,
                 ),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width - 150,
+                  width: MediaQuery.of(context).size.width - 200,
                   child: TextButton(
                     onPressed: () async {
                       Feedback.forLongPress(context);
@@ -304,13 +304,17 @@ class _StartShootingState extends State<StartShooting> {
                     },
                     child: Icon(
                       Icons.check,
+                      size: 40,
                       color: Colors.white,
                     ),
                     style: ButtonStyle(
-                      padding: MaterialStateProperty.all(EdgeInsets.all(10)),
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
                       backgroundColor: MaterialStateProperty.all(Colors.green.shade600),
                     ),
                   ),
+                ),
+                SizedBox(
+                  height: 5,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -354,7 +358,7 @@ class _StartShootingState extends State<StartShooting> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
-                      height: 50,
+                      height: 60,
                       width: MediaQuery.of(context).size.width,
                       child: StreamProvider<NetworkStatus>(
                         create: (context) {
@@ -379,7 +383,7 @@ class _StartShootingState extends State<StartShooting> {
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.onPrimary,
                                           fontFamily: 'NovecentoSans',
-                                          fontSize: 20,
+                                          fontSize: 24,
                                         ),
                                       ),
                                       Container(
@@ -387,7 +391,7 @@ class _StartShootingState extends State<StartShooting> {
                                         child: Icon(
                                           Icons.delete_forever,
                                           color: Theme.of(context).colorScheme.onPrimary,
-                                          size: 20,
+                                          size: 24,
                                         ),
                                       ),
                                     ],
@@ -620,7 +624,7 @@ class _StartShootingState extends State<StartShooting> {
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontFamily: 'NovecentoSans',
-                                          fontSize: 20,
+                                          fontSize: 24,
                                         ),
                                       ),
                                       Container(
@@ -628,7 +632,7 @@ class _StartShootingState extends State<StartShooting> {
                                         child: Icon(
                                           Icons.save_alt_rounded,
                                           color: Colors.white,
-                                          size: 20,
+                                          size: 24,
                                         ),
                                       ),
                                     ],
