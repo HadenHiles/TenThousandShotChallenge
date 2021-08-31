@@ -583,7 +583,7 @@ class _ProfileState extends State<Profile> {
                   Iteration i = Iteration.fromSnapshot(snapshot.data);
 
                   if (i.endDate != null) {
-                    int daysTaken = firstSessionDate.difference(i.endDate).inDays;
+                    int daysTaken = i.endDate.difference(firstSessionDate).inDays + 1;
                     daysTaken = daysTaken < 1 ? 1 : daysTaken;
                     String endDate = DateFormat('MMMM d, y').format(i.endDate);
                     String iterationDescription;
