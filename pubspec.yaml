@@ -96,6 +96,7 @@ flutter:
     - assets/images/
     - assets/images/avatars/
     - assets/images/avatars/teams/
+    - assets/images/avatars/players/
     - assets/images/avatars/characters/
     - assets/images/shop/
     - assets/fonts/
