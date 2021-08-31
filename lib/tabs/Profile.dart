@@ -45,6 +45,9 @@ class _ProfileState extends State<Profile> {
   List<DropdownMenuItem> _attemptDropdownItems = [];
   String _selectedIterationId;
 
+  DateTime firstSessionDate = DateTime.now();
+  DateTime latestSessionDate = DateTime.now();
+
   @override
   void initState() {
     FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
@@ -137,6 +140,18 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
+      if (sessionsSnap.docs.length > 0) {
+        ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
+        ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
+
+        setState(() {
+          firstSessionDate = first.date;
+          latestSessionDate = latest.date;
+        });
+      }
+    });
+
     return Container(
       padding: EdgeInsets.only(top: 15),
       child: Column(
@@ -568,7 +583,7 @@ class _ProfileState extends State<Profile> {
                   Iteration i = Iteration.fromSnapshot(snapshot.data);
 
                   if (i.endDate != null) {
-                    int daysTaken = i.startDate.difference(i.endDate).inDays;
+                    int daysTaken = firstSessionDate.difference(i.endDate).inDays;
                     daysTaken = daysTaken < 1 ? 1 : daysTaken;
                     String endDate = DateFormat('MMMM d, y').format(i.endDate);
                     String iterationDescription;
@@ -714,7 +729,7 @@ class _ProfileState extends State<Profile> {
                       ),
                     );
                   } else {
-                    int daysSoFar = i.startDate.difference(DateTime.now()).inDays;
+                    int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
                     daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
                     String targetDate;
                     String iterationDescription;
