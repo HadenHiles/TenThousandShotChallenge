@@ -58,9 +58,33 @@ class _ProfileState extends State<Profile> {
 
     super.initState();
 
+    _loadFirstLastSession();
     _loadHistory();
-
     _getAttempts();
+  }
+
+  Future<Null> _loadFirstLastSession() async {
+    if (_selectedIterationId == null) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) {
+        if (iterationSnap.docs.length > 0) {
+          setState(() {
+            _selectedIterationId = iterationSnap.docs.first.id;
+          });
+        }
+      });
+    }
+
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
+      if (sessionsSnap.docs.length > 0) {
+        ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
+        ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
+
+        setState(() {
+          firstSessionDate = first.date;
+          latestSessionDate = latest.date;
+        });
+      }
+    });
   }
 
   Future<Null> _getAttempts() async {
@@ -140,18 +164,6 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
-      if (sessionsSnap.docs.length > 0) {
-        ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
-        ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
-
-        setState(() {
-          firstSessionDate = first.date;
-          latestSessionDate = latest.date;
-        });
-      }
-    });
-
     return Container(
       padding: EdgeInsets.only(top: 15),
       child: Column(
@@ -419,6 +431,7 @@ class _ProfileState extends State<Profile> {
                       _sessions.clear();
                       _lastVisible = null;
                       _selectedIterationId = value;
+                      _loadFirstLastSession();
                       _loadHistory();
                     });
                   },
