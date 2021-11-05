@@ -1,4 +1,4 @@
-import 'package:apple_sign_in/scope.dart';
+import 'package:the_apple_sign_in/scope.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

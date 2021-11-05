@@ -1,4 +1,4 @@
-import 'package:apple_sign_in/apple_sign_in.dart';
+import 'package:the_apple_sign_in/the_apple_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -25,7 +25,7 @@ Future<UserCredential> signInWithGoogle() async {
 
 Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
   // 1. perform the sign-in request
-  final result = await AppleSignIn.performRequests([AppleIdRequest(requestedScopes: scopes)]);
+  final result = await TheAppleSignIn.performRequests([AppleIdRequest(requestedScopes: scopes)]);
   // 2. check the result
   switch (result.status) {
     case AuthorizationStatus.authorized:
@@ -82,6 +82,6 @@ class AppleSignInAvailable {
   final bool isAvailable;
 
   static Future<AppleSignInAvailable> check() async {
-    return AppleSignInAvailable(await AppleSignIn.isAvailable());
+    return AppleSignInAvailable(await TheAppleSignIn.isAvailable());
   }
 }
