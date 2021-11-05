@@ -17,7 +17,7 @@ class YouTubeCacheManager {
   static CacheManager instance = CacheManager(
     Config(
       key,
-      stalePeriod: const Duration(days: 3),
+      stalePeriod: const Duration(seconds: 3),
       maxNrOfCacheObjects: 1000,
       repo: JsonCacheInfoRepository(databaseName: key),
       fileService: HttpFileService(),

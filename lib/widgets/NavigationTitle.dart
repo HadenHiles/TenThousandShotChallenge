@@ -14,7 +14,7 @@ class NavigationTitle extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
-          color: Theme.of(context).appBarTheme.color,
+          color: Theme.of(context).appBarTheme.backgroundColor,
         ),
         textAlign: TextAlign.center,
       ),

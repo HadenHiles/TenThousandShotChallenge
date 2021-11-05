@@ -24,7 +24,7 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
 
   return await HttpProvider().getData(
     "https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=$channelId&key=$apiKey",
-    {'cache-control': 'private, max-age=86400'},
+    {'cache-control': 'private, max-age=86400', 'Content-Type': 'application/json, charset=utf-8'},
   ).then((response) async {
     final Map<String, dynamic> data = json.decode(response.body);
 
@@ -38,7 +38,7 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
 
         return await HttpProvider().getData(
           "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=$playlistId&maxResults=10&key=$apiKey",
-          {'cache-control': 'private, max-age=86400'},
+          {'cache-control': 'private, max-age=86400', 'Content-Type': 'application/json, charset=utf-8'},
         ).then((response) {
           final Map<String, dynamic> data = json.decode(response.body);
           final List items = data["items"];
