@@ -23,13 +23,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase: ^9.0.1
-  firebase_core: ^1.2.0
-  cloud_firestore: ^3.0.0
-  firebase_auth: ^3.1.5
-  firebase_analytics: ^8.1.0
-  firebase_messaging: ^11.0.0
-  firebase_remote_config: ^0.11.0+2
+  firebase: ^9.0.2
+  firebase_core: ^1.10.6
+  cloud_firestore: ^3.1.5
+  firebase_auth: ^3.3.4
+  firebase_analytics: ^9.0.4
+  firebase_messaging: ^11.2.4
+  firebase_remote_config: ^1.0.3
   package_info: ^2.0.2
   introduction_screen: ^2.1.0
   connectivity_plus: ^2.0.2
@@ -39,11 +39,11 @@ dependencies:
   provider: ^6.0.1
   shared_preferences: ^2.0.5
   global_configuration: ^2.0.0-nullsafety.1 
-  google_sign_in: ^5.0.2
+  google_sign_in: ^5.2.1
   the_apple_sign_in: ^1.1.1
   flutter_signin_button: ^2.0.0
   password_strength: ^0.2.0
-  settings_ui: ^1.0.0
+  flutter_settings_ui: ^2.0.1
   url_launcher: ^6.0.6
   webview_flutter: ^2.0.8
   html: ^0.15.0

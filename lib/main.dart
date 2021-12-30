@@ -1,7 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
@@ -115,7 +113,7 @@ class Home extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
 
-    FirebaseAnalytics analytics = FirebaseAnalytics();
+    FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
     return Consumer<PreferencesStateNotifier>(
       builder: (context, settingsState, child) {

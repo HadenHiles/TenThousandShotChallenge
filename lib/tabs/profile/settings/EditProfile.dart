@@ -10,7 +10,6 @@ import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
