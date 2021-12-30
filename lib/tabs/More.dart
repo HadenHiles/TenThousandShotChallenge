@@ -3,7 +3,6 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
@@ -281,72 +280,71 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          // TODO: Figure out why youtube playlistvideos have "invalid characters"
-                          // _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
-                          //     ? Container(
-                          //         margin: EdgeInsets.symmetric(vertical: 25),
-                          //         child: Center(
-                          //           child: LinearProgressIndicator(
-                          //             color: Theme.of(context).primaryColor,
-                          //           ),
-                          //         ),
-                          //       )
-                          //     : Container(
-                          //         height: 185.0,
-                          //         child: ListView.builder(
-                          //           scrollDirection: Axis.horizontal,
-                          //           shrinkWrap: true,
-                          //           itemCount: _coachJeremyVideos.length,
-                          //           itemBuilder: (BuildContext context, int i) {
-                          //             return GestureDetector(
-                          //               onTap: () async {
-                          //                 String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
-                          //                 await canLaunch(videoLink).then((can) {
-                          //                   launch(videoLink).catchError((err) {
-                          //                     print(err);
-                          //                   });
-                          //                 });
-                          //               },
-                          //               child: Card(
-                          //                 color: Theme.of(context).cardTheme.color,
-                          //                 elevation: 4,
-                          //                 child: Container(
-                          //                   width: 200.0,
-                          //                   child: Column(
-                          //                     mainAxisAlignment: MainAxisAlignment.start,
-                          //                     children: [
-                          //                       Image(
-                          //                         image: NetworkImage(_coachJeremyVideos[i].thumbnail),
-                          //                         width: 200,
-                          //                       ),
-                          //                       Expanded(
-                          //                         child: Column(
-                          //                           mainAxisAlignment: MainAxisAlignment.center,
-                          //                           children: [
-                          //                             Container(
-                          //                               padding: EdgeInsets.all(5),
-                          //                               child: AutoSizeText(
-                          //                                 _coachJeremyVideos[i].title,
-                          //                                 maxLines: 2,
-                          //                                 maxFontSize: 22,
-                          //                                 style: TextStyle(
-                          //                                   fontFamily: "NovecentoSans",
-                          //                                   fontSize: 22,
-                          //                                   color: Theme.of(context).colorScheme.onPrimary,
-                          //                                 ),
-                          //                               ),
-                          //                             ),
-                          //                           ],
-                          //                         ),
-                          //                       ),
-                          //                     ],
-                          //                   ),
-                          //                 ),
-                          //               ),
-                          //             );
-                          //           },
-                          //         ),
-                          //       ),
+                          _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
+                              ? Container(
+                                  // margin: EdgeInsets.symmetric(vertical: 25),
+                                  // child: Center(
+                                  //   child: LinearProgressIndicator(
+                                  //     color: Theme.of(context).primaryColor,
+                                  //   ),
+                                  // ),
+                                  )
+                              : Container(
+                                  height: 185.0,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    shrinkWrap: true,
+                                    itemCount: _coachJeremyVideos.length,
+                                    itemBuilder: (BuildContext context, int i) {
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
+                                            });
+                                          });
+                                        },
+                                        child: Card(
+                                          color: Theme.of(context).cardTheme.color,
+                                          elevation: 4,
+                                          child: Container(
+                                            width: 200.0,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              children: [
+                                                Image(
+                                                  image: NetworkImage(_coachJeremyVideos[i].thumbnail),
+                                                  width: 200,
+                                                ),
+                                                Expanded(
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        child: AutoSizeText(
+                                                          _coachJeremyVideos[i].title,
+                                                          maxLines: 2,
+                                                          maxFontSize: 22,
+                                                          style: TextStyle(
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 22,
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                         ],
                       ),
                     ),
@@ -415,72 +413,71 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          // TODO: Figure out why youtube playlistvideos have "invalid characters"
-                          // _loadingHthVideos || _hthVideos.length < 1
-                          //     ? Container(
-                          //         margin: EdgeInsets.symmetric(vertical: 25),
-                          //         child: Center(
-                          //           child: LinearProgressIndicator(
-                          //             color: Theme.of(context).primaryColor,
-                          //           ),
-                          //         ),
-                          //       )
-                          //     : Container(
-                          //         height: 185.0,
-                          //         child: ListView.builder(
-                          //           scrollDirection: Axis.horizontal,
-                          //           shrinkWrap: true,
-                          //           itemCount: _hthVideos.length,
-                          //           itemBuilder: (BuildContext context, int i) {
-                          //             return GestureDetector(
-                          //               onTap: () async {
-                          //                 String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
-                          //                 await canLaunch(videoLink).then((can) {
-                          //                   launch(videoLink).catchError((err) {
-                          //                     print(err);
-                          //                   });
-                          //                 });
-                          //               },
-                          //               child: Card(
-                          //                 color: Theme.of(context).cardTheme.color,
-                          //                 elevation: 4,
-                          //                 child: Container(
-                          //                   width: 200.0,
-                          //                   child: Column(
-                          //                     mainAxisAlignment: MainAxisAlignment.start,
-                          //                     children: [
-                          //                       Image(
-                          //                         image: NetworkImage(_hthVideos[i].thumbnail),
-                          //                         width: 200,
-                          //                       ),
-                          //                       Expanded(
-                          //                         child: Column(
-                          //                           mainAxisAlignment: MainAxisAlignment.center,
-                          //                           children: [
-                          //                             Container(
-                          //                               padding: EdgeInsets.all(5),
-                          //                               child: AutoSizeText(
-                          //                                 _hthVideos[i].title,
-                          //                                 maxLines: 2,
-                          //                                 maxFontSize: 22,
-                          //                                 style: TextStyle(
-                          //                                   fontFamily: "NovecentoSans",
-                          //                                   fontSize: 22,
-                          //                                   color: Theme.of(context).colorScheme.onPrimary,
-                          //                                 ),
-                          //                               ),
-                          //                             ),
-                          //                           ],
-                          //                         ),
-                          //                       ),
-                          //                     ],
-                          //                   ),
-                          //                 ),
-                          //               ),
-                          //             );
-                          //           },
-                          //         ),
-                          //       ),
+                          _loadingHthVideos || _hthVideos.length < 1
+                              ? Container(
+                                  // margin: EdgeInsets.symmetric(vertical: 25),
+                                  // child: Center(
+                                  //   child: LinearProgressIndicator(
+                                  //     color: Theme.of(context).primaryColor,
+                                  //   ),
+                                  // ),
+                                  )
+                              : Container(
+                                  height: 185.0,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    shrinkWrap: true,
+                                    itemCount: _hthVideos.length,
+                                    itemBuilder: (BuildContext context, int i) {
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
+                                          await canLaunch(videoLink).then((can) {
+                                            launch(videoLink).catchError((err) {
+                                              print(err);
+                                            });
+                                          });
+                                        },
+                                        child: Card(
+                                          color: Theme.of(context).cardTheme.color,
+                                          elevation: 4,
+                                          child: Container(
+                                            width: 200.0,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              children: [
+                                                Image(
+                                                  image: NetworkImage(_hthVideos[i].thumbnail),
+                                                  width: 200,
+                                                ),
+                                                Expanded(
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        child: AutoSizeText(
+                                                          _hthVideos[i].title,
+                                                          maxLines: 2,
+                                                          maxFontSize: 22,
+                                                          style: TextStyle(
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 22,
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                         ],
                       ),
                     ),
@@ -493,7 +490,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                 padding: EdgeInsets.all(10),
                                 child: GestureDetector(
                                   onTap: () async {
-                                    String channelLink = "https://www.youtube.com/Haden Hiles";
+                                    String channelLink = "https://www.youtube.com/HadenHiles";
                                     await canLaunch(channelLink).then((can) {
                                       launch(channelLink).catchError((err) {
                                         print(err);
