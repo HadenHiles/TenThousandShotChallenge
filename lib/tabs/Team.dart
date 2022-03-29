@@ -124,7 +124,7 @@ class _TeamState extends State<Team> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                color: HomeTheme.darkTheme.colorScheme.primaryContainer,
               ),
               child: TabBar(
                 labelStyle: TextStyle(

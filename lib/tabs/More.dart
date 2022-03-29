@@ -175,7 +175,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                     expandedHeight: 0,
                     forceElevated: false,
                     titleSpacing: 0,
-                    backgroundColor: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                    backgroundColor: HomeTheme.darkTheme.colorScheme.primaryContainer,
                     bottom: TabBar(
                       controller: _tabController,
                       labelStyle: TextStyle(

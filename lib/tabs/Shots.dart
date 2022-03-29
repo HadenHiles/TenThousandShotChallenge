@@ -142,7 +142,7 @@ class _ShotsState extends State<Shots> {
                                         decoration: InputDecoration(
                                           labelText: "10,000 Shots By:".toLowerCase(),
                                           labelStyle: TextStyle(
-                                            color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryVariant, 0.3),
+                                            color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                             fontFamily: "NovecentoSans",
                                             fontSize: 22,
                                           ),
@@ -151,7 +151,7 @@ class _ShotsState extends State<Shots> {
                                           disabledBorder: InputBorder.none,
                                           enabledBorder: InputBorder.none,
                                           contentPadding: EdgeInsets.all(2),
-                                          fillColor: Theme.of(context).colorScheme.primaryVariant,
+                                          fillColor: Theme.of(context).colorScheme.primaryContainer,
                                         ),
                                         readOnly: true,
                                         onTap: () {
@@ -176,7 +176,7 @@ class _ShotsState extends State<Shots> {
                                     ),
                                   ),
                                   enableFeedback: true,
-                                  focusColor: Theme.of(context).colorScheme.primaryVariant,
+                                  focusColor: Theme.of(context).colorScheme.primaryContainer,
                                   onTap: _editTargetDate,
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -270,7 +270,7 @@ class _ShotsState extends State<Shots> {
                                   ),
                                 ),
                                 enableFeedback: true,
-                                focusColor: Theme.of(context).colorScheme.primaryVariant,
+                                focusColor: Theme.of(context).colorScheme.primaryContainer,
                                 onTap: () {
                                   setState(() {
                                     _showShotsPerDay = !_showShotsPerDay;
@@ -331,7 +331,7 @@ class _ShotsState extends State<Shots> {
                                 message: "${iteration.totalWrist} Wrist Shots".toLowerCase(),
                                 preferBelow: false,
                                 textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
                                   width: iteration.totalWrist > 0 ? (iteration.totalWrist / iterationTotal) * totalShotsWidth : 0,
@@ -345,7 +345,7 @@ class _ShotsState extends State<Shots> {
                                 message: "${iteration.totalSnap} Snap Shots".toLowerCase(),
                                 preferBelow: false,
                                 textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
                                   width: iteration.totalSnap > 0 ? (iteration.totalSnap / iterationTotal) * totalShotsWidth : 0,
@@ -359,7 +359,7 @@ class _ShotsState extends State<Shots> {
                                 message: "${iteration.totalBackhand} Backhands".toLowerCase(),
                                 preferBelow: false,
                                 textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
                                   width: iteration.totalBackhand > 0 ? (iteration.totalBackhand / iterationTotal) * totalShotsWidth : 0,
@@ -373,7 +373,7 @@ class _ShotsState extends State<Shots> {
                                 message: "${iteration.totalSlap} Slap Shots".toLowerCase(),
                                 preferBelow: false,
                                 textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryVariant),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
                                   width: iteration.totalSlap > 0 ? (iteration.totalSlap / iterationTotal) * totalShotsWidth : 0,

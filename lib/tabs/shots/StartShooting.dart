@@ -543,7 +543,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                 ),
                                                                 Container(
                                                                   decoration: BoxDecoration(
-                                                                    color: Theme.of(context).colorScheme.primaryVariant,
+                                                                    color: Theme.of(context).colorScheme.primaryContainer,
                                                                   ),
                                                                   padding: EdgeInsets.all(5),
                                                                   child: SelectableText(
@@ -774,7 +774,7 @@ class _StartShootingState extends State<StartShooting> {
           //   },
           //   icon: Icon(
           //     Icons.delete,
-          //     color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryVariant : Theme.of(context).cardTheme.color,
+          //     color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).cardTheme.color,
           //   ),
           // ),
         ),
