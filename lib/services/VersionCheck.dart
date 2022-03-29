@@ -13,7 +13,7 @@ versionCheck(context) async {
   double currentVersion = double.parse(info.version.trim().replaceAll(".", ""));
 
   //Get Latest version info from firebase config
-  final RemoteConfig remoteConfig = RemoteConfig.instance;
+  final FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.instance;
 
   try {
     // Using default duration to force fetching from remote server.

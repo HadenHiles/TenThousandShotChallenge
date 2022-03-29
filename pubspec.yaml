@@ -29,9 +29,9 @@ dependencies:
   firebase_auth: ^3.3.4
   firebase_analytics: ^9.0.4
   firebase_messaging: ^11.2.4
-  firebase_remote_config: ^1.0.3
+  firebase_remote_config: ^2.0.2
   package_info: ^2.0.2
-  introduction_screen: ^2.1.0
+  introduction_screen: ^3.0.0
   connectivity_plus: ^2.0.2
   data_connection_checker: ^0.3.4
   http: ^0.13.3
@@ -45,7 +45,7 @@ dependencies:
   password_strength: ^0.2.0
   flutter_settings_ui: ^2.0.1
   url_launcher: ^6.0.6
-  webview_flutter: ^2.0.8
+  webview_flutter: ^2.8.0
   html: ^0.15.0
   flutter_html: ^2.1.0 
   numberpicker: ^2.1.1

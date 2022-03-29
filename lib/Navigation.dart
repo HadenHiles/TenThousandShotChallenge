@@ -221,7 +221,7 @@ class _NavigationState extends State<Navigation> {
           },
           panel: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryVariant,
+              color: Theme.of(context).colorScheme.primaryContainer,
             ),
             child: Column(
               children: [
@@ -357,14 +357,14 @@ class _NavigationState extends State<Navigation> {
                             pinned: true,
                             flexibleSpace: DecoratedBox(
                               decoration: BoxDecoration(
-                                color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                                color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                               ),
                               child: FlexibleSpaceBar(
                                 collapseMode: CollapseMode.parallax,
                                 centerTitle: true,
                                 title: _title,
                                 background: Container(
-                                  color: HomeTheme.darkTheme.colorScheme.primaryVariant,
+                                  color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                                 ),
                               ),
                             ),

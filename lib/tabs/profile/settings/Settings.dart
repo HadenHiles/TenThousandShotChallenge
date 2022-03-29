@@ -146,9 +146,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               children: [
                 Container(
                   child: SettingsList(
-                    backgroundColor: Theme.of(context).colorScheme.primaryVariant,
-                    lightBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
-                    darkBackgroundColor: Theme.of(context).colorScheme.primaryVariant,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    lightBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    darkBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
                     sections: [
                       SettingsSection(
                         title: 'General',
@@ -386,7 +386,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           //second parameter is top to down
                         ),
                       ],
-                      color: Theme.of(context).colorScheme.primaryVariant,
+                      color: Theme.of(context).colorScheme.primaryContainer,
                     ),
                     width: MediaQuery.of(context).size.width,
                     child: Column(
