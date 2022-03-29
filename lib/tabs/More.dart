@@ -10,9 +10,9 @@ import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:html/parser.dart' show parse;
-import 'package:html/dom.dart' as dom;
+// import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:html/parser.dart' show parse;
+// import 'package:html/dom.dart' as dom;
 
 class More extends StatefulWidget {
   More({Key key}) : super(key: key);
@@ -37,11 +37,11 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
   bool _loadingMerch = true;
   List<Merch> _merch = [];
 
-  WebViewController _webviewController;
-  List<Merch> _hockeyshotProducts = [];
-  dom.Document _hsPageBody;
-  String _hsBaseUrl = "https://www.hockeyshot.com";
-  String _hsShootingProductsLink = 'https://www.hockeyshot.com/collections/complete-shooting-lineup?blogResultsPerPage=12&resultsPerPage=12&page=1&filter.ss_price_ca.low=0&filter.ss_price_ca.high=1850&region=CAD&selected_sort_option=0&price_interval=50&max_price=1850&selectedTab=products&blog_selected_sort_option=0&blogPage=1&filter.ss_tags_use=office';
+  // WebViewController _webviewController;
+  // List<Merch> _webProducts = [];
+  // dom.Document _webPageBody;
+  // String _baseUrl = "https://www.hockeyshot.com";
+  // String _productListPageLink = 'https://www.hockeyshot.com/collections/complete-shooting-lineup?blogResultsPerPage=12&resultsPerPage=12&page=1&filter.ss_price_ca.low=0&filter.ss_price_ca.high=1850&region=CAD&selected_sort_option=0&price_interval=50&max_price=1850&selectedTab=products&blog_selected_sort_option=0&blogPage=1&filter.ss_tags_use=office';
 
   @override
   void initState() {
@@ -130,13 +130,15 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        /*
+        // Left this here in case we want to pull products from a different company soon
         Opacity(
           opacity: 0,
           child: Container(
             height: 1,
             width: 1,
             child: WebView(
-              initialUrl: _hsShootingProductsLink,
+              initialUrl: _productListPageLink,
               javascriptMode: JavascriptMode.unrestricted,
               javascriptChannels: <JavascriptChannel>[
                 _extractDataJSChannel(context),
@@ -151,6 +153,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
             ),
           ),
         ),
+        */
         Container(
           height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1),
           margin: EdgeInsets.only(
@@ -828,10 +831,12 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                               },
                             ),
                           ),
+                    /*
+                    // Left this here in case we want to pull different hockey products from a shopify site in the future
                     SizedBox(
                       height: 5,
                     ),
-                    _hockeyshotProducts.length < 1
+                    _webProducts.length < 1
                         ? Container(
                             margin: EdgeInsets.symmetric(vertical: 25),
                             height: 50,
@@ -851,9 +856,9 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                             padding: EdgeInsets.all(10),
                             child: GestureDetector(
                               onTap: () async {
-                                String hockeyshotLink = "https://www.hockeyshot.com";
-                                await canLaunch(hockeyshotLink).then((can) {
-                                  launch(hockeyshotLink).catchError((err) {
+                                String websiteLink = "https://www.howtohockey.com";
+                                await canLaunch(websiteLink).then((can) {
+                                  launch(websiteLink).catchError((err) {
                                     print(err);
                                   });
                                 });
@@ -866,7 +871,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * .3,
                                       child: Image(
-                                        image: AssetImage("assets/images/shop/logo-hockeyshot.png"),
+                                        image: AssetImage("assets/images/logo-small.png"),
                                         width: MediaQuery.of(context).size.width * .3,
                                       ),
                                     ),
@@ -876,7 +881,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                     Container(
                                       width: 140,
                                       child: AutoSizeText(
-                                        "Shooting Products".toUpperCase(),
+                                        "Training Products".toUpperCase(),
                                         maxLines: 1,
                                         maxFontSize: 22,
                                         style: TextStyle(
@@ -888,9 +893,9 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                     ),
                                     IconButton(
                                       onPressed: () async {
-                                        String hockeyshotLink = "https://www.hockeyshot.com";
-                                        await canLaunch(hockeyshotLink).then((can) {
-                                          launch(hockeyshotLink).catchError((err) {
+                                        String websiteLink = "https://www.howtohockey.com";
+                                        await canLaunch(websiteLink).then((can) {
+                                          launch(websiteLink).catchError((err) {
                                             print(err);
                                           });
                                         });
@@ -909,11 +914,11 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                       height: 210.0,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _hockeyshotProducts.length,
+                        itemCount: _webProducts.length,
                         itemBuilder: (BuildContext context, int i) {
                           return GestureDetector(
                             onTap: () async {
-                              String link = _hsBaseUrl + _hockeyshotProducts[i].url;
+                              String link = _baseUrl + _webProducts[i].url;
                               await canLaunch(link).then((can) {
                                 launch(link).catchError((err) {
                                   print(err);
@@ -929,10 +934,10 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     Image(
-                                      image: _hockeyshotProducts[i].image == null
+                                      image: _webProducts[i].image == null
                                           ? AssetImage("assets/images/avatar.png")
                                           : NetworkImage(
-                                              _hockeyshotProducts[i].image,
+                                              _webProducts[i].image,
                                             ),
                                       width: 140,
                                     ),
@@ -944,7 +949,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                                           Container(
                                             padding: EdgeInsets.all(5),
                                             child: AutoSizeText(
-                                              _hockeyshotProducts[i].title.toUpperCase(),
+                                              _webProducts[i].title.toUpperCase(),
                                               maxLines: 2,
                                               maxFontSize: 22,
                                               textAlign: TextAlign.center,
@@ -966,6 +971,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                         },
                       ),
                     ),
+                    */
                     SizedBox(
                       height: 80,
                     ),
@@ -979,12 +985,14 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
     );
   }
 
+  /*
+  // Left this here in case we want to pull different training products from a shopify site in the future
   JavascriptChannel _extractDataJSChannel(BuildContext context) {
     return JavascriptChannel(
       name: 'Flutter',
       onMessageReceived: (JavascriptMessage message) {
-        _hsPageBody = parse(message.message);
-        List<dom.Element> prods = _hsPageBody.getElementsByClassName('product-card__link');
+        _webPageBody = parse(message.message);
+        List<dom.Element> prods = _webPageBody.getElementsByClassName('product-card__link');
         List<Merch> products = [];
         prods.forEach((el) {
           String url = el.attributes['href'];
@@ -998,9 +1006,10 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
         });
 
         setState(() {
-          _hockeyshotProducts = products;
+          _webProducts = products;
         });
       },
     );
   }
+  */
 }
