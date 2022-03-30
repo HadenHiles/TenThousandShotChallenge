@@ -23,13 +23,38 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
   List<YouTubeVideo> _learnVideos = [];
   ScrollController _learnScrollController;
 
+  TabController _tabController;
+
   @override
   void initState() {
     _loadLearningVideos();
     _learnScrollController = ScrollController();
     _learnScrollController.addListener(this.swapPageListener);
 
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+    _tabController.addListener(this.changeTabListener);
+
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+
+    super.dispose();
+  }
+
+  void changeTabListener() {
+    if (_tabController.indexIsChanging) {
+      switch (_tabController.index) {
+        case 0:
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+      }
+    }
   }
 
   Future<Null> _loadLearningVideos() async {
@@ -72,187 +97,245 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
         Container(
           height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           margin: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top,
+            top: 0,
             right: 0,
             bottom: 0,
             left: 0,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              _loadingLearnVideos || _learnVideos.length < 1
-                  ? Container(
-                      margin: EdgeInsets.symmetric(vertical: 25),
-                      child: Column(
-                        children: [
-                          Center(
-                            child: LinearProgressIndicator(
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
+          child: NestedScrollView(
+            clipBehavior: Clip.antiAlias,
+            scrollDirection: Axis.vertical,
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+              // These are the slivers that show up in the "outer" scroll view.
+              return [
+                SliverOverlapAbsorber(
+                  handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                  sliver: SliverAppBar(
+                    floating: false,
+                    primary: true,
+                    toolbarHeight: 0,
+                    collapsedHeight: 0,
+                    expandedHeight: 0,
+                    forceElevated: false,
+                    titleSpacing: 0,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    bottom: TabBar(
+                      controller: _tabController,
+                      labelStyle: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
                       ),
-                    )
-                  : Container(
-                      height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + (sessionService.isRunning ? 60 : 0)),
-                      child: PageView.builder(
-                        controller: _learnPageController,
-                        scrollDirection: Axis.vertical,
-                        itemCount: _learnVideos.length,
-                        itemBuilder: (BuildContext context, int i) {
-                          YoutubePlayerController _ytController = YoutubePlayerController(
-                            initialVideoId: _learnVideos[i].id,
-                            flags: YoutubePlayerFlags(
-                              autoPlay: false,
-                              mute: false,
-                            ),
-                          );
-
-                          return Flex(
-                            direction: Axis.vertical,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              YoutubePlayerBuilder(
-                                player: YoutubePlayer(
-                                  controller: _ytController,
-                                  aspectRatio: 16 / 9,
-                                  showVideoProgressIndicator: true,
-                                  progressIndicatorColor: Theme.of(context).primaryColor,
-                                  progressColors: ProgressBarColors(
-                                    playedColor: Theme.of(context).primaryColor,
-                                    handleColor: Theme.of(context).primaryColor,
+                      labelPadding: EdgeInsets.all(0),
+                      indicatorColor: Theme.of(context).primaryColor,
+                      tabs: [
+                        Tab(
+                          icon: Icon(
+                            Icons.video_collection_rounded,
+                            color: Colors.white70,
+                          ),
+                          iconMargin: EdgeInsets.all(0),
+                          text: "Free".toUpperCase(),
+                        ),
+                        Tab(
+                          icon: Icon(
+                            Icons.shopping_bag_rounded,
+                            color: Colors.white70,
+                          ),
+                          iconMargin: EdgeInsets.all(0),
+                          text: "Premium".toUpperCase(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    _loadingLearnVideos || _learnVideos.length < 1
+                        ? Container(
+                            margin: EdgeInsets.symmetric(vertical: 25),
+                            child: Column(
+                              children: [
+                                Center(
+                                  child: LinearProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
                                   ),
-                                  bottomActions: [
-                                    const SizedBox(width: 14.0),
-                                    CurrentPosition(),
-                                    const SizedBox(width: 8.0),
-                                    ProgressBar(
-                                      isExpanded: true,
-                                    ),
-                                    RemainingDuration(),
-                                    const PlaybackSpeedButton(),
-                                  ],
-                                  actionsPadding: EdgeInsets.all(2),
-                                  liveUIColor: Theme.of(context).primaryColor,
-                                  onReady: () {
-                                    // _ytController.addListener(listener);
-                                  },
                                 ),
-                                builder: (context, player) {
-                                  return Column(
-                                    children: [
-                                      player,
-                                    ],
-                                  );
-                                },
-                              ),
-                              Flexible(
-                                flex: 2,
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: MediaQuery.of(context).size.width * .1,
+                              ],
+                            ),
+                          )
+                        : Container(
+                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 100 + (sessionService.isRunning ? 60 : 0)),
+                            child: PageView.builder(
+                              controller: _learnPageController,
+                              scrollDirection: Axis.vertical,
+                              itemCount: _learnVideos.length,
+                              itemBuilder: (BuildContext context, int i) {
+                                YoutubePlayerController _ytController = YoutubePlayerController(
+                                  initialVideoId: _learnVideos[i].id,
+                                  flags: YoutubePlayerFlags(
+                                    autoPlay: false,
+                                    mute: false,
                                   ),
-                                  child: SingleChildScrollView(
-                                    physics: BouncingScrollPhysics(),
-                                    controller: _learnScrollController,
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          margin: EdgeInsets.only(top: 25),
-                                          child: Text(
-                                            _learnVideos[i].title.toUpperCase(),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 42,
-                                            ),
+                                );
+
+                                return Flex(
+                                  direction: Axis.vertical,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    YoutubePlayerBuilder(
+                                      player: YoutubePlayer(
+                                        controller: _ytController,
+                                        aspectRatio: 16 / 9,
+                                        showVideoProgressIndicator: true,
+                                        progressIndicatorColor: Theme.of(context).primaryColor,
+                                        progressColors: ProgressBarColors(
+                                          playedColor: Theme.of(context).primaryColor,
+                                          handleColor: Theme.of(context).primaryColor,
+                                        ),
+                                        bottomActions: [
+                                          const SizedBox(width: 14.0),
+                                          CurrentPosition(),
+                                          const SizedBox(width: 8.0),
+                                          ProgressBar(
+                                            isExpanded: true,
                                           ),
+                                          RemainingDuration(),
+                                          const PlaybackSpeedButton(),
+                                        ],
+                                        actionsPadding: EdgeInsets.all(2),
+                                        liveUIColor: Theme.of(context).primaryColor,
+                                        onReady: () {
+                                          // _ytController.addListener(listener);
+                                        },
+                                      ),
+                                      builder: (context, player) {
+                                        return Column(
+                                          children: [
+                                            player,
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    Flexible(
+                                      flex: 2,
+                                      child: Container(
+                                        margin: EdgeInsets.symmetric(
+                                          vertical: 10,
+                                          horizontal: MediaQuery.of(context).size.width * .1,
                                         ),
-                                        Html(
-                                          data: _learnVideos[i].content,
-                                          style: {
-                                            "h1": Style(
-                                              textAlign: TextAlign.center,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: FontSize(36),
-                                            ),
-                                            "h2": Style(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: FontSize(30),
-                                            ),
-                                            "h3": Style(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: FontSize(24),
-                                            ),
-                                            "ul": Style(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: FontSize(24),
-                                              listStyleType: ListStyleType.DISC,
-                                            ),
-                                            "ol": Style(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: FontSize(24),
-                                              listStyleType: ListStyleType.DECIMAL,
-                                            ),
-                                            "ul li, ol li": Style(
-                                              padding: EdgeInsets.symmetric(vertical: 5),
-                                              margin: EdgeInsets.only(bottom: 2),
-                                            ),
-                                            "p": Style(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: FontSize(16),
-                                            ),
-                                          },
-                                        ),
-                                        _learnVideos[i].buttonUrl != null
-                                            ? Container(
-                                                margin: EdgeInsets.only(bottom: 50),
-                                                child: TextButton(
-                                                  onPressed: () async {
-                                                    await canLaunch(_learnVideos[i].buttonUrl).then((can) {
-                                                      launch(_learnVideos[i].buttonUrl).catchError((err) {
-                                                        print(err);
-                                                      });
-                                                    });
-                                                  },
-                                                  child: Text(
-                                                    _learnVideos[i].buttonText.toUpperCase() ?? "See more".toUpperCase(),
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontFamily: "NovecentoSans",
-                                                      fontSize: 24,
-                                                    ),
-                                                  ),
-                                                  style: ButtonStyle(
-                                                    padding: MaterialStateProperty.all(
-                                                      EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                    ),
-                                                    backgroundColor: MaterialStateProperty.all(
-                                                      Theme.of(context).primaryColor,
-                                                    ),
+                                        child: SingleChildScrollView(
+                                          physics: BouncingScrollPhysics(),
+                                          controller: _learnScrollController,
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                margin: EdgeInsets.only(top: 25),
+                                                child: Text(
+                                                  _learnVideos[i].title.toUpperCase(),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: 42,
                                                   ),
                                                 ),
-                                              )
-                                            : Container(),
-                                      ],
+                                              ),
+                                              Html(
+                                                data: _learnVideos[i].content,
+                                                style: {
+                                                  "h1": Style(
+                                                    textAlign: TextAlign.center,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(36),
+                                                  ),
+                                                  "h2": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(30),
+                                                  ),
+                                                  "h3": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                  ),
+                                                  "ul": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                    listStyleType: ListStyleType.DISC,
+                                                  ),
+                                                  "ol": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                    listStyleType: ListStyleType.DECIMAL,
+                                                  ),
+                                                  "ul li, ol li": Style(
+                                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                                    margin: EdgeInsets.only(bottom: 2),
+                                                  ),
+                                                  "p": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontSize: FontSize(16),
+                                                  ),
+                                                },
+                                              ),
+                                              _learnVideos[i].buttonUrl.isNotEmpty
+                                                  ? Container(
+                                                      margin: EdgeInsets.only(bottom: 50),
+                                                      child: TextButton(
+                                                        onPressed: () async {
+                                                          await canLaunch(_learnVideos[i].buttonUrl).then((can) {
+                                                            launch(_learnVideos[i].buttonUrl).catchError((err) {
+                                                              print(err);
+                                                            });
+                                                          });
+                                                        },
+                                                        child: Text(
+                                                          _learnVideos[i].buttonText.toUpperCase() ?? "See more".toUpperCase(),
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 24,
+                                                          ),
+                                                        ),
+                                                        style: ButtonStyle(
+                                                          padding: MaterialStateProperty.all(
+                                                            EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                          ),
+                                                          backgroundColor: MaterialStateProperty.all(
+                                                            Theme.of(context).primaryColor,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-            ],
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                  ],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [],
+                ),
+              ],
+            ),
           ),
         ),
       ],
