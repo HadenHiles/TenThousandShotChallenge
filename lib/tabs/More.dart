@@ -157,7 +157,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
         Container(
           height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1),
           margin: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top,
+            top: 0,
             right: 0,
             bottom: 0,
             left: 0,
@@ -186,6 +186,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                         fontSize: 18,
                       ),
                       labelPadding: EdgeInsets.all(0),
+                      indicatorColor: Theme.of(context).primaryColor,
                       tabs: [
                         Tab(
                           icon: Icon(
