@@ -348,7 +348,7 @@ class _NavigationState extends State<Navigation> {
                       : [
                           SliverAppBar(
                             collapsedHeight: 65,
-                            expandedHeight: 125,
+                            expandedHeight: 85,
                             automaticallyImplyLeading: false,
                             backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                             iconTheme: Theme.of(context).iconTheme,
