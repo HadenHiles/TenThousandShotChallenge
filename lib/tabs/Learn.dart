@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
+import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -332,7 +333,11 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.max,
-                  children: [],
+                  children: [
+                    Container(
+                      child: VideoStream(url: "https://player.vimeo.com/progressive_redirect/playback/685958839/rendition/1080p?loc=external&signature=f7542ffea715bb844a2acdadcc34870f7955d7595ee274893e2293a640b4fd11"),
+                    )
+                  ],
                 ),
               ],
             ),
