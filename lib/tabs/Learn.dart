@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -119,7 +120,7 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
                     expandedHeight: 0,
                     forceElevated: false,
                     titleSpacing: 0,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    backgroundColor: HomeTheme.darkTheme.colorScheme.primaryContainer,
                     bottom: TabBar(
                       controller: _tabController,
                       labelStyle: TextStyle(
