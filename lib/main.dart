@@ -122,6 +122,7 @@ class Home extends StatelessWidget {
         return MaterialApp(
           title: '10,000 Shot Challenge',
           navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
           theme: preferences.darkMode ? HomeTheme.darkTheme : HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
