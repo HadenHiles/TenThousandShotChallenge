@@ -17,22 +17,22 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:wc_flutter_share/wc_flutter_share.dart';
 
-class AddTeammate extends StatefulWidget {
-  AddTeammate({Key key}) : super(key: key);
+class AddFriend extends StatefulWidget {
+  AddFriend({Key key}) : super(key: key);
 
   @override
-  _AddTeammateState createState() => _AddTeammateState();
+  _AddFriendState createState() => _AddFriendState();
 }
 
-class _AddTeammateState extends State<AddTeammate> {
+class _AddFriendState extends State<AddFriend> {
   final user = FirebaseAuth.instance.currentUser;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController searchFieldController = TextEditingController();
 
-  List<DocumentSnapshot> _teammates = [];
+  List<DocumentSnapshot> _friends = [];
   bool _isSearching = false;
-  int _selectedTeammate;
+  int _selectedFriend;
 
   Future<bool> scanBarcodeNormal() async {
     String barcodeScanRes;
@@ -41,7 +41,7 @@ class _AddTeammateState extends State<AddTeammate> {
     barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
     print(barcodeScanRes);
 
-    return acceptTeammateBarcode(barcodeScanRes);
+    return acceptFriendBarcode(barcodeScanRes);
   }
 
   @override
@@ -120,7 +120,7 @@ class _AddTeammateState extends State<AddTeammate> {
                       collapseMode: CollapseMode.parallax,
                       titlePadding: null,
                       centerTitle: false,
-                      title: BasicTitle(title: "Invite Teammate"),
+                      title: BasicTitle(title: "Invite Friend"),
                       background: Container(
                         color: Theme.of(context).scaffoldBackgroundColor,
                       ),
@@ -145,7 +145,7 @@ class _AddTeammateState extends State<AddTeammate> {
                         ),
                       ),
                     ),
-                    _selectedTeammate == null
+                    _selectedFriend == null
                         ? Container()
                         : Container(
                             margin: EdgeInsets.only(top: 10),
@@ -156,13 +156,13 @@ class _AddTeammateState extends State<AddTeammate> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                sendInvite(user.uid, _teammates[_selectedTeammate].id).then((success) {
+                                sendInvite(user.uid, _friends[_selectedFriend].id).then((success) {
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " Invited!",
+                                          UserProfile.fromSnapshot(_friends[_selectedFriend]).displayName.toString() + " Invited!",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -172,8 +172,8 @@ class _AddTeammateState extends State<AddTeammate> {
                                     );
 
                                     setState(() {
-                                      _selectedTeammate = null;
-                                      _teammates = [];
+                                      _selectedFriend = null;
+                                      _friends = [];
                                     });
                                     searchFieldController.text = "";
                                   } else {
@@ -181,7 +181,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          "Failed to invite " + UserProfile.fromSnapshot(_teammates[_selectedTeammate]).displayName.toString() + " :(",
+                                          "Failed to invite " + UserProfile.fromSnapshot(_friends[_selectedFriend]).displayName.toString() + " :(",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -230,7 +230,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                     keyboardType: TextInputType.text,
                                     decoration: InputDecoration(
                                       hintText: 'Enter Name or Email'.toUpperCase(),
-                                      labelText: "Find a teammate".toUpperCase(),
+                                      labelText: "Find a friend".toUpperCase(),
                                       alignLabelWithHint: true,
                                       labelStyle: TextStyle(
                                         fontFamily: 'NovecentoSans',
@@ -275,18 +275,18 @@ class _AddTeammateState extends State<AddTeammate> {
                                           await new Future.delayed(new Duration(milliseconds: 500));
 
                                           setState(() {
-                                            _teammates = users;
+                                            _friends = users;
                                             _isSearching = false;
                                           });
                                         }
 
                                         setState(() {
-                                          _teammates = users;
+                                          _friends = users;
                                           _isSearching = false;
                                         });
                                       } else {
                                         setState(() {
-                                          _teammates = [];
+                                          _friends = [];
                                           _isSearching = false;
                                         });
                                       }
@@ -329,7 +329,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                           SnackBar(
                                             backgroundColor: Theme.of(context).cardTheme.color,
                                             content: Text(
-                                              "You are now teammates!",
+                                              "You are now friends!",
                                               style: TextStyle(
                                                 color: Theme.of(context).colorScheme.onPrimary,
                                               ),
@@ -340,7 +340,7 @@ class _AddTeammateState extends State<AddTeammate> {
 
                                         navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
                                           return Navigation(
-                                            title: NavigationTitle(title: "Team".toUpperCase()),
+                                            title: NavigationTitle(title: "Friends".toUpperCase()),
                                             selectedIndex: 1,
                                           );
                                         }));
@@ -349,7 +349,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                           SnackBar(
                                             backgroundColor: Theme.of(context).cardTheme.color,
                                             content: Text(
-                                              "There was an error scanning your teammates QR code :(",
+                                              "There was an error scanning your friend's QR code :(",
                                               style: TextStyle(
                                                 color: Theme.of(context).colorScheme.onPrimary,
                                               ),
@@ -374,7 +374,7 @@ class _AddTeammateState extends State<AddTeammate> {
                       ),
                     ),
                     Flexible(
-                      child: _isSearching && _teammates.length < 1 && searchFieldController.text.length > 0
+                      child: _isSearching && _friends.length < 1 && searchFieldController.text.length > 0
                           ? Column(
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -385,7 +385,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                 )
                               ],
                             )
-                          : _teammates.length < 1 && searchFieldController.text.length > 0
+                          : _friends.length < 1 && searchFieldController.text.length > 0
                               ? Column(
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -394,7 +394,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                     Container(
                                       margin: EdgeInsets.only(top: 40),
                                       child: Text(
-                                        "Couldn't find your teammate?",
+                                        "Couldn't find your friend?",
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
@@ -434,7 +434,7 @@ class _AddTeammateState extends State<AddTeammate> {
                                   ],
                                 )
                               : ListView(
-                                  children: _buildTeammateResults(),
+                                  children: _buildFriendResults(),
                                 ),
                     ),
                   ],
@@ -447,12 +447,12 @@ class _AddTeammateState extends State<AddTeammate> {
     );
   }
 
-  List<Widget> _buildTeammateResults() {
-    List<Widget> teammates = [];
-    _teammates.asMap().forEach((i, doc) {
-      UserProfile teammate = UserProfile.fromSnapshot(doc);
+  List<Widget> _buildFriendResults() {
+    List<Widget> friends = [];
+    _friends.asMap().forEach((i, doc) {
+      UserProfile friend = UserProfile.fromSnapshot(doc);
 
-      teammates.add(
+      friends.add(
         GestureDetector(
           onTap: () {
             Feedback.forTap(context);
@@ -464,18 +464,18 @@ class _AddTeammateState extends State<AddTeammate> {
             }
 
             setState(() {
-              _selectedTeammate = _selectedTeammate == i ? null : i;
+              _selectedFriend = _selectedFriend == i ? null : i;
               searchFieldController.text = searchFieldController.text;
             });
           },
           child: Container(
             decoration: BoxDecoration(
-              color: _selectedTeammate == i ? Theme.of(context).cardTheme.color : Colors.transparent,
+              color: _selectedFriend == i ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
             padding: EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
-                _selectedTeammate == i
+                _selectedFriend == i
                     ? Container(
                         height: 60,
                         width: 60,
@@ -484,7 +484,7 @@ class _AddTeammateState extends State<AddTeammate> {
                         child: IconButton(
                           onPressed: () {
                             setState(() {
-                              _selectedTeammate = null;
+                              _selectedFriend = null;
                               searchFieldController.text = searchFieldController.text;
                             });
                           },
@@ -505,7 +505,7 @@ class _AddTeammateState extends State<AddTeammate> {
                         child: SizedBox(
                           height: 60,
                           child: UserAvatar(
-                            user: teammate,
+                            user: friend,
                             backgroundColor: Colors.transparent,
                           ),
                         ),
@@ -519,11 +519,11 @@ class _AddTeammateState extends State<AddTeammate> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        teammate.displayName != null
+                        friend.displayName != null
                             ? Container(
                                 width: MediaQuery.of(context).size.width - 235,
                                 child: AutoSizeText(
-                                  teammate.displayName,
+                                  friend.displayName,
                                   maxLines: 1,
                                   style: TextStyle(
                                     fontSize: 22,
@@ -542,7 +542,7 @@ class _AddTeammateState extends State<AddTeammate> {
                         Container(
                           width: 135,
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return Center(
@@ -573,7 +573,7 @@ class _AddTeammateState extends State<AddTeammate> {
                         ),
                         Container(
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return Center(
@@ -614,6 +614,6 @@ class _AddTeammateState extends State<AddTeammate> {
       );
     });
 
-    return teammates;
+    return friends;
   }
 }

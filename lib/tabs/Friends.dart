@@ -8,23 +8,23 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/team/AddTeammate.dart';
-import 'package:tenthousandshotchallenge/tabs/team/Teammate.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/Friend.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
-class Team extends StatefulWidget {
-  Team({Key key}) : super(key: key);
+class Friends extends StatefulWidget {
+  Friends({Key key}) : super(key: key);
 
   @override
-  _TeamState createState() => _TeamState();
+  _FriendsState createState() => _FriendsState();
 }
 
-class _TeamState extends State<Team> {
+class _FriendsState extends State<Friends> {
   final user = FirebaseAuth.instance.currentUser;
 
-  bool _isLoadingTeammates = false;
-  List<DocumentSnapshot> _teammates = [];
+  bool _isLoadingFriends = false;
+  List<DocumentSnapshot> _friends = [];
 
   bool _isLoadingInvites = false;
   List<DocumentSnapshot> _invites = [];
@@ -32,7 +32,7 @@ class _TeamState extends State<Team> {
 
   @override
   void initState() {
-    _loadTeammates();
+    _loadFriends();
     _loadInvites();
 
     super.initState();
@@ -78,10 +78,10 @@ class _TeamState extends State<Team> {
     });
   }
 
-  Future<Null> _loadTeammates() async {
+  Future<Null> _loadFriends() async {
     setState(() {
-      _isLoadingTeammates = true;
-      _teammates = [];
+      _isLoadingFriends = true;
+      _friends = [];
     });
 
     await FirebaseFirestore.instance.collection('teammates').doc(user.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
@@ -92,21 +92,21 @@ class _TeamState extends State<Team> {
           FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
             if (mounted) {
               setState(() {
-                _teammates.add(uSnap);
+                _friends.add(uSnap);
               });
             }
           });
         }).then((_) {
           if (mounted) {
             setState(() {
-              _isLoadingTeammates = false;
+              _isLoadingFriends = false;
             });
           }
         });
       } else {
         if (mounted) {
           setState(() {
-            _isLoadingTeammates = false;
+            _isLoadingFriends = false;
           });
         }
       }
@@ -139,7 +139,7 @@ class _TeamState extends State<Team> {
                       color: Colors.white70,
                     ),
                     iconMargin: EdgeInsets.all(0),
-                    text: "Teammates".toUpperCase(),
+                    text: "Friends".toUpperCase(),
                   ),
                   Tab(
                     icon: Icon(
@@ -157,7 +157,7 @@ class _TeamState extends State<Team> {
                 children: [
                   RefreshIndicator(
                     color: Theme.of(context).primaryColor,
-                    child: _isLoadingTeammates
+                    child: _isLoadingFriends
                         ? Container(
                             margin: EdgeInsets.only(top: 25),
                             child: Center(
@@ -170,7 +170,7 @@ class _TeamState extends State<Team> {
                               ),
                             ),
                           )
-                        : _teammates.length < 1
+                        : _friends.length < 1
                             ? Container(
                                 width: MediaQuery.of(context).size.width - 30,
                                 child: Column(
@@ -181,7 +181,7 @@ class _TeamState extends State<Team> {
                                     Container(
                                       margin: EdgeInsets.only(top: 40),
                                       child: Text(
-                                        "Tap + to invite a teammate".toUpperCase(),
+                                        "Tap + to invite a friend".toUpperCase(),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
@@ -202,7 +202,7 @@ class _TeamState extends State<Team> {
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
                                               navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
-                                                return AddTeammate();
+                                                return AddFriend();
                                               }));
                                             },
                                             iconSize: 40,
@@ -220,14 +220,14 @@ class _TeamState extends State<Team> {
                               )
                             : ListView.builder(
                                 padding: EdgeInsets.only(top: 0, right: 0, left: 0, bottom: AppBar().preferredSize.height),
-                                itemCount: _teammates.length + 1,
+                                itemCount: _friends.length + 1,
                                 itemBuilder: (_, int index) {
-                                  if (index < _teammates.length) {
-                                    final DocumentSnapshot document = _teammates[index];
-                                    return _buildTeammateItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                  if (index < _friends.length) {
+                                    final DocumentSnapshot document = _friends[index];
+                                    return _buildFriendItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
                                   }
 
-                                  return !_isLoadingTeammates
+                                  return !_isLoadingFriends
                                       ? Container()
                                       : Container(
                                           child: Center(
@@ -250,8 +250,8 @@ class _TeamState extends State<Team> {
                                 },
                               ),
                     onRefresh: () async {
-                      _teammates.clear();
-                      await _loadTeammates();
+                      _friends.clear();
+                      await _loadFriends();
                     },
                   ),
                   RefreshIndicator(
@@ -282,7 +282,7 @@ class _TeamState extends State<Team> {
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
                                     final DocumentSnapshot document = _invites[index];
-                                    return _buildTeammateInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
+                                    return _buildFriendInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
                                   }
 
                                   return !_isLoadingInvites
@@ -321,13 +321,13 @@ class _TeamState extends State<Team> {
     );
   }
 
-  Widget _buildTeammateItem(UserProfile teammate, bool bg) {
+  Widget _buildFriendItem(UserProfile friend, bool bg) {
     return GestureDetector(
       onTap: () {
         Feedback.forTap(context);
 
         navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
-          return Teammate(uid: teammate.reference.id);
+          return Friend(uid: friend.reference.id);
         }));
       },
       child: Container(
@@ -348,7 +348,7 @@ class _TeamState extends State<Team> {
               child: SizedBox(
                 height: 60,
                 child: UserAvatar(
-                  user: teammate,
+                  user: friend,
                   backgroundColor: Colors.transparent,
                 ),
               ),
@@ -362,11 +362,11 @@ class _TeamState extends State<Team> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    teammate.displayName != null
+                    friend.displayName != null
                         ? Container(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
-                              teammate.displayName,
+                              friend.displayName,
                               maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
@@ -385,7 +385,7 @@ class _TeamState extends State<Team> {
                     Container(
                       width: 135,
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
@@ -416,7 +416,7 @@ class _TeamState extends State<Team> {
                     ),
                     Container(
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(teammate.reference.id).collection('iterations').snapshots(),
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
@@ -456,11 +456,11 @@ class _TeamState extends State<Team> {
     );
   }
 
-  Widget _buildTeammateInviteItem(UserProfile teammate, Invite invite, bool bg) {
+  Widget _buildFriendInviteItem(UserProfile friend, Invite invite, bool bg) {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
-        await deleteInvite(teammate.reference.id, user.uid).then((deleted) {
+        await deleteInvite(friend.reference.id, user.uid).then((deleted) {
           if (deleted == null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -492,7 +492,7 @@ class _TeamState extends State<Team> {
               SnackBar(
                 backgroundColor: Theme.of(context).cardTheme.color,
                 content: new Text(
-                  "Invite from ${teammate.displayName} deleted",
+                  "Invite from ${friend.displayName} deleted",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
@@ -512,7 +512,7 @@ class _TeamState extends State<Team> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text(
-                "Delete Invite from ${teammate.displayName}?".toUpperCase(),
+                "Delete Invite from ${friend.displayName}?".toUpperCase(),
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 24,
@@ -524,7 +524,7 @@ class _TeamState extends State<Team> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Are you sure you want to delete this teammate's invite?",
+                    "Are you sure you want to delete this friend's invite?",
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
@@ -610,11 +610,11 @@ class _TeamState extends State<Team> {
                       onTap: () {
                         Feedback.forTap(context);
                         navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
-                          return Teammate(uid: teammate.reference.id);
+                          return Friend(uid: friend.reference.id);
                         }));
                       },
                       child: UserAvatar(
-                        user: teammate,
+                        user: friend,
                         backgroundColor: Colors.transparent,
                       ),
                     ),
@@ -624,11 +624,11 @@ class _TeamState extends State<Team> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    teammate.displayName != null
+                    friend.displayName != null
                         ? Container(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
-                              teammate.displayName,
+                              friend.displayName,
                               maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
@@ -663,13 +663,13 @@ class _TeamState extends State<Team> {
                   margin: EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
-                      acceptInvite(Invite(teammate.reference.id, DateTime.now())).then((accepted) {
+                      acceptInvite(Invite(friend.reference.id, DateTime.now())).then((accepted) {
                         if (accepted == null || !accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Theme.of(context).cardTheme.color,
                               content: new Text(
-                                "Error accepting invite from ${teammate.displayName} :(",
+                                "Error accepting invite from ${friend.displayName} :(",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
@@ -682,7 +682,7 @@ class _TeamState extends State<Team> {
                             SnackBar(
                               backgroundColor: Theme.of(context).cardTheme.color,
                               content: new Text(
-                                "Invite from ${teammate.displayName} accepted!",
+                                "Invite from ${friend.displayName} accepted!",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
@@ -691,7 +691,7 @@ class _TeamState extends State<Team> {
                             ),
                           );
 
-                          _loadTeammates();
+                          _loadFriends();
                           _loadInvites();
                         }
                       });

@@ -246,14 +246,14 @@ Future<bool> sendInvite(String fromUid, String toUid) async {
         if (!i.exists) {
           return await FirebaseFirestore.instance.collection('invites').doc(toUid).collection('invites').doc(fromUid).set(invite.toMap()).then((_) async {
             return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((t) async {
-              String teammateFCMToken = UserProfile.fromSnapshot(t).fcmToken;
+              String friendFCMToken = UserProfile.fromSnapshot(t).fcmToken;
 
-              if (teammateFCMToken.isNotEmpty) {
+              if (friendFCMToken.isNotEmpty) {
                 // Get the current user profile
                 return await FirebaseFirestore.instance.collection('users').doc(toUid).get().then((u) async {
                   UserProfile user = UserProfile.fromSnapshot(u);
                   // Send the teammate a push notification! WOW
-                  return sendPushMessage(teammateFCMToken, "A Teammate has challenged you!", "${user.displayName} has sent you a teammate invitation.").then((value) => true);
+                  return sendPushMessage(friendFCMToken, "Someone has challenged you!", "${user.displayName} has sent you an friend invitation.").then((value) => true);
                 }).onError((error, stackTrace) => null);
               }
 
@@ -273,14 +273,14 @@ Future<bool> sendInvite(String fromUid, String toUid) async {
 Future<bool> acceptInvite(Invite invite) async {
   // Get the teammate who the invite is from
   return await FirebaseFirestore.instance.collection('users').doc(invite.fromUid).get().then((u) async {
-    UserProfile teammate = UserProfile.fromSnapshot(u);
+    UserProfile friend = UserProfile.fromSnapshot(u);
     // Save the teammate to the current user's teammates
-    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(teammate.reference.id).set(teammate.toMap()).then((_) async {
+    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(friend.reference.id).set(friend.toMap()).then((_) async {
       // Get the current user
       return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
         // Save the current user as a teammate of the invitee teammate
-        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((_) async {
+        return await FirebaseFirestore.instance.collection('teammates').doc(friend.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((_) async {
           // Delete the invite
           return await FirebaseFirestore.instance.collection('invites').doc(auth.currentUser.uid).collection('invites').doc(invite.fromUid).delete().then((value) => true).onError((error, stackTrace) => null);
         });
@@ -297,23 +297,23 @@ Future<bool> deleteInvite(String fromUid, String toUid) async {
   return false;
 }
 
-Future<bool> acceptTeammateBarcode(String teammateUid) async {
+Future<bool> acceptFriendBarcode(String friendUid) async {
   // Get the teammate
-  return await FirebaseFirestore.instance.collection('users').doc(teammateUid).get().then((u) async {
-    UserProfile teammate = UserProfile.fromSnapshot(u);
+  return await FirebaseFirestore.instance.collection('users').doc(friendUid).get().then((u) async {
+    UserProfile friend = UserProfile.fromSnapshot(u);
     // Save the teammate to the current user's teammates
-    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(teammate.reference.id).set(teammate.toMap()).then((_) async {
+    return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(friend.reference.id).set(friend.toMap()).then((_) async {
       // Get the current user
       return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
         // Save the current user as a teammate of the invitee teammate
-        return await FirebaseFirestore.instance.collection('teammates').doc(teammate.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => null);
+        return await FirebaseFirestore.instance.collection('teammates').doc(friend.reference.id).collection('teammates').doc(auth.currentUser.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => null);
       });
     });
   });
 }
 
-Future<bool> deleteTeammate(String uid) async {
+Future<bool> deleteFriend(String uid) async {
   return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser.uid).collection('teammates').doc(uid).delete().then((_) async {
     return await FirebaseFirestore.instance.collection('teammates').doc(uid).collection('teammates').doc(auth.currentUser.uid).delete().then((value) => true).onError((error, stackTrace) => null);
   });

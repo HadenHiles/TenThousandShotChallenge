@@ -9,7 +9,7 @@ void showQRCode(User user) {
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text(
-          "Teammates can add you with this".toUpperCase(),
+          "Friends can add you with this".toUpperCase(),
           style: TextStyle(
             fontFamily: 'NovecentoSans',
             fontSize: 24,
