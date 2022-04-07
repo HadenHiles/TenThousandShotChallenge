@@ -334,10 +334,19 @@ class _LearnState extends State<Learn> with SingleTickerProviderStateMixin {
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Container(
+                      child: Text(
+                        "Coming Soon!".toUpperCase(),
+                        style: Theme.of(context).textTheme.headline5,
+                      ),
+                    ),
+                    /*
                     Container(
                       child: VideoStream(url: "https://player.vimeo.com/progressive_redirect/playback/685958839/rendition/1080p?loc=external&signature=f7542ffea715bb844a2acdadcc34870f7955d7595ee274893e2293a640b4fd11"),
                     )
+                    */
                   ],
                 ),
               ],
