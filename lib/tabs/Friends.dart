@@ -127,6 +127,7 @@ class _FriendsState extends State<Friends> {
                 color: HomeTheme.darkTheme.colorScheme.primaryContainer,
               ),
               child: TabBar(
+                indicatorColor: Theme.of(context).primaryColor,
                 labelStyle: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 18,
