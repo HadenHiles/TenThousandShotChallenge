@@ -18,21 +18,21 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
-class Teammate extends StatefulWidget {
-  Teammate({Key key, this.uid}) : super(key: key);
+class Friend extends StatefulWidget {
+  Friend({Key key, this.uid}) : super(key: key);
 
   final String uid;
 
   @override
-  _TeammateState createState() => _TeammateState();
+  _FriendState createState() => _FriendState();
 }
 
-class _TeammateState extends State<Teammate> {
+class _FriendState extends State<Friend> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
-  UserProfile _userTeammate;
-  bool _loadingTeammate = false;
+  UserProfile _userFriend;
+  bool _loadingFriend = false;
   ScrollController sessionsController;
   DocumentSnapshot _lastVisible;
   bool _isLoading;
@@ -43,14 +43,14 @@ class _TeammateState extends State<Teammate> {
   @override
   void initState() {
     setState(() {
-      _loadingTeammate = true;
+      _loadingFriend = true;
     });
 
     FirebaseFirestore.instance.collection('users').doc(widget.uid).get().then((uDoc) {
-      _userTeammate = UserProfile.fromSnapshot(uDoc);
+      _userFriend = UserProfile.fromSnapshot(uDoc);
 
       setState(() {
-        _loadingTeammate = false;
+        _loadingFriend = false;
       });
     });
 
@@ -222,9 +222,9 @@ class _TeammateState extends State<Teammate> {
                           dialog(
                             context,
                             ConfirmDialog(
-                              "Remove Teammate?",
+                              "Remove Friend?",
                               Text(
-                                "Are you sure you want to remove ${_userTeammate.displayName} from your team?",
+                                "Are you sure you want to unfriend ${_userFriend.displayName}?",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onBackground,
                                 ),
@@ -238,20 +238,20 @@ class _TeammateState extends State<Teammate> {
                                 navigatorKey.currentState.pushReplacement(
                                   MaterialPageRoute(builder: (context) {
                                     return Navigation(
-                                      title: NavigationTitle(title: "Team".toUpperCase()),
+                                      title: NavigationTitle(title: "Friends".toUpperCase()),
                                       selectedIndex: 1,
                                     );
                                   }),
                                 );
 
-                                deleteTeammate(_userTeammate.reference.id).then((success) {
+                                deleteFriend(_userFriend.reference.id).then((success) {
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         duration: Duration(milliseconds: 2500),
                                         content: Text(
-                                          '${_userTeammate.displayName} was removed from your team.',
+                                          '${_userFriend.displayName} was removed.',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -264,7 +264,7 @@ class _TeammateState extends State<Teammate> {
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         duration: Duration(milliseconds: 4000),
                                         content: Text(
-                                          'There was an error removing teammate :(',
+                                          'Error removing friend :(',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -298,7 +298,7 @@ class _TeammateState extends State<Teammate> {
                 ),
               ];
             },
-            body: _loadingTeammate
+            body: _loadingFriend
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -331,7 +331,7 @@ class _TeammateState extends State<Teammate> {
                                   child: SizedBox(
                                     height: 60,
                                     child: UserAvatar(
-                                      user: _userTeammate,
+                                      user: _userFriend,
                                       backgroundColor: Colors.transparent,
                                     ),
                                   ),
@@ -366,7 +366,7 @@ class _TeammateState extends State<Teammate> {
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
 
                                           return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : _userTeammate.displayName,
+                                            userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : _userFriend.displayName,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 22,
@@ -450,7 +450,7 @@ class _TeammateState extends State<Teammate> {
                                 children: [
                                   Container(
                                     child: AutoSizeText(
-                                      _userTeammate.email,
+                                      _userFriend.email,
                                       maxLines: 1,
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
@@ -702,7 +702,7 @@ class _TeammateState extends State<Teammate> {
                                             )
                                           : _sessions.length < 1
                                               ? Text(
-                                                  "${_userTeammate.displayName.substring(0, _userTeammate.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
+                                                  "${_userFriend.displayName.substring(0, _userFriend.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
                                                   style: TextStyle(
                                                     fontFamily: 'NovecentoSans',
                                                     color: Theme.of(context).colorScheme.onPrimary,

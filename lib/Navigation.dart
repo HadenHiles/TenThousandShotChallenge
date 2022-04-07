@@ -9,14 +9,14 @@ import 'package:tenthousandshotchallenge/tabs/More.dart';
 import 'package:tenthousandshotchallenge/tabs/Learn.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
-import 'package:tenthousandshotchallenge/tabs/Team.dart';
+import 'package:tenthousandshotchallenge/tabs/Friends.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
-import 'package:tenthousandshotchallenge/tabs/team/AddTeammate.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -65,7 +65,7 @@ class _NavigationState extends State<Navigation> {
       body: Shots(sessionPanelController: sessionPanelController),
     ),
     NavigationTab(
-      title: NavigationTitle(title: "Team".toUpperCase()),
+      title: NavigationTitle(title: "Friends".toUpperCase()),
       actions: [
         Container(
           margin: EdgeInsets.only(top: 10),
@@ -77,13 +77,13 @@ class _NavigationState extends State<Navigation> {
             ),
             onPressed: () {
               navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
-                return AddTeammate();
+                return AddFriend();
               }));
             },
           ),
         ),
       ],
-      body: Team(),
+      body: Friends(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Learn".toUpperCase()),
@@ -429,7 +429,7 @@ class _NavigationState extends State<Navigation> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
-                label: 'Team',
+                label: 'Friends',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.school_rounded),
