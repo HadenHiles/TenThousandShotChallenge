@@ -5,8 +5,8 @@ import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/More.dart';
-import 'package:tenthousandshotchallenge/tabs/Learn.dart';
+import 'package:tenthousandshotchallenge/tabs/Team.dart';
+import 'package:tenthousandshotchallenge/tabs/Explore.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Friends.dart';
@@ -43,7 +43,7 @@ class _NavigationState extends State<Navigation> {
   Widget _title;
   Widget _leading;
   List<Widget> _actions;
-  int _selectedIndex = 0;
+  int _selectedIndex = 2;
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
   double _bottomNavOffsetPercentage = 0;
@@ -56,13 +56,8 @@ class _NavigationState extends State<Navigation> {
 
   static List<NavigationTab> _tabs = [
     NavigationTab(
-      title: Container(
-        height: 40,
-        padding: EdgeInsets.only(top: 6),
-        child: Image.asset('assets/images/logo-text-only.png'),
-      ),
-      actions: [],
-      body: Shots(sessionPanelController: sessionPanelController),
+      title: null,
+      body: Explore(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Friends".toUpperCase()),
@@ -86,12 +81,17 @@ class _NavigationState extends State<Navigation> {
       body: Friends(),
     ),
     NavigationTab(
-      title: NavigationTitle(title: "Learn".toUpperCase()),
-      body: Learn(),
+      title: Container(
+        height: 40,
+        padding: EdgeInsets.only(top: 6),
+        child: Image.asset('assets/images/logo-text-only.png'),
+      ),
+      actions: [],
+      body: Shots(sessionPanelController: sessionPanelController),
     ),
     NavigationTab(
-      title: NavigationTitle(title: "More".toUpperCase()),
-      body: More(),
+      title: NavigationTitle(title: "Team".toUpperCase()),
+      body: Team(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
@@ -132,8 +132,7 @@ class _NavigationState extends State<Navigation> {
   void _onItemTapped(int index) async {
     setState(() {
       _selectedIndex = index;
-      _selectedIndex = index;
-      _title = index == 0 ? logo : _tabs[index].title;
+      _title = index == 2 ? logo : _tabs[index].title;
       _leading = _tabs[index].leading;
       _actions = _tabs[index].actions;
     });
@@ -343,7 +342,7 @@ class _NavigationState extends State<Navigation> {
             child: NetworkAwareWidget(
               onlineChild: NestedScrollView(
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return _selectedIndex == 2 || _selectedIndex == 3
+                  return [0, 3].contains(_selectedIndex)
                       ? []
                       : [
                           SliverAppBar(
@@ -424,20 +423,20 @@ class _NavigationState extends State<Navigation> {
             type: BottomNavigationBarType.fixed,
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                icon: Icon(Icons.sports_hockey),
-                label: 'Shots',
+                icon: Icon(Icons.dashboard_rounded),
+                label: 'Explore',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
                 label: 'Friends',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.school_rounded),
-                label: 'Learn',
+                icon: Icon(Icons.play_arrow_rounded),
+                label: 'Start',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.add_box_rounded),
-                label: 'More',
+                icon: Icon(Icons.groups_rounded),
+                label: 'Team',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),

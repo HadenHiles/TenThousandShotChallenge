@@ -3,28 +3,32 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
-import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:webview_flutter/webview_flutter.dart';
-// import 'package:html/parser.dart' show parse;
-// import 'package:html/dom.dart' as dom;
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class More extends StatefulWidget {
-  More({Key key}) : super(key: key);
+class Explore extends StatefulWidget {
+  Explore({Key key}) : super(key: key);
 
   @override
-  _MoreState createState() => _MoreState();
+  _ExploreState createState() => _ExploreState();
 }
 
-class _MoreState extends State<More> with SingleTickerProviderStateMixin {
+class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   final user = FirebaseAuth.instance.currentUser;
 
-  TabController _tabController;
+  final PageController _explorePageController = PageController(initialPage: 0);
+  bool _loadingExploreVideos = true;
+  List<YouTubeVideo> _exploreVideos = [];
+  ScrollController _exploreScrollController;
 
   String _coachJeremyPhoto = "";
   bool _loadingCoachJeremyVideos = true;
@@ -37,23 +41,58 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
   bool _loadingMerch = true;
   List<Merch> _merch = [];
 
-  // WebViewController _webviewController;
-  // List<Merch> _webProducts = [];
-  // dom.Document _webPageBody;
-  // String _baseUrl = "https://www.hockeyshot.com";
-  // String _productListPageLink = 'https://www.hockeyshot.com/collections/complete-shooting-lineup?blogResultsPerPage=12&resultsPerPage=12&page=1&filter.ss_price_ca.low=0&filter.ss_price_ca.high=1850&region=CAD&selected_sort_option=0&price_interval=50&max_price=1850&selectedTab=products&blog_selected_sort_option=0&blogPage=1&filter.ss_tags_use=office';
+  TabController _tabController;
 
   @override
   void initState() {
+    _loadExploreingVideos();
     _loadYoutubeChannels();
-
     _loadMerch();
 
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+    _exploreScrollController = ScrollController();
+    _exploreScrollController.addListener(this.swapPageListener);
 
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
     _tabController.addListener(this.changeTabListener);
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+
+    super.dispose();
+  }
+
+  void changeTabListener() {
+    if (_tabController.indexIsChanging) {
+      switch (_tabController.index) {
+        case 0:
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+      }
+    }
+  }
+
+  Future<Null> _loadExploreingVideos() async {
+    await FirebaseFirestore.instance.collection('learn_videos').orderBy('order', descending: false).get().then((snapshot) {
+      List<YouTubeVideo> videos = [];
+      if (snapshot.docs.isNotEmpty) {
+        snapshot.docs.forEach((vDoc) {
+          YouTubeVideo vid = YouTubeVideo.fromSnapshot(vDoc);
+          videos.add(vid);
+        });
+
+        setState(() {
+          _exploreVideos = videos;
+          _loadingExploreVideos = false;
+        });
+      }
+    });
   }
 
   Future<Null> _loadYoutubeChannels() async {
@@ -91,19 +130,6 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
     });
   }
 
-  void changeTabListener() {
-    if (_tabController.indexIsChanging) {
-      switch (_tabController.index) {
-        case 0:
-          break;
-        case 1:
-          break;
-        case 2:
-          break;
-      }
-    }
-  }
-
   Future<Null> _loadMerch() async {
     await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
       List<Merch> merch = [];
@@ -119,43 +145,28 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
     });
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
+  void swapPageListener() {
+    if (_exploreScrollController.offset > _exploreScrollController.position.maxScrollExtent + 50) {
+      _explorePageController.nextPage(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeIn,
+      );
+    }
 
-    super.dispose();
+    if (_exploreScrollController.offset < _exploreScrollController.position.minScrollExtent - 50) {
+      _explorePageController.previousPage(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeIn,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        /*
-        // Left this here in case we want to pull products from a different company soon
-        Opacity(
-          opacity: 0,
-          child: Container(
-            height: 1,
-            width: 1,
-            child: WebView(
-              initialUrl: _productListPageLink,
-              javascriptMode: JavascriptMode.unrestricted,
-              javascriptChannels: <JavascriptChannel>[
-                _extractDataJSChannel(context),
-              ].toSet(),
-              onWebViewCreated: (WebViewController cont) {
-                print('webview was created.');
-                _webviewController = cont;
-              },
-              onPageFinished: (String url) {
-                _webviewController.runJavascriptReturningResult("(function(){Flutter.postMessage(window.document.body.outerHTML)})();");
-              },
-            ),
-          ),
-        ),
-        */
         Container(
-          height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1),
+          height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           margin: EdgeInsets.only(
             top: 0,
             right: 0,
@@ -178,6 +189,7 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                     expandedHeight: 0,
                     forceElevated: false,
                     titleSpacing: 0,
+                    title: null,
                     backgroundColor: HomeTheme.darkTheme.colorScheme.primaryContainer,
                     bottom: TabBar(
                       controller: _tabController,
@@ -194,15 +206,23 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                             color: Colors.white70,
                           ),
                           iconMargin: EdgeInsets.all(0),
-                          text: "Watch".toUpperCase(),
+                          text: "Tips".toUpperCase(),
                         ),
                         Tab(
                           icon: Icon(
-                            Icons.shopping_bag_rounded,
+                            Icons.library_books_rounded,
                             color: Colors.white70,
                           ),
                           iconMargin: EdgeInsets.all(0),
-                          text: "Shop".toUpperCase(),
+                          text: "Programs".toUpperCase(),
+                        ),
+                        Tab(
+                          icon: Icon(
+                            Icons.add_box_rounded,
+                            color: Colors.white70,
+                          ),
+                          iconMargin: EdgeInsets.all(0),
+                          text: "More".toUpperCase(),
                         ),
                       ],
                     ),
@@ -213,6 +233,200 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
             body: TabBarView(
               controller: _tabController,
               children: [
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    _loadingExploreVideos || _exploreVideos.length < 1
+                        ? Container(
+                            margin: EdgeInsets.symmetric(vertical: 25),
+                            child: Column(
+                              children: [
+                                Center(
+                                  child: LinearProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Container(
+                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 100 + (sessionService.isRunning ? 60 : 0)),
+                            child: PageView.builder(
+                              controller: _explorePageController,
+                              scrollDirection: Axis.vertical,
+                              itemCount: _exploreVideos.length,
+                              itemBuilder: (BuildContext context, int i) {
+                                YoutubePlayerController _ytController = YoutubePlayerController(
+                                  initialVideoId: _exploreVideos[i].id,
+                                  flags: YoutubePlayerFlags(
+                                    autoPlay: false,
+                                    mute: false,
+                                  ),
+                                );
+
+                                return Flex(
+                                  direction: Axis.vertical,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    YoutubePlayerBuilder(
+                                      player: YoutubePlayer(
+                                        controller: _ytController,
+                                        aspectRatio: 16 / 9,
+                                        showVideoProgressIndicator: true,
+                                        progressIndicatorColor: Theme.of(context).primaryColor,
+                                        progressColors: ProgressBarColors(
+                                          playedColor: Theme.of(context).primaryColor,
+                                          handleColor: Theme.of(context).primaryColor,
+                                        ),
+                                        bottomActions: [
+                                          const SizedBox(width: 14.0),
+                                          CurrentPosition(),
+                                          const SizedBox(width: 8.0),
+                                          ProgressBar(
+                                            isExpanded: true,
+                                          ),
+                                          RemainingDuration(),
+                                          const PlaybackSpeedButton(),
+                                        ],
+                                        actionsPadding: EdgeInsets.all(2),
+                                        liveUIColor: Theme.of(context).primaryColor,
+                                        onReady: () {
+                                          // _ytController.addListener(listener);
+                                        },
+                                      ),
+                                      builder: (context, player) {
+                                        return Column(
+                                          children: [
+                                            player,
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    Flexible(
+                                      flex: 2,
+                                      child: Container(
+                                        margin: EdgeInsets.symmetric(
+                                          vertical: 10,
+                                          horizontal: MediaQuery.of(context).size.width * .1,
+                                        ),
+                                        child: SingleChildScrollView(
+                                          physics: BouncingScrollPhysics(),
+                                          controller: _exploreScrollController,
+                                          child: Column(
+                                            children: [
+                                              Container(
+                                                margin: EdgeInsets.only(top: 25),
+                                                child: Text(
+                                                  _exploreVideos[i].title.toUpperCase(),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: 42,
+                                                  ),
+                                                ),
+                                              ),
+                                              Html(
+                                                data: _exploreVideos[i].content,
+                                                style: {
+                                                  "h1": Style(
+                                                    textAlign: TextAlign.center,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(36),
+                                                  ),
+                                                  "h2": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(30),
+                                                  ),
+                                                  "h3": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                  ),
+                                                  "ul": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                    listStyleType: ListStyleType.DISC,
+                                                  ),
+                                                  "ol": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: FontSize(24),
+                                                    listStyleType: ListStyleType.DECIMAL,
+                                                  ),
+                                                  "ul li, ol li": Style(
+                                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                                    margin: EdgeInsets.only(bottom: 2),
+                                                  ),
+                                                  "p": Style(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontSize: FontSize(16),
+                                                  ),
+                                                },
+                                              ),
+                                              _exploreVideos[i].buttonUrl.isNotEmpty
+                                                  ? Container(
+                                                      margin: EdgeInsets.only(bottom: 50),
+                                                      child: TextButton(
+                                                        onPressed: () async {
+                                                          await canLaunch(_exploreVideos[i].buttonUrl).then((can) {
+                                                            launch(_exploreVideos[i].buttonUrl).catchError((err) {
+                                                              print(err);
+                                                            });
+                                                          });
+                                                        },
+                                                        child: Text(
+                                                          _exploreVideos[i].buttonText.toUpperCase() ?? "See more".toUpperCase(),
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 24,
+                                                          ),
+                                                        ),
+                                                        style: ButtonStyle(
+                                                          padding: MaterialStateProperty.all(
+                                                            EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                          ),
+                                                          backgroundColor: MaterialStateProperty.all(
+                                                            Theme.of(context).primaryColor,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                  ],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      child: Text(
+                        "Coming Soon!".toUpperCase(),
+                        style: Theme.of(context).textTheme.headline5,
+                      ),
+                    ),
+                    /*
+                    Container(
+                      child: VideoStream(url: "https://player.vimeo.com/progressive_redirect/playback/685958839/rendition/1080p?loc=external&signature=f7542ffea715bb844a2acdadcc34870f7955d7595ee274893e2293a640b4fd11"),
+                    )
+                    */
+                  ],
+                ),
                 Column(
                   children: [
                     Container(
@@ -557,140 +771,6 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                         ],
                       ),
                     ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 25),
-                      padding: EdgeInsets.only(bottom: 80),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.instagram.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/instagram.png"),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.facebook.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/facebook.png"),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.tiktok.com/@coachjeremyhth";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/tiktok.png"),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.twitter.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/twitter.png"),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
                     Row(
                       children: [
                         Padding(
@@ -832,149 +912,131 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
                               },
                             ),
                           ),
-                    /*
-                    // Left this here in case we want to pull different hockey products from a shopify site in the future
-                    SizedBox(
-                      height: 5,
-                    ),
-                    _webProducts.length < 1
-                        ? Container(
-                            margin: EdgeInsets.symmetric(vertical: 25),
-                            height: 50,
-                            child: Column(
-                              children: [
-                                Center(
-                                  child: LinearProgressIndicator(
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Container(
-                            height: 60,
-                            width: MediaQuery.of(context).size.width,
-                            padding: EdgeInsets.all(10),
-                            child: GestureDetector(
-                              onTap: () async {
-                                String websiteLink = "https://www.howtohockey.com";
-                                await canLaunch(websiteLink).then((can) {
-                                  launch(websiteLink).catchError((err) {
-                                    print(err);
-                                  });
-                                });
-                              },
-                              child: Container(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: Image(
-                                        image: AssetImage("assets/images/logo-small.png"),
-                                        width: MediaQuery.of(context).size.width * .3,
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 15,
-                                    ),
-                                    Container(
-                                      width: 140,
-                                      child: AutoSizeText(
-                                        "Training Products".toUpperCase(),
-                                        maxLines: 1,
-                                        maxFontSize: 22,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 22,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 25),
+                      padding: EdgeInsets.only(top: 15, bottom: 15),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    String videoLink = "https://www.instagram.com/howtohockey";
+                                    await canLaunch(videoLink).then((can) {
+                                      launch(videoLink).catchError((err) {
+                                        print(err);
+                                      });
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: FittedBox(
+                                          fit: BoxFit.cover,
+                                          clipBehavior: Clip.antiAlias,
+                                          child: Image(
+                                            image: AssetImage("assets/images/instagram.png"),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        String websiteLink = "https://www.howtohockey.com";
-                                        await canLaunch(websiteLink).then((can) {
-                                          launch(websiteLink).catchError((err) {
-                                            print(err);
-                                          });
-                                        });
-                                      },
-                                      iconSize: 24,
-                                      icon: Icon(
-                                        Icons.link_rounded,
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                    Container(
-                      height: 210.0,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _webProducts.length,
-                        itemBuilder: (BuildContext context, int i) {
-                          return GestureDetector(
-                            onTap: () async {
-                              String link = _baseUrl + _webProducts[i].url;
-                              await canLaunch(link).then((can) {
-                                launch(link).catchError((err) {
-                                  print(err);
-                                });
-                              });
-                            },
-                            child: Card(
-                              color: Theme.of(context).cardTheme.color,
-                              elevation: 4,
-                              child: Container(
-                                width: 140.0,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Image(
-                                      image: _webProducts[i].image == null
-                                          ? AssetImage("assets/images/avatar.png")
-                                          : NetworkImage(
-                                              _webProducts[i].image,
-                                            ),
-                                      width: 140,
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.all(5),
-                                            child: AutoSizeText(
-                                              _webProducts[i].title.toUpperCase(),
-                                              maxLines: 2,
-                                              maxFontSize: 22,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 20,
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
+                              Container(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    String videoLink = "https://www.facebook.com/howtohockey";
+                                    await canLaunch(videoLink).then((can) {
+                                      launch(videoLink).catchError((err) {
+                                        print(err);
+                                      });
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: FittedBox(
+                                          fit: BoxFit.cover,
+                                          clipBehavior: Clip.antiAlias,
+                                          child: Image(
+                                            image: AssetImage("assets/images/facebook.png"),
                                           ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                              Container(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    String videoLink = "https://www.tiktok.com/@coachjeremyhth";
+                                    await canLaunch(videoLink).then((can) {
+                                      launch(videoLink).catchError((err) {
+                                        print(err);
+                                      });
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: FittedBox(
+                                          fit: BoxFit.cover,
+                                          clipBehavior: Clip.antiAlias,
+                                          child: Image(
+                                            image: AssetImage("assets/images/tiktok.png"),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    String videoLink = "https://www.twitter.com/howtohockey";
+                                    await canLaunch(videoLink).then((can) {
+                                      launch(videoLink).catchError((err) {
+                                        print(err);
+                                      });
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: FittedBox(
+                                          fit: BoxFit.cover,
+                                          clipBehavior: Clip.antiAlias,
+                                          child: Image(
+                                            image: AssetImage("assets/images/twitter.png"),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    */
-                    SizedBox(
-                      height: 80,
                     ),
                   ],
                 ),
@@ -985,32 +1047,4 @@ class _MoreState extends State<More> with SingleTickerProviderStateMixin {
       ],
     );
   }
-
-  /*
-  // Left this here in case we want to pull different training products from a shopify site in the future
-  JavascriptChannel _extractDataJSChannel(BuildContext context) {
-    return JavascriptChannel(
-      name: 'Flutter',
-      onMessageReceived: (JavascriptMessage message) {
-        _webPageBody = parse(message.message);
-        List<dom.Element> prods = _webPageBody.getElementsByClassName('product-card__link');
-        List<Merch> products = [];
-        prods.forEach((el) {
-          String url = el.attributes['href'];
-          String title = el.getElementsByClassName('product-card__title')[0].innerHtml;
-          dom.Element img = el.getElementsByClassName('product-card__img')[0];
-          String image = img.attributes['data-src'];
-
-          if (title != null && url != null && image != null) {
-            products.add(Merch(title, url, image));
-          }
-        });
-
-        setState(() {
-          _webProducts = products;
-        });
-      },
-    );
-  }
-  */
 }
