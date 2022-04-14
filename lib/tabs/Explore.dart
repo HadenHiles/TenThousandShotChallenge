@@ -210,11 +210,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                         ),
                         Tab(
                           icon: Icon(
-                            Icons.library_books_rounded,
+                            Icons.sports_hockey_rounded,
                             color: Colors.white70,
                           ),
                           iconMargin: EdgeInsets.all(0),
-                          text: "Programs".toUpperCase(),
+                          text: "Train".toUpperCase(),
                         ),
                         Tab(
                           icon: Icon(
@@ -429,348 +429,6 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                 ),
                 Column(
                   children: [
-                    Container(
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String channelLink = "https://www.youtube.com/CoachJeremy";
-                                    await canLaunch(channelLink).then((can) {
-                                      launch(channelLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: CircleAvatar(
-                                            radius: 50,
-                                            backgroundImage: _coachJeremyPhoto == null
-                                                ? AssetImage("assets/images/avatar.png")
-                                                : NetworkImage(
-                                                    _coachJeremyPhoto,
-                                                  ),
-                                            backgroundColor: Theme.of(context).colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 15,
-                                      ),
-                                      AutoSizeText(
-                                        "Coach Jeremy".toUpperCase(),
-                                        maxLines: 2,
-                                        maxFontSize: 22,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 22,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          String channelLink = "https://www.youtube.com/CoachJeremy";
-                                          await canLaunch(channelLink).then((can) {
-                                            launch(channelLink).catchError((err) {
-                                              print(err);
-                                            });
-                                          });
-                                        },
-                                        icon: Icon(
-                                          FontAwesomeIcons.youtube,
-                                          color: Colors.red.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
-                              ? Container(
-                                  // margin: EdgeInsets.symmetric(vertical: 25),
-                                  // child: Center(
-                                  //   child: LinearProgressIndicator(
-                                  //     color: Theme.of(context).primaryColor,
-                                  //   ),
-                                  // ),
-                                  )
-                              : Container(
-                                  height: 185.0,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    shrinkWrap: true,
-                                    itemCount: _coachJeremyVideos.length,
-                                    itemBuilder: (BuildContext context, int i) {
-                                      return GestureDetector(
-                                        onTap: () async {
-                                          String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
-                                          await canLaunch(videoLink).then((can) {
-                                            launch(videoLink).catchError((err) {
-                                              print(err);
-                                            });
-                                          });
-                                        },
-                                        child: Card(
-                                          color: Theme.of(context).cardTheme.color,
-                                          elevation: 4,
-                                          child: Container(
-                                            width: 200.0,
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              children: [
-                                                Image(
-                                                  image: NetworkImage(_coachJeremyVideos[i].thumbnail),
-                                                  width: 200,
-                                                ),
-                                                Expanded(
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Container(
-                                                        padding: EdgeInsets.all(5),
-                                                        child: AutoSizeText(
-                                                          _coachJeremyVideos[i].title,
-                                                          maxLines: 2,
-                                                          maxFontSize: 22,
-                                                          style: TextStyle(
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 22,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            child: GestureDetector(
-                              onTap: () async {
-                                String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                await canLaunch(channelLink).then((can) {
-                                  launch(channelLink).catchError((err) {
-                                    print(err);
-                                  });
-                                });
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 50,
-                                    height: 50,
-                                    child: FittedBox(
-                                      fit: BoxFit.cover,
-                                      clipBehavior: Clip.antiAlias,
-                                      child: CircleAvatar(
-                                        radius: 50,
-                                        backgroundImage: _hthPhoto == null
-                                            ? AssetImage("assets/images/avatar.png")
-                                            : NetworkImage(
-                                                _hthPhoto,
-                                              ),
-                                        backgroundColor: Theme.of(context).colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 15,
-                                  ),
-                                  AutoSizeText(
-                                    "How To Hockey".toUpperCase(),
-                                    maxLines: 2,
-                                    maxFontSize: 22,
-                                    style: TextStyle(
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 22,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () async {
-                                      String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                      await canLaunch(channelLink).then((can) {
-                                        launch(channelLink).catchError((err) {
-                                          print(err);
-                                        });
-                                      });
-                                    },
-                                    icon: Icon(
-                                      FontAwesomeIcons.youtube,
-                                      color: Colors.red.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          _loadingHthVideos || _hthVideos.length < 1
-                              ? Container(
-                                  // margin: EdgeInsets.symmetric(vertical: 25),
-                                  // child: Center(
-                                  //   child: LinearProgressIndicator(
-                                  //     color: Theme.of(context).primaryColor,
-                                  //   ),
-                                  // ),
-                                  )
-                              : Container(
-                                  height: 185.0,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    shrinkWrap: true,
-                                    itemCount: _hthVideos.length,
-                                    itemBuilder: (BuildContext context, int i) {
-                                      return GestureDetector(
-                                        onTap: () async {
-                                          String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
-                                          await canLaunch(videoLink).then((can) {
-                                            launch(videoLink).catchError((err) {
-                                              print(err);
-                                            });
-                                          });
-                                        },
-                                        child: Card(
-                                          color: Theme.of(context).cardTheme.color,
-                                          elevation: 4,
-                                          child: Container(
-                                            width: 200.0,
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              children: [
-                                                Image(
-                                                  image: NetworkImage(_hthVideos[i].thumbnail),
-                                                  width: 200,
-                                                ),
-                                                Expanded(
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Container(
-                                                        padding: EdgeInsets.all(5),
-                                                        child: AutoSizeText(
-                                                          _hthVideos[i].title,
-                                                          maxLines: 2,
-                                                          maxFontSize: 22,
-                                                          style: TextStyle(
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 22,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String channelLink = "https://www.youtube.com/HadenHiles";
-                                    await canLaunch(channelLink).then((can) {
-                                      launch(channelLink).catchError((err) {
-                                        print(err);
-                                      });
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: CircleAvatar(
-                                            radius: 50,
-                                            backgroundImage: _hadenPhoto == null
-                                                ? AssetImage("assets/images/avatar.png")
-                                                : NetworkImage(
-                                                    _hadenPhoto,
-                                                  ),
-                                            backgroundColor: Theme.of(context).colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 15,
-                                      ),
-                                      AutoSizeText(
-                                        "Haden Hiles".toUpperCase(),
-                                        maxLines: 2,
-                                        maxFontSize: 22,
-                                        style: TextStyle(
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 22,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          String channelLink = "https://www.youtube.com/HadenHiles";
-                                          await canLaunch(channelLink).then((can) {
-                                            launch(channelLink).catchError((err) {
-                                              print(err);
-                                            });
-                                          });
-                                        },
-                                        icon: Icon(
-                                          FontAwesomeIcons.youtube,
-                                          color: Colors.red.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
                     Row(
                       children: [
                         Padding(
@@ -912,6 +570,285 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               },
                             ),
                           ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.only(left: 5),
+                          width: (MediaQuery.of(context).size.width * 0.5),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        String channelLink = "https://www.youtube.com/CoachJeremy";
+                                        await canLaunch(channelLink).then((can) {
+                                          launch(channelLink).catchError((err) {
+                                            print(err);
+                                          });
+                                        });
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: FittedBox(
+                                              fit: BoxFit.cover,
+                                              clipBehavior: Clip.antiAlias,
+                                              child: CircleAvatar(
+                                                radius: 40,
+                                                backgroundImage: _coachJeremyPhoto == null
+                                                    ? AssetImage("assets/images/avatar.png")
+                                                    : NetworkImage(
+                                                        _coachJeremyPhoto,
+                                                      ),
+                                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          AutoSizeText(
+                                            "Coach Jeremy".toUpperCase(),
+                                            maxLines: 2,
+                                            maxFontSize: 20,
+                                            style: TextStyle(
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 20,
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () async {
+                                              String channelLink = "https://www.youtube.com/CoachJeremy";
+                                              await canLaunch(channelLink).then((can) {
+                                                launch(channelLink).catchError((err) {
+                                                  print(err);
+                                                });
+                                              });
+                                            },
+                                            icon: Icon(
+                                              FontAwesomeIcons.youtube,
+                                              color: Colors.red.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
+                                  ? Container(
+                                      // margin: EdgeInsets.symmetric(vertical: 25),
+                                      // child: Center(
+                                      //   child: LinearProgressIndicator(
+                                      //     color: Theme.of(context).primaryColor,
+                                      //   ),
+                                      // ),
+                                      )
+                                  : Container(
+                                      height: 185.0,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        itemCount: _coachJeremyVideos.length,
+                                        itemBuilder: (BuildContext context, int i) {
+                                          return GestureDetector(
+                                            onTap: () async {
+                                              String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
+                                              await canLaunch(videoLink).then((can) {
+                                                launch(videoLink).catchError((err) {
+                                                  print(err);
+                                                });
+                                              });
+                                            },
+                                            child: Card(
+                                              color: Theme.of(context).cardTheme.color,
+                                              elevation: 4,
+                                              child: Container(
+                                                width: 200.0,
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    Image(
+                                                      image: NetworkImage(_coachJeremyVideos[i].thumbnail),
+                                                      width: 200,
+                                                    ),
+                                                    Expanded(
+                                                      child: Column(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Container(
+                                                            padding: EdgeInsets.all(5),
+                                                            child: AutoSizeText(
+                                                              _coachJeremyVideos[i].title,
+                                                              maxLines: 2,
+                                                              maxFontSize: 22,
+                                                              style: TextStyle(
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 22,
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: (MediaQuery.of(context).size.width * 0.5),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(vertical: 5),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    String channelLink = "https://www.youtube.com/howtohockeydotcom";
+                                    await canLaunch(channelLink).then((can) {
+                                      launch(channelLink).catchError((err) {
+                                        print(err);
+                                      });
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 40,
+                                        height: 40,
+                                        child: FittedBox(
+                                          fit: BoxFit.cover,
+                                          clipBehavior: Clip.antiAlias,
+                                          child: CircleAvatar(
+                                            radius: 40,
+                                            backgroundImage: _hthPhoto == null
+                                                ? AssetImage("assets/images/avatar.png")
+                                                : NetworkImage(
+                                                    _hthPhoto,
+                                                  ),
+                                            backgroundColor: Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      AutoSizeText(
+                                        "How To Hockey".toUpperCase(),
+                                        maxLines: 2,
+                                        maxFontSize: 20,
+                                        style: TextStyle(
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 20,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () async {
+                                          String channelLink = "https://www.youtube.com/howtohockeydotcom";
+                                          await canLaunch(channelLink).then((can) {
+                                            launch(channelLink).catchError((err) {
+                                              print(err);
+                                            });
+                                          });
+                                        },
+                                        icon: Icon(
+                                          FontAwesomeIcons.youtube,
+                                          color: Colors.red.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              _loadingHthVideos || _hthVideos.length < 1
+                                  ? Container(
+                                      // margin: EdgeInsets.symmetric(vertical: 25),
+                                      // child: Center(
+                                      //   child: LinearProgressIndicator(
+                                      //     color: Theme.of(context).primaryColor,
+                                      //   ),
+                                      // ),
+                                      )
+                                  : Container(
+                                      height: 185.0,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        itemCount: _hthVideos.length,
+                                        itemBuilder: (BuildContext context, int i) {
+                                          return GestureDetector(
+                                            onTap: () async {
+                                              String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
+                                              await canLaunch(videoLink).then((can) {
+                                                launch(videoLink).catchError((err) {
+                                                  print(err);
+                                                });
+                                              });
+                                            },
+                                            child: Card(
+                                              color: Theme.of(context).cardTheme.color,
+                                              elevation: 4,
+                                              child: Container(
+                                                width: 200.0,
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    Image(
+                                                      image: NetworkImage(_hthVideos[i].thumbnail),
+                                                      width: 200,
+                                                    ),
+                                                    Expanded(
+                                                      child: Column(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Container(
+                                                            padding: EdgeInsets.all(5),
+                                                            child: AutoSizeText(
+                                                              _hthVideos[i].title,
+                                                              maxLines: 2,
+                                                              maxFontSize: 22,
+                                                              style: TextStyle(
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 22,
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 25),
                       padding: EdgeInsets.only(top: 15, bottom: 15),
