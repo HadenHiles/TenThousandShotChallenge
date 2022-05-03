@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 // import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Explore extends StatefulWidget {
@@ -36,7 +37,6 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   String _hthPhoto = "";
   bool _loadingHthVideos = true;
   List<YouTubeVideo> _hthVideos = [];
-  String _hadenPhoto = "";
 
   bool _loadingMerch = true;
   List<Merch> _merch = [];
@@ -102,30 +102,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         _coachJeremyPhoto = photo;
       });
     });
-    // await getVideos(GlobalConfiguration().getValue("coach_jeremy_channel_id")).then((v) {
-    //   setState(() {
-    //     _coachJeremyVideos = v ?? [];
-    //     _loadingCoachJeremyVideos = false;
-    //   });
-    // });
 
     // HTH channel
     await getChannelThumbnail(GlobalConfiguration().getValue("hth_channel_id")).then((photo) {
       setState(() {
         _hthPhoto = photo;
-      });
-    });
-    // await getVideos(GlobalConfiguration().getValue("hth_channel_id")).then((v) {
-    //   setState(() {
-    //     _hthVideos = v ?? [];
-    //     _loadingHthVideos = false;
-    //   });
-    // });
-
-    // Haden Channel
-    await getChannelThumbnail(GlobalConfiguration().getValue("haden_channel_id")).then((photo) {
-      setState(() {
-        _hadenPhoto = photo;
       });
     });
   }
@@ -373,8 +354,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                       margin: EdgeInsets.only(bottom: 50),
                                                       child: TextButton(
                                                         onPressed: () async {
-                                                          await canLaunch(_exploreVideos[i].buttonUrl).then((can) {
-                                                            launch(_exploreVideos[i].buttonUrl).catchError((err) {
+                                                          await canLaunchUrlString(_exploreVideos[i].buttonUrl).then((can) {
+                                                            launchUrlString(_exploreVideos[i].buttonUrl).catchError((err) {
                                                               print(err);
                                                             });
                                                           });
@@ -435,9 +416,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                           padding: EdgeInsets.all(10),
                           child: GestureDetector(
                             onTap: () async {
-                              String merchLink = "https://merch.howtohockey.com";
-                              await canLaunch(merchLink).then((can) {
-                                launch(merchLink).catchError((err) {
+                              Uri merchLink = Uri(scheme: "https", host: "merch.howtohockey.com");
+                              await canLaunchUrl(merchLink).then((can) {
+                                launchUrl(merchLink).catchError((err) {
                                   print(err);
                                 });
                               });
@@ -473,9 +454,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 ),
                                 IconButton(
                                   onPressed: () async {
-                                    String merchLink = "https://merch.howtohockey.com";
-                                    await canLaunch(merchLink).then((can) {
-                                      launch(merchLink).catchError((err) {
+                                    Uri merchLink = Uri(scheme: "https", host: "merch.howtohockey.com");
+                                    await canLaunchUrl(merchLink).then((can) {
+                                      launchUrl(merchLink).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -516,8 +497,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 return GestureDetector(
                                   onTap: () async {
                                     String link = _merch[i].url;
-                                    await canLaunch(link).then((can) {
-                                      launch(link).catchError((err) {
+                                    await canLaunchUrlString(link).then((can) {
+                                      launchUrlString(link).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -585,8 +566,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     child: GestureDetector(
                                       onTap: () async {
                                         String channelLink = "https://www.youtube.com/CoachJeremy";
-                                        await canLaunch(channelLink).then((can) {
-                                          launch(channelLink).catchError((err) {
+                                        await canLaunchUrlString(channelLink).then((can) {
+                                          launchUrlString(channelLink).catchError((err) {
                                             print(err);
                                           });
                                         });
@@ -627,8 +608,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           IconButton(
                                             onPressed: () async {
                                               String channelLink = "https://www.youtube.com/CoachJeremy";
-                                              await canLaunch(channelLink).then((can) {
-                                                launch(channelLink).catchError((err) {
+                                              await canLaunchUrlString(channelLink).then((can) {
+                                                launchUrlString(channelLink).catchError((err) {
                                                   print(err);
                                                 });
                                               });
@@ -663,8 +644,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           return GestureDetector(
                                             onTap: () async {
                                               String videoLink = "https://www.youtube.com/watch?v=${_coachJeremyVideos[i].id}";
-                                              await canLaunch(videoLink).then((can) {
-                                                launch(videoLink).catchError((err) {
+                                              await canLaunchUrlString(videoLink).then((can) {
+                                                launchUrlString(videoLink).catchError((err) {
                                                   print(err);
                                                 });
                                               });
@@ -721,8 +702,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   onTap: () async {
                                     String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                    await canLaunch(channelLink).then((can) {
-                                      launch(channelLink).catchError((err) {
+                                    await canLaunchUrlString(channelLink).then((can) {
+                                      launchUrlString(channelLink).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -764,8 +745,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         padding: EdgeInsets.zero,
                                         onPressed: () async {
                                           String channelLink = "https://www.youtube.com/howtohockeydotcom";
-                                          await canLaunch(channelLink).then((can) {
-                                            launch(channelLink).catchError((err) {
+                                          await canLaunchUrlString(channelLink).then((can) {
+                                            launchUrlString(channelLink).catchError((err) {
                                               print(err);
                                             });
                                           });
@@ -798,8 +779,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           return GestureDetector(
                                             onTap: () async {
                                               String videoLink = "https://www.youtube.com/watch?v=${_hthVideos[i].id}";
-                                              await canLaunch(videoLink).then((can) {
-                                                launch(videoLink).catchError((err) {
+                                              await canLaunchUrlString(videoLink).then((can) {
+                                                launchUrlString(videoLink).catchError((err) {
                                                   print(err);
                                                 });
                                               });
@@ -862,8 +843,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   onTap: () async {
                                     String videoLink = "https://www.instagram.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
+                                    await canLaunchUrlString(videoLink).then((can) {
+                                      launchUrlString(videoLink).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -890,8 +871,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   onTap: () async {
                                     String videoLink = "https://www.facebook.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
+                                    await canLaunchUrlString(videoLink).then((can) {
+                                      launchUrlString(videoLink).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -918,8 +899,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   onTap: () async {
                                     String videoLink = "https://www.tiktok.com/@coachjeremyhth";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
+                                    await canLaunchUrlString(videoLink).then((can) {
+                                      launchUrlString(videoLink).catchError((err) {
                                         print(err);
                                       });
                                     });
@@ -946,8 +927,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   onTap: () async {
                                     String videoLink = "https://www.twitter.com/howtohockey";
-                                    await canLaunch(videoLink).then((can) {
-                                      launch(videoLink).catchError((err) {
+                                    await canLaunchUrlString(videoLink).then((can) {
+                                      launchUrlString(videoLink).catchError((err) {
                                         print(err);
                                       });
                                     });

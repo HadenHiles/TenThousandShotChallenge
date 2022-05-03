@@ -17,7 +17,7 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfileSettings extends StatefulWidget {
   ProfileSettings({Key key}) : super(key: key);
@@ -416,8 +416,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               ),
                               onPressed: () async {
                                 String link = "https://github.com/HadenHiles";
-                                await canLaunch(link).then((can) {
-                                  launch(link).catchError((err) {
+                                await canLaunchUrlString(link).then((can) {
+                                  launchUrlString(link).catchError((err) {
                                     print(err);
                                   });
                                 });
@@ -452,8 +452,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 ),
                                 onPressed: () async {
                                   String link = "https://howtohockey.com";
-                                  await canLaunch(link).then((can) {
-                                    launch(link).catchError((err) {
+                                  await canLaunchUrlString(link).then((can) {
+                                    launchUrlString(link).catchError((err) {
                                       print(err);
                                     });
                                   });

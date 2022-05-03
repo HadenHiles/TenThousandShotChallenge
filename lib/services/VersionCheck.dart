@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const APP_URL = 'http://hyperurl.co/tenthousandshots';
+const APP_URL_HOST = 'hyperurl.co';
+const APP_URL_PATH = "tenthousandshots";
 
 versionCheck(context) async {
   //Get Current installed version of app
@@ -69,7 +70,7 @@ _showVersionDialog(context) async {
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  onPressed: () => _launchURL(APP_URL),
+                  onPressed: () => _launchURL(Uri(scheme: "http", host: APP_URL_HOST, path: APP_URL_PATH)),
                 ),
               ],
             )
@@ -100,7 +101,7 @@ _showVersionDialog(context) async {
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  onPressed: () => _launchURL(APP_URL),
+                  onPressed: () => _launchURL(Uri(scheme: "http", host: APP_URL_HOST, path: APP_URL_PATH)),
                 ),
               ],
             );
@@ -108,9 +109,9 @@ _showVersionDialog(context) async {
   );
 }
 
-_launchURL(String url) async {
-  if (await canLaunch(url)) {
-    await launch(url);
+_launchURL(Uri url) async {
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url);
   } else {
     throw 'Could not launch $url';
   }
