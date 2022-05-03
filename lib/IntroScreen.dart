@@ -35,7 +35,7 @@ class _IntroScreenState extends State<IntroScreen> {
       MaterialPageRoute(builder: (context) {
         return user != null
             ? Navigation(
-                selectedIndex: 0,
+                selectedIndex: 2,
               )
             : Login();
       }),
