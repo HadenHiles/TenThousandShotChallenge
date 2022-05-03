@@ -17,7 +17,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
   StartShooting({Key key, this.sessionPanelController, this.shots}) : super(key: key);
@@ -491,8 +491,8 @@ class _StartShootingState extends State<StartShooting> {
                                                                 GestureDetector(
                                                                   onTap: () async {
                                                                     String link = "https://teespring.com/sniper-snapback?pr=TENKSNIPER";
-                                                                    await canLaunch(link).then((can) {
-                                                                      launch(link).catchError((err) {
+                                                                    await canLaunchUrlString(link).then((can) {
+                                                                      launchUrlString(link).catchError((err) {
                                                                         print(err);
                                                                       });
                                                                     });
