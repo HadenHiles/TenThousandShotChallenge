@@ -92,7 +92,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
       context: context,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height - 85,
+          height: MediaQuery.of(context).size.height - 105,
           color: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
