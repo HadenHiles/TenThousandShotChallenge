@@ -27,63 +27,66 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1) - TEAM_HEADER_HEIGHT,
-          child: NestedScrollView(
-            clipBehavior: Clip.antiAlias,
-            scrollDirection: Axis.vertical,
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              // These are the slivers that show up in the "outer" scroll view.
-              return [
-                SliverOverlapAbsorber(
-                  handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                  sliver: SliverAppBar(
-                    floating: true,
-                    primary: true,
-                    collapsedHeight: TEAM_HEADER_HEIGHT,
-                    expandedHeight: TEAM_HEADER_HEIGHT,
-                    forceElevated: false,
-                    titleSpacing: 2,
-                    backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                    title: GestureDetector(
-                      onTap: () {
-                        _rotationController.forward();
-                        _showTeamBottomSheetModal();
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Team Name",
-                            style: HomeTheme.darkTheme.textTheme.bodyText1,
-                          ),
-                          SizedBox(
-                            width: 5,
-                          ),
-                          RotationTransition(
-                            turns: Tween(begin: 0.0, end: 0.5).animate(_rotationController),
-                            child: RotatedBox(
-                              quarterTurns: 1,
-                              child: Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                color: HomeTheme.darkTheme.textTheme.bodyText1.color,
-                                size: HomeTheme.darkTheme.textTheme.bodyText1.fontSize,
+    return Container(
+      margin: EdgeInsets.all(0),
+      child: Column(
+        children: [
+          Container(
+            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1) - TEAM_HEADER_HEIGHT,
+            child: NestedScrollView(
+              clipBehavior: Clip.antiAlias,
+              scrollDirection: Axis.vertical,
+              headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                // These are the slivers that show up in the "outer" scroll view.
+                return [
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                    sliver: SliverAppBar(
+                      floating: true,
+                      primary: true,
+                      collapsedHeight: TEAM_HEADER_HEIGHT,
+                      expandedHeight: TEAM_HEADER_HEIGHT,
+                      forceElevated: false,
+                      titleSpacing: 2,
+                      backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                      title: GestureDetector(
+                        onTap: () {
+                          _rotationController.forward();
+                          _showTeamBottomSheetModal();
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Team Name",
+                              style: HomeTheme.darkTheme.textTheme.bodyText1,
+                            ),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            RotationTransition(
+                              turns: Tween(begin: 0.0, end: 0.5).animate(_rotationController),
+                              child: RotatedBox(
+                                quarterTurns: 1,
+                                child: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: HomeTheme.darkTheme.textTheme.bodyText1.color,
+                                  size: HomeTheme.darkTheme.textTheme.bodyText1.fontSize,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ];
-            },
-            body: Column(),
+                ];
+              },
+              body: Column(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -102,7 +105,11 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                 topRight: Radius.circular(15.0),
               ),
             ),
-            child: TeamList(),
+            child: Column(
+              children: [
+                TeamList(),
+              ],
+            ),
           ),
         );
       },
@@ -125,14 +132,12 @@ class TeamList extends StatefulWidget {
 class _TeamListState extends State<TeamList> {
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          ListTile(
-            title: Text("Old Paint Cans"),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        ListTile(
+          title: Text("Old Paint Cans"),
+        ),
+      ],
     );
   }
 }
