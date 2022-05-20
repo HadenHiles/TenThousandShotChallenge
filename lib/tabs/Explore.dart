@@ -231,7 +231,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             ),
                           )
                         : Container(
-                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 100 + (sessionService.isRunning ? 60 : 0)),
+                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 125 + (sessionService.isRunning ? 60 : 0)),
                             child: PageView.builder(
                               controller: _explorePageController,
                               scrollDirection: Axis.vertical,
