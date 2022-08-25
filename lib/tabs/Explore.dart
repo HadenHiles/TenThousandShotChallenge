@@ -513,13 +513,19 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         mainAxisAlignment: MainAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Image(
-                                            image: _merch[i].image == null
-                                                ? AssetImage("assets/images/avatar.png")
-                                                : NetworkImage(
-                                                    _merch[i].image,
-                                                  ),
+                                          Container(
                                             width: 150,
+                                            height: 175,
+                                            decoration: BoxDecoration(
+                                              image: DecorationImage(
+                                                fit: BoxFit.cover,
+                                                image: _merch[i].image == null
+                                                    ? AssetImage("assets/images/avatar.png")
+                                                    : NetworkImage(
+                                                        _merch[i].image,
+                                                      ),
+                                              ),
+                                            ),
                                           ),
                                           Expanded(
                                             child: Column(
