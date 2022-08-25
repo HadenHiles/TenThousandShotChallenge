@@ -466,7 +466,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 125 + (sessionService.isRunning ? 60 : 0)),
                             child: Expanded(
                               child: ListView.builder(
-                                scrollDirection: Axis.vertical,
+                                scrollDirection: Axis.horizontal,
                                 itemCount: _programs.length,
                                 shrinkWrap: true,
                                 itemBuilder: (BuildContext context, int i) {
