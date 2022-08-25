@@ -8,6 +8,7 @@ import 'package:global_configuration/global_configuration.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
+import 'package:tenthousandshotchallenge/models/firestore/TrainingProgram.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -41,13 +42,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   bool _loadingMerch = true;
   List<Merch> _merch = [];
 
+  bool _loadingPrograms = true;
+  List<TrainingProgram> _programs = [];
+
   TabController _tabController;
 
   @override
   void initState() {
-    _loadExploreingVideos();
-    _loadYoutubeChannels();
-    _loadMerch();
+    _loadExploringVideos();
 
     _exploreScrollController = ScrollController();
     _exploreScrollController.addListener(this.swapPageListener);
@@ -69,16 +71,20 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     if (_tabController.indexIsChanging) {
       switch (_tabController.index) {
         case 0:
+          _loadExploringVideos();
           break;
         case 1:
+          _loadTrainingPrograms();
           break;
         case 2:
+          _loadYoutubeChannels();
+          _loadMerch();
           break;
       }
     }
   }
 
-  Future<Null> _loadExploreingVideos() async {
+  Future<Null> _loadExploringVideos() async {
     await FirebaseFirestore.instance.collection('learn_videos').orderBy('order', descending: false).get().then((snapshot) {
       List<YouTubeVideo> videos = [];
       if (snapshot.docs.isNotEmpty) {
@@ -92,6 +98,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
           _loadingExploreVideos = false;
         });
       }
+    }).timeout(Duration(seconds: 10), onTimeout: () {
+      setState(() {
+        _loadingExploreVideos = false;
+      });
+    }).onError((error, stackTrace) {
+      setState(() {
+        _loadingExploreVideos = false;
+      });
     });
   }
 
@@ -122,6 +136,37 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       setState(() {
         _merch = merch;
         _loadingMerch = false;
+      });
+    }).timeout(Duration(seconds: 30), onTimeout: () {
+      setState(() {
+        _loadingMerch = false;
+      });
+    }).onError((error, stackTrace) {
+      setState(() {
+        _loadingMerch = false;
+      });
+    });
+  }
+
+  Future<Null> _loadTrainingPrograms() async {
+    await FirebaseFirestore.instance.collection('trainingPrograms').orderBy('order', descending: false).get().then((snapshot) {
+      List<TrainingProgram> programs = [];
+      snapshot.docs.forEach((mDoc) {
+        TrainingProgram program = TrainingProgram.fromSnapshot(mDoc);
+        programs.add(program);
+      });
+
+      setState(() {
+        _programs = programs;
+        _loadingPrograms = false;
+      });
+    }).timeout(Duration(seconds: 10), onTimeout: () {
+      setState(() {
+        _loadingPrograms = false;
+      });
+    }).onError((error, stackTrace) {
+      setState(() {
+        _loadingPrograms = false;
       });
     });
   }
@@ -392,20 +437,104 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                   ],
                 ),
                 Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: _programs.length < 1 ? MainAxisAlignment.center : MainAxisAlignment.start,
                   children: [
-                    Container(
-                      child: Text(
-                        "Coming Soon!".toUpperCase(),
-                        style: Theme.of(context).textTheme.headline5,
-                      ),
-                    ),
-                    /*
-                    Container(
-                      child: VideoStream(url: "https://player.vimeo.com/progressive_redirect/playback/685958839/rendition/1080p?loc=external&signature=f7542ffea715bb844a2acdadcc34870f7955d7595ee274893e2293a640b4fd11"),
-                    )
-                    */
+                    _loadingPrograms || _programs.length < 1
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                child: Text(
+                                  "Coming Soon!".toUpperCase(),
+                                  style: Theme.of(context).textTheme.headline5,
+                                ),
+                              ),
+                              SizedBox(height: 15),
+                              Container(
+                                height: 50,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Container(
+                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 125 + (sessionService.isRunning ? 60 : 0)),
+                            child: Expanded(
+                              child: ListView.builder(
+                                scrollDirection: Axis.vertical,
+                                itemCount: _programs.length,
+                                shrinkWrap: true,
+                                itemBuilder: (BuildContext context, int i) {
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      String link = _programs[i].url;
+                                      await canLaunchUrlString(link).then((can) {
+                                        launchUrlString(link).catchError((err) {
+                                          print(err);
+                                        });
+                                      });
+                                    },
+                                    child: Card(
+                                      color: Theme.of(context).cardTheme.color,
+                                      elevation: 4,
+                                      child: Container(
+                                        height: 300,
+                                        width: MediaQuery.of(context).size.width - 40,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: MediaQuery.of(context).size.width - 40,
+                                              height: 245,
+                                              decoration: BoxDecoration(
+                                                image: DecorationImage(
+                                                  fit: BoxFit.cover,
+                                                  image: _programs[i]?.image == null
+                                                      ? AssetImage("assets/images/avatar.png")
+                                                      : NetworkImage(
+                                                          _programs[i].image,
+                                                        ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Container(
+                                                    padding: EdgeInsets.all(5),
+                                                    child: AutoSizeText(
+                                                      _programs[i].title.toUpperCase(),
+                                                      maxLines: 2,
+                                                      maxFontSize: 28,
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 28,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
                   ],
                 ),
                 Column(
