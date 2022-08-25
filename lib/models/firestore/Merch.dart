@@ -20,7 +20,7 @@ class Merch {
     return {
       'title': title,
       'url': url,
-      'iamge': image,
+      'image': image,
     };
   }
 
