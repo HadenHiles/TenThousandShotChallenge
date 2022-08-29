@@ -50,6 +50,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     _loadExploringVideos();
+    _loadTrainingPrograms();
+    _loadMerch();
+    _loadYoutubeChannels();
 
     _exploreScrollController = ScrollController();
     _exploreScrollController.addListener(this.swapPageListener);
@@ -67,18 +70,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void changeTabListener() {
+  Future<void> changeTabListener() async {
     if (_tabController.indexIsChanging) {
       switch (_tabController.index) {
         case 0:
-          _loadExploringVideos();
           break;
         case 1:
-          _loadTrainingPrograms();
           break;
         case 2:
-          _loadYoutubeChannels();
-          _loadMerch();
           break;
       }
     }
@@ -99,10 +98,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         });
       }
     }).timeout(Duration(seconds: 10), onTimeout: () {
+      print("_loadExploringVideos timed out");
       setState(() {
         _loadingExploreVideos = false;
       });
     }).onError((error, stackTrace) {
+      print("Error loading explore videos: $error");
       setState(() {
         _loadingExploreVideos = false;
       });
@@ -138,10 +139,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         _loadingMerch = false;
       });
     }).timeout(Duration(seconds: 30), onTimeout: () {
+      print("_loadMerch timed out");
       setState(() {
         _loadingMerch = false;
       });
     }).onError((error, stackTrace) {
+      print("Error loading merch: $error");
       setState(() {
         _loadingMerch = false;
       });
@@ -161,10 +164,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         _loadingPrograms = false;
       });
     }).timeout(Duration(seconds: 10), onTimeout: () {
+      print("_loadTrainingPrograms timed out");
       setState(() {
         _loadingPrograms = false;
       });
     }).onError((error, stackTrace) {
+      print("Error loading training programs: $error");
       setState(() {
         _loadingPrograms = false;
       });
