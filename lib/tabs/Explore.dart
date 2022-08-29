@@ -280,8 +280,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               ],
                             ),
                           )
-                        : Container(
-                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 125 + (sessionService.isRunning ? 60 : 0)),
+                        : Expanded(
                             child: PageView.builder(
                               controller: _explorePageController,
                               scrollDirection: Axis.vertical,
@@ -338,8 +337,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       flex: 2,
                                       child: Container(
                                         margin: EdgeInsets.symmetric(
-                                          vertical: 10,
-                                          horizontal: MediaQuery.of(context).size.width * .1,
+                                          vertical: 5,
+                                          horizontal: MediaQuery.of(context).size.width * .075,
                                         ),
                                         child: SingleChildScrollView(
                                           physics: BouncingScrollPhysics(),
@@ -347,7 +346,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           child: Column(
                                             children: [
                                               Container(
-                                                margin: EdgeInsets.only(top: 25),
+                                                margin: EdgeInsets.only(top: 15),
                                                 child: Text(
                                                   _exploreVideos[i].title.toUpperCase(),
                                                   textAlign: TextAlign.center,
@@ -375,19 +374,21 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   "h3": Style(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(24),
+                                                    fontSize: FontSize(23),
                                                   ),
                                                   "ul": Style(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(24),
+                                                    fontSize: FontSize(23),
                                                     listStyleType: ListStyleType.DISC,
                                                   ),
                                                   "ol": Style(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(24),
+                                                    fontSize: FontSize(23),
                                                     listStyleType: ListStyleType.DECIMAL,
+                                                    listStylePosition: ListStylePosition.INSIDE,
+                                                    lineHeight: LineHeight.em(1.1),
                                                   ),
                                                   "ul li, ol li": Style(
                                                     padding: EdgeInsets.symmetric(vertical: 5),
@@ -401,7 +402,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               ),
                                               _exploreVideos[i].buttonUrl.isNotEmpty
                                                   ? Container(
-                                                      margin: EdgeInsets.only(bottom: 50),
+                                                      margin: EdgeInsets.only(bottom: 25),
                                                       child: TextButton(
                                                         onPressed: () async {
                                                           await canLaunchUrlString(_exploreVideos[i].buttonUrl).then((can) {
