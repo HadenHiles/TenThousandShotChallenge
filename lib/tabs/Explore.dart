@@ -733,7 +733,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           SizedBox(
-                                            width: 10,
+                                            width: 5,
                                           ),
                                           AutoSizeText(
                                             "Coach Jeremy".toUpperCase(),
@@ -869,7 +869,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         ),
                                       ),
                                       SizedBox(
-                                        width: 10,
+                                        width: 5,
                                       ),
                                       AutoSizeText(
                                         "How To Hockey".toUpperCase(),
