@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/firestore/TrainingProgram.dart';
@@ -84,17 +83,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _loadExploringVideos() async {
+    List<YouTubeVideo> videos = [];
     await FirebaseFirestore.instance.collection('learn_videos').orderBy('order', descending: false).get().then((snapshot) {
-      List<YouTubeVideo> videos = [];
       if (snapshot.docs.isNotEmpty) {
         snapshot.docs.forEach((vDoc) {
           YouTubeVideo vid = YouTubeVideo.fromSnapshot(vDoc);
           videos.add(vid);
-        });
-
-        setState(() {
-          _exploreVideos = videos;
-          _loadingExploreVideos = false;
         });
       }
     }).timeout(Duration(seconds: 10), onTimeout: () {
@@ -107,6 +101,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       setState(() {
         _loadingExploreVideos = false;
       });
+    });
+
+    setState(() {
+      _exploreVideos = videos;
+      _loadingExploreVideos = false;
     });
   }
 
@@ -127,16 +126,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _loadMerch() async {
+    List<Merch> merch = [];
     await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
-      List<Merch> merch = [];
       snapshot.docs.forEach((mDoc) {
         Merch product = Merch.fromSnapshot(mDoc);
         merch.add(product);
-      });
-
-      setState(() {
-        _merch = merch;
-        _loadingMerch = false;
       });
     }).timeout(Duration(seconds: 30), onTimeout: () {
       print("_loadMerch timed out");
@@ -149,19 +143,19 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         _loadingMerch = false;
       });
     });
+
+    setState(() {
+      _merch = merch;
+      _loadingMerch = false;
+    });
   }
 
   Future<Null> _loadTrainingPrograms() async {
+    List<TrainingProgram> programs = [];
     await FirebaseFirestore.instance.collection('trainingPrograms').orderBy('order', descending: false).get().then((snapshot) {
-      List<TrainingProgram> programs = [];
-      snapshot.docs.forEach((mDoc) {
-        TrainingProgram program = TrainingProgram.fromSnapshot(mDoc);
+      snapshot.docs.forEach((pDoc) {
+        TrainingProgram program = TrainingProgram.fromSnapshot(pDoc);
         programs.add(program);
-      });
-
-      setState(() {
-        _programs = programs;
-        _loadingPrograms = false;
       });
     }).timeout(Duration(seconds: 10), onTimeout: () {
       print("_loadTrainingPrograms timed out");
@@ -173,6 +167,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       setState(() {
         _loadingPrograms = false;
       });
+    });
+
+    setState(() {
+      _programs = programs;
+      _loadingPrograms = false;
     });
   }
 
@@ -444,12 +443,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: _programs.length < 1 ? MainAxisAlignment.center : MainAxisAlignment.start,
                   children: [
                     _loadingPrograms || _programs.length < 1
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisSize: MainAxisSize.max,
                             children: [
                               Container(
                                 child: Text(
@@ -468,77 +466,87 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               ),
                             ],
                           )
-                        : Container(
-                            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 125 + (sessionService.isRunning ? 60 : 0)),
-                            child: Expanded(
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _programs.length,
-                                shrinkWrap: true,
-                                itemBuilder: (BuildContext context, int i) {
-                                  return GestureDetector(
-                                    onTap: () async {
-                                      String link = _programs[i].url;
-                                      await canLaunchUrlString(link).then((can) {
-                                        launchUrlString(link).catchError((err) {
-                                          print(err);
-                                        });
-                                      });
-                                    },
-                                    child: Card(
-                                      color: Theme.of(context).cardTheme.color,
-                                      elevation: 4,
-                                      child: Container(
+                        : Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.only(top: 10),
+                                  width: MediaQuery.of(context).size.width - 15,
+                                  height: 40,
+                                  child: Text(
+                                    "Our Programs:".toUpperCase(),
+                                    style: Theme.of(context).textTheme.headline5,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                                Container(
+                                  height: 320,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: _programs.length,
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                    itemBuilder: (BuildContext context, int i) {
+                                      return Container(
                                         height: 300,
-                                        width: MediaQuery.of(context).size.width - 40,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.start,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: MediaQuery.of(context).size.width - 40,
-                                              height: 245,
-                                              decoration: BoxDecoration(
-                                                image: DecorationImage(
-                                                  fit: BoxFit.cover,
-                                                  image: _programs[i]?.image == null
-                                                      ? AssetImage("assets/images/avatar.png")
-                                                      : NetworkImage(
-                                                          _programs[i].image,
-                                                        ),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.max,
-                                                children: [
-                                                  Container(
-                                                    padding: EdgeInsets.all(5),
-                                                    child: AutoSizeText(
-                                                      _programs[i].title.toUpperCase(),
-                                                      maxLines: 2,
-                                                      maxFontSize: 28,
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 28,
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
+                                        width: MediaQuery.of(context).size.width - 15,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            String link = _programs[i].url;
+                                            await canLaunchUrlString(link).then((can) {
+                                              launchUrlString(link).catchError((err) {
+                                                print(err);
+                                              });
+                                            });
+                                          },
+                                          child: Card(
+                                            color: Theme.of(context).cardTheme.color,
+                                            elevation: 4,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: MediaQuery.of(context).size.width - 15,
+                                                  height: 245,
+                                                  decoration: BoxDecoration(
+                                                    image: DecorationImage(
+                                                      fit: BoxFit.cover,
+                                                      image: _programs[i]?.image == null
+                                                          ? AssetImage("assets/images/avatar.png")
+                                                          : NetworkImage(
+                                                              _programs[i].image,
+                                                            ),
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                                Container(
+                                                  padding: EdgeInsets.all(5),
+                                                  child: AutoSizeText(
+                                                    _programs[i].title.toUpperCase(),
+                                                    maxLines: 2,
+                                                    maxFontSize: 28,
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontFamily: "NovecentoSans",
+                                                      fontSize: 28,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                   ],
