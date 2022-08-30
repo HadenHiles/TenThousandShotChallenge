@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_settings_ui/flutter_settings_ui.dart';
+import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -146,18 +146,24 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               children: [
                 Container(
                   child: SettingsList(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    lightBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    darkBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    lightTheme: SettingsThemeData(
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                    darkTheme: SettingsThemeData(
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                    ),
                     sections: [
                       SettingsSection(
-                        title: 'General',
-                        titleTextStyle: Theme.of(context).textTheme.headline6,
+                        title: Text(
+                          'General',
+                          style: Theme.of(context).textTheme.headline6,
+                        ),
                         tiles: [
                           SettingsTile(
-                            title: 'How many pucks do you have?',
-                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            title: Text(
+                              'How many pucks do you have?',
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
                             leading: Container(
                               margin: EdgeInsets.only(left: 10),
                               child: Stack(
@@ -222,13 +228,15 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile.switchTile(
-                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                            title: 'Dark Mode',
+                            title: Text(
+                              'Dark Mode',
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
                             leading: Icon(
                               Icons.brightness_2,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            switchValue: _darkMode,
+                            initialValue: _darkMode,
                             onToggle: (bool value) async {
                               SharedPreferences prefs = await SharedPreferences.getInstance();
                               setState(() {
@@ -247,10 +255,14 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile(
-                            title: "Recalculate Shot Totals",
-                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
-                            subtitle: "Use this if your shot count is out of sync",
+                            title: Text(
+                              "Recalculate Shot Totals",
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
+                            description: Text(
+                              "Use this if your shot count is out of sync",
+                              style: Theme.of(context).textTheme.bodyText2,
+                            ),
                             enabled: true,
                             leading: _refreshingShots
                                 ? Container(
@@ -305,17 +317,21 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         ],
                       ),
                       SettingsSection(
-                        titleTextStyle: Theme.of(context).textTheme.headline6,
-                        title: 'Account',
+                        title: Text(
+                          'Account',
+                          style: Theme.of(context).textTheme.headline6,
+                        ),
                         tiles: [
                           SettingsTile.switchTile(
-                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                            title: 'Public',
+                            title: Text(
+                              'Public',
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
                             leading: Icon(
                               Icons.privacy_tip_rounded,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            switchValue: _publicProfile,
+                            initialValue: _publicProfile,
                             onToggle: (bool value) async {
                               await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
                                 setState(() {
@@ -325,9 +341,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile(
-                            title: 'Edit Profile',
-                            titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
+                            title: Text(
+                              'Edit Profile',
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
                             leading: Icon(
                               Icons.person,
                               color: Theme.of(context).colorScheme.onPrimary,
@@ -343,12 +360,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile(
-                            title: 'Logout',
-                            titleTextStyle: TextStyle(
-                              color: Colors.red,
-                              fontSize: Theme.of(context).textTheme.bodyText1.fontSize,
+                            title: Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: Theme.of(context).textTheme.bodyText1.fontSize,
+                              ),
                             ),
-                            subtitleTextStyle: Theme.of(context).textTheme.bodyText2,
                             leading: Icon(
                               Icons.logout,
                               color: Colors.red,
