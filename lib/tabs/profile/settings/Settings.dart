@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -356,6 +358,99 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     return EditProfile();
                                   },
                                 ),
+                              );
+                            },
+                          ),
+                          SettingsTile(
+                            title: Row(
+                              children: [
+                                Text(
+                                  'Delete Account',
+                                  style: Theme.of(context).textTheme.bodyText1,
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(left: 5),
+                                  child: RotatedBox(
+                                    quarterTurns: 2,
+                                    child: Icon(
+                                      Icons.info_outlined,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            leading: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            onPressed: (BuildContext context) {
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      "Are you absolutely sure you want to delete your account?",
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 24,
+                                      ),
+                                    ),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: Text(
+                                          "Cancel".toUpperCase(),
+                                          style: TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          FirebaseAuth.instance.currentUser.delete().then((_) {
+                                            navigatorKey.currentState.pop();
+                                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (_) {
+                                              return Login();
+                                            }));
+
+                                            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                          }).onError((FirebaseAuthException error, stackTrace) {
+                                            String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                            Fluttertoast.showToast(
+                                              msg: msg,
+                                              toastLength: Toast.LENGTH_LONG,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+                                          });
+                                        },
+                                        child: Text(
+                                          "Delete Account".toUpperCase(),
+                                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                             },
                           ),
