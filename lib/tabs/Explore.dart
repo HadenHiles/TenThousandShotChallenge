@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
+import 'package:tenthousandshotchallenge/models/firestore/LearnToPlayItem.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/firestore/TrainingProgram.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
@@ -44,12 +45,16 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   bool _loadingPrograms = true;
   List<TrainingProgram> _programs = [];
 
+  bool _loadingLearnToPlayItems = true;
+  List<LearnToPlayItem> _learnToPlayItems = [];
+
   TabController _tabController;
 
   @override
   void initState() {
     _loadExploringVideos();
     _loadTrainingPrograms();
+    _loadLearnToPlayItems();
     _loadMerch();
     _loadYoutubeChannels();
 
@@ -172,6 +177,31 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     setState(() {
       _programs = programs;
       _loadingPrograms = false;
+    });
+  }
+
+  Future<Null> _loadLearnToPlayItems() async {
+    List<LearnToPlayItem> items = [];
+    await FirebaseFirestore.instance.collection('learn_to_play').orderBy('order', descending: false).get().then((snapshot) {
+      snapshot.docs.forEach((pDoc) {
+        LearnToPlayItem item = LearnToPlayItem.fromSnapshot(pDoc);
+        items.add(item);
+      });
+    }).timeout(Duration(seconds: 10), onTimeout: () {
+      print("_loadLearnToPlayItems timed out");
+      setState(() {
+        _loadingLearnToPlayItems = false;
+      });
+    }).onError((error, stackTrace) {
+      print("Error loading learn to play items: $error");
+      setState(() {
+        _loadingLearnToPlayItems = false;
+      });
+    });
+
+    setState(() {
+      _learnToPlayItems = items;
+      _loadingLearnToPlayItems = false;
     });
   }
 
@@ -476,23 +506,22 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   width: MediaQuery.of(context).size.width - 15,
                                   height: 40,
                                   child: Text(
-                                    "Our Programs:".toUpperCase(),
+                                    "Training Programs:".toUpperCase(),
                                     style: Theme.of(context).textTheme.headline5,
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
                                 Container(
-                                  height: 320,
+                                  height: 280,
                                   child: ListView.builder(
                                     scrollDirection: Axis.horizontal,
-                                    physics: NeverScrollableScrollPhysics(),
                                     itemCount: _programs.length,
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                    shrinkWrap: false,
+                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                                     itemBuilder: (BuildContext context, int i) {
                                       return Container(
-                                        height: 300,
-                                        width: MediaQuery.of(context).size.width - 15,
+                                        height: 240,
+                                        width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
                                         child: GestureDetector(
                                           onTap: () async {
                                             String link = _programs[i].url;
@@ -511,8 +540,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Container(
-                                                  width: MediaQuery.of(context).size.width - 15,
-                                                  height: 245,
+                                                  width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
+                                                  height: 215,
                                                   decoration: BoxDecoration(
                                                     image: DecorationImage(
                                                       fit: BoxFit.cover,
@@ -525,15 +554,112 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: EdgeInsets.all(5),
+                                                  padding: EdgeInsets.all(4),
                                                   child: AutoSizeText(
                                                     _programs[i].title.toUpperCase(),
                                                     maxLines: 2,
-                                                    maxFontSize: 28,
+                                                    maxFontSize: 25,
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       fontFamily: "NovecentoSans",
-                                                      fontSize: 28,
+                                                      fontSize: 25,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                    _loadingLearnToPlayItems || _learnToPlayItems.length < 1
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.max,
+                            children: [
+                              Container(
+                                height: 50,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.only(top: 10),
+                                  width: MediaQuery.of(context).size.width - 25,
+                                  height: 40,
+                                  child: Text(
+                                    "Learn the game:".toUpperCase(),
+                                    style: Theme.of(context).textTheme.headline5,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                                Container(
+                                  height: 280,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _learnToPlayItems.length,
+                                    shrinkWrap: false,
+                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                                    itemBuilder: (BuildContext context, int i) {
+                                      return Container(
+                                        height: 240,
+                                        width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            String link = _learnToPlayItems[i].url;
+                                            await canLaunchUrlString(link).then((can) {
+                                              launchUrlString(link).catchError((err) {
+                                                print(err);
+                                              });
+                                            });
+                                          },
+                                          child: Card(
+                                            color: Theme.of(context).cardTheme.color,
+                                            elevation: 4,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
+                                                  height: 215,
+                                                  decoration: BoxDecoration(
+                                                    image: DecorationImage(
+                                                      fit: BoxFit.cover,
+                                                      image: _learnToPlayItems[i]?.image == null
+                                                          ? AssetImage("assets/images/avatar.png")
+                                                          : NetworkImage(
+                                                              _learnToPlayItems[i].image,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: EdgeInsets.all(4),
+                                                  child: AutoSizeText(
+                                                    _learnToPlayItems[i].title.toUpperCase(),
+                                                    maxLines: 2,
+                                                    maxFontSize: 25,
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontFamily: "NovecentoSans",
+                                                      fontSize: 25,
                                                       color: Theme.of(context).colorScheme.onPrimary,
                                                     ),
                                                   ),
