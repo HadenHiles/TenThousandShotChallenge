@@ -39,14 +39,16 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   bool _loadingHthVideos = true;
   List<YouTubeVideo> _hthVideos = [];
 
-  bool _loadingMerch = true;
-  List<Merch> _merch = [];
-
   bool _loadingPrograms = true;
   List<TrainingProgram> _programs = [];
 
   bool _loadingLearnToPlayItems = true;
   List<LearnToPlayItem> _learnToPlayItems = [];
+
+  bool _loadingMerch = true;
+  List<Merch> _merch = [];
+
+  bool _oneChallengeCompleted = false;
 
   TabController _tabController;
 
@@ -56,6 +58,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     _loadTrainingPrograms();
     _loadLearnToPlayItems();
     _loadMerch();
+    _checkIfChallengeCompletedOnce();
     _loadYoutubeChannels();
 
     _exploreScrollController = ScrollController();
@@ -130,31 +133,6 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     });
   }
 
-  Future<Null> _loadMerch() async {
-    List<Merch> merch = [];
-    await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
-      snapshot.docs.forEach((mDoc) {
-        Merch product = Merch.fromSnapshot(mDoc);
-        merch.add(product);
-      });
-    }).timeout(Duration(seconds: 30), onTimeout: () {
-      print("_loadMerch timed out");
-      setState(() {
-        _loadingMerch = false;
-      });
-    }).onError((error, stackTrace) {
-      print("Error loading merch: $error");
-      setState(() {
-        _loadingMerch = false;
-      });
-    });
-
-    setState(() {
-      _merch = merch;
-      _loadingMerch = false;
-    });
-  }
-
   Future<Null> _loadTrainingPrograms() async {
     List<TrainingProgram> programs = [];
     await FirebaseFirestore.instance.collection('trainingPrograms').orderBy('order', descending: false).get().then((snapshot) {
@@ -202,6 +180,41 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     setState(() {
       _learnToPlayItems = items;
       _loadingLearnToPlayItems = false;
+    });
+  }
+
+  Future<Null> _loadMerch() async {
+    List<Merch> merch = [];
+    await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
+      snapshot.docs.forEach((mDoc) {
+        Merch product = Merch.fromSnapshot(mDoc);
+        merch.add(product);
+      });
+    }).timeout(Duration(seconds: 30), onTimeout: () {
+      print("_loadMerch timed out");
+      setState(() {
+        _loadingMerch = false;
+      });
+    }).onError((error, stackTrace) {
+      print("Error loading merch: $error");
+      setState(() {
+        _loadingMerch = false;
+      });
+    });
+
+    setState(() {
+      _merch = merch;
+      _loadingMerch = false;
+    });
+  }
+
+  Future<Null> _checkIfChallengeCompletedOnce() async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
+      if (snap.docs.length > 0) {
+        setState(() {
+          _oneChallengeCompleted = true;
+        });
+      }
     });
   }
 
@@ -766,11 +779,186 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                 return GestureDetector(
                                   onTap: () async {
                                     String link = _merch[i].url;
-                                    await canLaunchUrlString(link).then((can) {
-                                      launchUrlString(link).catchError((err) {
-                                        print(err);
+
+                                    if (_oneChallengeCompleted && _merch[i].title.replaceAll(" ", "").toLowerCase() == "snipersnapback") {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return Dialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                            child: SingleChildScrollView(
+                                              clipBehavior: Clip.none,
+                                              child: Stack(
+                                                clipBehavior: Clip.none,
+                                                alignment: Alignment.topCenter,
+                                                children: [
+                                                  Container(
+                                                    height: 550,
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                      child: Column(
+                                                        children: [
+                                                          Text(
+                                                            "Congradulations!".toUpperCase(),
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).primaryColor,
+                                                              fontFamily: "NovecentoSans",
+                                                              fontSize: 32,
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: 5,
+                                                          ),
+                                                          Text(
+                                                            "Nice job, ya beauty!\n10,000 shots isn\'t easy.",
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                              fontFamily: "NovecentoSans",
+                                                              fontSize: 22,
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: 5,
+                                                          ),
+                                                          Opacity(
+                                                            opacity: 0.8,
+                                                            child: Text(
+                                                              "To celebrate, here\'s 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                              textAlign: TextAlign.center,
+                                                              style: TextStyle(
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 16,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: 15,
+                                                          ),
+                                                          GestureDetector(
+                                                            onTap: () async {
+                                                              String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                              await canLaunchUrlString(link).then((can) {
+                                                                launchUrlString(link).catchError((err) {
+                                                                  print(err);
+                                                                });
+                                                              });
+                                                            },
+                                                            child: Card(
+                                                              color: Theme.of(context).cardTheme.color,
+                                                              elevation: 4,
+                                                              child: Container(
+                                                                width: 125,
+                                                                height: 180,
+                                                                child: Column(
+                                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                                  children: [
+                                                                    Image(
+                                                                      image: NetworkImage(
+                                                                        "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
+                                                                      ),
+                                                                      width: 150,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Column(
+                                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                                        children: [
+                                                                          Container(
+                                                                            padding: EdgeInsets.all(5),
+                                                                            child: AutoSizeText(
+                                                                              "Sniper Snapback".toUpperCase(),
+                                                                              maxLines: 2,
+                                                                              maxFontSize: 20,
+                                                                              textAlign: TextAlign.center,
+                                                                              style: TextStyle(
+                                                                                fontFamily: "NovecentoSans",
+                                                                                fontSize: 18,
+                                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: 5,
+                                                          ),
+                                                          Container(
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(context).colorScheme.primaryContainer,
+                                                            ),
+                                                            padding: EdgeInsets.all(5),
+                                                            child: SelectableText(
+                                                              "TENKSNIPER",
+                                                              style: TextStyle(
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 24,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: 5,
+                                                          ),
+                                                          TextButton(
+                                                            onPressed: () async {
+                                                              Navigator.of(context).pop();
+                                                              String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                              await canLaunchUrlString(link).then((can) {
+                                                                launchUrlString(link).catchError((err) {
+                                                                  print(err);
+                                                                });
+                                                              });
+                                                            },
+                                                            style: ButtonStyle(
+                                                              backgroundColor: MaterialStateProperty.all(
+                                                                Theme.of(context).primaryColor,
+                                                              ),
+                                                              padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                            ),
+                                                            child: Text(
+                                                              "Get yours".toUpperCase(),
+                                                              style: TextStyle(
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 30,
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    top: -40,
+                                                    child: Container(
+                                                      width: 100,
+                                                      height: 100,
+                                                      child: Image(
+                                                        image: AssetImage("assets/images/GoalLight.gif"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    } else {
+                                      await canLaunchUrlString(link).then((can) {
+                                        launchUrlString(link).catchError((err) {
+                                          print(err);
+                                        });
                                       });
-                                    });
+                                    }
                                   },
                                   child: Card(
                                     color: Theme.of(context).cardTheme.color,

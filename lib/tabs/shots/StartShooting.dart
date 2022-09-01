@@ -444,7 +444,7 @@ class _StartShootingState extends State<StartShooting> {
                                                       alignment: Alignment.topCenter,
                                                       children: [
                                                         Container(
-                                                          height: 530,
+                                                          height: 550,
                                                           child: Padding(
                                                             padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
                                                             child: Column(
@@ -476,12 +476,12 @@ class _StartShootingState extends State<StartShooting> {
                                                                 Opacity(
                                                                   opacity: 0.8,
                                                                   child: Text(
-                                                                    "To celebrate, here\'s a coupon code for our special snapback only available to snipers like yourself.",
+                                                                    "To celebrate, here\'s 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
                                                                     textAlign: TextAlign.center,
                                                                     style: TextStyle(
                                                                       color: Theme.of(context).colorScheme.onPrimary,
                                                                       fontFamily: "NovecentoSans",
-                                                                      fontSize: 18,
+                                                                      fontSize: 16,
                                                                     ),
                                                                   ),
                                                                 ),
@@ -490,7 +490,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                 ),
                                                                 GestureDetector(
                                                                   onTap: () async {
-                                                                    String link = "https://teespring.com/sniper-snapback?pr=TENKSNIPER";
+                                                                    String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
                                                                     await canLaunchUrlString(link).then((can) {
                                                                       launchUrlString(link).catchError((err) {
                                                                         print(err);
@@ -508,7 +508,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                         children: [
                                                                           Image(
                                                                             image: NetworkImage(
-                                                                              "https://mockup-api.teespring.com/static.jpg?height=560&image_url=https%3A%2F%2Fteespring-pub-custom.s3.amazonaws.com%2F4a4_110354429_product_762_103363_front.png&padded=false&signature=BiR0YcAkTV7e48t07B2zTnZ4HoEQRz5u3s50Y2hIaXw%3D&version=2021-06-13-21-51-49&width=480",
+                                                                              "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
                                                                             ),
                                                                             width: 150,
                                                                           ),
@@ -519,7 +519,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                                 Container(
                                                                                   padding: EdgeInsets.all(5),
                                                                                   child: AutoSizeText(
-                                                                                    "10,000 Shot Sniper Snapback".toUpperCase(),
+                                                                                    "Sniper Snapback".toUpperCase(),
                                                                                     maxLines: 2,
                                                                                     maxFontSize: 20,
                                                                                     textAlign: TextAlign.center,
@@ -559,17 +559,23 @@ class _StartShootingState extends State<StartShooting> {
                                                                   height: 5,
                                                                 ),
                                                                 TextButton(
-                                                                  onPressed: () {
+                                                                  onPressed: () async {
                                                                     Navigator.of(context).pop();
+                                                                    String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                                    await canLaunchUrlString(link).then((can) {
+                                                                      launchUrlString(link).catchError((err) {
+                                                                        print(err);
+                                                                      });
+                                                                    });
                                                                   },
                                                                   style: ButtonStyle(
                                                                     backgroundColor: MaterialStateProperty.all(
                                                                       Theme.of(context).primaryColor,
                                                                     ),
-                                                                    padding: MaterialStateProperty.all(EdgeInsets.all(4)),
+                                                                    padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                                   ),
                                                                   child: Text(
-                                                                    "OK",
+                                                                    "Get yours".toUpperCase(),
                                                                     style: TextStyle(
                                                                       fontFamily: "NovecentoSans",
                                                                       fontSize: 30,
