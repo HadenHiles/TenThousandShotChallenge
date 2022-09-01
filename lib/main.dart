@@ -134,7 +134,7 @@ class Home extends StatelessWidget {
               : (user != null
                   ? Navigation(
                       title: null,
-                      selectedIndex: 2,
+                      selectedIndex: 0,
                     )
                   : Login()),
         );

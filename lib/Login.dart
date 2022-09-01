@@ -59,7 +59,7 @@ class _LoginState extends State<Login> {
 
     //If user is signed in
     if (_signedIn) {
-      return Navigation(title: null, selectedIndex: 2);
+      return Navigation(title: null, selectedIndex: 0);
     }
 
     return Scaffold(
