@@ -397,9 +397,9 @@ class _StartShootingState extends State<StartShooting> {
                                     ],
                                   ),
                                   style: TextButton.styleFrom(
-                                    primary: Theme.of(context).cardTheme.color,
+                                    foregroundColor: Theme.of(context).cardTheme.color,
                                     backgroundColor: Theme.of(context).cardTheme.color,
-                                    onSurface: Theme.of(context).colorScheme.onPrimary,
+                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
                                     shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                                   ),
                                 )
@@ -644,9 +644,9 @@ class _StartShootingState extends State<StartShooting> {
                                     ],
                                   ),
                                   style: TextButton.styleFrom(
-                                    primary: Theme.of(context).primaryColor,
+                                    foregroundColor: Theme.of(context).primaryColor,
                                     backgroundColor: Theme.of(context).primaryColor,
-                                    onSurface: Colors.white,
+                                    disabledForegroundColor: Colors.white,
                                     shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                                   ),
                                 ),

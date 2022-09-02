@@ -95,9 +95,9 @@ class _LoginState extends State<Login> {
                           socialSignIn(context, 'google', (error) {
                             // ignore: deprecated_member_use
                             // ignore: deprecated_member_use
-                            _scaffoldKey.currentState.hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             // ignore: deprecated_member_use
-                            _scaffoldKey.currentState.showSnackBar(
+                            ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: Theme.of(context).cardTheme.color,
                                 content: Text(
@@ -111,7 +111,7 @@ class _LoginState extends State<Login> {
                                   label: "Dismiss",
                                   onPressed: () {
                                     // ignore: deprecated_member_use
-                                    _scaffoldKey.currentState.hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                   },
                                 ),
                               ),
@@ -133,9 +133,9 @@ class _LoginState extends State<Login> {
                                   socialSignIn(context, 'apple', (error) {
                                     // ignore: deprecated_member_use
                                     // ignore: deprecated_member_use
-                                    _scaffoldKey.currentState.hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                     // ignore: deprecated_member_use
-                                    _scaffoldKey.currentState.showSnackBar(
+                                    ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
@@ -149,7 +149,7 @@ class _LoginState extends State<Login> {
                                           label: "Dismiss",
                                           onPressed: () {
                                             // ignore: deprecated_member_use
-                                            _scaffoldKey.currentState.hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           },
                                         ),
                                       ),
@@ -190,8 +190,8 @@ class _LoginState extends State<Login> {
                       width: 300,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.white,
-                          onPrimary: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor: Colors.white,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -310,8 +310,8 @@ class _LoginState extends State<Login> {
                                                 width: double.infinity,
                                                 child: ElevatedButton(
                                                   style: ElevatedButton.styleFrom(
-                                                    primary: Theme.of(context).primaryColor,
-                                                    onPrimary: Colors.white,
+                                                    backgroundColor: Theme.of(context).primaryColor,
+                                                    foregroundColor: Colors.white,
                                                   ),
                                                   child: Text("Sign in"),
                                                   onPressed: () async {
@@ -326,9 +326,9 @@ class _LoginState extends State<Login> {
                                                           ), (error) async {
                                                         // ignore: deprecated_member_use
                                                         // ignore: deprecated_member_use
-                                                        _scaffoldKey.currentState.hideCurrentSnackBar();
+                                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                         // ignore: deprecated_member_use
-                                                        _scaffoldKey.currentState.showSnackBar(
+                                                        ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                             backgroundColor: Theme.of(context).cardTheme.color,
                                                             content: Text(
@@ -342,7 +342,7 @@ class _LoginState extends State<Login> {
                                                               label: "Dismiss",
                                                               onPressed: () {
                                                                 // ignore: deprecated_member_use
-                                                                _scaffoldKey.currentState.hideCurrentSnackBar();
+                                                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                               },
                                                             ),
                                                           ),
@@ -444,7 +444,7 @@ class _LoginState extends State<Login> {
                                                                                     label: "Dismiss",
                                                                                     onPressed: () {
                                                                                       // ignore: deprecated_member_use
-                                                                                      _scaffoldKey.currentState.hideCurrentSnackBar();
+                                                                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                                                     },
                                                                                   ),
                                                                                 ),
@@ -625,8 +625,8 @@ class _LoginState extends State<Login> {
                                                     width: double.infinity,
                                                     child: ElevatedButton(
                                                       style: ElevatedButton.styleFrom(
-                                                        primary: Theme.of(context).primaryColor,
-                                                        onPrimary: Colors.white,
+                                                        backgroundColor: Theme.of(context).primaryColor,
+                                                        foregroundColor: Colors.white,
                                                       ),
                                                       child: Text("Sign up"),
                                                       onPressed: () async {
@@ -640,9 +640,9 @@ class _LoginState extends State<Login> {
                                                                 _signUpPass.text,
                                                               ), (error) async {
                                                             // ignore: deprecated_member_use
-                                                            _scaffoldKey.currentState.hideCurrentSnackBar();
+                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                             // ignore: deprecated_member_use
-                                                            _scaffoldKey.currentState.showSnackBar(
+                                                            ScaffoldMessenger.of(context).showSnackBar(
                                                               SnackBar(
                                                                 backgroundColor: Theme.of(context).cardTheme.color,
                                                                 content: Text(
@@ -656,7 +656,7 @@ class _LoginState extends State<Login> {
                                                                   label: "Dismiss",
                                                                   onPressed: () {
                                                                     // ignore: deprecated_member_use
-                                                                    _scaffoldKey.currentState.hideCurrentSnackBar();
+                                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                                   },
                                                                 ),
                                                               ),
