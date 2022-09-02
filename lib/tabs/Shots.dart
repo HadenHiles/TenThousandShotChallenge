@@ -845,7 +845,7 @@ class _ShotsState extends State<Shots> {
                                           width: MediaQuery.of(context).size.width - 30,
                                           child: TextButton(
                                             style: TextButton.styleFrom(
-                                              primary: Colors.white,
+                                              foregroundColor: Colors.white,
                                               padding: EdgeInsets.all(10),
                                               backgroundColor: Theme.of(context).cardTheme.color,
                                             ),
@@ -922,7 +922,7 @@ class _ShotsState extends State<Shots> {
                                     width: MediaQuery.of(context).size.width - 30,
                                     child: TextButton(
                                       style: TextButton.styleFrom(
-                                        primary: Colors.white,
+                                        foregroundColor: Colors.white,
                                         padding: EdgeInsets.all(10),
                                         backgroundColor: Theme.of(context).primaryColor,
                                       ),
