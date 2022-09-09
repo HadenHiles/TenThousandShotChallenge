@@ -1012,7 +1012,7 @@ SPEC CHECKSUMS:
   FirebaseInstallations: 41f811b530c41dd90973d0174381cdb3fcb5e839
   FirebaseMessaging: 4e220eddd356181469ba2ec5f7d5fafbc2312841
   FirebaseRemoteConfig: 6d9982bc64548a6e3c1b497b9fa53938ad135f2d
-  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_barcode_scanner: 7a1144744c28dc0c57a8de7218ffe5ec59a9e4bf
   flutter_inappwebview: bfd58618f49dc62f2676de690fc6dcda1d6c3721
   flutter_local_notifications: 0c0b1ae97e741e1521e4c1629a459d04b9aec743
