@@ -14,7 +14,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Friends extends StatefulWidget {
-  Friends({Key key}) : super(key: key);
+  Friends({Key? key}) : super(key: key);
 
   @override
   _FriendsState createState() => _FriendsState();
@@ -45,13 +45,13 @@ class _FriendsState extends State<Friends> {
       _inviteDates = [];
     });
 
-    await FirebaseFirestore.instance.collection('invites').doc(user.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
+    await FirebaseFirestore.instance.collection('invites').doc(user!.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
         await Future.forEach(snapshot.docs, (doc) {
-          Invite invite = Invite.fromSnapshot(doc);
-          String fromUid = invite.fromUid;
+          Invite invite = Invite.fromSnapshot(doc as DocumentSnapshot);
+          String? fromUid = invite.fromUid;
 
           FirebaseFirestore.instance.collection('users').doc(fromUid).get().then((uSnap) {
             if (mounted) {
@@ -84,7 +84,7 @@ class _FriendsState extends State<Friends> {
       _friends = [];
     });
 
-    await FirebaseFirestore.instance.collection('teammates').doc(user.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
+    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
       if (snapshot.docs.length > 0) {
         await new Future.delayed(new Duration(milliseconds: 500));
 
@@ -202,7 +202,7 @@ class _FriendsState extends State<Friends> {
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+                                              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
                                                 return AddFriend();
                                               }));
                                             },
@@ -327,8 +327,8 @@ class _FriendsState extends State<Friends> {
       onTap: () {
         Feedback.forTap(context);
 
-        navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
-          return Friend(uid: friend.reference.id);
+        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
+          return Friend(uid: friend.reference!.id);
         }));
       },
       child: Container(
@@ -367,12 +367,12 @@ class _FriendsState extends State<Friends> {
                         ? Container(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
-                              friend.displayName,
+                              friend.displayName!,
                               maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context).textTheme.bodyLarge!.color,
                               ),
                             ),
                           )
@@ -386,7 +386,7 @@ class _FriendsState extends State<Friends> {
                     Container(
                       width: 135,
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
@@ -398,8 +398,8 @@ class _FriendsState extends State<Friends> {
                               );
                             } else {
                               int total = 0;
-                              snapshot.data.docs.forEach((doc) {
-                                total += Iteration.fromSnapshot(doc).total;
+                              snapshot.data!.docs.forEach((doc) {
+                                total += Iteration.fromSnapshot(doc).total!;
                               });
 
                               return AutoSizeText(
@@ -417,7 +417,7 @@ class _FriendsState extends State<Friends> {
                     ),
                     Container(
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
@@ -429,8 +429,8 @@ class _FriendsState extends State<Friends> {
                               );
                             } else {
                               Duration totalDuration = Duration();
-                              snapshot.data.docs.forEach((doc) {
-                                totalDuration += Iteration.fromSnapshot(doc).totalDuration;
+                              snapshot.data!.docs.forEach((doc) {
+                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                               });
 
                               return totalDuration > Duration()
@@ -461,21 +461,8 @@ class _FriendsState extends State<Friends> {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
-        await deleteInvite(friend.reference.id, user.uid).then((deleted) {
-          if (deleted == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).cardTheme.color,
-                content: new Text(
-                  "There was an error deleting the invite :(",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-                duration: Duration(milliseconds: 1500),
-              ),
-            );
-          } else if (!deleted) {
+        await deleteInvite(friend.reference!.id, user!.uid).then((deleted) {
+          if (!deleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: Theme.of(context).cardTheme.color,
@@ -610,8 +597,8 @@ class _FriendsState extends State<Friends> {
                     child: GestureDetector(
                       onTap: () {
                         Feedback.forTap(context);
-                        navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
-                          return Friend(uid: friend.reference.id);
+                        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
+                          return Friend(uid: friend.reference!.id);
                         }));
                       },
                       child: UserAvatar(
@@ -629,12 +616,12 @@ class _FriendsState extends State<Friends> {
                         ? Container(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
-                              friend.displayName,
+                              friend.displayName!,
                               maxLines: 1,
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context).textTheme.bodyLarge!.color,
                               ),
                             ),
                           )
@@ -650,7 +637,7 @@ class _FriendsState extends State<Friends> {
                 Container(
                   width: 40,
                   child: AutoSizeText(
-                    printDuration(DateTime.now().difference(invite.date), false),
+                    printDuration(DateTime.now().difference(invite.date!), false),
                     maxLines: 1,
                     textAlign: TextAlign.right,
                   ),
@@ -664,8 +651,8 @@ class _FriendsState extends State<Friends> {
                   margin: EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
-                      acceptInvite(Invite(friend.reference.id, DateTime.now())).then((accepted) {
-                        if (accepted == null || !accepted) {
+                      acceptInvite(Invite(friend.reference!.id, DateTime.now())).then((accepted) {
+                        if (!accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Theme.of(context).cardTheme.color,

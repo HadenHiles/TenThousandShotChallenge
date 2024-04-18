@@ -12,7 +12,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 
 class Login extends StatefulWidget {
-  Login({Key key}) : super(key: key);
+  Login({Key? key}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -30,7 +30,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   // Auth variables
   final FirebaseAuth auth = FirebaseAuth.instance;
-  final User user = FirebaseAuth.instance.currentUser;
+  final User? user = FirebaseAuth.instance.currentUser;
 
   // static variables
   final _signInFormKey = GlobalKey<FormState>();
@@ -268,8 +268,8 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 keyboardType: TextInputType.emailAddress,
-                                                validator: (String value) {
-                                                  if (value.isEmpty) {
+                                                validator: (String? value) {
+                                                  if (value!.isEmpty) {
                                                     return 'Please enter your email';
                                                   } else if (!validEmail(value)) {
                                                     return 'Invalid email address';
@@ -295,8 +295,8 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 keyboardType: TextInputType.visiblePassword,
-                                                validator: (String value) {
-                                                  if (value.isEmpty) {
+                                                validator: (String? value) {
+                                                  if (value!.isEmpty) {
                                                     return 'Please enter a password';
                                                   }
 
@@ -315,8 +315,8 @@ class _LoginState extends State<Login> {
                                                   ),
                                                   child: Text("Sign in"),
                                                   onPressed: () async {
-                                                    if (_signInFormKey.currentState.validate()) {
-                                                      _signInFormKey.currentState.save();
+                                                    if (_signInFormKey.currentState!.validate()) {
+                                                      _signInFormKey.currentState!.save();
 
                                                       signIn(
                                                           context,
@@ -407,8 +407,8 @@ class _LoginState extends State<Login> {
                                                                           ),
                                                                         ),
                                                                         keyboardType: TextInputType.emailAddress,
-                                                                        validator: (String value) {
-                                                                          if (value.isEmpty) {
+                                                                        validator: (String? value) {
+                                                                          if (value!.isEmpty) {
                                                                             return 'Please enter your email';
                                                                           } else if (!validEmail(value)) {
                                                                             return 'Invalid email address';
@@ -423,12 +423,12 @@ class _LoginState extends State<Login> {
                                                                       child: ElevatedButton(
                                                                         child: Text("Send reset email"),
                                                                         onPressed: () {
-                                                                          if (_forgotPasswordFormKey.currentState.validate()) {
+                                                                          if (_forgotPasswordFormKey.currentState!.validate()) {
                                                                             FirebaseAuth.instance.sendPasswordResetEmail(email: _forgotPasswordEmail.text.toString()).then((value) {
                                                                               _forgotPasswordEmail.text = "";
 
-                                                                              navigatorKey.currentState.pop();
-                                                                              navigatorKey.currentState.pop();
+                                                                              navigatorKey.currentState?.pop();
+                                                                              navigatorKey.currentState?.pop();
 
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                                 SnackBar(
@@ -553,8 +553,8 @@ class _LoginState extends State<Login> {
                                                       ),
                                                     ),
                                                     keyboardType: TextInputType.emailAddress,
-                                                    validator: (String value) {
-                                                      if (value.isEmpty) {
+                                                    validator: (String? value) {
+                                                      if (value!.isEmpty) {
                                                         return 'Please enter your email';
                                                       }
                                                       if (!validEmail(value)) {
@@ -581,8 +581,8 @@ class _LoginState extends State<Login> {
                                                       ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
-                                                    validator: (String value) {
-                                                      if (value.isEmpty) {
+                                                    validator: (String? value) {
+                                                      if (value!.isEmpty) {
                                                         return 'Please enter a password';
                                                       } else if (!validPassword(value)) {
                                                         return 'Please enter a stronger password';
@@ -608,8 +608,8 @@ class _LoginState extends State<Login> {
                                                       ),
                                                     ),
                                                     keyboardType: TextInputType.visiblePassword,
-                                                    validator: (String value) {
-                                                      if (value.isEmpty) {
+                                                    validator: (String? value) {
+                                                      if (value!.isEmpty) {
                                                         return 'Please confirm your password';
                                                       } else if (value != _signUpPass.text) {
                                                         return 'Passwords do not match';
@@ -630,8 +630,8 @@ class _LoginState extends State<Login> {
                                                       ),
                                                       child: Text("Sign up"),
                                                       onPressed: () async {
-                                                        if (_signUpFormKey.currentState.validate()) {
-                                                          _signUpFormKey.currentState.save();
+                                                        if (_signUpFormKey.currentState!.validate()) {
+                                                          _signUpFormKey.currentState!.save();
 
                                                           signUp(
                                                               context,
@@ -702,10 +702,10 @@ class _LoginState extends State<Login> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid).set({
-          'display_name_lowercase': FirebaseAuth.instance.currentUser.email.toLowerCase(),
-          'display_name': FirebaseAuth.instance.currentUser.email,
-          'email': FirebaseAuth.instance.currentUser.email,
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
+          'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
+          'display_name': FirebaseAuth.instance.currentUser?.email,
+          'email': FirebaseAuth.instance.currentUser?.email,
           'photo_url': null,
           'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
@@ -741,7 +741,7 @@ class _LoginState extends State<Login> {
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
         // Update/add the user's display name to firestore
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) async {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           if (u.exists) {
@@ -750,9 +750,9 @@ class _LoginState extends State<Login> {
             }).then((value) => null);
           } else {
             uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser.email.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser.email,
-              'email': FirebaseAuth.instance.currentUser.email,
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser?.email,
+              'email': FirebaseAuth.instance.currentUser?.email,
               'public': true,
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => null);
@@ -786,7 +786,7 @@ class _LoginState extends State<Login> {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             // Update/add the user's display name to firestore
@@ -796,10 +796,10 @@ class _LoginState extends State<Login> {
           } else {
             // Update/add the user's display name to firestore
             uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser.displayName,
-              'email': FirebaseAuth.instance.currentUser.email,
-              'photo_url': FirebaseAuth.instance.currentUser.photoURL,
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser?.displayName,
+              'email': FirebaseAuth.instance.currentUser?.email,
+              'photo_url': FirebaseAuth.instance.currentUser?.photoURL,
               'public': true,
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});
@@ -825,7 +825,7 @@ class _LoginState extends State<Login> {
     } else if (provider == 'apple') {
       signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             // Update/add the user's display name to firestore
@@ -835,10 +835,10 @@ class _LoginState extends State<Login> {
           } else {
             // Update/add the user's display name to firestore
             uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser.displayName.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser.displayName,
-              'email': FirebaseAuth.instance.currentUser.email,
-              'photo_url': FirebaseAuth.instance.currentUser.photoURL,
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
+              'display_name': FirebaseAuth.instance.currentUser?.displayName,
+              'email': FirebaseAuth.instance.currentUser?.email,
+              'photo_url': FirebaseAuth.instance.currentUser?.photoURL,
               'public': true,
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});

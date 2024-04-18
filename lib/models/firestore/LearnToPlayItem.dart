@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LearnToPlayItem {
-  final String title;
-  final String url;
-  final String image;
-  DocumentReference reference;
+  final String? title;
+  final String? url;
+  final String? image;
+  DocumentReference? reference;
 
   LearnToPlayItem(this.title, this.url, this.image);
 
@@ -24,5 +24,5 @@ class LearnToPlayItem {
     };
   }
 
-  LearnToPlayItem.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  LearnToPlayItem.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

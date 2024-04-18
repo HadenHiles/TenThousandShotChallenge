@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TrainingProgram {
-  final String title;
-  final String url;
-  final String image;
-  DocumentReference reference;
+  final String? title;
+  final String? url;
+  final String? image;
+  DocumentReference? reference;
 
   TrainingProgram(this.title, this.url, this.image);
 
@@ -24,5 +24,5 @@ class TrainingProgram {
     };
   }
 
-  TrainingProgram.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  TrainingProgram.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

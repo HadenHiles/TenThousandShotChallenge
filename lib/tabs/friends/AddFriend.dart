@@ -18,7 +18,7 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:wc_flutter_share/wc_flutter_share.dart';
 
 class AddFriend extends StatefulWidget {
-  AddFriend({Key key}) : super(key: key);
+  AddFriend({Key? key}) : super(key: key);
 
   @override
   _AddFriendState createState() => _AddFriendState();
@@ -32,7 +32,7 @@ class _AddFriendState extends State<AddFriend> {
 
   List<DocumentSnapshot> _friends = [];
   bool _isSearching = false;
-  int _selectedFriend;
+  int? _selectedFriend;
 
   Future<bool> scanBarcodeNormal() async {
     String barcodeScanRes;
@@ -89,7 +89,7 @@ class _AddFriendState extends State<AddFriend> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -108,13 +108,13 @@ class _AddFriendState extends State<AddFriend> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).backgroundColor,
+                      color: Theme.of(context).colorScheme.background,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
@@ -156,13 +156,13 @@ class _AddFriendState extends State<AddFriend> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                sendInvite(user.uid, _friends[_selectedFriend].id).then((success) {
-                                  if (success) {
+                                sendInvite(user!.uid, _friends[_selectedFriend!].id).then((success) {
+                                  if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          UserProfile.fromSnapshot(_friends[_selectedFriend]).displayName.toString() + " Invited!",
+                                          UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName.toString() + " Invited!",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -181,7 +181,7 @@ class _AddFriendState extends State<AddFriend> {
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          "Failed to invite " + UserProfile.fromSnapshot(_friends[_selectedFriend]).displayName.toString() + " :(",
+                                          "Failed to invite " + UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName.toString() + " :(",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -257,7 +257,7 @@ class _AddFriendState extends State<AddFriend> {
                                         if (value.isNotEmpty) {
                                           await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                                 uSnaps.docs.forEach((uDoc) {
-                                                  if (uDoc.reference.id != user.uid) {
+                                                  if (uDoc.reference.id != user!.uid) {
                                                     users.add(uDoc);
                                                   }
                                                 });
@@ -265,7 +265,7 @@ class _AddFriendState extends State<AddFriend> {
                                           if (users.length < 1) {
                                             await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
                                                   uSnaps.docs.forEach((uDoc) {
-                                                    if (uDoc.reference.id != user.uid) {
+                                                    if (uDoc.reference.id != user!.uid) {
                                                       users.add(uDoc);
                                                     }
                                                   });
@@ -293,7 +293,7 @@ class _AddFriendState extends State<AddFriend> {
                                     },
                                     controller: searchFieldController,
                                     validator: (value) {
-                                      if (value.isEmpty) {
+                                      if (value!.isEmpty) {
                                         return 'Enter a name or email address';
                                       }
                                       return null;
@@ -338,7 +338,7 @@ class _AddFriendState extends State<AddFriend> {
                                           ),
                                         );
 
-                                        navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+                                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
                                           return Navigation(
                                             title: NavigationTitle(title: "Friends".toUpperCase()),
                                             selectedIndex: 1,
@@ -523,12 +523,12 @@ class _AddFriendState extends State<AddFriend> {
                             ? Container(
                                 width: MediaQuery.of(context).size.width - 235,
                                 child: AutoSizeText(
-                                  friend.displayName,
+                                  friend.displayName!,
                                   maxLines: 1,
                                   style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).textTheme.bodyText1.color,
+                                    color: Theme.of(context).textTheme.bodyLarge!.color,
                                   ),
                                 ),
                               )
@@ -542,7 +542,7 @@ class _AddFriendState extends State<AddFriend> {
                         Container(
                           width: 135,
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return Center(
@@ -554,8 +554,8 @@ class _AddFriendState extends State<AddFriend> {
                                   );
                                 } else {
                                   int total = 0;
-                                  snapshot.data.docs.forEach((doc) {
-                                    total += Iteration.fromSnapshot(doc).total;
+                                  snapshot.data!.docs.forEach((doc) {
+                                    total += Iteration.fromSnapshot(doc).total!;
                                   });
 
                                   return AutoSizeText(
@@ -573,7 +573,7 @@ class _AddFriendState extends State<AddFriend> {
                         ),
                         Container(
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference.id).collection('iterations').snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return Center(
@@ -585,8 +585,8 @@ class _AddFriendState extends State<AddFriend> {
                                   );
                                 } else {
                                   Duration totalDuration = Duration();
-                                  snapshot.data.docs.forEach((doc) {
-                                    totalDuration += Iteration.fromSnapshot(doc).totalDuration;
+                                  snapshot.data!.docs.forEach((doc) {
+                                    totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                   });
 
                                   return totalDuration > Duration()

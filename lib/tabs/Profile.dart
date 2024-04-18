@@ -23,10 +23,10 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Profile extends StatefulWidget {
-  Profile({Key key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  Profile({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
 
-  final PanelController sessionPanelController;
-  final Function updateSessionShotsCB;
+  final PanelController? sessionPanelController;
+  final Function? updateSessionShotsCB;
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -42,7 +42,7 @@ class _ProfileState extends State<Profile> {
   bool _isLoading = true;
   List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem> _attemptDropdownItems = [];
-  String _selectedIterationId;
+  String? _selectedIterationId;
 
   DateTime firstSessionDate = DateTime.now();
   DateTime latestSessionDate = DateTime.now();
@@ -700,7 +700,7 @@ class _ProfileState extends State<Profile> {
                 Container(
                   child: Text(
                     "Recent Sessions".toUpperCase(),
-                    style: Theme.of(context).textTheme.headline5,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
                 Column(

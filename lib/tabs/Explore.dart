@@ -18,7 +18,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Explore extends StatefulWidget {
-  Explore({Key key}) : super(key: key);
+  Explore({Key? key}) : super(key: key);
 
   @override
   _ExploreState createState() => _ExploreState();
@@ -30,7 +30,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   final PageController _explorePageController = PageController(initialPage: 0);
   bool _loadingExploreVideos = true;
   List<YouTubeVideo> _exploreVideos = [];
-  ScrollController _exploreScrollController;
+  ScrollController? _exploreScrollController;
 
   String _coachJeremyPhoto = "";
   bool _loadingCoachJeremyVideos = true;
@@ -50,7 +50,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   bool _oneChallengeCompleted = false;
 
-  TabController _tabController;
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -62,24 +62,24 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     _loadYoutubeChannels();
 
     _exploreScrollController = ScrollController();
-    _exploreScrollController.addListener(this.swapPageListener);
+    _exploreScrollController!.addListener(this.swapPageListener);
 
     _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
-    _tabController.addListener(this.changeTabListener);
+    _tabController!.addListener(this.changeTabListener);
 
     super.initState();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController!.dispose();
 
     super.dispose();
   }
 
   Future<void> changeTabListener() async {
-    if (_tabController.indexIsChanging) {
-      switch (_tabController.index) {
+    if (_tabController!.indexIsChanging) {
+      switch (_tabController!.index) {
         case 0:
           break;
         case 1:
@@ -209,7 +209,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _checkIfChallengeCompletedOnce() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
       if (snap.docs.length > 0) {
         setState(() {
           _oneChallengeCompleted = true;
@@ -219,14 +219,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   void swapPageListener() {
-    if (_exploreScrollController.offset > _exploreScrollController.position.maxScrollExtent + 50) {
+    if (_exploreScrollController!.offset > _exploreScrollController!.position.maxScrollExtent + 50) {
       _explorePageController.nextPage(
         duration: Duration(milliseconds: 500),
         curve: Curves.easeIn,
       );
     }
 
-    if (_exploreScrollController.offset < _exploreScrollController.position.minScrollExtent - 50) {
+    if (_exploreScrollController!.offset < _exploreScrollController!.position.minScrollExtent - 50) {
       _explorePageController.previousPage(
         duration: Duration(milliseconds: 500),
         curve: Curves.easeIn,
@@ -422,19 +422,19 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
                                                     fontSize: FontSize(23),
-                                                    listStyleType: ListStyleType.DISC,
+                                                    listStyleType: ListStyleType.disc,
                                                   ),
                                                   "ol": Style(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
                                                     fontSize: FontSize(23),
-                                                    listStyleType: ListStyleType.DECIMAL,
-                                                    listStylePosition: ListStylePosition.INSIDE,
+                                                    listStyleType: ListStyleType.decimal,
+                                                    listStylePosition: ListStylePosition.inside,
                                                     lineHeight: LineHeight.em(1.1),
                                                   ),
                                                   "ul li, ol li": Style(
-                                                    padding: EdgeInsets.symmetric(vertical: 5),
-                                                    margin: EdgeInsets.only(bottom: 2),
+                                                    padding: HtmlPaddings.symmetric(vertical: 5),
+                                                    margin: Margins.only(bottom: 2),
                                                   ),
                                                   "p": Style(
                                                     color: Theme.of(context).colorScheme.onPrimary,
@@ -442,19 +442,20 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   ),
                                                 },
                                               ),
-                                              _exploreVideos[i].buttonUrl.isNotEmpty
+                                              _exploreVideos[i].buttonUrl!.isNotEmpty
                                                   ? Container(
                                                       margin: EdgeInsets.only(bottom: 25),
                                                       child: TextButton(
                                                         onPressed: () async {
-                                                          await canLaunchUrlString(_exploreVideos[i].buttonUrl).then((can) {
-                                                            launchUrlString(_exploreVideos[i].buttonUrl).catchError((err) {
+                                                          await canLaunchUrlString(_exploreVideos[i].buttonUrl!).then((can) {
+                                                            launchUrlString(_exploreVideos[i].buttonUrl!).catchError((err) {
                                                               print(err);
+                                                              return false;
                                                             });
                                                           });
                                                         },
                                                         child: Text(
-                                                          _exploreVideos[i].buttonText.toUpperCase() ?? "See more".toUpperCase(),
+                                                          _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
                                                           style: TextStyle(
                                                             color: Colors.white,
                                                             fontFamily: "NovecentoSans",
@@ -495,7 +496,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               Container(
                                 child: Text(
                                   "Coming Soon!".toUpperCase(),
-                                  style: Theme.of(context).textTheme.headline5,
+                                  style: Theme.of(context).textTheme.headlineSmall,
                                 ),
                               ),
                               SizedBox(height: 15),
@@ -520,7 +521,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   height: 40,
                                   child: Text(
                                     "Training Programs:".toUpperCase(),
-                                    style: Theme.of(context).textTheme.headline5,
+                                    style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
@@ -537,10 +538,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
                                         child: GestureDetector(
                                           onTap: () async {
-                                            String link = _programs[i].url;
-                                            await canLaunchUrlString(link).then((can) {
+                                            String? link = _programs[i].url;
+                                            await canLaunchUrlString(link!).then((can) {
                                               launchUrlString(link).catchError((err) {
                                                 print(err);
+                                                return false;
                                               });
                                             });
                                           },
@@ -558,18 +560,16 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   decoration: BoxDecoration(
                                                     image: DecorationImage(
                                                       fit: BoxFit.cover,
-                                                      image: _programs[i]?.image == null
-                                                          ? AssetImage("assets/images/avatar.png")
-                                                          : NetworkImage(
-                                                              _programs[i].image,
-                                                            ),
+                                                      image: NetworkImage(
+                                                        _programs[i].image!,
+                                                      ) as ImageProvider,
                                                     ),
                                                   ),
                                                 ),
                                                 Container(
                                                   padding: EdgeInsets.all(4),
                                                   child: AutoSizeText(
-                                                    _programs[i].title.toUpperCase(),
+                                                    _programs[i].title!.toUpperCase(),
                                                     maxLines: 2,
                                                     maxFontSize: 25,
                                                     textAlign: TextAlign.center,
@@ -617,7 +617,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   height: 40,
                                   child: Text(
                                     "Learn the game:".toUpperCase(),
-                                    style: Theme.of(context).textTheme.headline5,
+                                    style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
@@ -634,10 +634,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
                                         child: GestureDetector(
                                           onTap: () async {
-                                            String link = _learnToPlayItems[i].url;
+                                            String link = _learnToPlayItems[i].url!;
                                             await canLaunchUrlString(link).then((can) {
                                               launchUrlString(link).catchError((err) {
                                                 print(err);
+                                                return false;
                                               });
                                             });
                                           },
@@ -655,18 +656,16 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   decoration: BoxDecoration(
                                                     image: DecorationImage(
                                                       fit: BoxFit.cover,
-                                                      image: _learnToPlayItems[i]?.image == null
-                                                          ? AssetImage("assets/images/avatar.png")
-                                                          : NetworkImage(
-                                                              _learnToPlayItems[i].image,
-                                                            ),
+                                                      image: NetworkImage(
+                                                        _learnToPlayItems[i].image!,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
                                                 Container(
                                                   padding: EdgeInsets.all(4),
                                                   child: AutoSizeText(
-                                                    _learnToPlayItems[i].title.toUpperCase(),
+                                                    _learnToPlayItems[i].title!.toUpperCase(),
                                                     maxLines: 2,
                                                     maxFontSize: 25,
                                                     textAlign: TextAlign.center,
@@ -702,6 +701,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               await canLaunchUrl(merchLink).then((can) {
                                 launchUrl(merchLink).catchError((err) {
                                   print(err);
+                                  return false;
                                 });
                               });
                             },
@@ -740,6 +740,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrl(merchLink).then((can) {
                                       launchUrl(merchLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },
@@ -778,9 +779,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               itemBuilder: (BuildContext context, int i) {
                                 return GestureDetector(
                                   onTap: () async {
-                                    String link = _merch[i].url;
+                                    String link = _merch[i].url!;
 
-                                    if (_oneChallengeCompleted && _merch[i].title.replaceAll(" ", "").toLowerCase() == "snipersnapback") {
+                                    if (_oneChallengeCompleted && _merch[i].title!.replaceAll(" ", "").toLowerCase() == "snipersnapback") {
                                       showDialog(
                                         context: context,
                                         builder: (context) {
@@ -843,6 +844,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               await canLaunchUrlString(link).then((can) {
                                                                 launchUrlString(link).catchError((err) {
                                                                   print(err);
+                                                                  return false;
                                                                 });
                                                               });
                                                             },
@@ -914,6 +916,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               await canLaunchUrlString(link).then((can) {
                                                                 launchUrlString(link).catchError((err) {
                                                                   print(err);
+                                                                  return false;
                                                                 });
                                                               });
                                                             },
@@ -956,6 +959,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       await canLaunchUrlString(link).then((can) {
                                         launchUrlString(link).catchError((err) {
                                           print(err);
+                                          return false;
                                         });
                                       });
                                     }
@@ -976,11 +980,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                             decoration: BoxDecoration(
                                               image: DecorationImage(
                                                 fit: BoxFit.cover,
-                                                image: _merch[i].image == null
-                                                    ? AssetImage("assets/images/avatar.png")
-                                                    : NetworkImage(
-                                                        _merch[i].image,
-                                                      ),
+                                                image: NetworkImage(
+                                                  _merch[i].image!,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -992,7 +994,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                 Container(
                                                   padding: EdgeInsets.all(5),
                                                   child: AutoSizeText(
-                                                    _merch[i].title.toUpperCase(),
+                                                    _merch[i].title!.toUpperCase(),
                                                     maxLines: 2,
                                                     maxFontSize: 22,
                                                     textAlign: TextAlign.center,
@@ -1032,6 +1034,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         await canLaunchUrlString(channelLink).then((can) {
                                           launchUrlString(channelLink).catchError((err) {
                                             print(err);
+                                            return false;
                                           });
                                         });
                                       },
@@ -1046,11 +1049,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               clipBehavior: Clip.antiAlias,
                                               child: CircleAvatar(
                                                 radius: 40,
-                                                backgroundImage: _coachJeremyPhoto == null
-                                                    ? AssetImage("assets/images/avatar.png")
-                                                    : NetworkImage(
-                                                        _coachJeremyPhoto,
-                                                      ),
+                                                backgroundImage: NetworkImage(
+                                                  _coachJeremyPhoto,
+                                                ),
                                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                               ),
                                             ),
@@ -1074,6 +1075,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               await canLaunchUrlString(channelLink).then((can) {
                                                 launchUrlString(channelLink).catchError((err) {
                                                   print(err);
+                                                  return false;
                                                 });
                                               });
                                             },
@@ -1110,6 +1112,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               await canLaunchUrlString(videoLink).then((can) {
                                                 launchUrlString(videoLink).catchError((err) {
                                                   print(err);
+                                                  return false;
                                                 });
                                               });
                                             },
@@ -1168,6 +1171,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrlString(channelLink).then((can) {
                                       launchUrlString(channelLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },
@@ -1182,11 +1186,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           clipBehavior: Clip.antiAlias,
                                           child: CircleAvatar(
                                             radius: 40,
-                                            backgroundImage: _hthPhoto == null
-                                                ? AssetImage("assets/images/avatar.png")
-                                                : NetworkImage(
-                                                    _hthPhoto,
-                                                  ),
+                                            backgroundImage: NetworkImage(
+                                              _hthPhoto,
+                                            ),
                                             backgroundColor: Theme.of(context).colorScheme.primary,
                                           ),
                                         ),
@@ -1211,6 +1213,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           await canLaunchUrlString(channelLink).then((can) {
                                             launchUrlString(channelLink).catchError((err) {
                                               print(err);
+                                              return false;
                                             });
                                           });
                                         },
@@ -1245,6 +1248,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               await canLaunchUrlString(videoLink).then((can) {
                                                 launchUrlString(videoLink).catchError((err) {
                                                   print(err);
+                                                  return false;
                                                 });
                                               });
                                             },
@@ -1309,6 +1313,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrlString(videoLink).then((can) {
                                       launchUrlString(videoLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },
@@ -1337,6 +1342,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrlString(videoLink).then((can) {
                                       launchUrlString(videoLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },
@@ -1365,6 +1371,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrlString(videoLink).then((can) {
                                       launchUrlString(videoLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },
@@ -1393,6 +1400,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     await canLaunchUrlString(videoLink).then((can) {
                                       launchUrlString(videoLink).catchError((err) {
                                         print(err);
+                                        return false;
                                       });
                                     });
                                   },

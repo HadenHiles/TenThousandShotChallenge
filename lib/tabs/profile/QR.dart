@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 
-void showQRCode(User user) {
+void showQRCode(User? user) {
   showDialog(
-    context: navigatorKey.currentContext,
+    context: navigatorKey.currentContext!,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text(
@@ -23,8 +23,8 @@ void showQRCode(User user) {
             Container(
               width: 200,
               height: 200,
-              child: QrImage(
-                data: user.uid,
+              child: QrImageView(
+                data: user!.uid,
                 backgroundColor: Colors.white70,
               ),
             ),

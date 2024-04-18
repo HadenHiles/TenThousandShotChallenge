@@ -28,10 +28,10 @@ final PanelController sessionPanelController = PanelController();
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  Navigation({Key key, this.title, this.selectedIndex}) : super(key: key);
+  Navigation({Key? key, this.title, this.selectedIndex}) : super(key: key);
 
-  final Widget title;
-  final int selectedIndex;
+  final Widget? title;
+  final int? selectedIndex;
 
   @override
   _NavigationState createState() => _NavigationState();
@@ -40,9 +40,9 @@ class Navigation extends StatefulWidget {
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
   // State variables
-  Widget _title;
-  Widget _leading;
-  List<Widget> _actions;
+  Widget? _title;
+  Widget? _leading;
+  List<Widget>? _actions;
   int _selectedIndex = 0;
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
@@ -76,7 +76,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState?.push(MaterialPageRoute(builder: (BuildContext context) {
                 return AddFriend();
               }));
             },
@@ -118,7 +118,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState.push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
                 return ProfileSettings();
               }));
             },
@@ -161,8 +161,8 @@ class _NavigationState extends State<Navigation> {
       _title = widget.title != null ? widget.title : logo;
       _leading = Container();
       _actions = [];
-      _selectedIndex = widget.selectedIndex;
-      _onItemTapped(widget.selectedIndex);
+      _selectedIndex = widget.selectedIndex!;
+      _onItemTapped(widget.selectedIndex!);
     });
 
     super.initState();
@@ -173,12 +173,12 @@ class _NavigationState extends State<Navigation> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
-    DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-    String fcmToken = prefs.getString('fcm_token');
+    DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+    String fcmToken = prefs.getString('fcm_token')!;
 
     // Potentially update user's FCM Token if stale
-    if (preferences.fcmToken != fcmToken) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'fcm_token': fcmToken}).then((_) => null);
+    if (preferences!.fcmToken != fcmToken) {
+      await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'fcm_token': fcmToken}).then((_) => null);
     }
 
     // Update the preferences reference with the latest settings

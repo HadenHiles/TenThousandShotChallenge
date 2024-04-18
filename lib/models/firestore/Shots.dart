@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Shots {
-  String id;
-  final DateTime date;
-  final String type;
-  final int count;
-  DocumentReference reference;
+  String? id;
+  final DateTime? date;
+  final String? type;
+  final int? count;
+  DocumentReference? reference;
 
   Shots(this.date, this.type, this.count);
 
@@ -27,5 +27,5 @@ class Shots {
     };
   }
 
-  Shots.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  Shots.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

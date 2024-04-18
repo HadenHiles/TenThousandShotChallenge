@@ -1,7 +1,7 @@
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 
 class ShootingSessionItem extends ShootingSession {
-  bool deletable;
+  bool? deletable;
 
   ShootingSessionItem({
     total,

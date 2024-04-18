@@ -8,19 +8,19 @@ final FirebaseAuth auth = FirebaseAuth.instance;
 
 Future<UserCredential> signInWithGoogle() async {
   // Trigger the authentication flow
-  final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+  final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
   // Obtain the auth details from the request
-  final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+  final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
 
   // Create a new credential
-  final GoogleAuthCredential credential = GoogleAuthProvider.credential(
-    accessToken: googleAuth.accessToken,
-    idToken: googleAuth.idToken,
+  final OAuthCredential? credential = GoogleAuthProvider.credential(
+    accessToken: googleAuth?.accessToken,
+    idToken: googleAuth?.idToken,
   );
 
   // Once signed in, return the UserCredential
-  return await auth.signInWithCredential(credential);
+  return await auth.signInWithCredential(credential as AuthCredential);
 }
 
 Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
@@ -32,14 +32,14 @@ Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
       final appleIdCredential = result.credential;
       final oAuthProvider = OAuthProvider('apple.com');
       final credential = oAuthProvider.credential(
-        idToken: String.fromCharCodes(appleIdCredential.identityToken),
-        accessToken: String.fromCharCodes(appleIdCredential.authorizationCode),
+        idToken: String.fromCharCodes(appleIdCredential?.identityToken as Iterable<int>),
+        accessToken: String.fromCharCodes(appleIdCredential?.authorizationCode as Iterable<int>),
       );
       return await auth.signInWithCredential(credential).then((authResult) async {
         if (scopes.contains(Scope.fullName)) {
-          final displayName = '${appleIdCredential.fullName.givenName} ${appleIdCredential.fullName.familyName}';
-          await authResult.user.updateDisplayName(displayName);
-          authResult.user.reload();
+          final displayName = '${appleIdCredential?.fullName?.givenName} ${appleIdCredential?.fullName?.familyName}';
+          await authResult.user?.updateDisplayName(displayName);
+          authResult.user?.reload();
         }
 
         return authResult;
@@ -65,8 +65,8 @@ Future<void> signOut() async {
 }
 
 bool emailVerified() {
-  auth.currentUser.reload();
-  return auth.currentUser.emailVerified;
+  auth.currentUser?.reload();
+  return auth.currentUser!.emailVerified;
 }
 
 bool validEmail(String email) {

@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Merch {
-  final String title;
-  final String url;
-  final String image;
-  DocumentReference reference;
+  final String? title;
+  final String? url;
+  final String? image;
+  DocumentReference? reference;
 
   Merch(this.title, this.url, this.image);
 
@@ -24,5 +24,5 @@ class Merch {
     };
   }
 
-  Merch.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  Merch.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

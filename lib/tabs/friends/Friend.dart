@@ -19,9 +19,9 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Friend extends StatefulWidget {
-  Friend({Key key, this.uid}) : super(key: key);
+  Friend({Key? key, this.uid}) : super(key: key);
 
-  final String uid;
+  final String? uid;
 
   @override
   _FriendState createState() => _FriendState();
@@ -31,14 +31,14 @@ class _FriendState extends State<Friend> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
-  UserProfile _userFriend;
+  UserProfile? _userFriend;
   bool _loadingFriend = false;
-  ScrollController sessionsController;
-  DocumentSnapshot _lastVisible;
-  bool _isLoading;
+  ScrollController? sessionsController;
+  DocumentSnapshot? _lastVisible;
+  bool? _isLoading;
   List<DocumentSnapshot> _sessions = [];
-  List<DropdownMenuItem> _attemptDropdownItems = [];
-  String _selectedIterationId;
+  List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
+  String? _selectedIterationId;
 
   @override
   void initState() {
@@ -100,7 +100,7 @@ class _FriendState extends State<Friend> {
             sessions.add(s);
           });
 
-          if (sessions != null && sessions.length > 0) {
+          if (sessions.length > 0) {
             _lastVisible = sessions[sessions.length - 1];
 
             if (mounted) {
@@ -119,12 +119,12 @@ class _FriendState extends State<Friend> {
     } else {
       await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(5).get().then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible!['date']]).limit(5).get().then((sSnap) {
               sSnap.docs.forEach((s) {
                 sessions.add(s);
               });
 
-              if (sessions != null && sessions.length > 0) {
+              if (sessions.length > 0) {
                 _lastVisible = sessions[sessions.length - 1];
                 if (mounted) {
                   setState(() {
@@ -185,7 +185,7 @@ class _FriendState extends State<Friend> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -204,7 +204,7 @@ class _FriendState extends State<Friend> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
@@ -224,7 +224,7 @@ class _FriendState extends State<Friend> {
                             ConfirmDialog(
                               "Remove Friend?",
                               Text(
-                                "Are you sure you want to unfriend ${_userFriend.displayName}?",
+                                "Are you sure you want to unfriend ${_userFriend!.displayName}?",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onBackground,
                                 ),
@@ -235,7 +235,7 @@ class _FriendState extends State<Friend> {
                               },
                               "Continue",
                               () {
-                                navigatorKey.currentState.pushReplacement(
+                                navigatorKey.currentState!.pushReplacement(
                                   MaterialPageRoute(builder: (context) {
                                     return Navigation(
                                       title: NavigationTitle(title: "Friends".toUpperCase()),
@@ -244,14 +244,14 @@ class _FriendState extends State<Friend> {
                                   }),
                                 );
 
-                                deleteFriend(_userFriend.reference.id).then((success) {
+                                deleteFriend(_userFriend!.reference!.id).then((success) {
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         duration: Duration(milliseconds: 2500),
                                         content: Text(
-                                          '${_userFriend.displayName} was removed.',
+                                          '${_userFriend!.displayName} was removed.',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -284,7 +284,7 @@ class _FriendState extends State<Friend> {
                   ],
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).backgroundColor,
+                      color: Theme.of(context).colorScheme.background,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
@@ -363,15 +363,15 @@ class _FriendState extends State<Friend> {
                                               ],
                                             );
 
-                                          UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
+                                          UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                                           return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : _userFriend.displayName,
+                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userFriend!.displayName!,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 22,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).textTheme.bodyText1.color,
+                                              color: Theme.of(context).textTheme.bodyLarge!.color,
                                             ),
                                           );
                                         },
@@ -391,8 +391,8 @@ class _FriendState extends State<Friend> {
                                               );
                                             } else {
                                               int total = 0;
-                                              snapshot.data.docs.forEach((doc) {
-                                                total += Iteration.fromSnapshot(doc).total;
+                                              snapshot.data!.docs.forEach((doc) {
+                                                total += Iteration.fromSnapshot(doc).total!;
                                               });
 
                                               return Text(
@@ -420,8 +420,8 @@ class _FriendState extends State<Friend> {
                                               );
                                             } else {
                                               Duration totalDuration = Duration();
-                                              snapshot.data.docs.forEach((doc) {
-                                                totalDuration += Iteration.fromSnapshot(doc).totalDuration;
+                                              snapshot.data!.docs.forEach((doc) {
+                                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                               });
 
                                               return totalDuration > Duration()
@@ -450,7 +450,7 @@ class _FriendState extends State<Friend> {
                                 children: [
                                   Container(
                                     child: AutoSizeText(
-                                      _userFriend.email,
+                                      _userFriend!.email!,
                                       maxLines: 1,
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
@@ -480,7 +480,7 @@ class _FriendState extends State<Friend> {
                                         builder: (context, snapshot) {
                                           if (snapshot.hasData) {
                                             return Text(
-                                              (snapshot.data.docs.length).toString(),
+                                              (snapshot.data!.docs.length).toString(),
                                               style: TextStyle(
                                                 color: Theme.of(context).colorScheme.onPrimary,
                                                 fontSize: 34,
@@ -506,7 +506,7 @@ class _FriendState extends State<Friend> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            DropdownButton(
+                            DropdownButton<dynamic>(
                               onChanged: (value) {
                                 setState(() {
                                   _isLoading = true;
@@ -694,7 +694,7 @@ class _FriendState extends State<Friend> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      _isLoading
+                                      _isLoading!
                                           ? SizedBox(
                                               height: 25,
                                               width: 25,
@@ -702,7 +702,7 @@ class _FriendState extends State<Friend> {
                                             )
                                           : _sessions.length < 1
                                               ? Text(
-                                                  "${_userFriend.displayName.substring(0, _userFriend.displayName.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
+                                                  "${_userFriend!.displayName!.substring(0, _userFriend!.displayName!.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
                                                   style: TextStyle(
                                                     fontFamily: 'NovecentoSans',
                                                     color: Theme.of(context).colorScheme.onPrimary,
@@ -733,13 +733,13 @@ class _FriendState extends State<Friend> {
 
   @override
   void dispose() {
-    sessionsController.removeListener(_scrollListener);
+    sessionsController!.removeListener(_scrollListener);
     super.dispose();
   }
 
   void _scrollListener() {
-    if (!_isLoading) {
-      if (sessionsController.position.pixels == sessionsController.position.maxScrollExtent) {
+    if (!_isLoading!) {
+      if (sessionsController!.position.pixels == sessionsController!.position.maxScrollExtent) {
         setState(() => _isLoading = true);
         _loadHistory();
       }
@@ -763,7 +763,7 @@ class _FriendState extends State<Friend> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  printDate(s.date),
+                  printDate(s.date!),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 18,
@@ -771,7 +771,7 @@ class _FriendState extends State<Friend> {
                   ),
                 ),
                 Text(
-                  printDuration(s.duration, true),
+                  printDuration(s.duration!, true),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 18,
@@ -803,12 +803,12 @@ class _FriendState extends State<Friend> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalWrist),
+                      width: calculateSessionShotWidth(s, s.totalWrist!),
                       height: 30,
                       decoration: BoxDecoration(
                         color: wristShotColor,
                       ),
-                      child: s.totalWrist < 1
+                      child: s.totalWrist! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -827,12 +827,12 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSnap),
+                      width: calculateSessionShotWidth(s, s.totalSnap!),
                       height: 30,
                       decoration: BoxDecoration(
                         color: snapShotColor,
                       ),
-                      child: s.totalSnap < 1
+                      child: s.totalSnap! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -851,12 +851,12 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                      width: calculateSessionShotWidth(s, s.totalBackhand!),
                       height: 30,
                       decoration: BoxDecoration(
                         color: backhandShotColor,
                       ),
-                      child: s.totalBackhand < 1
+                      child: s.totalBackhand! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -875,12 +875,12 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSlap),
+                      width: calculateSessionShotWidth(s, s.totalSlap!),
                       height: 30,
                       decoration: BoxDecoration(
                         color: slapShotColor,
                       ),
-                      child: s.totalSlap < 1
+                      child: s.totalSlap! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -911,8 +911,8 @@ class _FriendState extends State<Friend> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalWrist),
-                      child: s.totalWrist < 1
+                      width: calculateSessionShotWidth(s, s.totalWrist!),
+                      child: s.totalWrist! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -934,8 +934,8 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSnap),
-                      child: s.totalSnap < 1
+                      width: calculateSessionShotWidth(s, s.totalSnap!),
+                      child: s.totalSnap! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -957,8 +957,8 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalBackhand),
-                      child: s.totalBackhand < 1
+                      width: calculateSessionShotWidth(s, s.totalBackhand!),
+                      child: s.totalBackhand! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -980,8 +980,8 @@ class _FriendState extends State<Friend> {
                             ),
                     ),
                     Container(
-                      width: calculateSessionShotWidth(s, s.totalSlap),
-                      child: s.totalSlap < 1
+                      width: calculateSessionShotWidth(s, s.totalSlap!),
+                      child: s.totalSlap! < 1
                           ? Container()
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1013,7 +1013,7 @@ class _FriendState extends State<Friend> {
   }
 
   double calculateSessionShotWidth(ShootingSession session, int shotCount) {
-    double percentage = (shotCount / session.total);
+    double percentage = (shotCount / session.total!);
     return (MediaQuery.of(context).size.width - 30) * percentage;
   }
 }

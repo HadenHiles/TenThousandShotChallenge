@@ -3,7 +3,7 @@ description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -18,27 +18,27 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.1.0+17
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.12.0 < 4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^1.10.6
-  cloud_firestore: ^3.4.6
-  firebase_auth: ^3.7.0
-  firebase_analytics: ^9.0.4
-  firebase_messaging: ^13.0.0
-  firebase_remote_config: ^2.0.2
+  firebase_core: ^2.30.0
+  cloud_firestore: ^4.17.0
+  firebase_auth: ^4.19.2
+  firebase_analytics: ^10.10.2
+  firebase_messaging: ^14.8.2
+  firebase_remote_config: ^4.4.2
   package_info: ^2.0.2
   introduction_screen: ^3.0.0
-  connectivity_plus: ^2.0.2
-  data_connection_checker: ^0.3.4
-  http: ^0.13.3
-  flutter_cache_manager: ^3.1.1 
+  connectivity_plus: ^6.0.2
+  data_connection_checker_nulls: ^0.0.2
+  http: ^1.2.1
+  flutter_cache_manager: ^3.1.1
   provider: ^6.0.1
   shared_preferences: ^2.0.5
-  global_configuration: ^2.0.0-nullsafety.1 
-  google_sign_in: ^5.2.1
+  global_configuration: ^2.0.0-nullsafety.1
+  google_sign_in: ^6.2.1
   the_apple_sign_in: ^1.1.1
   flutter_signin_button: ^2.0.0
   password_strength: ^0.2.0
@@ -46,7 +46,7 @@ dependencies:
   url_launcher: ^6.0.6
   # webview_flutter: ^2.8.0
   html: ^0.15.0
-  flutter_html: ^3.0.0-alpha.5 
+  flutter_html: ^3.0.0-alpha.5
   numberpicker: ^2.1.1
   prompt_dialog: ^1.0.0
   sliding_up_panel: ^2.0.0+1
@@ -57,22 +57,21 @@ dependencies:
   flutter_barcode_scanner: ^2.0.0
   wc_flutter_share: ^0.4.0
   chewie: ^1.3.3
-  youtube_player_flutter: ^8.0.0
-  vibration: ^1.7.3 
+  youtube_player_flutter: ^9.0.1
+  vibration: ^1.7.3
   flutter_datetime_picker: ^1.5.1
   fluttertoast: ^8.0.7
-  flutter_local_notifications: ^9.9.0
+  flutter_local_notifications: ^17.0.1
   # font_awesome_flutter: ^8.8.1 # Included in flutter_signin_button but has dependency conflict
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2 
+  cupertino_icons: ^1.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.10.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter_icons:
   android: "launcher_icon"
@@ -84,7 +83,6 @@ flutter_icons:
 
 # The following section is specific to Flutter.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -92,7 +90,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/cfg/ 
+    - assets/cfg/
     - assets/images/
     - assets/images/avatars/
     - assets/images/avatars/teams/

@@ -21,7 +21,7 @@ final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
-Preferences preferences = Preferences(false, 25, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null);
+Preferences? preferences = Preferences(false, 25, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null);
 final sessionService = SessionService();
 final Color wristShotColor = Color(0xff00BCD4);
 final Color snapShotColor = Color(0xff2296F3);
@@ -44,7 +44,7 @@ void main() async {
   preferences = Preferences(
     prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
     prefs.getInt('puck_count') ?? 25,
-    prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+    prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
     prefs.getString('fcm_token'),
   );
 
@@ -69,8 +69,8 @@ void main() async {
 
   // Get the user's FCM token
   firebaseMessaging.getToken().then((token) {
-    if (preferences.fcmToken != token) {
-      prefs.setString('fcm_token', token); // Svae the fcm token to local storage (will save to firestore after user authenticates)
+    if (preferences!.fcmToken != token) {
+      prefs.setString('fcm_token', token!); // Svae the fcm token to local storage (will save to firestore after user authenticates)
     }
 
     print("FCM token: $token"); // Print the Token in Console
@@ -96,7 +96,7 @@ void main() async {
  * Called when a background message is sent from firebase cloud messaging
  */
 Future<void> _messageHandler(RemoteMessage message) async {
-  print('background message ${message.notification.body}');
+  print('background message ${message.notification!.body}');
 }
 
 Future<void> _messageClickHandler(RemoteMessage message) async {
@@ -123,9 +123,9 @@ class Home extends StatelessWidget {
           title: '10,000 Shot Challenge',
           navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
-          theme: preferences.darkMode ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+          theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
-          themeMode: preferences.darkMode ? ThemeMode.dark : ThemeMode.system,
+          themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
           navigatorObservers: [
             FirebaseAnalyticsObserver(analytics: analytics),
           ],
