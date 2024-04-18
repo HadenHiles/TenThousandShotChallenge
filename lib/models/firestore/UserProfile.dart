@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserProfile {
-  String id;
-  final String displayName;
-  final String email;
-  final String photoUrl;
-  final bool public;
-  final String fcmToken;
-  DocumentReference reference;
+  String? id;
+  final String? displayName;
+  final String? email;
+  final String? photoUrl;
+  final bool? public;
+  final String? fcmToken;
+  DocumentReference? reference;
 
   UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.fcmToken);
 
@@ -30,5 +30,5 @@ class UserProfile {
     };
   }
 
-  UserProfile.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  UserProfile.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

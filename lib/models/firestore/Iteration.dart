@@ -1,18 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Iteration {
-  String id;
-  final DateTime startDate;
-  final DateTime targetDate;
-  final DateTime endDate;
-  final Duration totalDuration;
-  final int total;
-  final int totalWrist;
-  final int totalSnap;
-  final int totalSlap;
-  final int totalBackhand;
-  final bool complete;
-  DocumentReference reference;
+  String? id;
+  final DateTime? startDate;
+  final DateTime? targetDate;
+  final DateTime? endDate;
+  final Duration? totalDuration;
+  final int? total;
+  final int? totalWrist;
+  final int? totalSnap;
+  final int? totalSlap;
+  final int? totalBackhand;
+  final bool? complete;
+  DocumentReference? reference;
 
   Iteration(this.startDate, this.targetDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
 
@@ -43,7 +43,7 @@ class Iteration {
               DateTime.now().day + 100,
             ),
       'end_date': endDate,
-      'total_duration': totalDuration.inSeconds,
+      'total_duration': totalDuration!.inSeconds,
       'total': total,
       'total_wrist': totalWrist,
       'total_snap': totalSnap,
@@ -53,5 +53,5 @@ class Iteration {
     };
   }
 
-  Iteration.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  Iteration.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

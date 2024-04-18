@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:data_connection_checker/data_connection_checker.dart';
+import 'package:data_connection_checker_nulls/data_connection_checker_nulls.dart';
 
 enum NetworkStatus { Online, Offline }
 

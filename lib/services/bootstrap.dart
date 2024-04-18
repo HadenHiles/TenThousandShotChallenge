@@ -11,11 +11,11 @@ Future<void> bootstrap() async {
 }
 
 Future<void> bootstrapIterations() async {
-  await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').get().then((iSnap) async {
+  await FirebaseFirestore.instance.collection('iterations').doc(user?.uid).collection('iterations').get().then((iSnap) async {
     if (iSnap.docs.isEmpty) {
       await FirebaseFirestore.instance
           .collection('iterations')
-          .doc(user.uid)
+          .doc(user!.uid)
           .collection('iterations')
           .doc()
           .set(Iteration(
@@ -35,18 +35,18 @@ Future<void> bootstrapIterations() async {
   });
 
   // Ensure current iterations for existing users will have a default target date
-  await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
+  await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
     if (iSnap.docs.isNotEmpty) {
       DocumentReference ref = iSnap.docs[0].reference;
       Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
 
-      DateTime targetDate = i.targetDate != null
+      DateTime? targetDate = i.targetDate != null
           ? i.targetDate
-          : preferences.targetDate != null
-              ? preferences.targetDate
+          : preferences!.targetDate != null
+              ? preferences!.targetDate
               : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
 
-      if (i.targetDate == null || preferences.targetDate != null) {
+      if (i.targetDate == null || preferences!.targetDate != null) {
         Iteration updatedIteration = Iteration(
           i.startDate,
           targetDate,
@@ -62,7 +62,7 @@ Future<void> bootstrapIterations() async {
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
         prefs.remove('target_date');
-        preferences.targetDate = null;
+        preferences!.targetDate = null;
 
         await ref.update(updatedIteration.toMap());
       }

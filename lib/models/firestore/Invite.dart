@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Invite {
-  String id;
-  final String fromUid;
-  final DateTime date;
-  DocumentReference reference;
+  String? id;
+  final String? fromUid;
+  final DateTime? date;
+  DocumentReference? reference;
 
   Invite(this.fromUid, this.date);
 
@@ -23,5 +23,5 @@ class Invite {
     };
   }
 
-  Invite.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  Invite.fromSnapshot(DocumentSnapshot? snapshot) : this.fromMap(snapshot!.data() as Map<String, dynamic>, reference: snapshot.reference);
 }

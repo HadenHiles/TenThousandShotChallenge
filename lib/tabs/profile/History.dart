@@ -22,10 +22,10 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
-  History({Key key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  History({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
 
-  final PanelController sessionPanelController;
-  final Function updateSessionShotsCB;
+  final PanelController? sessionPanelController;
+  final Function? updateSessionShotsCB;
 
   @override
   _HistoryState createState() => _HistoryState();
@@ -34,12 +34,12 @@ class History extends StatefulWidget {
 class _HistoryState extends State<History> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
-  ScrollController sessionsController;
-  DocumentSnapshot _lastVisible;
-  bool _isLoading = true;
+  ScrollController? sessionsController;
+  DocumentSnapshot? _lastVisible;
+  bool? _isLoading = true;
   List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem> _attemptDropdownItems = [];
-  String _selectedIterationId;
+  String? _selectedIterationId;
 
   DateTime firstSessionDate = DateTime.now();
   DateTime latestSessionDate = DateTime.now();

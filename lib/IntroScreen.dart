@@ -19,13 +19,13 @@ class IntroScreen extends StatefulWidget {
 
 class _IntroScreenState extends State<IntroScreen> {
   final introKey = GlobalKey<IntroductionScreenState>();
-  final TextEditingController _puckCountTextFieldController = TextEditingController(text: preferences.puckCount.toString());
-  final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences.targetDate));
+  final TextEditingController _puckCountTextFieldController = TextEditingController(text: preferences?.puckCount.toString());
+  final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences!.targetDate!));
 
-  bool _darkMode = preferences.darkMode;
+  bool? _darkMode = preferences?.darkMode;
 
-  DateTime _targetDate;
-  int _shotsPerDay;
+  DateTime? _targetDate;
+  int? _shotsPerDay;
 
   Future<void> _onIntroEnd(context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -111,7 +111,7 @@ class _IntroScreenState extends State<IntroScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Transform.scale(
-                          scale: _darkMode ? 1 : 1.2,
+                          scale: _darkMode! ? 1 : 1.2,
                           child: TextButton(
                             onPressed: () async {
                               setState(() {
@@ -120,7 +120,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
                               SharedPreferences prefs = await SharedPreferences.getInstance();
                               prefs.setBool('dark_mode', false);
-                              preferences.darkMode = false;
+                              preferences?.darkMode = false;
 
                               Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
                             },
@@ -138,7 +138,7 @@ class _IntroScreenState extends State<IntroScreen> {
                           ),
                         ),
                         Transform.scale(
-                          scale: _darkMode ? 1.2 : 1,
+                          scale: _darkMode! ? 1.2 : 1,
                           child: TextButton(
                             onPressed: () async {
                               setState(() {
@@ -147,7 +147,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
                               SharedPreferences prefs = await SharedPreferences.getInstance();
                               prefs.setBool('dark_mode', true);
-                              preferences.darkMode = true;
+                              preferences?.darkMode = true;
 
                               Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
                             },
@@ -186,7 +186,7 @@ class _IntroScreenState extends State<IntroScreen> {
           image: Icon(
             Icons.brightness_4,
             size: MediaQuery.of(context).size.width * 0.5,
-            color: preferences.darkMode ? Colors.black : Colors.white,
+            color: preferences!.darkMode! ? Colors.black : Colors.white,
           ),
           decoration: pageDecoration,
         ),
@@ -211,7 +211,7 @@ class _IntroScreenState extends State<IntroScreen> {
                       onChanged: (value) async {
                         SharedPreferences prefs = await SharedPreferences.getInstance();
                         prefs.setInt('puck_count', int.parse(value));
-                        preferences.puckCount = int.parse(value);
+                        preferences?.puckCount = int.parse(value);
 
                         Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
                       },
@@ -339,7 +339,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             prefs.setString('target_date', DateFormat('yyyy-MM-dd').format(date));
-                            preferences.targetDate = date;
+                            preferences?.targetDate = date;
 
                             int daysRemaining = date.difference(DateTime.now()).inDays;
 

@@ -4,10 +4,10 @@ class YouTubeVideo {
   final String id;
   final String title;
   final String thumbnail;
-  String buttonUrl;
-  String buttonText;
-  String content;
-  DocumentReference reference;
+  String? buttonUrl;
+  String? buttonText;
+  String? content;
+  DocumentReference? reference;
 
   YouTubeVideo(this.id, this.title, this.thumbnail);
 
@@ -32,5 +32,5 @@ class YouTubeVideo {
     };
   }
 
-  YouTubeVideo.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data(), reference: snapshot.reference);
+  YouTubeVideo.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }
