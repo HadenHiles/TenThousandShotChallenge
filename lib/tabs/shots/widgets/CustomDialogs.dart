@@ -29,7 +29,7 @@ void dialog(BuildContext context, ConfirmDialog dialog) {
         fontSize: 20,
       ),
     ),
-    backgroundColor: Theme.of(context).backgroundColor,
+    backgroundColor: Theme.of(context).colorScheme.background,
     content: dialog.body != null
         ? dialog.body
         : Text(

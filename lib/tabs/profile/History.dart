@@ -114,7 +114,7 @@ class _HistoryState extends State<History> {
             sessions.add(s);
           });
 
-          if (sessions != null && sessions.length > 0) {
+          if (sessions.length > 0) {
             _lastVisible = sessions[sessions.length - 1];
 
             if (mounted) {
@@ -138,7 +138,7 @@ class _HistoryState extends State<History> {
                 sessions.add(s);
               });
 
-              if (sessions != null && sessions.length > 0) {
+              if (sessions.length > 0) {
                 _lastVisible = sessions[sessions.length - 1];
                 if (mounted) {
                   setState(() {
@@ -199,7 +199,7 @@ class _HistoryState extends State<History> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -818,33 +818,20 @@ class _HistoryState extends State<History> {
           );
 
           await deleteSession(s).then((deleted) {
-            if (deleted == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
-                    "There was an error deleting the session",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
+            if (!deleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Theme.of(context).cardTheme.color,
+                content: new Text(
+                  "Sorry this session can't be deleted",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
-                  duration: Duration(milliseconds: 1500),
                 ),
-              );
-            } else if (!deleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
-                    "Sorry this session can't be deleted",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  duration: Duration(milliseconds: 1500),
-                ),
-              );
-            }
+                duration: Duration(milliseconds: 1500),
+              ),
+            );
+          }
 
             _sessions.clear();
             _lastVisible = null;
@@ -1207,33 +1194,20 @@ class _HistoryState extends State<History> {
                                                   );
 
                                                   await deleteSession(s).then((deleted) {
-                                                    if (deleted == null) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
-                                                            "There was an error deleting the session",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
+                                                    if (!deleted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        content: new Text(
+                                                          "Sorry this session can't be deleted",
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
                                                           ),
-                                                          duration: Duration(milliseconds: 1500),
                                                         ),
-                                                      );
-                                                    } else if (!deleted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
-                                                            "Sorry this session can't be deleted",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
-                                                          ),
-                                                          duration: Duration(milliseconds: 1500),
-                                                        ),
-                                                      );
-                                                    }
+                                                        duration: Duration(milliseconds: 1500),
+                                                      ),
+                                                    );
+                                                  }
 
                                                     _sessions.clear();
                                                     _lastVisible = null;

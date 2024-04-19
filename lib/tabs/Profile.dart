@@ -112,7 +112,7 @@ class _ProfileState extends State<Profile> {
           sessions.add(s);
         });
 
-        if (sessions != null && sessions.length > 0) {
+        if (sessions.length > 0) {
           if (mounted) {
             setState(() {
               _isLoading = false;
@@ -275,7 +275,7 @@ class _ProfileState extends State<Profile> {
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).textTheme.bodyText1.color,
+                                  color: Theme.of(context).textTheme.bodyLarge.color,
                                 ),
                               ),
                             );
@@ -955,33 +955,20 @@ class _ProfileState extends State<Profile> {
           );
 
           await deleteSession(s).then((deleted) {
-            if (deleted == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
-                    "There was an error deleting the session",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
+            if (!deleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Theme.of(context).cardTheme.color,
+                content: new Text(
+                  "Sorry this session can't be deleted",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
-                  duration: Duration(milliseconds: 1500),
                 ),
-              );
-            } else if (!deleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
-                    "Sorry this session can't be deleted",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  duration: Duration(milliseconds: 1500),
-                ),
-              );
-            }
+                duration: Duration(milliseconds: 1500),
+              ),
+            );
+          }
 
             _sessions.clear();
             _loadRecentSessions();
@@ -1343,33 +1330,20 @@ class _ProfileState extends State<Profile> {
                                                   );
 
                                                   await deleteSession(s).then((deleted) {
-                                                    if (deleted == null) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
-                                                            "There was an error deleting the session",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
+                                                    if (!deleted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        content: new Text(
+                                                          "Sorry this session can't be deleted",
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
                                                           ),
-                                                          duration: Duration(milliseconds: 1500),
                                                         ),
-                                                      );
-                                                    } else if (!deleted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
-                                                            "Sorry this session can't be deleted",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
-                                                          ),
-                                                          duration: Duration(milliseconds: 1500),
-                                                        ),
-                                                      );
-                                                    }
+                                                        duration: Duration(milliseconds: 1500),
+                                                      ),
+                                                    );
+                                                  }
 
                                                     _sessions.clear();
                                                     _loadRecentSessions();

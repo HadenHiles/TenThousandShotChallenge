@@ -77,7 +77,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -102,7 +102,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).backgroundColor,
+                      color: Theme.of(context).colorScheme.background,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,

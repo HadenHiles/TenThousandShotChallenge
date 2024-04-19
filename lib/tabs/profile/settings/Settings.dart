@@ -103,7 +103,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -128,7 +128,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).backgroundColor,
+                      color: Theme.of(context).colorScheme.background,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
@@ -158,13 +158,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       SettingsSection(
                         title: Text(
                           'General',
-                          style: Theme.of(context).textTheme.headline6,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                         tiles: [
                           SettingsTile(
                             title: Text(
                               'How many pucks do you have?',
-                              style: Theme.of(context).textTheme.bodyText1,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             leading: Container(
                               margin: EdgeInsets.only(left: 10),
@@ -232,7 +232,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           SettingsTile.switchTile(
                             title: Text(
                               'Dark Mode',
-                              style: Theme.of(context).textTheme.bodyText1,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             leading: Icon(
                               Icons.brightness_2,
@@ -259,11 +259,11 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           SettingsTile(
                             title: Text(
                               "Recalculate Shot Totals",
-                              style: Theme.of(context).textTheme.bodyText1,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             description: Text(
                               "Use this if your shot count is out of sync",
-                              style: Theme.of(context).textTheme.bodyText2,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             enabled: true,
                             leading: _refreshingShots
@@ -321,13 +321,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       SettingsSection(
                         title: Text(
                           'Account',
-                          style: Theme.of(context).textTheme.headline6,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                         tiles: [
                           SettingsTile.switchTile(
                             title: Text(
                               'Public',
-                              style: Theme.of(context).textTheme.bodyText1,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             leading: Icon(
                               Icons.privacy_tip_rounded,
@@ -345,7 +345,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           SettingsTile(
                             title: Text(
                               'Edit Profile',
-                              style: Theme.of(context).textTheme.bodyText1,
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             leading: Icon(
                               Icons.person,
@@ -366,7 +366,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               children: [
                                 Text(
                                   'Delete Account',
-                                  style: Theme.of(context).textTheme.bodyText1,
+                                  style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 Padding(
                                   padding: EdgeInsets.only(left: 5),
@@ -459,7 +459,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               'Logout',
                               style: TextStyle(
                                 color: Colors.red,
-                                fontSize: Theme.of(context).textTheme.bodyText1.fontSize,
+                                fontSize: Theme.of(context).textTheme.bodyLarge.fontSize,
                               ),
                             ),
                             leading: Icon(
