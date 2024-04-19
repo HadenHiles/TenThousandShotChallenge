@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ShotProgress extends StatefulWidget {
-  ShotProgress({Key key}) : super(key: key);
+  ShotProgress({Key? key}) : super(key: key);
 
   @override
   _ShotProgressState createState() => _ShotProgressState();

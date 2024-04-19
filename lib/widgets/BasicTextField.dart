@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class BasicTextField extends StatefulWidget {
-  BasicTextField({Key key, this.hintText, this.controller, this.keyboardType, this.validator}) : super(key: key);
+  BasicTextField({Key? key, this.hintText, this.controller, this.keyboardType, this.validator}) : super(key: key);
 
-  final String hintText;
-  final TextEditingController controller;
-  final TextInputType keyboardType;
-  final Function validator;
+  final String? hintText;
+  final TextEditingController? controller;
+  final TextInputType? keyboardType;
+  final Function? validator;
 
   @override
   _BasicTextFieldState createState() => _BasicTextFieldState();
@@ -16,7 +16,7 @@ class _BasicTextFieldState extends State<BasicTextField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      cursorColor: Theme.of(context).textTheme.bodyLarge.color,
+      cursorColor: Theme.of(context).textTheme.bodyLarge!.color,
       style: Theme.of(context).textTheme.bodyLarge,
       keyboardType: widget.keyboardType,
       decoration: InputDecoration(
@@ -24,7 +24,7 @@ class _BasicTextFieldState extends State<BasicTextField> {
         hintText: widget.hintText,
       ),
       controller: widget.controller,
-      validator: widget.validator,
+      validator: widget.validator as String? Function(String?)?,
     );
   }
 }

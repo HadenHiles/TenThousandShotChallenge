@@ -19,7 +19,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
-  Shots({Key key, this.sessionPanelController}) : super(key: key);
+  Shots({Key? key, required this.sessionPanelController}) : super(key: key);
 
   final PanelController sessionPanelController;
 
@@ -30,7 +30,7 @@ class Shots extends StatefulWidget {
 class _ShotsState extends State<Shots> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
-  DateTime _targetDate;
+  DateTime? _targetDate;
   TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
 
@@ -41,7 +41,7 @@ class _ShotsState extends State<Shots> {
   }
 
   Future<Null> _loadTargetDate() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
       if (iSnap.docs.isNotEmpty) {
         Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
         setState(() {
@@ -73,7 +73,7 @@ class _ShotsState extends State<Shots> {
 
         _targetDateController.text = DateFormat('MMMM d, y').format(date);
 
-        await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
+        await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
@@ -125,15 +125,15 @@ class _ShotsState extends State<Shots> {
                             children: [
                               Container(
                                 width: 150,
-                                child: StreamBuilder(
-                                  stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                child: StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                                   builder: (context, snapshot) {
                                     if (!snapshot.hasData) {
                                       return CircularProgressIndicator(
                                         color: Theme.of(context).primaryColor,
                                       );
-                                    } else if (snapshot.data.docs.length > 0) {
-                                      Iteration i = Iteration.fromSnapshot(snapshot.data.docs[0]);
+                                    } else if (snapshot.data!.docs.length > 0) {
+                                      Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
 
                                       _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
 
@@ -142,7 +142,7 @@ class _ShotsState extends State<Shots> {
                                         decoration: InputDecoration(
                                           labelText: "10,000 Shots By:".toLowerCase(),
                                           labelStyle: TextStyle(
-                                            color: preferences.darkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                             fontFamily: "NovecentoSans",
                                             fontSize: 22,
                                           ),
@@ -190,8 +190,8 @@ class _ShotsState extends State<Shots> {
                             children: [
                               Container(
                                 width: 80,
-                                child: StreamBuilder(
-                                  stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                child: StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                                   builder: (context, snapshot) {
                                     if (!snapshot.hasData) {
                                       return Center(
@@ -199,11 +199,11 @@ class _ShotsState extends State<Shots> {
                                           color: Theme.of(context).primaryColor,
                                         ),
                                       );
-                                    } else if (snapshot.data.docs.length > 0) {
-                                      Iteration i = Iteration.fromSnapshot(snapshot.data.docs[0]);
-                                      int total = i.total >= 10000 ? 10000 : i.total;
-                                      int shotsRemaining = 10000 - total;
-                                      int daysRemaining = _targetDate.difference(DateTime.now()).inDays;
+                                    } else if (snapshot.data!.docs.length > 0) {
+                                      Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                                      int? total = i.total! >= 10000 ? 10000 : i.total;
+                                      int shotsRemaining = 10000 - total!;
+                                      int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
                                       double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
 
                                       int shotsPerDay = 0;
@@ -231,8 +231,8 @@ class _ShotsState extends State<Shots> {
                                               ? shotsPerWeek.toString() + " / Week".toLowerCase()
                                               : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
 
-                                      if (_targetDate.compareTo(DateTime.now()) < 0) {
-                                        daysRemaining = DateTime.now().difference(i.targetDate).inDays * -1;
+                                      if (_targetDate!.compareTo(DateTime.now()) < 0) {
+                                        daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
 
                                         shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
                                         shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
@@ -300,17 +300,17 @@ class _ShotsState extends State<Shots> {
                 height: 5,
               ),
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(
                       child: LinearProgressIndicator(),
                     );
-                  } else if (snapshot.data.docs.length > 0) {
-                    Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
-                    int maxIterationTotalForWidth = iteration.total <= 10000 ? iteration.total : 10000;
-                    int iterationTotal = iteration.total;
-                    double totalShotsWidth = (maxIterationTotalForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
+                  } else if (snapshot.data!.docs.length > 0) {
+                    Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                    int? maxIterationTotalForWidth = iteration.total! <= 10000 ? iteration.total : 10000;
+                    int? iterationTotal = iteration.total;
+                    double totalShotsWidth = (maxIterationTotalForWidth! / 10000) * (MediaQuery.of(context).size.width - 60);
 
                     return Column(
                       children: [
@@ -334,7 +334,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
-                                  width: iteration.totalWrist > 0 ? (iteration.totalWrist / iterationTotal) * totalShotsWidth : 0,
+                                  width: iteration.totalWrist! > 0 ? (iteration.totalWrist! / iterationTotal!) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: wristShotColor,
@@ -348,7 +348,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
-                                  width: iteration.totalSnap > 0 ? (iteration.totalSnap / iterationTotal) * totalShotsWidth : 0,
+                                  width: iteration.totalSnap! > 0 ? (iteration.totalSnap! / iterationTotal!) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: snapShotColor,
@@ -362,7 +362,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
-                                  width: iteration.totalBackhand > 0 ? (iteration.totalBackhand / iterationTotal) * totalShotsWidth : 0,
+                                  width: iteration.totalBackhand! > 0 ? (iteration.totalBackhand! / iterationTotal!) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: backhandShotColor,
@@ -376,7 +376,7 @@ class _ShotsState extends State<Shots> {
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                 child: Container(
                                   height: 40,
-                                  width: iteration.totalSlap > 0 ? (iteration.totalSlap / iterationTotal) * totalShotsWidth : 0,
+                                  width: iteration.totalSlap! > 0 ? (iteration.totalSlap! / iterationTotal!) * totalShotsWidth : 0,
                                   padding: EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
                                     color: slapShotColor,
@@ -406,7 +406,7 @@ class _ShotsState extends State<Shots> {
                                         : totalShotsWidth,
                                 padding: EdgeInsets.symmetric(horizontal: 2),
                                 child: Text(
-                                  iteration.total <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
+                                  iteration.total! <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
                                     fontFamily: 'NovecentoSans',
@@ -448,7 +448,7 @@ class _ShotsState extends State<Shots> {
                 height: 5,
               ),
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Column(
@@ -463,8 +463,8 @@ class _ShotsState extends State<Shots> {
                         ),
                       ],
                     );
-                  } else if (snapshot.data.docs.length > 0) {
-                    Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
+                  } else if (snapshot.data!.docs.length > 0) {
+                    Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
                     List<ShotCount> shotCounts = [
                       ShotCount('W'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
                       ShotCount('SN'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
@@ -484,7 +484,7 @@ class _ShotsState extends State<Shots> {
                         labelAccessorFn: (ShotCount row, _) => '${row.count}',
                         outsideLabelStyleAccessorFn: (ShotCount row, _) => charts.TextStyleSpec(
                           fontFamily: "NovecentoSans",
-                          color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
+                          color: preferences!.darkMode! ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
                           fontSize: 18,
                         ),
                         insideLabelStyleAccessorFn: (ShotCount row, _) => charts.TextStyleSpec(
@@ -542,7 +542,7 @@ class _ShotsState extends State<Shots> {
                                   Container(
                                     width: 50,
                                     child: AutoSizeText(
-                                      iteration.totalWrist > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
+                                      iteration.totalWrist! > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
                                       maxFontSize: 18,
                                       maxLines: 1,
                                       textAlign: TextAlign.center,
@@ -591,7 +591,7 @@ class _ShotsState extends State<Shots> {
                                   Container(
                                     width: 50,
                                     child: AutoSizeText(
-                                      iteration.totalSnap > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
+                                      iteration.totalSnap! > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
                                       maxFontSize: 18,
                                       maxLines: 1,
                                       textAlign: TextAlign.center,
@@ -640,7 +640,7 @@ class _ShotsState extends State<Shots> {
                                   Container(
                                     width: 50,
                                     child: AutoSizeText(
-                                      iteration.totalBackhand > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
+                                      iteration.totalBackhand! > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
                                       maxFontSize: 18,
                                       maxLines: 1,
                                       textAlign: TextAlign.center,
@@ -689,7 +689,7 @@ class _ShotsState extends State<Shots> {
                                   Container(
                                     width: 50,
                                     child: AutoSizeText(
-                                      iteration.totalSlap > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
+                                      iteration.totalSlap! > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
                                       maxFontSize: 18,
                                       maxLines: 1,
                                       textAlign: TextAlign.center,
@@ -708,7 +708,7 @@ class _ShotsState extends State<Shots> {
                         Container(
                           height: MediaQuery.of(context).size.height * 0.3,
                           width: MediaQuery.of(context).size.width * 0.7,
-                          child: iteration.total < 1
+                          child: iteration.total! < 1
                               ? Container(
                                   child: Text(
                                     "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
@@ -834,12 +834,12 @@ class _ShotsState extends State<Shots> {
                         child: Column(
                           children: [
                             StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                               builder: (context, snapshot) {
-                                if (snapshot.hasData && snapshot.data.docs.length > 0) {
-                                  Iteration iteration = Iteration.fromSnapshot(snapshot.data.docs[0]);
+                                if (snapshot.hasData && snapshot.data!.docs.length > 0) {
+                                  Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
 
-                                  return iteration.total < 10000
+                                  return iteration.total! < 10000
                                       ? Container()
                                       : Container(
                                           width: MediaQuery.of(context).size.width - 30,
@@ -867,7 +867,7 @@ class _ShotsState extends State<Shots> {
                                                   "Continue",
                                                   () {
                                                     startNewIteration().then((success) {
-                                                      if (success) {
+                                                      if (success!) {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                             backgroundColor: Theme.of(context).cardTheme.color,
@@ -896,7 +896,7 @@ class _ShotsState extends State<Shots> {
                                                       }
                                                     });
 
-                                                    navigatorKey.currentState.pop();
+                                                    navigatorKey.currentState!.pop();
                                                   },
                                                 ),
                                               );

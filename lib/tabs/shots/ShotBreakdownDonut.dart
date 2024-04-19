@@ -9,7 +9,7 @@ import 'package:tenthousandshotchallenge/main.dart';
 
 class ShotBreakdownDonut extends StatelessWidget {
   final List<charts.Series> seriesList;
-  final bool animate;
+  final bool? animate;
 
   ShotBreakdownDonut(this.seriesList, {this.animate});
 
@@ -44,7 +44,7 @@ class ShotBreakdownDonut extends StatelessWidget {
               outsideLabelStyleSpec: TextStyleSpec(
             fontFamily: 'NovecentoSans',
             fontSize: 18,
-            color: preferences.darkMode ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
+            color: preferences!.darkMode! ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
           ))
         ],
       ),

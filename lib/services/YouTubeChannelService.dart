@@ -53,10 +53,8 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
 
       return videos;
     });
-    
-    return videos;
   }).catchError((err) {
     print(err);
-    return null;
+    return <YouTubeVideo>[];
   });
 }

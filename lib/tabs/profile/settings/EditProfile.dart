@@ -14,7 +14,7 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class EditProfile extends StatefulWidget {
-  EditProfile({Key key}) : super(key: key);
+  EditProfile({Key? key}) : super(key: key);
 
   @override
   _EditProfileState createState() => _EditProfileState();
@@ -31,12 +31,12 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
+    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
       UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
-      _avatar = userProfile.photoUrl;
+      _avatar = userProfile.photoUrl!;
 
-      displayNameTextFieldController.text = userProfile.displayName != null ? userProfile.displayName : user.displayName;
+      displayNameTextFieldController.text = userProfile.displayName != null ? userProfile.displayName! : user!.displayName!;
     });
 
     _loadAvatars();
@@ -54,7 +54,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   void _saveProfile() {
-    FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+    FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
       'display_name': displayNameTextFieldController.text.toString(),
       'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
       'photo_url': _avatar,
@@ -69,7 +69,7 @@ class _EditProfileState extends State<EditProfile> {
       textColor: Theme.of(context).colorScheme.onPrimary,
       fontSize: 16.0,
     );
-    navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (context) {
+    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
       return Navigation(selectedIndex: 3);
     }));
   }
@@ -138,7 +138,7 @@ class _EditProfileState extends State<EditProfile> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
@@ -166,7 +166,7 @@ class _EditProfileState extends State<EditProfile> {
                           size: 28,
                         ),
                         onPressed: () {
-                          if (_formKey.currentState.validate()) {
+                          if (_formKey.currentState!.validate()) {
                             _saveProfile();
                           }
                         },
@@ -242,7 +242,7 @@ class _EditProfileState extends State<EditProfile> {
           Feedback.forTap(context);
 
           setState(() {
-            _avatar = user.photoURL;
+            _avatar = user!.photoURL!;
           });
 
           _saveProfile();
@@ -252,7 +252,7 @@ class _EditProfileState extends State<EditProfile> {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(55),
-            border: _avatar == user.photoURL
+            border: _avatar == user!.photoURL
                 ? Border.all(
                     color: Theme.of(context).primaryColor,
                     width: 2,
@@ -262,8 +262,8 @@ class _EditProfileState extends State<EditProfile> {
           width: 70,
           height: 70,
           child: UserAvatar(
-            user: UserProfile(user.displayName, user.email, user.photoURL, true, preferences.fcmToken),
-            backgroundColor: _avatar == user.photoURL ? Theme.of(context).cardTheme.color : Colors.transparent,
+            user: UserProfile(user!.displayName, user!.email, user!.photoURL, true, preferences!.fcmToken),
+            backgroundColor: _avatar == user!.photoURL ? Theme.of(context).cardTheme.color : Colors.transparent,
           ),
         ),
       ),
@@ -298,7 +298,7 @@ class _EditProfileState extends State<EditProfile> {
             width: 70,
             height: 70,
             child: UserAvatar(
-              user: UserProfile(user.displayName, user.email, a, true, preferences.fcmToken),
+              user: UserProfile(user!.displayName, user!.email, a, true, preferences!.fcmToken),
               backgroundColor: _avatar == a ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
           ),

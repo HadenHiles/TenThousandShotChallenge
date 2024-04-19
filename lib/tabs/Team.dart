@@ -5,7 +5,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 const TEAM_HEADER_HEIGHT = 65.0;
 
 class Team extends StatefulWidget {
-  Team({Key key}) : super(key: key);
+  Team({Key? key}) : super(key: key);
 
   @override
   _TeamState createState() => _TeamState();
@@ -13,7 +13,7 @@ class Team extends StatefulWidget {
 
 class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
   final user = FirebaseAuth.instance.currentUser;
-  AnimationController _rotationController;
+  AnimationController? _rotationController;
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                       backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                       title: GestureDetector(
                         onTap: () {
-                          _rotationController.forward();
+                          _rotationController!.forward();
                           _showTeamBottomSheetModal();
                         },
                         child: Row(
@@ -65,13 +65,13 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                               width: 5,
                             ),
                             RotationTransition(
-                              turns: Tween(begin: 0.0, end: 0.5).animate(_rotationController),
+                              turns: Tween(begin: 0.0, end: 0.5).animate(_rotationController!),
                               child: RotatedBox(
                                 quarterTurns: 1,
                                 child: Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  color: HomeTheme.darkTheme.textTheme.bodyLarge.color,
-                                  size: HomeTheme.darkTheme.textTheme.bodyLarge.fontSize,
+                                  color: HomeTheme.darkTheme.textTheme.bodyLarge!.color,
+                                  size: HomeTheme.darkTheme.textTheme.bodyLarge!.fontSize,
                                 ),
                               ),
                             ),
@@ -117,13 +117,13 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
       isScrollControlled: true,
       isDismissible: true,
     ).whenComplete(() {
-      _rotationController.reverse();
+      _rotationController!.reverse();
     });
   }
 }
 
 class TeamList extends StatefulWidget {
-  TeamList({Key key}) : super(key: key);
+  TeamList({Key? key}) : super(key: key);
 
   @override
   State<TeamList> createState() => _TeamListState();
