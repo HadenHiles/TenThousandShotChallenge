@@ -57,7 +57,7 @@ class _HistoryState extends State<History> {
 
   Future<Null> _loadFirstLastSession() async {
     if (_selectedIterationId == null) {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) {
         if (iterationSnap.docs.length > 0) {
           setState(() {
             _selectedIterationId = iterationSnap.docs.first.id;
@@ -66,21 +66,21 @@ class _HistoryState extends State<History> {
       });
     }
 
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
       if (sessionsSnap.docs.length > 0) {
         ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
         ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
 
         setState(() {
-          firstSessionDate = first.date;
-          latestSessionDate = latest.date;
+          firstSessionDate = first.date!;
+          latestSessionDate = latest.date!;
         });
       }
     });
   }
 
   Future<Null> _getAttempts() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(
@@ -107,7 +107,7 @@ class _HistoryState extends State<History> {
     await new Future.delayed(new Duration(milliseconds: 500));
 
     if (_lastVisible == null) {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
         snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(8).get().then((sSnap) {
           sSnap.docs.forEach((s) {
@@ -131,9 +131,9 @@ class _HistoryState extends State<History> {
         });
       });
     } else {
-      await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
+      await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
-        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible['date']]).limit(5).get().then((sSnap) {
+        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible!['date']]).limit(5).get().then((sSnap) {
               sSnap.docs.forEach((s) {
                 sessions.add(s);
               });
@@ -221,7 +221,7 @@ class _HistoryState extends State<History> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
@@ -252,7 +252,7 @@ class _HistoryState extends State<History> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        DropdownButton(
+                        DropdownButton<dynamic>(
                           onChanged: (value) {
                             setState(() {
                               _isLoading = true;
@@ -418,18 +418,18 @@ class _HistoryState extends State<History> {
                   Container(
                     decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
                     child: StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          Iteration i = Iteration.fromSnapshot(snapshot.data);
+                          Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                           if (i.endDate != null) {
-                            int daysTaken = i.endDate.difference(firstSessionDate).inDays + 1;
+                            int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
                             daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                            String endDate = DateFormat('MMMM d, y').format(i.endDate);
+                            String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                             String iterationDescription;
                             String goalDescription = "";
-                            String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
+                            String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                             if (daysTaken <= 1) {
                               iterationDescription = "$fTotal shots in $daysTaken day";
@@ -438,8 +438,8 @@ class _HistoryState extends State<History> {
                             }
 
                             if (i.targetDate != null) {
-                              String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
-                              int daysBeforeAfterTarget = i.targetDate.difference(i.endDate).inDays;
+                              String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
+                              int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
                               if (daysBeforeAfterTarget > 0) {
                                 if (daysBeforeAfterTarget.abs() <= 1) {
@@ -572,12 +572,12 @@ class _HistoryState extends State<History> {
                           } else {
                             int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
                             daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                            String targetDate;
-                            String iterationDescription;
+                            String? targetDate;
+                            String? iterationDescription;
                             String goalDescription = "";
-                            int remainingShots = 10000 - i.total;
+                            int remainingShots = 10000 - i.total!;
                             String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
-                            String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
+                            String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                             if (daysSoFar <= 1 && daysSoFar != 0) {
                               iterationDescription = "$fTotal shots in $daysSoFar day";
@@ -586,9 +586,9 @@ class _HistoryState extends State<History> {
                             }
 
                             if (i.targetDate != null && remainingShots > 0) {
-                              int daysBeforeAfterTarget = i.targetDate.difference(DateTime.now()).inDays;
-                              if (i.targetDate.compareTo(DateTime.now()) < 0) {
-                                daysBeforeAfterTarget = DateTime.now().difference(i.targetDate).inDays * -1;
+                              int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
+                              if (i.targetDate!.compareTo(DateTime.now()) < 0) {
+                                daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
                               }
 
                               if (daysBeforeAfterTarget > 0) {
@@ -749,7 +749,7 @@ class _HistoryState extends State<History> {
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                _isLoading
+                                _isLoading!
                                     ? SizedBox(
                                         height: 25,
                                         width: 25,
@@ -788,13 +788,13 @@ class _HistoryState extends State<History> {
 
   @override
   void dispose() {
-    sessionsController.removeListener(_scrollListener);
+    sessionsController!.removeListener(_scrollListener);
     super.dispose();
   }
 
   void _scrollListener() {
-    if (!_isLoading) {
-      if (sessionsController.position.pixels == sessionsController.position.maxScrollExtent) {
+    if (!_isLoading!) {
+      if (sessionsController!.position.pixels == sessionsController!.position.maxScrollExtent) {
         setState(() => _isLoading = true);
         _loadHistory();
       }
@@ -819,19 +819,19 @@ class _HistoryState extends State<History> {
 
           await deleteSession(s).then((deleted) {
             if (!deleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).cardTheme.color,
-                content: new Text(
-                  "Sorry this session can't be deleted",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: new Text(
+                    "Sorry this session can't be deleted",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
+                  duration: Duration(milliseconds: 1500),
                 ),
-                duration: Duration(milliseconds: 1500),
-              ),
-            );
-          }
+              );
+            }
 
             _sessions.clear();
             _lastVisible = null;
@@ -900,7 +900,7 @@ class _HistoryState extends State<History> {
                             height: 5,
                           ),
                           Text(
-                            printDate(s.date),
+                            printDate(s.date!),
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               fontSize: 20,
@@ -980,7 +980,7 @@ class _HistoryState extends State<History> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      printDate(s.date),
+                      printDate(s.date!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 18,
@@ -988,7 +988,7 @@ class _HistoryState extends State<History> {
                       ),
                     ),
                     Text(
-                      printDuration(s.duration, true),
+                      printDuration(s.duration!, true),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 18,
@@ -1021,7 +1021,7 @@ class _HistoryState extends State<History> {
                                   ),
                                   itemBuilder: (_) => <PopupMenuItem<String>>[
                                     i >= 0
-                                        ? null
+                                        ? PopupMenuItem<String>(child: Container())
                                         : PopupMenuItem<String>(
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1066,8 +1066,8 @@ class _HistoryState extends State<History> {
                                       if (!sessionService.isRunning) {
                                         Feedback.forTap(context);
                                         sessionService.start();
-                                        widget.sessionPanelController.open();
-                                        widget.updateSessionShotsCB();
+                                        widget.sessionPanelController!.open();
+                                        widget.updateSessionShotsCB!();
                                       } else {
                                         dialog(
                                           context,
@@ -1089,7 +1089,7 @@ class _HistoryState extends State<History> {
                                               sessionService.reset();
                                               Navigator.of(context).pop();
                                               sessionService.start();
-                                              widget.sessionPanelController.show();
+                                              widget.sessionPanelController!.show();
                                             },
                                           ),
                                         );
@@ -1156,7 +1156,7 @@ class _HistoryState extends State<History> {
                                                         height: 5,
                                                       ),
                                                       Text(
-                                                        printDate(s.date),
+                                                        printDate(s.date!),
                                                         style: TextStyle(
                                                           fontFamily: 'NovecentoSans',
                                                           fontSize: 20,
@@ -1195,19 +1195,19 @@ class _HistoryState extends State<History> {
 
                                                   await deleteSession(s).then((deleted) {
                                                     if (!deleted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                                        content: new Text(
-                                                          "Sorry this session can't be deleted",
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                                          content: new Text(
+                                                            "Sorry this session can't be deleted",
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                            ),
                                                           ),
+                                                          duration: Duration(milliseconds: 1500),
                                                         ),
-                                                        duration: Duration(milliseconds: 1500),
-                                                      ),
-                                                    );
-                                                  }
+                                                      );
+                                                    }
 
                                                     _sessions.clear();
                                                     _lastVisible = null;
@@ -1246,19 +1246,19 @@ class _HistoryState extends State<History> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalWrist),
+                          width: calculateSessionShotWidth(s, s.totalWrist!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: wristShotColor,
                           ),
-                          child: s.totalWrist < 1
+                          child: s.totalWrist! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalWrist),
+                                      width: calculateSessionShotWidth(s, s.totalWrist!),
                                       child: AutoSizeText(
                                         s.totalWrist.toString(),
                                         maxFontSize: 14,
@@ -1276,20 +1276,20 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSnap),
+                          width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             color: snapShotColor,
                           ),
-                          child: s.totalSnap < 1
+                          child: s.totalSnap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalSnap),
+                                      width: calculateSessionShotWidth(s, s.totalSnap!),
                                       child: AutoSizeText(
                                         s.totalSnap.toString(),
                                         maxFontSize: 14,
@@ -1307,19 +1307,19 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalBackhand),
+                          width: calculateSessionShotWidth(s, s.totalBackhand!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: backhandShotColor,
                           ),
-                          child: s.totalBackhand < 1
+                          child: s.totalBackhand! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                                      width: calculateSessionShotWidth(s, s.totalBackhand!),
                                       child: AutoSizeText(
                                         s.totalBackhand.toString(),
                                         maxFontSize: 14,
@@ -1337,19 +1337,19 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSlap),
+                          width: calculateSessionShotWidth(s, s.totalSlap!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: slapShotColor,
                           ),
-                          child: s.totalSlap < 1
+                          child: s.totalSlap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalSlap),
+                                      width: calculateSessionShotWidth(s, s.totalSlap!),
                                       child: AutoSizeText(
                                         s.totalSlap.toString(),
                                         maxFontSize: 14,
@@ -1379,8 +1379,8 @@ class _HistoryState extends State<History> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalWrist),
-                          child: s.totalWrist < 1
+                          width: calculateSessionShotWidth(s, s.totalWrist!),
+                          child: s.totalWrist! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1402,8 +1402,8 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSnap),
-                          child: s.totalSnap < 1
+                          width: calculateSessionShotWidth(s, s.totalSnap!),
+                          child: s.totalSnap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1425,8 +1425,8 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalBackhand),
-                          child: s.totalBackhand < 1
+                          width: calculateSessionShotWidth(s, s.totalBackhand!),
+                          child: s.totalBackhand! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1448,8 +1448,8 @@ class _HistoryState extends State<History> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSlap),
-                          child: s.totalSlap < 1
+                          width: calculateSessionShotWidth(s, s.totalSlap!),
+                          child: s.totalSlap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1483,7 +1483,7 @@ class _HistoryState extends State<History> {
   }
 
   double calculateSessionShotWidth(ShootingSession session, int shotCount) {
-    double percentage = (shotCount / session.total);
+    double percentage = (shotCount / session.total!);
     return (MediaQuery.of(context).size.width - 30) * percentage;
   }
 }
