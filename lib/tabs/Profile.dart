@@ -38,18 +38,18 @@ class _ProfileState extends State<Profile> {
 
   final GlobalKey _avatarMenuKey = new GlobalKey();
 
-  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser.photoURL, true, '');
+  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser!.photoURL, true, '');
   bool _isLoading = true;
   List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem> _attemptDropdownItems = [];
   String? _selectedIterationId;
 
-  DateTime firstSessionDate = DateTime.now();
-  DateTime latestSessionDate = DateTime.now();
+  DateTime? firstSessionDate = DateTime.now();
+  DateTime? latestSessionDate = DateTime.now();
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((uDoc) {
+    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
       userProfile = UserProfile.fromSnapshot(uDoc);
     });
 
@@ -61,9 +61,9 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _loadFirstLastSession() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) async {
       if (iterationSnap.docs.length > 0) {
-        await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(iterationSnap.docs.first.id).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
+        await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationSnap.docs.first.id).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
           if (sessionsSnap.docs.length > 0) {
             ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
             ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
@@ -79,7 +79,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _getAttempts() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(
@@ -105,7 +105,7 @@ class _ProfileState extends State<Profile> {
   Future<Null> _loadRecentSessions() async {
     await Future.delayed(new Duration(milliseconds: 500));
 
-    await FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
       List<DocumentSnapshot> sessions = [];
       snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(3).get().then((sSnap) {
         sSnap.docs.forEach((s) {
@@ -194,7 +194,7 @@ class _ProfileState extends State<Profile> {
                               ],
                               onSelected: (value) {
                                 if (value == 'edit') {
-                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
                                     return EditProfile();
                                   }));
                                 } else if (value == 'qr_code') {
@@ -213,7 +213,7 @@ class _ProfileState extends State<Profile> {
                                 onLongPress: () {
                                   Feedback.forLongPress(context);
 
-                                  navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
                                     return EditProfile();
                                   }));
                                 },
@@ -226,7 +226,7 @@ class _ProfileState extends State<Profile> {
                                   height: 60,
                                   width: 60,
                                   child: UserAvatar(
-                                    user: UserProfile(user.displayName, user.email, userProfile != null ? userProfile.photoUrl : user.photoURL, true, preferences.fcmToken),
+                                    user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, preferences!.fcmToken),
                                     backgroundColor: Colors.transparent,
                                   ),
                                 ),
@@ -246,7 +246,7 @@ class _ProfileState extends State<Profile> {
                         width: (MediaQuery.of(context).size.width - 100) * 0.6,
                         child: StreamBuilder<DocumentSnapshot>(
                           // ignore: deprecated_member_use
-                          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                          stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData)
                               return Column(
@@ -264,18 +264,18 @@ class _ProfileState extends State<Profile> {
                                 ],
                               );
 
-                            UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data);
+                            UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                             return Container(
                               width: (MediaQuery.of(context).size.width - 100) * 0.5,
                               child: AutoSizeText(
-                                userProfile.displayName != null && userProfile.displayName.isNotEmpty ? userProfile.displayName : user.displayName,
+                                userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : user!.displayName!,
                                 maxLines: 1,
                                 maxFontSize: 22,
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).textTheme.bodyLarge.color,
+                                  color: Theme.of(context).textTheme.bodyLarge!.color,
                                 ),
                               ),
                             );
@@ -284,7 +284,7 @@ class _ProfileState extends State<Profile> {
                       ),
                       Container(
                         child: StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
@@ -296,8 +296,8 @@ class _ProfileState extends State<Profile> {
                                 );
                               } else {
                                 int total = 0;
-                                snapshot.data.docs.forEach((doc) {
-                                  total += Iteration.fromSnapshot(doc).total;
+                                snapshot.data!.docs.forEach((doc) {
+                                  total += Iteration.fromSnapshot(doc).total!;
                                 });
 
                                 return Container(
@@ -318,7 +318,7 @@ class _ProfileState extends State<Profile> {
                       ),
                       Container(
                         child: StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
@@ -330,8 +330,8 @@ class _ProfileState extends State<Profile> {
                                 );
                               } else {
                                 Duration totalDuration = Duration();
-                                snapshot.data.docs.forEach((doc) {
-                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration;
+                                snapshot.data!.docs.forEach((doc) {
+                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                 });
 
                                 return totalDuration > Duration()
@@ -356,13 +356,13 @@ class _ProfileState extends State<Profile> {
                 child: Row(
                   children: [
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots(),
+                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return Container(
                             width: (MediaQuery.of(context).size.width - 100) * 0.3,
                             child: AutoSizeText(
-                              "challenge ".toLowerCase() + (snapshot.data.docs.length).toString().toLowerCase(),
+                              "challenge ".toLowerCase() + (snapshot.data!.docs.length).toString().toLowerCase(),
                               maxFontSize: 34,
                               maxLines: 1,
                               style: TextStyle(
@@ -384,18 +384,18 @@ class _ProfileState extends State<Profile> {
           ),
           Container(
             child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  Iteration i = Iteration.fromSnapshot(snapshot.data);
+                  Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                   if (i.endDate != null) {
-                    int daysTaken = i.endDate.difference(firstSessionDate).inDays + 1;
+                    int daysTaken = i.endDate!.difference(firstSessionDate!).inDays + 1;
                     daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                    String endDate = DateFormat('MMMM d, y').format(i.endDate);
+                    String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                     String iterationDescription;
                     String goalDescription = "";
-                    String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
+                    String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysTaken <= 1) {
                       iterationDescription = "$fTotal shots in $daysTaken day";
@@ -404,8 +404,8 @@ class _ProfileState extends State<Profile> {
                     }
 
                     if (i.targetDate != null) {
-                      String targetDate = DateFormat('MMMM d, y').format(i.targetDate);
-                      int daysBeforeAfterTarget = i.targetDate.difference(i.endDate).inDays;
+                      String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
+                      int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
                       if (daysBeforeAfterTarget > 0) {
                         if (daysBeforeAfterTarget.abs() <= 1) {
@@ -536,14 +536,14 @@ class _ProfileState extends State<Profile> {
                       ),
                     );
                   } else {
-                    int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
+                    int daysSoFar = latestSessionDate!.difference(firstSessionDate!).inDays + 1;
                     daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                    String targetDate;
-                    String iterationDescription;
+                    String? targetDate;
+                    String? iterationDescription;
                     String goalDescription = "";
-                    int remainingShots = 10000 - i.total;
+                    int remainingShots = 10000 - i.total!;
                     String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
-                    String fTotal = i.total > 999 ? numberFormat.format(i.total) : i.total.toString();
+                    String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                     if (daysSoFar <= 1 && daysSoFar != 0) {
                       iterationDescription = "$fTotal shots in $daysSoFar day";
@@ -552,9 +552,9 @@ class _ProfileState extends State<Profile> {
                     }
 
                     if (i.targetDate != null && remainingShots > 0) {
-                      int daysBeforeAfterTarget = i.targetDate.difference(DateTime.now()).inDays;
-                      if (i.targetDate.compareTo(DateTime.now()) < 0) {
-                        daysBeforeAfterTarget = DateTime.now().difference(i.targetDate).inDays * -1;
+                      int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
+                      if (i.targetDate!.compareTo(DateTime.now()) < 0) {
+                        daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
                       }
 
                       if (daysBeforeAfterTarget > 0) {
@@ -877,7 +877,7 @@ class _ProfileState extends State<Profile> {
                     padding: MaterialStateProperty.all(EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
                   ),
                   onPressed: () {
-                    navigatorKey.currentState.push(MaterialPageRoute(builder: (context) {
+                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
                       return History();
                     }));
                   },
@@ -956,19 +956,19 @@ class _ProfileState extends State<Profile> {
 
           await deleteSession(s).then((deleted) {
             if (!deleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).cardTheme.color,
-                content: new Text(
-                  "Sorry this session can't be deleted",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: new Text(
+                    "Sorry this session can't be deleted",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
+                  duration: Duration(milliseconds: 1500),
                 ),
-                duration: Duration(milliseconds: 1500),
-              ),
-            );
-          }
+              );
+            }
 
             _sessions.clear();
             _loadRecentSessions();
@@ -1036,7 +1036,7 @@ class _ProfileState extends State<Profile> {
                             height: 5,
                           ),
                           Text(
-                            printDate(s.date),
+                            printDate(s.date!),
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               fontSize: 20,
@@ -1116,7 +1116,7 @@ class _ProfileState extends State<Profile> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      printDate(s.date),
+                      printDate(s.date!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 18,
@@ -1124,7 +1124,7 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                     Text(
-                      printDuration(s.duration, true),
+                      printDuration(s.duration!, true),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 18,
@@ -1157,7 +1157,7 @@ class _ProfileState extends State<Profile> {
                                   ),
                                   itemBuilder: (_) => <PopupMenuItem<String>>[
                                     i >= 0
-                                        ? null
+                                        ? PopupMenuItem<String>(child: Container())
                                         : PopupMenuItem<String>(
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1202,8 +1202,8 @@ class _ProfileState extends State<Profile> {
                                       if (!sessionService.isRunning) {
                                         Feedback.forTap(context);
                                         sessionService.start();
-                                        widget.sessionPanelController.open();
-                                        widget.updateSessionShotsCB();
+                                        widget.sessionPanelController!.open();
+                                        widget.updateSessionShotsCB!();
                                       } else {
                                         dialog(
                                           context,
@@ -1225,7 +1225,7 @@ class _ProfileState extends State<Profile> {
                                               sessionService.reset();
                                               Navigator.of(context).pop();
                                               sessionService.start();
-                                              widget.sessionPanelController.show();
+                                              widget.sessionPanelController!.show();
                                             },
                                           ),
                                         );
@@ -1292,7 +1292,7 @@ class _ProfileState extends State<Profile> {
                                                         height: 5,
                                                       ),
                                                       Text(
-                                                        printDate(s.date),
+                                                        printDate(s.date!),
                                                         style: TextStyle(
                                                           fontFamily: 'NovecentoSans',
                                                           fontSize: 20,
@@ -1331,19 +1331,19 @@ class _ProfileState extends State<Profile> {
 
                                                   await deleteSession(s).then((deleted) {
                                                     if (!deleted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                                        content: new Text(
-                                                          "Sorry this session can't be deleted",
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                                          content: new Text(
+                                                            "Sorry this session can't be deleted",
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                            ),
                                                           ),
+                                                          duration: Duration(milliseconds: 1500),
                                                         ),
-                                                        duration: Duration(milliseconds: 1500),
-                                                      ),
-                                                    );
-                                                  }
+                                                      );
+                                                    }
 
                                                     _sessions.clear();
                                                     _loadRecentSessions();
@@ -1381,19 +1381,19 @@ class _ProfileState extends State<Profile> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalWrist),
+                          width: calculateSessionShotWidth(s, s.totalWrist!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: wristShotColor,
                           ),
-                          child: s.totalWrist < 1
+                          child: s.totalWrist! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalWrist),
+                                      width: calculateSessionShotWidth(s, s.totalWrist!),
                                       child: AutoSizeText(
                                         s.totalWrist.toString(),
                                         maxFontSize: 14,
@@ -1411,20 +1411,20 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSnap),
+                          width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             color: snapShotColor,
                           ),
-                          child: s.totalSnap < 1
+                          child: s.totalSnap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalSnap),
+                                      width: calculateSessionShotWidth(s, s.totalSnap!),
                                       child: AutoSizeText(
                                         s.totalSnap.toString(),
                                         maxFontSize: 14,
@@ -1442,19 +1442,19 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalBackhand),
+                          width: calculateSessionShotWidth(s, s.totalBackhand!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: backhandShotColor,
                           ),
-                          child: s.totalBackhand < 1
+                          child: s.totalBackhand! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalBackhand),
+                                      width: calculateSessionShotWidth(s, s.totalBackhand!),
                                       child: AutoSizeText(
                                         s.totalBackhand.toString(),
                                         maxFontSize: 14,
@@ -1472,19 +1472,19 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSlap),
+                          width: calculateSessionShotWidth(s, s.totalSlap!),
                           height: 30,
                           decoration: BoxDecoration(
                             color: slapShotColor,
                           ),
-                          child: s.totalSlap < 1
+                          child: s.totalSlap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: calculateSessionShotWidth(s, s.totalSlap),
+                                      width: calculateSessionShotWidth(s, s.totalSlap!),
                                       child: AutoSizeText(
                                         s.totalSlap.toString(),
                                         maxFontSize: 14,
@@ -1514,8 +1514,8 @@ class _ProfileState extends State<Profile> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalWrist),
-                          child: s.totalWrist < 1
+                          width: calculateSessionShotWidth(s, s.totalWrist!),
+                          child: s.totalWrist! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1537,8 +1537,8 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSnap),
-                          child: s.totalSnap < 1
+                          width: calculateSessionShotWidth(s, s.totalSnap!),
+                          child: s.totalSnap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1560,8 +1560,8 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalBackhand),
-                          child: s.totalBackhand < 1
+                          width: calculateSessionShotWidth(s, s.totalBackhand!),
+                          child: s.totalBackhand! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1583,8 +1583,8 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSlap),
-                          child: s.totalSlap < 1
+                          width: calculateSessionShotWidth(s, s.totalSlap!),
+                          child: s.totalSlap! < 1
                               ? Container()
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1618,7 +1618,7 @@ class _ProfileState extends State<Profile> {
   }
 
   double calculateSessionShotWidth(ShootingSession session, int shotCount) {
-    double percentage = (shotCount / session.total);
+    double percentage = (shotCount / session.total!);
     return (MediaQuery.of(context).size.width - 30) * percentage;
   }
 }
