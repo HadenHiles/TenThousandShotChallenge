@@ -22,7 +22,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfileSettings extends StatefulWidget {
-  ProfileSettings({Key key}) : super(key: key);
+  ProfileSettings({Key? key}) : super(key: key);
 
   @override
   _ProfileSettingsState createState() => _ProfileSettingsState();
@@ -50,7 +50,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
     });
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snapshot) {
+    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((snapshot) {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
         _publicProfile = u.public ?? false;
@@ -122,7 +122,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
@@ -220,7 +220,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               ),
                             ),
                             onPressed: (BuildContext context) {
-                              navigatorKey.currentState.push(
+                              navigatorKey.currentState!.push(
                                 MaterialPageRoute(
                                   builder: (context) {
                                     return EditPuckCount();
@@ -335,7 +335,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             initialValue: _publicProfile,
                             onToggle: (bool value) async {
-                              await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'public': !_publicProfile}).then((_) {
+                              await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
                                 setState(() {
                                   _publicProfile = !_publicProfile;
                                 });
@@ -352,7 +352,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                             onPressed: (BuildContext context) {
-                              navigatorKey.currentState.push(
+                              navigatorKey.currentState!.push(
                                 MaterialPageRoute(
                                   builder: (context) {
                                     return EditProfile();
@@ -423,9 +423,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          FirebaseAuth.instance.currentUser.delete().then((_) {
-                                            navigatorKey.currentState.pop();
-                                            navigatorKey.currentState.pushReplacement(MaterialPageRoute(builder: (_) {
+                                          FirebaseAuth.instance.currentUser!.delete().then((_) {
+                                            navigatorKey.currentState!.pop();
+                                            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
                                               return Login();
                                             }));
 
@@ -459,7 +459,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               'Logout',
                               style: TextStyle(
                                 color: Colors.red,
-                                fontSize: Theme.of(context).textTheme.bodyLarge.fontSize,
+                                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                               ),
                             ),
                             leading: Icon(
@@ -469,8 +469,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             onPressed: (BuildContext context) {
                               signOut();
 
-                              navigatorKey.currentState.pop();
-                              navigatorKey.currentState.pushReplacement(
+                              navigatorKey.currentState!.pop();
+                              navigatorKey.currentState!.pushReplacement(
                                 MaterialPageRoute(
                                   builder: (context) {
                                     return Login();
@@ -532,6 +532,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 await canLaunchUrlString(link).then((can) {
                                   launchUrlString(link).catchError((err) {
                                     print(err);
+                                    return false;
                                   });
                                 });
                               },
@@ -568,6 +569,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   await canLaunchUrlString(link).then((can) {
                                     launchUrlString(link).catchError((err) {
                                       print(err);
+                                      return false;
                                     });
                                   });
                                 },

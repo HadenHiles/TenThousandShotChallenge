@@ -20,10 +20,10 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
-  StartShooting({Key key, this.sessionPanelController, this.shots}) : super(key: key);
+  StartShooting({Key? key, required this.sessionPanelController, this.shots}) : super(key: key);
 
   final PanelController sessionPanelController;
-  final List<Shots> shots;
+  final List<Shots>? shots;
 
   @override
   _StartShootingState createState() => _StartShootingState();
@@ -32,14 +32,14 @@ class StartShooting extends StatefulWidget {
 class _StartShootingState extends State<StartShooting> {
   // Stateful variables
   String _selectedShotType = 'wrist';
-  int _currentShotCount = preferences.puckCount;
+  int _currentShotCount = preferences!.puckCount!;
   bool _puckCountUpdating = false;
   List<Shots> _shots = [];
 
   @override
   void initState() {
     _shots = widget.shots ?? [];
-    _currentShotCount = preferences.puckCount;
+    _currentShotCount = preferences!.puckCount!;
 
     super.initState();
   }
@@ -47,13 +47,13 @@ class _StartShootingState extends State<StartShooting> {
   @override
   void dispose() {
     _shots = [];
-    _currentShotCount = preferences.puckCount;
+    _currentShotCount = preferences!.puckCount!;
     super.dispose();
   }
 
   void reset() {
     _shots = [];
-    _currentShotCount = preferences.puckCount;
+    _currentShotCount = preferences!.puckCount!;
   }
 
   @override
@@ -130,7 +130,7 @@ class _StartShootingState extends State<StartShooting> {
                     ],
                   ),
                 ),
-                preferences.puckCount != _currentShotCount
+                preferences!.puckCount != _currentShotCount
                     ? SizedBox(
                         height: 10,
                       )
@@ -188,9 +188,9 @@ class _StartShootingState extends State<StartShooting> {
                                 color: Theme.of(context).primaryColor,
                               ),
                             )
-                          : preferences.puckCount != _currentShotCount
+                          : preferences!.puckCount != _currentShotCount
                               ? Text(
-                                  "Tap to update # of pucks you have from ${preferences.puckCount} to $_currentShotCount",
+                                  "Tap to update # of pucks you have from ${preferences!.puckCount} to $_currentShotCount",
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 11,
@@ -198,7 +198,7 @@ class _StartShootingState extends State<StartShooting> {
                                   ),
                                 )
                               : Container(height: 14),
-                      preferences.puckCount != _currentShotCount
+                      preferences!.puckCount != _currentShotCount
                           ? Container(
                               margin: EdgeInsets.only(left: 4),
                               child: Icon(
@@ -210,7 +210,7 @@ class _StartShootingState extends State<StartShooting> {
                     ],
                   ),
                 ),
-                preferences.puckCount != _currentShotCount
+                preferences!.puckCount != _currentShotCount
                     ? SizedBox(
                         height: 5,
                       )
@@ -409,7 +409,7 @@ class _StartShootingState extends State<StartShooting> {
 
                                     int totalShots = 0;
                                     _shots.forEach((s) {
-                                      totalShots += s.count;
+                                      totalShots += s.count!;
                                     });
 
                                     await saveShootingSession(_shots).then((success) async {
@@ -417,11 +417,11 @@ class _StartShootingState extends State<StartShooting> {
                                       widget.sessionPanelController.close();
                                       this.reset();
 
-                                      await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                                      await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
                                         if (snapshot.docs.isNotEmpty) {
                                           Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
-                                          if ((i.total + totalShots) < 10000) {
+                                          if ((i.total! + totalShots) < 10000) {
                                             Fluttertoast.showToast(
                                               msg: 'Shooting session saved!',
                                               toastLength: Toast.LENGTH_SHORT,
@@ -494,6 +494,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                     await canLaunchUrlString(link).then((can) {
                                                                       launchUrlString(link).catchError((err) {
                                                                         print(err);
+                                                                        return false;
                                                                       });
                                                                     });
                                                                   },
@@ -565,6 +566,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                     await canLaunchUrlString(link).then((can) {
                                                                       launchUrlString(link).catchError((err) {
                                                                         print(err);
+                                                                        return false;
                                                                       });
                                                                     });
                                                                   },
@@ -755,7 +757,7 @@ class _StartShootingState extends State<StartShooting> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Text(
-                s.type.toUpperCase(),
+                s.type!.toUpperCase(),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 20,
@@ -763,7 +765,7 @@ class _StartShootingState extends State<StartShooting> {
                 ),
               ),
               Text(
-                printTime(s.date),
+                printTime(s.date!),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 20,

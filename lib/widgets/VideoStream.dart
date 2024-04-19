@@ -4,7 +4,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoStream extends StatefulWidget {
-  VideoStream({Key key, this.url}) : super(key: key);
+  VideoStream({Key? key, required this.url}) : super(key: key);
 
   final String url;
 
@@ -13,18 +13,18 @@ class VideoStream extends StatefulWidget {
 }
 
 class _VideoStreamState extends State<VideoStream> {
-  VideoPlayerController _videoPlayerController;
+  VideoPlayerController? _videoPlayerController;
 
   @override
   void initState() {
-    _videoPlayerController = VideoPlayerController.network(widget.url);
-    _videoPlayerController.initialize();
+    _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _videoPlayerController!.initialize();
     super.initState();
   }
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
+    _videoPlayerController!.dispose();
     super.dispose();
   }
 
@@ -32,7 +32,7 @@ class _VideoStreamState extends State<VideoStream> {
   Widget build(BuildContext context) {
     return Chewie(
       controller: ChewieController(
-        videoPlayerController: _videoPlayerController,
+        videoPlayerController: _videoPlayerController!,
         autoPlay: true,
         looping: false,
         allowFullScreen: true,

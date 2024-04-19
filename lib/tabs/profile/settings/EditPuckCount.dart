@@ -11,7 +11,7 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditPuckCount extends StatefulWidget {
-  EditPuckCount({Key key}) : super(key: key);
+  EditPuckCount({Key? key}) : super(key: key);
 
   @override
   _EditPuckCountState createState() => _EditPuckCountState();
@@ -26,7 +26,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
   @override
   void initState() {
     setState(() {
-      puckCountTextFieldController.text = preferences.puckCount != null ? preferences.puckCount.toString() : 25.toString();
+      puckCountTextFieldController.text = preferences!.puckCount != null ? preferences!.puckCount.toString() : 25.toString();
     });
 
     super.initState();
@@ -96,7 +96,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState.pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
@@ -124,7 +124,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                           size: 28,
                         ),
                         onPressed: () async {
-                          if (_formKey.currentState.validate()) {
+                          if (_formKey.currentState!.validate()) {
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             setState(() {
                               prefs.setInt(
@@ -149,7 +149,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ));
-                            navigatorKey.currentState.pop();
+                            navigatorKey.currentState!.pop();
                           }
                         },
                       ),

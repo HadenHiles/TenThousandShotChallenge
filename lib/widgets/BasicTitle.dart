@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class BasicTitle extends StatelessWidget {
-  const BasicTitle({Key key, this.title}) : super(key: key);
+  const BasicTitle({Key? key, this.title}) : super(key: key);
 
-  final String title;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(bottom: 2),
       child: Text(
-        title.toUpperCase(),
+        title!.toUpperCase(),
         style: Theme.of(context).textTheme.headlineSmall,
         textAlign: TextAlign.center,
       ),

@@ -36,25 +36,18 @@ String printWeekday(DateTime date) {
   switch (date.weekday) {
     case DateTime.sunday:
       return "Sunday";
-      break;
     case DateTime.monday:
       return "Monday";
-      break;
     case DateTime.tuesday:
       return "Tuesday";
-      break;
     case DateTime.wednesday:
       return "Wednesday";
-      break;
     case DateTime.thursday:
       return "Thursday";
-      break;
     case DateTime.friday:
       return "Friday";
-      break;
     case DateTime.saturday:
       return "Saturday";
-      break;
     default:
       return "";
   }
