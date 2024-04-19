@@ -30,34 +30,30 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
 
     List<YouTubeVideo> videos = [];
 
-    if (data != null) {
-      final Map<String, dynamic> channel = data["items"][0];
+    final Map<String, dynamic> channel = data["items"][0];
 
-      if (channel != null) {
-        String playlistId = channel['contentDetails']['relatedPlaylists']['uploads'];
+    String playlistId = channel['contentDetails']['relatedPlaylists']['uploads'];
 
-        return await HttpProvider().getData(
-          "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=$playlistId&maxResults=10&key=$apiKey",
-          {'cache-control': 'private, max-age=86400', 'Content-Type': 'application/json, charset=utf-8'},
-        ).then((response) {
-          final Map<String, dynamic> data = json.decode(response.body);
-          final List items = data["items"];
+    return await HttpProvider().getData(
+      "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=$playlistId&maxResults=10&key=$apiKey",
+      {'cache-control': 'private, max-age=86400', 'Content-Type': 'application/json, charset=utf-8'},
+    ).then((response) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List items = data["items"];
 
-          if (items != null && items.length > 0) {
-            items.forEach((dynamic i) {
-              videos.add(YouTubeVideo(
-                i["id"],
-                i["snippet"]["title"],
-                i["snippet"]["thumbnails"]["medium"]["url"],
-              ));
-            });
-          }
-
-          return videos;
+      if (items.length > 0) {
+        items.forEach((dynamic i) {
+          videos.add(YouTubeVideo(
+            i["id"],
+            i["snippet"]["title"],
+            i["snippet"]["thumbnails"]["medium"]["url"],
+          ));
         });
       }
-    }
 
+      return videos;
+    });
+    
     return videos;
   }).catchError((err) {
     print(err);

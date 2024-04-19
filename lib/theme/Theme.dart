@@ -5,7 +5,6 @@ class HomeTheme {
 
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    backgroundColor: Colors.white,
     primaryColor: Color(0xffCC3333),
     scaffoldBackgroundColor: Color(0xffF7F7F7),
     appBarTheme: AppBarTheme(
@@ -14,16 +13,6 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
-    toggleableActiveColor: Color(0xffCC3333),
-    colorScheme: ColorScheme.light(
-      brightness: Brightness.light,
-      primary: Colors.white,
-      onPrimary: Colors.black54,
-      primaryContainer: Color(0xffF7F7F7),
-      secondary: Color(0xff670101),
-      onSecondary: Colors.white,
-      onBackground: Colors.black,
-    ),
     cardTheme: CardTheme(
       color: Colors.grey.shade300,
     ),
@@ -31,42 +20,72 @@ class HomeTheme {
       color: Colors.black87,
     ),
     textTheme: TextTheme(
-      headline1: TextStyle(
+      displayLarge: TextStyle(
         color: Colors.black87,
       ),
-      headline2: TextStyle(
+      displayMedium: TextStyle(
         color: Colors.black87,
       ),
-      headline3: TextStyle(
+      displaySmall: TextStyle(
         color: Colors.black87,
       ),
-      headline4: TextStyle(
+      headlineMedium: TextStyle(
         color: Colors.black87,
       ),
-      headline5: TextStyle(
+      headlineSmall: TextStyle(
         color: Colors.black87,
         fontFamily: 'NovecentoSans',
         fontSize: 22,
       ),
-      headline6: TextStyle(
+      titleLarge: TextStyle(
         color: Color(0xffCC3333),
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
-      bodyText1: TextStyle(
+      bodyLarge: TextStyle(
         color: Colors.black87,
         fontSize: 16,
       ),
-      bodyText2: TextStyle(
+      bodyMedium: TextStyle(
         color: Colors.black87,
         fontSize: 12,
       ),
-    ),
+    ), checkboxTheme: CheckboxThemeData(
+ fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), radioTheme: RadioThemeData(
+ fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), switchTheme: SwitchThemeData(
+ thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), colorScheme: ColorScheme.light(
+      brightness: Brightness.light,
+      primary: Colors.white,
+      onPrimary: Colors.black54,
+      primaryContainer: Color(0xffF7F7F7),
+      secondary: Color(0xff670101),
+      onSecondary: Colors.white,
+      onBackground: Colors.black,
+    ).copyWith(background: Colors.white),
   );
 
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    backgroundColor: Color(0xff222222),
     primaryColor: Color(0xffCC3333),
     scaffoldBackgroundColor: Color(0xff1A1A1A),
     appBarTheme: AppBarTheme(
@@ -75,16 +94,6 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
-    toggleableActiveColor: Color(0xffCC3333),
-    colorScheme: ColorScheme.dark(
-      brightness: Brightness.dark,
-      primary: Color(0xff1A1A1A),
-      onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
-      primaryContainer: Color(0xff1D1D1D),
-      secondary: Color(0xffCC3333),
-      onSecondary: Colors.white,
-      onBackground: Colors.white,
-    ),
     cardTheme: CardTheme(
       color: Color(0xff333333),
     ),
@@ -92,37 +101,68 @@ class HomeTheme {
       color: Color.fromRGBO(255, 255, 255, 0.8),
     ),
     textTheme: TextTheme(
-      headline1: TextStyle(
+      displayLarge: TextStyle(
         color: Colors.white,
       ),
-      headline2: TextStyle(
+      displayMedium: TextStyle(
         color: Colors.white,
       ),
-      headline3: TextStyle(
+      displaySmall: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 0.8),
       ),
-      headline4: TextStyle(
+      headlineMedium: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 0.8),
       ),
-      headline5: TextStyle(
+      headlineSmall: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 0.8),
         fontFamily: 'NovecentoSans',
         fontSize: 22,
       ),
-      headline6: TextStyle(
+      titleLarge: TextStyle(
         color: Color(0xffCC3333),
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
-      bodyText1: TextStyle(
+      bodyLarge: TextStyle(
         color: Colors.white,
         fontSize: 16,
       ),
-      bodyText2: TextStyle(
+      bodyMedium: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 0.8),
         fontSize: 12,
       ),
-    ),
+    ), checkboxTheme: CheckboxThemeData(
+ fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), radioTheme: RadioThemeData(
+ fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), switchTheme: SwitchThemeData(
+ thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+ if (states.contains(MaterialState.disabled)) { return null; }
+ if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ return null;
+ }),
+ ), colorScheme: ColorScheme.dark(
+      brightness: Brightness.dark,
+      primary: Color(0xff1A1A1A),
+      onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
+      primaryContainer: Color(0xff1D1D1D),
+      secondary: Color(0xffCC3333),
+      onSecondary: Colors.white,
+      onBackground: Colors.white,
+    ).copyWith(background: Color(0xff222222)),
   );
 }
 

@@ -16,11 +16,11 @@ class _BasicTextFieldState extends State<BasicTextField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      cursorColor: Theme.of(context).textTheme.bodyText1.color,
-      style: Theme.of(context).textTheme.bodyText1,
+      cursorColor: Theme.of(context).textTheme.bodyLarge.color,
+      style: Theme.of(context).textTheme.bodyLarge,
       keyboardType: widget.keyboardType,
       decoration: InputDecoration(
-        hintStyle: Theme.of(context).textTheme.bodyText1,
+        hintStyle: Theme.of(context).textTheme.bodyLarge,
         hintText: widget.hintText,
       ),
       controller: widget.controller,

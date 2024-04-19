@@ -59,7 +59,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                           children: [
                             Text(
                               "Team Name",
-                              style: HomeTheme.darkTheme.textTheme.bodyText1,
+                              style: HomeTheme.darkTheme.textTheme.bodyLarge,
                             ),
                             SizedBox(
                               width: 5,
@@ -70,8 +70,8 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                                 quarterTurns: 1,
                                 child: Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  color: HomeTheme.darkTheme.textTheme.bodyText1.color,
-                                  size: HomeTheme.darkTheme.textTheme.bodyText1.fontSize,
+                                  color: HomeTheme.darkTheme.textTheme.bodyLarge.color,
+                                  size: HomeTheme.darkTheme.textTheme.bodyLarge.fontSize,
                                 ),
                               ),
                             ),
