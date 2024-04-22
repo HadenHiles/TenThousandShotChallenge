@@ -7,42 +7,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:767649510191:android:56275d208ee7f3eb07a7da",
-        "android_client_info": {
-          "package_name": "com.example.tenthousandshotchallenge"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "767649510191-fajui10n6i4hvnrtdoidmp2rp6vpunaa.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDjFWCxIm9PAS_X02H4tuB6pAueJ96hVug"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "767649510191-fajui10n6i4hvnrtdoidmp2rp6vpunaa.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "767649510191-97sumh7rc5jaj2d9d0a7h4ia5hc6dnrd.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.howtohockey.tenthousandshotchallenge"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:767649510191:android:ac957befc765bfd107a7da",
         "android_client_info": {
           "package_name": "com.howtohockey.tenthousandshotchallenge"
