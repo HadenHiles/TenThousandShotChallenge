@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +34,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize the connection to our firebase project
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   final appleSignInAvailable = await AppleSignInAvailable.check();
 
   // Load global app configurations
