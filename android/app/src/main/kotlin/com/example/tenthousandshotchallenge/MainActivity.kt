@@ -1,4 +1,4 @@
-package com.example.tenthousandshotchallenge
+package com.howtohockey.tenthousandshotchallenge
 
 import io.flutter.embedding.android.FlutterActivity
 
