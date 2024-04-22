@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
