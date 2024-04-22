@@ -6,6 +6,10 @@ allprojects {
 }
 
 rootProject.buildDir = '../build'
+
+android {
+    namespace 'io.flutter.plugins.share'
+}
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
