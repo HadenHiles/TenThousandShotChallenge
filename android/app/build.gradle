@@ -1,9 +1,8 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    id 'com.google.gms.google-services'
     id "dev.flutter.flutter-gradle-plugin"
-    id from "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+    id 'com.google.gms.google-services'
 }
 
 def localProperties = new Properties()
@@ -25,7 +24,18 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 34
+    namespace "com.example.tenthousandshotchallenge"
+    compileSdk flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -33,10 +43,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.howtohockey.tenthousandshotchallenge"
-        minSdkVersion 29
-        targetSdkVersion 34
-        multiDexEnabled true
+        applicationId "com.example.tenthousandshotchallenge"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -46,11 +57,8 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
-            shrinkResources false
-            minifyEnabled false
         }
     }
-    namespace 'com.howtohockey.tenthousandshotchallenge'
 }
 
 flutter {
@@ -58,17 +66,14 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.multidex:multidex:2.0.1"
-
     // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
-        implementation('com.google.firebase:firebase-auth') {
-            exclude module: "play-services-safetynet"
-        }
+    implementation platform('com.google.firebase:firebase-bom:32.8.1')
+    implementation('com.google.firebase:firebase-auth') {
+        exclude module: "play-services-safetynet"
+    }
 
     // Add the dependency for the Firebase SDK for Google Analytics
     // When using the BoM, don't specify versions in Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging")
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging'
 }
