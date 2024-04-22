@@ -6,7 +6,7 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:sign_in_button/sign_in_button.dart';
 import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
@@ -90,7 +90,7 @@ class _LoginState extends State<Login> {
                       height: 50,
                       width: 300,
                       child: SignInButton(
-                        Buttons.Google,
+                        Buttons.google,
                         onPressed: () {
                           socialSignIn(context, 'google', (error) {
                             // ignore: deprecated_member_use
@@ -128,7 +128,7 @@ class _LoginState extends State<Login> {
                               height: 50,
                               width: 300,
                               child: SignInButton(
-                                Buttons.AppleDark,
+                                Buttons.appleDark,
                                 onPressed: () {
                                   socialSignIn(context, 'apple', (error) {
                                     // ignore: deprecated_member_use

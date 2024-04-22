@@ -17,6 +17,8 @@ dependencies:
   firebase_core: ^2.30.0
   firebase_messaging: ^14.8.2
   firebase_remote_config: ^4.4.2
+  flutter: 
+      sdk: flutter
   flutter_barcode_scanner: ^2.0.0
   flutter_cache_manager: ^3.1.1
   flutter_datetime_picker_plus: ^2.2.0
@@ -37,7 +39,7 @@ dependencies:
   provider: ^6.0.1
   qr_flutter: ^4.0.0
   settings_ui: ^2.0.1
-  share_plus: ^8.0.3
+  share_plus: 8.0.3
   shared_preferences: ^2.0.5
   sign_in_button: ^3.2.0
   sliding_up_panel: ^2.0.0+1
@@ -46,12 +48,10 @@ dependencies:
   vibration: ^1.7.3
   video_player: any
   youtube_player_flutter: ^9.0.1
-  flutter: 
-    sdk: flutter
 dev_dependencies: 
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^3.0.2
-  pubspec_dependency_sorter: ^1.0.4
+  # pubspec_dependency_sorter: ^1.0.4
   flutter_test: 
     sdk: flutter
 flutter_icons: 
