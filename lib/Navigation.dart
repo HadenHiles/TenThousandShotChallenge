@@ -28,13 +28,13 @@ final PanelController sessionPanelController = PanelController();
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  Navigation({Key? key, this.title, this.selectedIndex}) : super(key: key);
+  const Navigation({Key? key, this.title, this.selectedIndex}) : super(key: key);
 
   final Widget? title;
   final int? selectedIndex;
 
   @override
-  _NavigationState createState() => _NavigationState();
+  State<Navigation> createState() => _NavigationState();
 }
 
 /// This is the private State class that goes with MyStatefulWidget.
@@ -50,25 +50,25 @@ class _NavigationState extends State<Navigation> {
 
   final logo = Container(
     height: 40,
-    padding: EdgeInsets.only(top: 6),
+    padding: const EdgeInsets.only(top: 6),
     child: Image.asset('assets/images/logo-text-only.png'),
   );
 
-  static List<NavigationTab> _tabs = [
+  static final List<NavigationTab> _tabs = [
     NavigationTab(
       title: Container(
         height: 40,
-        padding: EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.only(top: 6),
         child: Image.asset('assets/images/logo-text-only.png'),
       ),
-      actions: [],
+      actions: const [],
       body: Shots(sessionPanelController: sessionPanelController),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Friends".toUpperCase()),
       actions: [
         Container(
-          margin: EdgeInsets.only(top: 10),
+          margin: const EdgeInsets.only(top: 10),
           child: IconButton(
             icon: Icon(
               Icons.add,
@@ -77,26 +77,26 @@ class _NavigationState extends State<Navigation> {
             ),
             onPressed: () {
               navigatorKey.currentState?.push(MaterialPageRoute(builder: (BuildContext context) {
-                return AddFriend();
+                return const AddFriend();
               }));
             },
           ),
         ),
       ],
-      body: Friends(),
+      body: const Friends(),
     ),
     // NavigationTab(
     //   title: NavigationTitle(title: "Team".toUpperCase()),
     //   body: Team(),
     // ),
-    NavigationTab(
+    const NavigationTab(
       title: null,
       body: Explore(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
       leading: Container(
-        margin: EdgeInsets.only(top: 10),
+        margin: const EdgeInsets.only(top: 10),
         child: IconButton(
           icon: Icon(
             Icons.qr_code_2_rounded,
@@ -110,7 +110,7 @@ class _NavigationState extends State<Navigation> {
       ),
       actions: [
         Container(
-          margin: EdgeInsets.only(top: 10),
+          margin: const EdgeInsets.only(top: 10),
           child: IconButton(
             icon: Icon(
               Icons.settings,
@@ -119,13 +119,13 @@ class _NavigationState extends State<Navigation> {
             ),
             onPressed: () {
               navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                return ProfileSettings();
+                return const ProfileSettings();
               }));
             },
           ),
         ),
       ],
-      body: Profile(),
+      body: const Profile(),
     ),
   ];
 
@@ -158,7 +158,7 @@ class _NavigationState extends State<Navigation> {
     _loadPreferences();
 
     setState(() {
-      _title = widget.title != null ? widget.title : logo;
+      _title = widget.title ?? logo;
       _leading = Container();
       _actions = [];
       _selectedIndex = widget.selectedIndex!;
@@ -184,7 +184,9 @@ class _NavigationState extends State<Navigation> {
     // Update the preferences reference with the latest settings
     preferences = Preferences(darkMode, puckCount, targetDate, fcmToken);
 
-    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    if (mounted) {
+      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    }
   }
 
   @override
@@ -197,7 +199,7 @@ class _NavigationState extends State<Navigation> {
           controller: sessionPanelController,
           maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           minHeight: sessionService.isRunning ? 65 : 0,
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
           ),
@@ -237,7 +239,7 @@ class _NavigationState extends State<Navigation> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              printWeekday(DateTime.now()) + " Session",
+                              "${printWeekday(DateTime.now())} Session",
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSecondary,
                                 fontFamily: "NovecentoSans",
@@ -258,17 +260,17 @@ class _NavigationState extends State<Navigation> {
                                       sessionService.resume();
                                     }
                                   },
+                                  focusColor: darken(Theme.of(context).primaryColor, 0.2),
+                                  enableFeedback: true,
+                                  borderRadius: BorderRadius.circular(30),
                                   child: Padding(
-                                    padding: EdgeInsets.all(10),
+                                    padding: const EdgeInsets.all(10),
                                     child: Icon(
                                       sessionService.isPaused ? Icons.play_arrow : Icons.pause,
                                       size: 30,
                                       color: Colors.white,
                                     ),
                                   ),
-                                  focusColor: darken(Theme.of(context).primaryColor, 0.2),
-                                  enableFeedback: true,
-                                  borderRadius: BorderRadius.circular(30),
                                 ),
                                 Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -312,7 +314,7 @@ class _NavigationState extends State<Navigation> {
                             }
                           },
                         ),
-                        contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                         onTap: () {
                           if (sessionPanelController.isPanelClosed) {
                             sessionPanelController.open();
@@ -373,7 +375,7 @@ class _NavigationState extends State<Navigation> {
                         ];
                 },
                 body: Container(
-                  padding: EdgeInsets.only(bottom: 0),
+                  padding: const EdgeInsets.only(bottom: 0),
                   child: _tabs.elementAt(_selectedIndex),
                 ),
               ),
@@ -392,21 +394,21 @@ class _NavigationState extends State<Navigation> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Image(
+                      const Image(
                         image: AssetImage('assets/images/logo.png'),
                       ),
                       Text(
                         "Where's the wifi bud?".toUpperCase(),
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontFamily: "NovecentoSans",
                           fontSize: 24,
                         ),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 25,
                       ),
-                      CircularProgressIndicator(
+                      const CircularProgressIndicator(
                         color: Colors.white70,
                       ),
                     ],

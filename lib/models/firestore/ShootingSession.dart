@@ -29,7 +29,7 @@ class ShootingSession {
         totalSnap = map['total_snap'],
         totalSlap = map['total_slap'],
         totalBackhand = map['total_backhand'],
-        date = map['date'] != null ? map['date'].toDate() : null,
+        date = map['date']?.toDate(),
         duration = Duration(seconds: map['duration']);
 
   Map<String, dynamic> toMap() {

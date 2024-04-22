@@ -5,21 +5,21 @@ class HomeTheme {
 
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: Color(0xffCC3333),
-    scaffoldBackgroundColor: Color(0xffF7F7F7),
+    primaryColor: const Color(0xffCC3333),
+    scaffoldBackgroundColor: const Color(0xffF7F7F7),
     appBarTheme: AppBarTheme(
       color: Colors.grey.shade400,
-      iconTheme: IconThemeData(
+      iconTheme: const IconThemeData(
         color: Colors.white,
       ),
     ),
     cardTheme: CardTheme(
       color: Colors.grey.shade300,
     ),
-    iconTheme: IconThemeData(
+    iconTheme: const IconThemeData(
       color: Colors.black87,
     ),
-    textTheme: TextTheme(
+    textTheme: const TextTheme(
       displayLarge: TextStyle(
         color: Colors.black87,
       ),
@@ -53,27 +53,27 @@ class HomeTheme {
     ), checkboxTheme: CheckboxThemeData(
  fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  ), radioTheme: RadioThemeData(
  fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  ), switchTheme: SwitchThemeData(
  thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
- ), colorScheme: ColorScheme.light(
+ ), colorScheme: const ColorScheme.light(
       brightness: Brightness.light,
       primary: Colors.white,
       onPrimary: Colors.black54,
@@ -86,21 +86,21 @@ class HomeTheme {
 
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: Color(0xffCC3333),
-    scaffoldBackgroundColor: Color(0xff1A1A1A),
-    appBarTheme: AppBarTheme(
+    primaryColor: const Color(0xffCC3333),
+    scaffoldBackgroundColor: const Color(0xff1A1A1A),
+    appBarTheme: const AppBarTheme(
       color: Colors.white,
       iconTheme: IconThemeData(
         color: Colors.white,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: const CardTheme(
       color: Color(0xff333333),
     ),
-    iconTheme: IconThemeData(
+    iconTheme: const IconThemeData(
       color: Color.fromRGBO(255, 255, 255, 0.8),
     ),
-    textTheme: TextTheme(
+    textTheme: const TextTheme(
       displayLarge: TextStyle(
         color: Colors.white,
       ),
@@ -134,27 +134,27 @@ class HomeTheme {
     ), checkboxTheme: CheckboxThemeData(
  fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  ), radioTheme: RadioThemeData(
  fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  ), switchTheme: SwitchThemeData(
  thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
  trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
  if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return Color(0xffCC3333); }
+ if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
  return null;
  }),
- ), colorScheme: ColorScheme.dark(
+ ), colorScheme: const ColorScheme.dark(
       brightness: Brightness.dark,
       primary: Color(0xff1A1A1A),
       onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
@@ -162,7 +162,7 @@ class HomeTheme {
       secondary: Color(0xffCC3333),
       onSecondary: Colors.white,
       onBackground: Colors.white,
-    ).copyWith(background: Color(0xff222222)),
+    ).copyWith(background: const Color(0xff222222)),
   );
 }
 

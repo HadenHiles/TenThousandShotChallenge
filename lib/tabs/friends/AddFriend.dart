@@ -18,10 +18,10 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:wc_flutter_share/wc_flutter_share.dart';
 
 class AddFriend extends StatefulWidget {
-  AddFriend({Key? key}) : super(key: key);
+  const AddFriend({Key? key}) : super(key: key);
 
   @override
-  _AddFriendState createState() => _AddFriendState();
+  State<AddFriend> createState() => _AddFriendState();
 }
 
 class _AddFriendState extends State<AddFriend> {
@@ -67,21 +67,21 @@ class _AddFriendState extends State<AddFriend> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image(
+                const Image(
                   image: AssetImage('assets/images/logo.png'),
                 ),
                 Text(
                   "Where's the wifi bud?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontFamily: "NovecentoSans",
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 25,
                 ),
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: Colors.white70,
                 ),
               ],
@@ -100,7 +100,7 @@ class _AddFriendState extends State<AddFriend> {
                   floating: true,
                   pinned: true,
                   leading: Container(
-                    margin: EdgeInsets.only(top: 10),
+                    margin: const EdgeInsets.only(top: 10),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
@@ -120,7 +120,7 @@ class _AddFriendState extends State<AddFriend> {
                       collapseMode: CollapseMode.parallax,
                       titlePadding: null,
                       centerTitle: false,
-                      title: BasicTitle(title: "Invite Friend"),
+                      title: const BasicTitle(title: "Invite Friend"),
                       background: Container(
                         color: Theme.of(context).scaffoldBackgroundColor,
                       ),
@@ -128,7 +128,7 @@ class _AddFriendState extends State<AddFriend> {
                   ),
                   actions: [
                     Container(
-                      margin: EdgeInsets.only(top: 10),
+                      margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         onPressed: () {
                           WcFlutterShare.share(
@@ -148,7 +148,7 @@ class _AddFriendState extends State<AddFriend> {
                     _selectedFriend == null
                         ? Container()
                         : Container(
-                            margin: EdgeInsets.only(top: 10),
+                            margin: const EdgeInsets.only(top: 10),
                             child: IconButton(
                               icon: Icon(
                                 Icons.send,
@@ -162,12 +162,12 @@ class _AddFriendState extends State<AddFriend> {
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName.toString() + " Invited!",
+                                          "${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} Invited!",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
-                                        duration: Duration(seconds: 4),
+                                        duration: const Duration(seconds: 4),
                                       ),
                                     );
 
@@ -181,12 +181,12 @@ class _AddFriendState extends State<AddFriend> {
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          "Failed to invite " + UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName.toString() + " :(",
+                                          "Failed to invite ${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} :(",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
-                                        duration: Duration(seconds: 4),
+                                        duration: const Duration(seconds: 4),
                                       ),
                                     );
                                   }
@@ -209,172 +209,168 @@ class _AddFriendState extends State<AddFriend> {
                 }
               },
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    Container(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
-                            width: MediaQuery.of(context).size.width * 0.7,
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                children: [
-                                  TextFormField(
-                                    keyboardType: TextInputType.text,
-                                    decoration: InputDecoration(
-                                      hintText: 'Enter Name or Email'.toUpperCase(),
-                                      labelText: "Find a friend".toUpperCase(),
-                                      alignLabelWithHint: true,
-                                      labelStyle: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                      hintStyle: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 20,
-                                        color: Theme.of(context).cardTheme.color,
-                                      ),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 24,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  keyboardType: TextInputType.text,
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter Name or Email'.toUpperCase(),
+                                    labelText: "Find a friend".toUpperCase(),
+                                    alignLabelWithHint: true,
+                                    labelStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       color: Theme.of(context).colorScheme.onPrimary,
                                     ),
-                                    onChanged: (value) async {
-                                      if (value.length >= 1) {
-                                        setState(() {
-                                          _isSearching = true;
-                                        });
-
-                                        List<DocumentSnapshot> users = [];
-                                        if (value.isNotEmpty) {
-                                          await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                                uSnaps.docs.forEach((uDoc) {
+                                    hintStyle: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                      color: Theme.of(context).cardTheme.color,
+                                    ),
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontFamily: 'NovecentoSans',
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  onChanged: (value) async {
+                                    if (value.isNotEmpty) {
+                                      setState(() {
+                                        _isSearching = true;
+                                      });
+                    
+                                      List<DocumentSnapshot> users = [];
+                                      if (value.isNotEmpty) {
+                                        await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                              for (var uDoc in uSnaps.docs) {
+                                                if (uDoc.reference.id != user!.uid) {
+                                                  users.add(uDoc);
+                                                }
+                                              }
+                                            });
+                                        if (users.isEmpty) {
+                                          await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                                for (var uDoc in uSnaps.docs) {
                                                   if (uDoc.reference.id != user!.uid) {
                                                     users.add(uDoc);
                                                   }
-                                                });
+                                                }
                                               });
-                                          if (users.length < 1) {
-                                            await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt([value.toLowerCase() + '\uf8ff']).get().then((uSnaps) async {
-                                                  uSnaps.docs.forEach((uDoc) {
-                                                    if (uDoc.reference.id != user!.uid) {
-                                                      users.add(uDoc);
-                                                    }
-                                                  });
-                                                });
-                                          }
-
-                                          await new Future.delayed(new Duration(milliseconds: 500));
-
-                                          setState(() {
-                                            _friends = users;
-                                            _isSearching = false;
-                                          });
                                         }
-
+                    
+                                        await Future.delayed(const Duration(milliseconds: 500));
+                    
                                         setState(() {
                                           _friends = users;
                                           _isSearching = false;
                                         });
-                                      } else {
-                                        setState(() {
-                                          _friends = [];
-                                          _isSearching = false;
-                                        });
                                       }
-                                    },
-                                    controller: searchFieldController,
-                                    validator: (value) {
-                                      if (value!.isEmpty) {
-                                        return 'Enter a name or email address';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 15),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  child: Text(
-                                    "Scan".toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 20,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  margin: EdgeInsets.only(right: 15),
-                                  child: IconButton(
-                                    onPressed: () {
-                                      scanBarcodeNormal().then((success) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                            content: Text(
-                                              "You are now friends!",
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 2500),
-                                          ),
-                                        );
-
-                                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                          return Navigation(
-                                            title: NavigationTitle(title: "Friends".toUpperCase()),
-                                            selectedIndex: 1,
-                                          );
-                                        }));
-                                      }).onError((error, stackTrace) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                            content: Text(
-                                              "There was an error scanning your friend's QR code :(",
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 4000),
-                                          ),
-                                        );
+                    
+                                      setState(() {
+                                        _friends = users;
+                                        _isSearching = false;
                                       });
-                                    },
-                                    icon: Icon(
-                                      Icons.qr_code_2_rounded,
-                                      size: 50,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                    color: Theme.of(context).primaryColor,
-                                  ),
+                                    } else {
+                                      setState(() {
+                                        _friends = [];
+                                        _isSearching = false;
+                                      });
+                                    }
+                                  },
+                                  controller: searchFieldController,
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return 'Enter a name or email address';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "Scan".toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 20,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(right: 15),
+                                child: IconButton(
+                                  onPressed: () {
+                                    scanBarcodeNormal().then((success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          content: Text(
+                                            "You are now friends!",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          duration: const Duration(milliseconds: 2500),
+                                        ),
+                                      );
+                    
+                                      navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                        return Navigation(
+                                          title: NavigationTitle(title: "Friends".toUpperCase()),
+                                          selectedIndex: 1,
+                                        );
+                                      }));
+                                    }).onError((error, stackTrace) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          content: Text(
+                                            "There was an error scanning your friend's QR code :(",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          duration: const Duration(milliseconds: 4000),
+                                        ),
+                                      );
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.qr_code_2_rounded,
+                                    size: 50,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     Flexible(
-                      child: _isSearching && _friends.length < 1 && searchFieldController.text.length > 0
+                      child: _isSearching && _friends.isEmpty && searchFieldController.text.isNotEmpty
                           ? Column(
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -385,14 +381,14 @@ class _AddFriendState extends State<AddFriend> {
                                 )
                               ],
                             )
-                          : _friends.length < 1 && searchFieldController.text.length > 0
+                          : _friends.isEmpty && searchFieldController.text.isNotEmpty
                               ? Column(
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      margin: EdgeInsets.only(top: 40),
+                                      margin: const EdgeInsets.only(top: 40),
                                       child: Text(
                                         "Couldn't find your friend?",
                                         style: TextStyle(
@@ -403,7 +399,7 @@ class _AddFriendState extends State<AddFriend> {
                                       ),
                                     ),
                                     Container(
-                                      margin: EdgeInsets.only(top: 25),
+                                      margin: const EdgeInsets.only(top: 25),
                                       child: Text(
                                         "Challenge them!".toUpperCase(),
                                         style: TextStyle(
@@ -414,7 +410,7 @@ class _AddFriendState extends State<AddFriend> {
                                       ),
                                     ),
                                     Container(
-                                      margin: EdgeInsets.only(top: 5),
+                                      margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
                                           WcFlutterShare.share(
@@ -472,14 +468,14 @@ class _AddFriendState extends State<AddFriend> {
             decoration: BoxDecoration(
               color: _selectedFriend == i ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
-            padding: EdgeInsets.symmetric(vertical: 9),
+            padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
                 _selectedFriend == i
                     ? Container(
                         height: 60,
                         width: 60,
-                        margin: EdgeInsets.symmetric(horizontal: 15),
+                        margin: const EdgeInsets.symmetric(horizontal: 15),
                         decoration: BoxDecoration(color: Colors.blue.shade600, borderRadius: BorderRadius.circular(30)),
                         child: IconButton(
                           onPressed: () {
@@ -488,14 +484,14 @@ class _AddFriendState extends State<AddFriend> {
                               searchFieldController.text = searchFieldController.text;
                             });
                           },
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.check,
                             color: Colors.white,
                           ),
                         ),
                       )
                     : Container(
-                        margin: EdgeInsets.symmetric(horizontal: 15),
+                        margin: const EdgeInsets.symmetric(horizontal: 15),
                         width: 60,
                         height: 60,
                         clipBehavior: Clip.antiAlias,
@@ -520,7 +516,7 @@ class _AddFriendState extends State<AddFriend> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         friend.displayName != null
-                            ? Container(
+                            ? SizedBox(
                                 width: MediaQuery.of(context).size.width - 235,
                                 child: AutoSizeText(
                                   friend.displayName!,
@@ -539,13 +535,13 @@ class _AddFriendState extends State<AddFriend> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Container(
+                        SizedBox(
                           width: 135,
                           child: StreamBuilder(
                               stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
-                                  return Center(
+                                  return const Center(
                                     child: SizedBox(
                                       width: 120,
                                       height: 2,
@@ -554,12 +550,12 @@ class _AddFriendState extends State<AddFriend> {
                                   );
                                 } else {
                                   int total = 0;
-                                  snapshot.data!.docs.forEach((doc) {
+                                  for (var doc in snapshot.data!.docs) {
                                     total += Iteration.fromSnapshot(doc).total!;
-                                  });
+                                  }
 
                                   return AutoSizeText(
-                                    total.toString() + " Lifetime Shots",
+                                    "$total Lifetime Shots",
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
@@ -571,38 +567,36 @@ class _AddFriendState extends State<AddFriend> {
                                 }
                               }),
                         ),
-                        Container(
-                          child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                if (!snapshot.hasData) {
-                                  return Center(
-                                    child: SizedBox(
-                                      width: 120,
-                                      height: 2,
-                                      child: LinearProgressIndicator(),
-                                    ),
-                                  );
-                                } else {
-                                  Duration totalDuration = Duration();
-                                  snapshot.data!.docs.forEach((doc) {
-                                    totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                                  });
-
-                                  return totalDuration > Duration()
-                                      ? Text(
-                                          "IN " + printDuration(totalDuration, true),
-                                          textAlign: TextAlign.right,
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontFamily: 'NovecentoSans',
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        )
-                                      : Container();
+                        StreamBuilder(
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                  child: SizedBox(
+                                    width: 120,
+                                    height: 2,
+                                    child: LinearProgressIndicator(),
+                                  ),
+                                );
+                              } else {
+                                Duration totalDuration = const Duration();
+                                for (var doc in snapshot.data!.docs) {
+                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                 }
-                              }),
-                        ),
+                        
+                                return totalDuration > const Duration()
+                                    ? Text(
+                                        "IN ${printDuration(totalDuration, true)}",
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontFamily: 'NovecentoSans',
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      )
+                                    : Container();
+                              }
+                            }),
                       ],
                     ),
                   ],

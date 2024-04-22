@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NavigationTab extends StatefulWidget {
-  NavigationTab({Key? key, this.title, this.leading, this.actions, this.body}) : super(key: key);
+  const NavigationTab({Key? key, this.title, this.leading, this.actions, this.body}) : super(key: key);
 
   final Widget? title;
   final Widget? leading;
@@ -9,14 +9,14 @@ class NavigationTab extends StatefulWidget {
   final Widget? body;
 
   @override
-  _NavigationTabState createState() => _NavigationTabState();
+  State<NavigationTab> createState() => _NavigationTabState();
 }
 
 class _NavigationTabState extends State<NavigationTab> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.transparent,
       ),
       child: widget.body,

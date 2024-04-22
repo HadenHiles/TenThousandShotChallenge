@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 
 class UserAvatar extends StatelessWidget {
-  UserAvatar({Key? key, this.user, this.radius, this.backgroundColor}) : super(key: key);
+  const UserAvatar({Key? key, this.user, this.radius, this.backgroundColor}) : super(key: key);
 
   final UserProfile? user;
   final double? radius;
@@ -30,10 +30,10 @@ class UserAvatar extends StatelessWidget {
           scale: user!.photoUrl!.contains('characters') ? 1.03 : 0.98,
           child: CircleAvatar(
             radius: radius,
+            backgroundColor: backgroundColor,
             child: Image(
               image: AssetImage(user!.photoUrl!),
             ),
-            backgroundColor: backgroundColor,
           ),
         ),
       );
@@ -43,7 +43,7 @@ class UserAvatar extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: CircleAvatar(
           radius: radius,
-          backgroundImage: AssetImage("assets/images/avatar.png"),
+          backgroundImage: const AssetImage("assets/images/avatar.png"),
           backgroundColor: backgroundColor,
         ),
       );

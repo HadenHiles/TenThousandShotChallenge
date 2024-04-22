@@ -14,7 +14,7 @@ class Shots {
         assert(map['type'] != null),
         assert(map['count'] != null),
         id = map['id'],
-        date = map['date'] != null ? map['date'].toDate() : null,
+        date = map['date']?.toDate(),
         type = map['type'],
         count = map['count'];
 

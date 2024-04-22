@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'package:data_connection_checker_nulls/data_connection_checker_nulls.dart';
 

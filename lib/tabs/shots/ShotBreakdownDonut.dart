@@ -11,15 +11,15 @@ class ShotBreakdownDonut extends StatelessWidget {
   final List<charts.Series> seriesList;
   final bool? animate;
 
-  ShotBreakdownDonut(this.seriesList, {this.animate});
+  const ShotBreakdownDonut(this.seriesList, {Key? key, this.animate}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return new charts.PieChart(
+    return charts.PieChart(
       seriesList,
       animate: animate,
-      animationDuration: Duration(milliseconds: 500),
-      selectionModels: [],
+      animationDuration: const Duration(milliseconds: 500),
+      selectionModels: const [],
       // Configure the width of the pie slices to 60px. The remaining space in
       // the chart will be left as a hole in the center.
       //
@@ -35,12 +35,12 @@ class ShotBreakdownDonut extends StatelessWidget {
       //       new charts.ArcLabelDecorator(
       //          insideLabelStyleSpec: new charts.TextStyleSpec(...),
       //          outsideLabelStyleSpec: new charts.TextStyleSpec(...)),
-      defaultRenderer: new charts.ArcRendererConfig(
+      defaultRenderer: charts.ArcRendererConfig(
         startAngle: 5 / 5 * pi,
         arcLength: 10 / 5 * pi,
         arcRatio: 0.4,
         arcRendererDecorators: [
-          new charts.ArcLabelDecorator(
+          charts.ArcLabelDecorator(
               outsideLabelStyleSpec: TextStyleSpec(
             fontFamily: 'NovecentoSans',
             fontSize: 18,

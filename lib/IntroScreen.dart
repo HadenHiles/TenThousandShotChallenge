@@ -13,8 +13,10 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
 class IntroScreen extends StatefulWidget {
+  const IntroScreen({Key? key}) : super(key: key);
+
   @override
-  _IntroScreenState createState() => _IntroScreenState();
+  State<IntroScreen> createState() => _IntroScreenState();
 }
 
 class _IntroScreenState extends State<IntroScreen> {
@@ -34,10 +36,10 @@ class _IntroScreenState extends State<IntroScreen> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) {
         return user != null
-            ? Navigation(
+            ? const Navigation(
                 selectedIndex: 2,
               )
-            : Login();
+            : const Login();
       }),
     );
   }
@@ -58,7 +60,7 @@ class _IntroScreenState extends State<IntroScreen> {
   Widget build(BuildContext context) {
     const bodyStyle = TextStyle(fontSize: 22.0, color: Color.fromRGBO(255, 255, 255, 0.9));
 
-    const pageDecoration = const PageDecoration(
+    const pageDecoration = PageDecoration(
       titleTextStyle: TextStyle(
         fontSize: 32.0,
         fontFamily: 'NovecentoSans',
@@ -72,7 +74,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
     return IntroductionScreen(
       key: introKey,
-      globalBackgroundColor: Color(0xffCC33333),
+      globalBackgroundColor: const Color(0xffcc3333),
       pages: [
         PageViewModel(
           title: "Take the 10,000 shot challenge".toUpperCase(),
@@ -122,18 +124,20 @@ class _IntroScreenState extends State<IntroScreen> {
                               prefs.setBool('dark_mode', false);
                               preferences?.darkMode = false;
 
-                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                              if (context.mounted) {
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                              }
                             },
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Colors.white),
+                            ),
                             child: Text(
                               "Light".toUpperCase(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'NovecentoSans',
                                 fontSize: 24,
                                 color: Colors.black54,
                               ),
-                            ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Colors.white),
                             ),
                           ),
                         ),
@@ -149,27 +153,29 @@ class _IntroScreenState extends State<IntroScreen> {
                               prefs.setBool('dark_mode', true);
                               preferences?.darkMode = true;
 
-                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                              if (context.mounted) {
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                              }
                             },
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(const Color(0xff1A1A1A)),
+                            ),
                             child: Text(
                               "Dark".toUpperCase(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'NovecentoSans',
                                 fontSize: 24,
                                 color: Color.fromRGBO(255, 255, 255, 0.75),
                               ),
                             ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Color(0xff1A1A1A)),
-                            ),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 10,
                     ),
-                    Text(
+                    const Text(
                       'You can change this later',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
@@ -202,7 +208,7 @@ class _IntroScreenState extends State<IntroScreen> {
                     TextFormField(
                       controller: _puckCountTextFieldController,
                       keyboardType: TextInputType.number,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 28,
                         color: Colors.white,
@@ -213,13 +219,15 @@ class _IntroScreenState extends State<IntroScreen> {
                         prefs.setInt('puck_count', int.parse(value));
                         preferences?.puckCount = int.parse(value);
 
-                        Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                        if (context.mounted) {
+                          Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                        }
                       },
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 10,
                     ),
-                    Text(
+                    const Text(
                       'You can change this later',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
@@ -234,7 +242,7 @@ class _IntroScreenState extends State<IntroScreen> {
             ],
           ),
           image: Container(
-            margin: EdgeInsets.only(bottom: 30),
+            margin: const EdgeInsets.only(bottom: 30),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -244,7 +252,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   color: Colors.white,
                 ),
                 // Top Left
-                Positioned(
+                const Positioned(
                   left: -25,
                   top: -25.0,
                   child: Icon(
@@ -254,7 +262,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                 ),
                 // Bottom Left
-                Positioned(
+                const Positioned(
                   left: -35,
                   bottom: -30.0,
                   child: Icon(
@@ -264,7 +272,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                 ),
                 // Top right
-                Positioned(
+                const Positioned(
                   right: -30,
                   top: -35.0,
                   child: Icon(
@@ -274,7 +282,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                 ),
                 // Bottom right
-                Positioned(
+                const Positioned(
                   right: -30,
                   bottom: -25.0,
                   child: Icon(
@@ -297,12 +305,12 @@ class _IntroScreenState extends State<IntroScreen> {
                 width: 200,
                 child: Column(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       height: 15,
                     ),
                     TextFormField(
                       controller: _targetDateTextFieldController,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 28,
                         color: Colors.white,
@@ -353,17 +361,19 @@ class _IntroScreenState extends State<IntroScreen> {
                               });
                             }
 
-                            Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                            if (context.mounted) {
+                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+                            }
                           },
                           currentTime: _targetDate,
                           locale: LocaleType.en,
                         );
                       },
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 10,
                     ),
-                    Text(
+                    const Text(
                       'You can change this later',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
@@ -372,7 +382,7 @@ class _IntroScreenState extends State<IntroScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 10,
                     ),
                   ],
@@ -388,13 +398,13 @@ class _IntroScreenState extends State<IntroScreen> {
                 "Set your goal".toUpperCase(),
                 maxFontSize: 44,
                 maxLines: 3,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 44,
                   fontFamily: "NovecentoSans",
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 40,
               ),
               Icon(
@@ -415,19 +425,19 @@ class _IntroScreenState extends State<IntroScreen> {
       //rtl: true, // Display as right-to-left
       skip: Text(
         'Skip'.toUpperCase(),
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
           color: Colors.white,
         ),
       ),
-      next: Icon(
+      next: const Icon(
         Icons.arrow_forward_ios,
         color: Colors.white,
       ),
       done: Text(
         'Done'.toUpperCase(),
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
           color: Colors.white,

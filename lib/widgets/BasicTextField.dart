@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BasicTextField extends StatefulWidget {
-  BasicTextField({Key? key, this.hintText, this.controller, this.keyboardType, this.validator}) : super(key: key);
+  const BasicTextField({Key? key, this.hintText, this.controller, this.keyboardType, this.validator}) : super(key: key);
 
   final String? hintText;
   final TextEditingController? controller;
@@ -9,7 +9,7 @@ class BasicTextField extends StatefulWidget {
   final Function? validator;
 
   @override
-  _BasicTextFieldState createState() => _BasicTextFieldState();
+  State<BasicTextField> createState() => _BasicTextFieldState();
 }
 
 class _BasicTextFieldState extends State<BasicTextField> {

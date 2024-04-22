@@ -17,7 +17,7 @@ Future<bool?> saveShootingSession(List<Shots> shots) async {
   int snap = 0;
   int slap = 0;
   int backhand = 0;
-  shots.forEach((s) {
+  for (var s in shots) {
     total += s.count!;
 
     switch (s.type) {
@@ -35,12 +35,12 @@ Future<bool?> saveShootingSession(List<Shots> shots) async {
         break;
       default:
     }
-  });
+  }
 
   ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now(), sessionService.currentDuration);
   shootingSession.shots = shots;
 
-  Iteration iteration = Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, Duration(), 0, 0, 0, 0, 0, false);
+  Iteration iteration = Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, const Duration(), 0, 0, 0, 0, 0, false);
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
@@ -64,10 +64,10 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
     // Get a new write batch
     var batch = FirebaseFirestore.instance.batch();
 
-    shots.forEach((shot) {
+    for (var shot in shots) {
       var sRef = s.collection('shots').doc();
       batch.set(sRef, shot.toMap());
-    });
+    }
 
     await ref.get().then((i) {
       Iteration iteration = Iteration.fromSnapshot(i);
@@ -222,7 +222,7 @@ Future<bool?> startNewIteration() async {
               DateTime.now(),
               DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
               null,
-              Duration(),
+              const Duration(),
               0,
               0,
               0,

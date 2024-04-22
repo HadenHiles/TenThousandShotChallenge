@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -5,10 +7,10 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 const TEAM_HEADER_HEIGHT = 65.0;
 
 class Team extends StatefulWidget {
-  Team({Key? key}) : super(key: key);
+  const Team({Key? key}) : super(key: key);
 
   @override
-  _TeamState createState() => _TeamState();
+  State<Team> createState() => _TeamState();
 }
 
 class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
@@ -28,10 +30,10 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(0),
+      margin: const EdgeInsets.all(0),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1) - TEAM_HEADER_HEIGHT,
             child: NestedScrollView(
               clipBehavior: Clip.antiAlias,
@@ -61,7 +63,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                               "Team Name",
                               style: HomeTheme.darkTheme.textTheme.bodyLarge,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 5,
                             ),
                             RotationTransition(
@@ -82,7 +84,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
                   ),
                 ];
               },
-              body: Column(),
+              body: const Column(),
             ),
           ),
         ],
@@ -100,12 +102,12 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15.0),
                 topRight: Radius.circular(15.0),
               ),
             ),
-            child: Column(
+            child: const Column(
               children: [
                 TeamList(),
               ],
@@ -123,7 +125,7 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
 }
 
 class TeamList extends StatefulWidget {
-  TeamList({Key? key}) : super(key: key);
+  const TeamList({Key? key}) : super(key: key);
 
   @override
   State<TeamList> createState() => _TeamListState();
@@ -132,7 +134,7 @@ class TeamList extends StatefulWidget {
 class _TeamListState extends State<TeamList> {
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         ListTile(
           title: Text("Old Paint Cans"),

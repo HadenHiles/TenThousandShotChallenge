@@ -23,20 +23,20 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Profile extends StatefulWidget {
-  Profile({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  const Profile({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;
 
   @override
-  _ProfileState createState() => _ProfileState();
+  State<Profile> createState() => _ProfileState();
 }
 
 class _ProfileState extends State<Profile> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
-  final GlobalKey _avatarMenuKey = new GlobalKey();
+  final GlobalKey _avatarMenuKey = GlobalKey();
 
   UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser!.photoURL, true, '');
   bool _isLoading = true;
@@ -62,9 +62,9 @@ class _ProfileState extends State<Profile> {
 
   Future<Null> _loadFirstLastSession() async {
     await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) async {
-      if (iterationSnap.docs.length > 0) {
+      if (iterationSnap.docs.isNotEmpty) {
         await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationSnap.docs.first.id).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
-          if (sessionsSnap.docs.length > 0) {
+          if (sessionsSnap.docs.isNotEmpty) {
             ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
             ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
 
@@ -85,7 +85,7 @@ class _ProfileState extends State<Profile> {
         iterations.add(DropdownMenuItem<String>(
           value: iDoc.reference.id,
           child: Text(
-            "challenge " + (i + 1).toString().toLowerCase(),
+            "challenge ${(i + 1).toString().toLowerCase()}",
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 26,
@@ -103,16 +103,16 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<Null> _loadRecentSessions() async {
-    await Future.delayed(new Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
       List<DocumentSnapshot> sessions = [];
       snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(3).get().then((sSnap) {
-        sSnap.docs.forEach((s) {
+        for (var s in sSnap.docs) {
           sessions.add(s);
-        });
+        }
 
-        if (sessions.length > 0) {
+        if (sessions.isNotEmpty) {
           if (mounted) {
             setState(() {
               _isLoading = false;
@@ -129,7 +129,7 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(top: 15),
+      padding: const EdgeInsets.only(top: 15),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -141,7 +141,7 @@ class _ProfileState extends State<Profile> {
               Row(
                 children: [
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 15),
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -153,7 +153,8 @@ class _ProfileState extends State<Profile> {
                               iconSize: 40,
                               icon: Container(),
                               itemBuilder: (_) => <PopupMenuItem<String>>[
-                                new PopupMenuItem<String>(
+                                PopupMenuItem<String>(
+                                  value: 'edit',
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -170,9 +171,9 @@ class _ProfileState extends State<Profile> {
                                       ),
                                     ],
                                   ),
-                                  value: 'edit',
                                 ),
-                                new PopupMenuItem<String>(
+                                PopupMenuItem<String>(
+                                  value: 'qr_code',
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -189,13 +190,12 @@ class _ProfileState extends State<Profile> {
                                       ),
                                     ],
                                   ),
-                                  value: 'qr_code',
                                 ),
                               ],
                               onSelected: (value) {
                                 if (value == 'edit') {
                                   navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                                    return EditProfile();
+                                    return const EditProfile();
                                   }));
                                 } else if (value == 'qr_code') {
                                   showQRCode(user);
@@ -214,7 +214,7 @@ class _ProfileState extends State<Profile> {
                                   Feedback.forLongPress(context);
 
                                   navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                                    return EditProfile();
+                                    return const EditProfile();
                                   }));
                                 },
                                 onTap: () {
@@ -242,14 +242,14 @@ class _ProfileState extends State<Profile> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      SizedBox(
                         width: (MediaQuery.of(context).size.width - 100) * 0.6,
                         child: StreamBuilder<DocumentSnapshot>(
                           // ignore: deprecated_member_use
                           stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
                           builder: (context, snapshot) {
-                            if (!snapshot.hasData)
-                              return Column(
+                            if (!snapshot.hasData) {
+                              return const Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.max,
@@ -263,10 +263,11 @@ class _ProfileState extends State<Profile> {
                                   ),
                                 ],
                               );
+                            }
 
                             UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
-                            return Container(
+                            return SizedBox(
                               width: (MediaQuery.of(context).size.width - 100) * 0.5,
                               child: AutoSizeText(
                                 userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : user!.displayName!,
@@ -282,84 +283,80 @@ class _ProfileState extends State<Profile> {
                           },
                         ),
                       ),
-                      Container(
-                        child: StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
-                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                              if (!snapshot.hasData) {
-                                return Center(
-                                  child: SizedBox(
-                                    width: (MediaQuery.of(context).size.width - 100) * 0.5,
-                                    height: 2,
-                                    child: LinearProgressIndicator(),
-                                  ),
-                                );
-                              } else {
-                                int total = 0;
-                                snapshot.data!.docs.forEach((doc) {
-                                  total += Iteration.fromSnapshot(doc).total!;
-                                });
-
-                                return Container(
+                      StreamBuilder(
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                            if (!snapshot.hasData) {
+                              return Center(
+                                child: SizedBox(
                                   width: (MediaQuery.of(context).size.width - 100) * 0.5,
-                                  child: AutoSizeText(
-                                    total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
-                                    maxFontSize: 20,
-                                    maxLines: 1,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                );
+                                  height: 2,
+                                  child: const LinearProgressIndicator(),
+                                ),
+                              );
+                            } else {
+                              int total = 0;
+                              for (var doc in snapshot.data!.docs) {
+                                total += Iteration.fromSnapshot(doc).total!;
                               }
-                            }),
-                      ),
-                      Container(
-                        child: StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
-                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                              if (!snapshot.hasData) {
-                                return Center(
-                                  child: SizedBox(
-                                    width: (MediaQuery.of(context).size.width - 100) * 0.5,
-                                    height: 2,
-                                    child: LinearProgressIndicator(),
-                                  ),
-                                );
-                              } else {
-                                Duration totalDuration = Duration();
-                                snapshot.data!.docs.forEach((doc) {
-                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                                });
 
-                                return totalDuration > Duration()
-                                    ? Text(
-                                        "IN " + printDuration(totalDuration, true),
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      )
-                                    : Container();
+                              return SizedBox(
+                                width: (MediaQuery.of(context).size.width - 100) * 0.5,
+                                child: AutoSizeText(
+                                  total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
+                                  maxFontSize: 20,
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontFamily: 'NovecentoSans',
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              );
+                            }
+                          }),
+                      StreamBuilder(
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                            if (!snapshot.hasData) {
+                              return Center(
+                                child: SizedBox(
+                                  width: (MediaQuery.of(context).size.width - 100) * 0.5,
+                                  height: 2,
+                                  child: const LinearProgressIndicator(),
+                                ),
+                              );
+                            } else {
+                              Duration totalDuration = const Duration();
+                              for (var doc in snapshot.data!.docs) {
+                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                               }
-                            }),
-                      ),
+
+                              return totalDuration > const Duration()
+                                  ? Text(
+                                      "IN ${printDuration(totalDuration, true)}",
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    )
+                                  : Container();
+                            }
+                          }),
                     ],
                   ),
                 ],
               ),
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 15),
+                margin: const EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
                   children: [
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          return Container(
+                          return SizedBox(
                             width: (MediaQuery.of(context).size.width - 100) * 0.3,
                             child: AutoSizeText(
                               "challenge ".toLowerCase() + (snapshot.data!.docs.length).toString().toLowerCase(),
@@ -382,326 +379,318 @@ class _ProfileState extends State<Profile> {
               ),
             ],
           ),
-          Container(
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
-                  if (i.endDate != null) {
-                    int daysTaken = i.endDate!.difference(firstSessionDate!).inDays + 1;
-                    daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                    String endDate = DateFormat('MMMM d, y').format(i.endDate!);
-                    String iterationDescription;
-                    String goalDescription = "";
-                    String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+                if (i.endDate != null) {
+                  int daysTaken = i.endDate!.difference(firstSessionDate!).inDays + 1;
+                  daysTaken = daysTaken < 1 ? 1 : daysTaken;
+                  String endDate = DateFormat('MMMM d, y').format(i.endDate!);
+                  String iterationDescription;
+                  String goalDescription = "";
+                  String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
-                    if (daysTaken <= 1) {
-                      iterationDescription = "$fTotal shots in $daysTaken day";
-                    } else {
-                      iterationDescription = "$fTotal shots in $daysTaken days";
-                    }
+                  if (daysTaken <= 1) {
+                    iterationDescription = "$fTotal shots in $daysTaken day";
+                  } else {
+                    iterationDescription = "$fTotal shots in $daysTaken days";
+                  }
 
-                    if (i.targetDate != null) {
-                      String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
-                      int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
+                  if (i.targetDate != null) {
+                    String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
+                    int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
-                      if (daysBeforeAfterTarget > 0) {
-                        if (daysBeforeAfterTarget.abs() <= 1) {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
-                        } else {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} days before goal";
-                        }
-                      } else if (daysBeforeAfterTarget < 0) {
-                        if (daysBeforeAfterTarget.abs() <= 1) {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} day after goal";
-                        } else {
-                          goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
-                        }
+                    if (daysBeforeAfterTarget > 0) {
+                      if (daysBeforeAfterTarget.abs() <= 1) {
+                        goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
+                      } else {
+                        goalDescription += " ${daysBeforeAfterTarget.abs()} days before goal";
                       }
-
-                      goalDescription += " ($targetDate)";
-                    } else {
-                      goalDescription += "completed on $endDate";
+                    } else if (daysBeforeAfterTarget < 0) {
+                      if (daysBeforeAfterTarget.abs() <= 1) {
+                        goalDescription += " ${daysBeforeAfterTarget.abs()} day after goal";
+                      } else {
+                        goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
+                      }
                     }
 
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 60,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 8,
-                              ),
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Icon(
+                    goalDescription += " ($targetDate)";
+                  } else {
+                    goalDescription += "completed on $endDate";
+                  }
+
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: 60,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(
+                                  FontAwesomeIcons.hockeyPuck,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                                // Top Left
+                                Positioned(
+                                  left: -6,
+                                  top: -6,
+                                  child: Icon(
                                     FontAwesomeIcons.hockeyPuck,
-                                    size: 14,
+                                    size: 8,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  // Top Left
-                                  Positioned(
-                                    left: -6,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
+                                ),
+                                // Bottom Left
+                                Positioned(
+                                  left: -5,
+                                  bottom: -5,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 6,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  // Bottom Left
-                                  Positioned(
-                                    left: -5,
-                                    bottom: -5,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
+                                ),
+                                // Top right
+                                Positioned(
+                                  right: -4,
+                                  top: -6,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 6,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  // Top right
-                                  Positioned(
-                                    right: -4,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
+                                ),
+                                // Bottom right
+                                Positioned(
+                                  right: -4,
+                                  bottom: -8,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 8,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  // Bottom right
-                                  Positioned(
-                                    right: -4,
-                                    bottom: -8,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            AutoSizeText(
+                              iterationDescription.toLowerCase(),
+                              maxFontSize: 18,
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              FontAwesomeIcons.calendarCheck,
+                              size: 20,
+                            ),
+                            const SizedBox(
+                              width: 4,
+                            ),
+                            AutoSizeText(
+                              goalDescription.toLowerCase(),
+                              maxFontSize: 18,
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  int daysSoFar = latestSessionDate!.difference(firstSessionDate!).inDays + 1;
+                  daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
+                  String? targetDate;
+                  String? iterationDescription;
+                  String goalDescription = "";
+                  int remainingShots = 10000 - i.total!;
+                  String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
+                  String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+
+                  if (daysSoFar <= 1 && daysSoFar != 0) {
+                    iterationDescription = "$fTotal shots in $daysSoFar day";
+                  } else {
+                    iterationDescription = "$fTotal shots in $daysSoFar days";
+                  }
+
+                  if (i.targetDate != null && remainingShots > 0) {
+                    int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
+                    if (i.targetDate!.compareTo(DateTime.now()) < 0) {
+                      daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
+                    }
+
+                    if (daysBeforeAfterTarget > 0) {
+                      if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
+                        goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
+                      } else {
+                        goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
+                      }
+                    } else if (daysBeforeAfterTarget < 0) {
+                      if (daysBeforeAfterTarget == -1) {
+                        goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
+                      } else {
+                        goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
+                      }
+                    } else {
+                      goalDescription += "1 day left to take $fRemainingShots shots";
+                    }
+                  }
+
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: 60,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
+                      children: [
+                        remainingShots >= 10000
+                            ? Container()
+                            : Row(
+                                children: [
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Icon(
+                                        FontAwesomeIcons.hockeyPuck,
+                                        size: 14,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                      // Top Left
+                                      Positioned(
+                                        left: -6,
+                                        top: -6,
+                                        child: Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 8,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                      // Bottom Left
+                                      Positioned(
+                                        left: -5,
+                                        bottom: -5,
+                                        child: Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 6,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                      // Top right
+                                      Positioned(
+                                        right: -4,
+                                        top: -6,
+                                        child: Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 6,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                      // Bottom right
+                                      Positioned(
+                                        right: -4,
+                                        bottom: -8,
+                                        child: Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 8,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    width: 8,
+                                  ),
+                                  SizedBox(
+                                    width: MediaQuery.of(context).size.width * .3,
+                                    child: AutoSizeText(
+                                      iterationDescription.toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                width: 8,
-                              ),
-                              Container(
-                                child: AutoSizeText(
-                                  iterationDescription.toLowerCase(),
-                                  maxFontSize: 18,
-                                  maxLines: 1,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontFamily: "NovecentoSans",
-                                    fontSize: 18,
+                        remainingShots <= 0
+                            ? Container()
+                            : Row(
+                                children: [
+                                  const Icon(
+                                    FontAwesomeIcons.calendarCheck,
+                                    size: 20,
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.calendarCheck,
-                                size: 20,
-                              ),
-                              SizedBox(
-                                width: 4,
-                              ),
-                              Container(
-                                child: AutoSizeText(
-                                  goalDescription.toLowerCase(),
-                                  maxFontSize: 18,
-                                  maxLines: 1,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontFamily: "NovecentoSans",
-                                    fontSize: 18,
+                                  const SizedBox(
+                                    width: 2,
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    int daysSoFar = latestSessionDate!.difference(firstSessionDate!).inDays + 1;
-                    daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                    String? targetDate;
-                    String? iterationDescription;
-                    String goalDescription = "";
-                    int remainingShots = 10000 - i.total!;
-                    String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
-                    String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-
-                    if (daysSoFar <= 1 && daysSoFar != 0) {
-                      iterationDescription = "$fTotal shots in $daysSoFar day";
-                    } else {
-                      iterationDescription = "$fTotal shots in $daysSoFar days";
-                    }
-
-                    if (i.targetDate != null && remainingShots > 0) {
-                      int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
-                      if (i.targetDate!.compareTo(DateTime.now()) < 0) {
-                        daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
-                      }
-
-                      if (daysBeforeAfterTarget > 0) {
-                        if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
-                          goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
-                        } else {
-                          goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
-                        }
-                      } else if (daysBeforeAfterTarget < 0) {
-                        if (daysBeforeAfterTarget == -1) {
-                          goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
-                        } else {
-                          goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
-                        }
-                      } else {
-                        goalDescription += "1 day left to take $fRemainingShots shots";
-                      }
-                    }
-
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 60,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
-                        children: [
-                          remainingShots >= 10000
-                              ? Container()
-                              : Row(
-                                  children: [
-                                    Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        Icon(
-                                          FontAwesomeIcons.hockeyPuck,
-                                          size: 14,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                        // Top Left
-                                        Positioned(
-                                          left: -6,
-                                          top: -6,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 8,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Bottom Left
-                                        Positioned(
-                                          left: -5,
-                                          bottom: -5,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 6,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Top right
-                                        Positioned(
-                                          right: -4,
-                                          top: -6,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 6,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        // Bottom right
-                                        Positioned(
-                                          right: -4,
-                                          bottom: -8,
-                                          child: Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 8,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      width: 8,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .3,
-                                      child: AutoSizeText(
-                                        iterationDescription.toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 18,
-                                        ),
+                                  SizedBox(
+                                    width: MediaQuery.of(context).size.width * .4,
+                                    child: AutoSizeText(
+                                      goalDescription != "" ? goalDescription.toLowerCase() : "N/A".toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
                                       ),
                                     ),
-                                  ],
-                                ),
-                          remainingShots <= 0
-                              ? Container()
-                              : Row(
-                                  children: [
-                                    Icon(
-                                      FontAwesomeIcons.calendarCheck,
-                                      size: 20,
-                                    ),
-                                    SizedBox(
-                                      width: 2,
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width * .4,
-                                      child: AutoSizeText(
-                                        goalDescription != "" ? goalDescription.toLowerCase() : "N/A".toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ],
-                      ),
-                    );
-                  }
+                                  ),
+                                ],
+                              ),
+                      ],
+                    ),
+                  );
                 }
+              }
 
-                return Container();
-              },
-            ),
+              return Container();
+            },
           ),
           Container(
             decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
-            padding: EdgeInsets.only(top: 5, bottom: 10),
+            padding: const EdgeInsets.only(top: 5, bottom: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Container(
-                  child: Text(
-                    "Recent Sessions".toUpperCase(),
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                Text(
+                  "Recent Sessions".toUpperCase(),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 Column(
                   children: [
@@ -716,9 +705,9 @@ class _ProfileState extends State<Profile> {
                     Container(
                       width: 30,
                       height: 25,
-                      margin: EdgeInsets.only(top: 2),
-                      decoration: BoxDecoration(color: wristShotColor),
-                      child: Column(
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: wristShotColor),
+                      child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -751,9 +740,9 @@ class _ProfileState extends State<Profile> {
                     Container(
                       width: 30,
                       height: 25,
-                      margin: EdgeInsets.only(top: 2),
-                      decoration: BoxDecoration(color: snapShotColor),
-                      child: Column(
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: snapShotColor),
+                      child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -786,9 +775,9 @@ class _ProfileState extends State<Profile> {
                     Container(
                       width: 30,
                       height: 25,
-                      margin: EdgeInsets.only(top: 2),
-                      decoration: BoxDecoration(color: backhandShotColor),
-                      child: Column(
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: backhandShotColor),
+                      child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -821,9 +810,9 @@ class _ProfileState extends State<Profile> {
                     Container(
                       width: 30,
                       height: 25,
-                      margin: EdgeInsets.only(top: 2),
-                      decoration: BoxDecoration(color: slapShotColor),
-                      child: Column(
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: slapShotColor),
+                      child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -847,43 +836,41 @@ class _ProfileState extends State<Profile> {
             ),
           ),
           _buildSessionList(_sessions),
-          Container(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  child: Row(
-                    children: [
-                      Text(
-                        "History".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 24,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.only(top: 4, left: 5),
-                        child: Icon(
-                          Icons.history_rounded,
-                          size: 28,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(darken(Theme.of(context).colorScheme.primaryContainer, 0.05)),
-                    padding: MaterialStateProperty.all(EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
-                  ),
-                  onPressed: () {
-                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                      return History();
-                    }));
-                  },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(darken(Theme.of(context).colorScheme.primaryContainer, 0.05)),
+                  padding: MaterialStateProperty.all(const EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
                 ),
-              ],
-            ),
+                onPressed: () {
+                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
+                    return const History();
+                  }));
+                },
+                child: Row(
+                  children: [
+                    Text(
+                      "History".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 24,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 4, left: 5),
+                      child: Icon(
+                        Icons.history_rounded,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -897,7 +884,7 @@ class _ProfileState extends State<Profile> {
 
   Widget _buildSessionList(List<DocumentSnapshot> sessions) {
     List<Widget> items = [];
-    if (_sessions.length > 0) {
+    if (_sessions.isNotEmpty) {
       int i = 0;
       for (DocumentSnapshot s in sessions) {
         items.add(_buildSessionItem(ShootingSession.fromSnapshot(s), i++));
@@ -909,7 +896,7 @@ class _ProfileState extends State<Profile> {
     return Column(
       children: [
         Container(
-          margin: EdgeInsets.only(top: 25, bottom: 35),
+          margin: const EdgeInsets.only(top: 25, bottom: 35),
           child: Column(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -921,7 +908,7 @@ class _ProfileState extends State<Profile> {
                       width: 25,
                       child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                     )
-                  : _sessions.length < 1
+                  : _sessions.isEmpty
                       ? Text(
                           "You don't have any sessions yet".toUpperCase(),
                           style: TextStyle(
@@ -959,13 +946,13 @@ class _ProfileState extends State<Profile> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
+                  content: Text(
                     "Sorry this session can't be deleted",
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
-                  duration: Duration(milliseconds: 1500),
+                  duration: const Duration(milliseconds: 1500),
                 ),
               );
             }
@@ -981,7 +968,7 @@ class _ProfileState extends State<Profile> {
               return AlertDialog(
                 title: Text(
                   "Delete Session?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 24,
                   ),
@@ -999,7 +986,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     Container(
                       height: 120,
-                      margin: EdgeInsets.only(top: 15),
+                      margin: const EdgeInsets.only(top: 15),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1011,7 +998,7 @@ class _ProfileState extends State<Profile> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -1022,7 +1009,7 @@ class _ProfileState extends State<Profile> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -1032,7 +1019,7 @@ class _ProfileState extends State<Profile> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -1079,10 +1066,10 @@ class _ProfileState extends State<Profile> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                margin: EdgeInsets.only(left: 15),
+                margin: const EdgeInsets.only(left: 15),
                 child: Text(
                   "Delete".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 16,
                     color: Colors.white,
@@ -1090,8 +1077,8 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(right: 15),
-                child: Icon(
+                margin: const EdgeInsets.only(right: 15),
+                child: const Icon(
                   Icons.delete,
                   size: 16,
                   color: Colors.white,
@@ -1101,7 +1088,7 @@ class _ProfileState extends State<Profile> {
           ),
         ),
         child: Container(
-          padding: EdgeInsets.only(top: 5, bottom: 15),
+          padding: const EdgeInsets.only(top: 5, bottom: 15),
           decoration: BoxDecoration(
             color: i % 2 == 0 ? Colors.transparent : Theme.of(context).cardTheme.color,
           ),
@@ -1111,7 +1098,7 @@ class _ProfileState extends State<Profile> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1143,13 +1130,13 @@ class _ProfileState extends State<Profile> {
                         ),
                         _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value
                             ? Container()
-                            : Container(
+                            : SizedBox(
                                 height: 24,
                                 width: 24,
                                 child: PopupMenuButton(
                                   key: UniqueKey(),
                                   color: Theme.of(context).colorScheme.primary,
-                                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+                                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
                                   icon: Icon(
                                     Icons.more_horiz_rounded,
                                     color: Theme.of(context).colorScheme.onPrimary,
@@ -1159,6 +1146,7 @@ class _ProfileState extends State<Profile> {
                                     i >= 0
                                         ? PopupMenuItem<String>(child: Container())
                                         : PopupMenuItem<String>(
+                                            value: 'resume',
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
@@ -1169,15 +1157,15 @@ class _ProfileState extends State<Profile> {
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
                                                 ),
-                                                Icon(
+                                                const Icon(
                                                   Icons.play_arrow,
                                                   color: wristShotColor,
                                                 ),
                                               ],
                                             ),
-                                            value: 'resume',
                                           ),
                                     PopupMenuItem<String>(
+                                      value: 'delete',
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
@@ -1194,7 +1182,6 @@ class _ProfileState extends State<Profile> {
                                           ),
                                         ],
                                       ),
-                                      value: 'delete',
                                     ),
                                   ],
                                   onSelected: (value) async {
@@ -1237,7 +1224,7 @@ class _ProfileState extends State<Profile> {
                                           return AlertDialog(
                                             title: Text(
                                               "Delete Session?".toUpperCase(),
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontFamily: 'NovecentoSans',
                                                 fontSize: 24,
                                               ),
@@ -1255,7 +1242,7 @@ class _ProfileState extends State<Profile> {
                                                 ),
                                                 Container(
                                                   height: 120,
-                                                  margin: EdgeInsets.only(top: 15),
+                                                  margin: const EdgeInsets.only(top: 15),
                                                   child: Column(
                                                     mainAxisAlignment: MainAxisAlignment.center,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,7 +1254,7 @@ class _ProfileState extends State<Profile> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1278,7 +1265,7 @@ class _ProfileState extends State<Profile> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1288,7 +1275,7 @@ class _ProfileState extends State<Profile> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1334,13 +1321,13 @@ class _ProfileState extends State<Profile> {
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                         SnackBar(
                                                           backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
+                                                          content: Text(
                                                             "Sorry this session can't be deleted",
                                                             style: TextStyle(
                                                               color: Theme.of(context).colorScheme.onPrimary,
                                                             ),
                                                           ),
-                                                          duration: Duration(milliseconds: 1500),
+                                                          duration: const Duration(milliseconds: 1500),
                                                         ),
                                                       );
                                                     }
@@ -1383,7 +1370,7 @@ class _ProfileState extends State<Profile> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalWrist!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: wristShotColor,
                           ),
                           child: s.totalWrist! < 1
@@ -1392,14 +1379,14 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalWrist!),
                                       child: AutoSizeText(
                                         s.totalWrist.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1414,7 +1401,7 @@ class _ProfileState extends State<Profile> {
                           width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: snapShotColor,
                           ),
                           child: s.totalSnap! < 1
@@ -1423,14 +1410,14 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalSnap!),
                                       child: AutoSizeText(
                                         s.totalSnap.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1444,7 +1431,7 @@ class _ProfileState extends State<Profile> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalBackhand!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: backhandShotColor,
                           ),
                           child: s.totalBackhand! < 1
@@ -1453,14 +1440,14 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalBackhand!),
                                       child: AutoSizeText(
                                         s.totalBackhand.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1474,7 +1461,7 @@ class _ProfileState extends State<Profile> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalSlap!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: slapShotColor,
                           ),
                           child: s.totalSlap! < 1
@@ -1483,14 +1470,14 @@ class _ProfileState extends State<Profile> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalSlap!),
                                       child: AutoSizeText(
                                         s.totalSlap.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1513,7 +1500,7 @@ class _ProfileState extends State<Profile> {
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalWrist!),
                           child: s.totalWrist! < 1
                               ? Container()
@@ -1536,7 +1523,7 @@ class _ProfileState extends State<Profile> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalSnap!),
                           child: s.totalSnap! < 1
                               ? Container()
@@ -1559,7 +1546,7 @@ class _ProfileState extends State<Profile> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalBackhand!),
                           child: s.totalBackhand! < 1
                               ? Container()
@@ -1582,7 +1569,7 @@ class _ProfileState extends State<Profile> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalSlap!),
                           child: s.totalSlap! < 1
                               ? Container()

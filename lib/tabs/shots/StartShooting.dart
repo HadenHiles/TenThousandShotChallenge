@@ -20,13 +20,13 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
-  StartShooting({Key? key, required this.sessionPanelController, this.shots}) : super(key: key);
+  const StartShooting({Key? key, required this.sessionPanelController, this.shots}) : super(key: key);
 
   final PanelController sessionPanelController;
   final List<Shots>? shots;
 
   @override
-  _StartShootingState createState() => _StartShootingState();
+  State<StartShooting> createState() => _StartShootingState();
 }
 
 class _StartShootingState extends State<StartShooting> {
@@ -68,7 +68,7 @@ class _StartShootingState extends State<StartShooting> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
                 Text(
                   "Shot Type".toUpperCase(),
                   style: TextStyle(
@@ -77,9 +77,9 @@ class _StartShootingState extends State<StartShooting> {
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 5),
+                  padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardTheme.color,
                   ),
@@ -131,7 +131,7 @@ class _StartShootingState extends State<StartShooting> {
                   ),
                 ),
                 preferences!.puckCount != _currentShotCount
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 10,
                       )
                     : Container(),
@@ -149,16 +149,18 @@ class _StartShootingState extends State<StartShooting> {
                       _currentShotCount,
                     );
 
-                    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                      Preferences(
-                        prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
-                        _currentShotCount,
-                        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                        prefs.getString('fcm_token'),
-                      ),
-                    );
+                    if (context.mounted) {
+                      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                        Preferences(
+                          prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
+                          _currentShotCount,
+                          DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                          prefs.getString('fcm_token'),
+                        ),
+                      );
+                    }
 
-                    Future.delayed(Duration(seconds: 1), () {
+                    Future.delayed(const Duration(seconds: 1), () {
                       setState(() {
                         _puckCountUpdating = false;
                       });
@@ -166,13 +168,13 @@ class _StartShootingState extends State<StartShooting> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: Theme.of(context).cardTheme.color,
-                          content: new Text(
+                          content: Text(
                             '# of pucks updated successfully!',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          duration: Duration(milliseconds: 1200),
+                          duration: const Duration(milliseconds: 1200),
                         ),
                       );
                     });
@@ -200,8 +202,8 @@ class _StartShootingState extends State<StartShooting> {
                               : Container(height: 14),
                       preferences!.puckCount != _currentShotCount
                           ? Container(
-                              margin: EdgeInsets.only(left: 4),
-                              child: Icon(
+                              margin: const EdgeInsets.only(left: 4),
+                              child: const Icon(
                                 Icons.refresh_rounded,
                                 size: 14,
                               ),
@@ -211,7 +213,7 @@ class _StartShootingState extends State<StartShooting> {
                   ),
                 ),
                 preferences!.puckCount != _currentShotCount
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 5,
                       )
                     : Container(),
@@ -223,20 +225,20 @@ class _StartShootingState extends State<StartShooting> {
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
                 GestureDetector(
                   onLongPress: () async {
                     Feedback.forLongPress(context);
 
                     await prompt(
                       context,
-                      title: Text('Shots'),
+                      title: const Text('Shots'),
                       initialValue: _currentShotCount.toString(),
                       textOK: Icon(
                         Icons.check,
                         color: Colors.green.shade700,
                       ),
-                      textCancel: Icon(
+                      textCancel: const Icon(
                         Icons.close,
                         color: Colors.grey,
                       ),
@@ -277,7 +279,7 @@ class _StartShootingState extends State<StartShooting> {
                     ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 5,
                 ),
                 Text(
@@ -288,7 +290,7 @@ class _StartShootingState extends State<StartShooting> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
                 SizedBox(
@@ -302,18 +304,18 @@ class _StartShootingState extends State<StartShooting> {
                         _shots.insert(0, shots);
                       });
                     },
-                    child: Icon(
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
+                      backgroundColor: MaterialStateProperty.all(Colors.green.shade600),
+                    ),
+                    child: const Icon(
                       Icons.check,
                       size: 40,
                       color: Colors.white,
                     ),
-                    style: ButtonStyle(
-                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
-                      backgroundColor: MaterialStateProperty.all(Colors.green.shade600),
-                    ),
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 5,
                 ),
                 Row(
@@ -328,7 +330,7 @@ class _StartShootingState extends State<StartShooting> {
                       ),
                     ),
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 3),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
                       child: Icon(
                         Icons.check,
                         color: Colors.green.shade600,
@@ -345,12 +347,12 @@ class _StartShootingState extends State<StartShooting> {
                     ),
                   ],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.all(0),
+                    padding: const EdgeInsets.all(0),
                     children: _buildShotsList(context, _shots),
                   ),
                 ),
@@ -366,15 +368,21 @@ class _StartShootingState extends State<StartShooting> {
                         },
                         initialData: NetworkStatus.Online,
                         child: NetworkAwareWidget(
-                          onlineChild: _shots.length < 1
+                          onlineChild: _shots.isEmpty
                               ? TextButton(
                                   onPressed: () {
                                     Feedback.forLongPress(context);
 
                                     sessionService.reset();
                                     widget.sessionPanelController.close();
-                                    this.reset();
+                                    reset();
                                   },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(context).cardTheme.color,
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                  ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -387,7 +395,7 @@ class _StartShootingState extends State<StartShooting> {
                                         ),
                                       ),
                                       Container(
-                                        margin: EdgeInsets.only(top: 3, left: 4),
+                                        margin: const EdgeInsets.only(top: 3, left: 4),
                                         child: Icon(
                                           Icons.delete_forever,
                                           color: Theme.of(context).colorScheme.onPrimary,
@@ -396,26 +404,20 @@ class _StartShootingState extends State<StartShooting> {
                                       ),
                                     ],
                                   ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Theme.of(context).cardTheme.color,
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                                  ),
                                 )
                               : TextButton(
                                   onPressed: () async {
                                     Feedback.forLongPress(context);
 
                                     int totalShots = 0;
-                                    _shots.forEach((s) {
+                                    for (var s in _shots) {
                                       totalShots += s.count!;
-                                    });
+                                    }
 
                                     await saveShootingSession(_shots).then((success) async {
                                       sessionService.reset();
                                       widget.sessionPanelController.close();
-                                      this.reset();
+                                      reset();
 
                                       await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
                                         if (snapshot.docs.isNotEmpty) {
@@ -443,7 +445,7 @@ class _StartShootingState extends State<StartShooting> {
                                                       clipBehavior: Clip.none,
                                                       alignment: Alignment.topCenter,
                                                       children: [
-                                                        Container(
+                                                        SizedBox(
                                                           height: 550,
                                                           child: Padding(
                                                             padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
@@ -458,11 +460,11 @@ class _StartShootingState extends State<StartShooting> {
                                                                     fontSize: 32,
                                                                   ),
                                                                 ),
-                                                                SizedBox(
+                                                                const SizedBox(
                                                                   height: 5,
                                                                 ),
                                                                 Text(
-                                                                  "Nice job, ya beauty!\n10,000 shots isn\'t easy.",
+                                                                  "Nice job, ya beauty!\n10,000 shots isn't easy.",
                                                                   textAlign: TextAlign.center,
                                                                   style: TextStyle(
                                                                     color: Theme.of(context).colorScheme.onPrimary,
@@ -470,13 +472,13 @@ class _StartShootingState extends State<StartShooting> {
                                                                     fontSize: 22,
                                                                   ),
                                                                 ),
-                                                                SizedBox(
+                                                                const SizedBox(
                                                                   height: 5,
                                                                 ),
                                                                 Opacity(
                                                                   opacity: 0.8,
                                                                   child: Text(
-                                                                    "To celebrate, here\'s 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                                    "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
                                                                     textAlign: TextAlign.center,
                                                                     style: TextStyle(
                                                                       color: Theme.of(context).colorScheme.onPrimary,
@@ -485,7 +487,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                SizedBox(
+                                                                const SizedBox(
                                                                   height: 15,
                                                                 ),
                                                                 GestureDetector(
@@ -501,13 +503,13 @@ class _StartShootingState extends State<StartShooting> {
                                                                   child: Card(
                                                                     color: Theme.of(context).cardTheme.color,
                                                                     elevation: 4,
-                                                                    child: Container(
+                                                                    child: SizedBox(
                                                                       width: 125,
                                                                       height: 180,
                                                                       child: Column(
                                                                         mainAxisAlignment: MainAxisAlignment.start,
                                                                         children: [
-                                                                          Image(
+                                                                          const Image(
                                                                             image: NetworkImage(
                                                                               "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
                                                                             ),
@@ -518,7 +520,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                               mainAxisAlignment: MainAxisAlignment.center,
                                                                               children: [
                                                                                 Container(
-                                                                                  padding: EdgeInsets.all(5),
+                                                                                  padding: const EdgeInsets.all(5),
                                                                                   child: AutoSizeText(
                                                                                     "Sniper Snapback".toUpperCase(),
                                                                                     maxLines: 2,
@@ -539,14 +541,14 @@ class _StartShootingState extends State<StartShooting> {
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                SizedBox(
+                                                                const SizedBox(
                                                                   height: 5,
                                                                 ),
                                                                 Container(
                                                                   decoration: BoxDecoration(
                                                                     color: Theme.of(context).colorScheme.primaryContainer,
                                                                   ),
-                                                                  padding: EdgeInsets.all(5),
+                                                                  padding: const EdgeInsets.all(5),
                                                                   child: SelectableText(
                                                                     "TENKSNIPER",
                                                                     style: TextStyle(
@@ -556,7 +558,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                SizedBox(
+                                                                const SizedBox(
                                                                   height: 5,
                                                                 ),
                                                                 TextButton(
@@ -574,11 +576,11 @@ class _StartShootingState extends State<StartShooting> {
                                                                     backgroundColor: MaterialStateProperty.all(
                                                                       Theme.of(context).primaryColor,
                                                                     ),
-                                                                    padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                                    padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                                   ),
                                                                   child: Text(
                                                                     "Get yours".toUpperCase(),
-                                                                    style: TextStyle(
+                                                                    style: const TextStyle(
                                                                       fontFamily: "NovecentoSans",
                                                                       fontSize: 30,
                                                                       color: Colors.white,
@@ -589,9 +591,9 @@ class _StartShootingState extends State<StartShooting> {
                                                             ),
                                                           ),
                                                         ),
-                                                        Positioned(
+                                                        const Positioned(
                                                           top: -40,
-                                                          child: Container(
+                                                          child: SizedBox(
                                                             width: 100,
                                                             height: 100,
                                                             child: Image(
@@ -613,43 +615,43 @@ class _StartShootingState extends State<StartShooting> {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           backgroundColor: Theme.of(context).cardTheme.color,
-                                          content: new Text(
+                                          content: Text(
                                             'There was an error saving your shooting session :(',
                                             style: TextStyle(
                                               color: Theme.of(context).colorScheme.onPrimary,
                                             ),
                                           ),
-                                          duration: Duration(milliseconds: 1500),
+                                          duration: const Duration(milliseconds: 1500),
                                         ),
                                       );
                                     });
                                   },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(context).primaryColor,
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    disabledForegroundColor: Colors.white,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                  ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
                                         "Finish".toUpperCase(),
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 24,
                                         ),
                                       ),
                                       Container(
-                                        margin: EdgeInsets.only(top: 3, left: 4),
-                                        child: Icon(
+                                        margin: const EdgeInsets.only(top: 3, left: 4),
+                                        child: const Icon(
                                           Icons.save_alt_rounded,
                                           color: Colors.white,
                                           size: 24,
                                         ),
                                       ),
                                     ],
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Theme.of(context).primaryColor,
-                                    backgroundColor: Theme.of(context).primaryColor,
-                                    disabledForegroundColor: Colors.white,
-                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
                                   ),
                                 ),
                           offlineChild: Container(
@@ -668,13 +670,13 @@ class _StartShootingState extends State<StartShooting> {
                                     fontSize: 24,
                                   ),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 10,
                                 ),
                                 Container(
                                   width: 16,
                                   height: 16,
-                                  margin: EdgeInsets.only(top: 5),
+                                  margin: const EdgeInsets.only(top: 5),
                                   child: CircularProgressIndicator(
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
@@ -722,10 +724,10 @@ class _StartShootingState extends State<StartShooting> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                margin: EdgeInsets.only(left: 15),
+                margin: const EdgeInsets.only(left: 15),
                 child: Text(
                   "Delete".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 16,
                     color: Colors.white,
@@ -733,8 +735,8 @@ class _StartShootingState extends State<StartShooting> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(right: 15),
-                child: Icon(
+                margin: const EdgeInsets.only(right: 15),
+                child: const Icon(
                   Icons.delete,
                   size: 16,
                   color: Colors.white,
@@ -746,10 +748,10 @@ class _StartShootingState extends State<StartShooting> {
         child: ListTile(
           tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
           leading: Container(
-            margin: EdgeInsets.only(bottom: 4),
+            margin: const EdgeInsets.only(bottom: 4),
             child: Text(
               s.count.toString(),
-              style: TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+              style: const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
             ),
           ),
           title: Row(

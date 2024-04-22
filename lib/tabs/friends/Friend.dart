@@ -19,12 +19,12 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Friend extends StatefulWidget {
-  Friend({Key? key, this.uid}) : super(key: key);
+  const Friend({Key? key, this.uid}) : super(key: key);
 
   final String? uid;
 
   @override
-  _FriendState createState() => _FriendState();
+  State<Friend> createState() => _FriendState();
 }
 
 class _FriendState extends State<Friend> {
@@ -36,7 +36,7 @@ class _FriendState extends State<Friend> {
   ScrollController? sessionsController;
   DocumentSnapshot? _lastVisible;
   bool? _isLoading;
-  List<DocumentSnapshot> _sessions = [];
+  final List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
 
@@ -54,7 +54,7 @@ class _FriendState extends State<Friend> {
       });
     });
 
-    sessionsController = new ScrollController()..addListener(_scrollListener);
+    sessionsController = ScrollController()..addListener(_scrollListener);
 
     super.initState();
 
@@ -90,17 +90,17 @@ class _FriendState extends State<Friend> {
   }
 
   Future<Null> _loadHistory() async {
-    await new Future.delayed(new Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (_lastVisible == null) {
       await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
         snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(5).get().then((sSnap) {
-          sSnap.docs.forEach((s) {
+          for (var s in sSnap.docs) {
             sessions.add(s);
-          });
+          }
 
-          if (sessions.length > 0) {
+          if (sessions.isNotEmpty) {
             _lastVisible = sessions[sessions.length - 1];
 
             if (mounted) {
@@ -120,11 +120,11 @@ class _FriendState extends State<Friend> {
       await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
         snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible!['date']]).limit(5).get().then((sSnap) {
-              sSnap.docs.forEach((s) {
+              for (var s in sSnap.docs) {
                 sessions.add(s);
-              });
+              }
 
-              if (sessions.length > 0) {
+              if (sessions.isNotEmpty) {
                 _lastVisible = sessions[sessions.length - 1];
                 if (mounted) {
                   setState(() {
@@ -163,21 +163,21 @@ class _FriendState extends State<Friend> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image(
+                const Image(
                   image: AssetImage('assets/images/logo.png'),
                 ),
                 Text(
                   "Where's the wifi bud?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontFamily: "NovecentoSans",
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 25,
                 ),
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: Colors.white70,
                 ),
               ],
@@ -196,7 +196,7 @@ class _FriendState extends State<Friend> {
                   floating: true,
                   pinned: true,
                   leading: Container(
-                    margin: EdgeInsets.only(top: 10),
+                    margin: const EdgeInsets.only(top: 10),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
@@ -210,7 +210,7 @@ class _FriendState extends State<Friend> {
                   ),
                   actions: [
                     Container(
-                      margin: EdgeInsets.only(top: 10),
+                      margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         icon: Icon(
                           Icons.delete,
@@ -249,7 +249,7 @@ class _FriendState extends State<Friend> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
-                                        duration: Duration(milliseconds: 2500),
+                                        duration: const Duration(milliseconds: 2500),
                                         content: Text(
                                           '${_userFriend!.displayName} was removed.',
                                           style: TextStyle(
@@ -262,7 +262,7 @@ class _FriendState extends State<Friend> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
-                                        duration: Duration(milliseconds: 4000),
+                                        duration: const Duration(milliseconds: 4000),
                                         content: Text(
                                           'Error removing friend :(',
                                           style: TextStyle(
@@ -299,7 +299,7 @@ class _FriendState extends State<Friend> {
               ];
             },
             body: _loadingFriend
-                ? Column(
+                ? const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -309,7 +309,7 @@ class _FriendState extends State<Friend> {
                     ],
                   )
                 : Container(
-                    padding: EdgeInsets.only(top: 15),
+                    padding: const EdgeInsets.only(top: 15),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -321,7 +321,7 @@ class _FriendState extends State<Friend> {
                             Row(
                               children: [
                                 Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 15),
+                                  margin: const EdgeInsets.symmetric(horizontal: 15),
                                   width: 60,
                                   height: 60,
                                   clipBehavior: Clip.antiAlias,
@@ -341,14 +341,14 @@ class _FriendState extends State<Friend> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: (MediaQuery.of(context).size.width - 100) * 0.6,
                                       child: StreamBuilder<DocumentSnapshot>(
                                         // ignore: deprecated_member_use
                                         stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
                                         builder: (context, snapshot) {
-                                          if (!snapshot.hasData)
-                                            return Column(
+                                          if (!snapshot.hasData) {
+                                            return const Column(
                                               mainAxisAlignment: MainAxisAlignment.start,
                                               crossAxisAlignment: CrossAxisAlignment.center,
                                               mainAxisSize: MainAxisSize.max,
@@ -362,6 +362,7 @@ class _FriendState extends State<Friend> {
                                                 ),
                                               ],
                                             );
+                                          }
 
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
@@ -377,94 +378,88 @@ class _FriendState extends State<Friend> {
                                         },
                                       ),
                                     ),
-                                    Container(
-                                      child: StreamBuilder(
-                                          stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                            if (!snapshot.hasData) {
-                                              return Center(
-                                                child: SizedBox(
-                                                  width: 120,
-                                                  height: 2,
-                                                  child: LinearProgressIndicator(),
-                                                ),
-                                              );
-                                            } else {
-                                              int total = 0;
-                                              snapshot.data!.docs.forEach((doc) {
-                                                total += Iteration.fromSnapshot(doc).total!;
-                                              });
-
-                                              return Text(
-                                                total.toString() + " Lifetime Shots".toLowerCase(),
-                                                style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontFamily: 'NovecentoSans',
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                              );
+                                    StreamBuilder(
+                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
+                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                                          if (!snapshot.hasData) {
+                                            return const Center(
+                                              child: SizedBox(
+                                                width: 120,
+                                                height: 2,
+                                                child: LinearProgressIndicator(),
+                                              ),
+                                            );
+                                          } else {
+                                            int total = 0;
+                                            for (var doc in snapshot.data!.docs) {
+                                              total += Iteration.fromSnapshot(doc).total!;
                                             }
-                                          }),
-                                    ),
-                                    Container(
-                                      child: StreamBuilder(
-                                          stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                            if (!snapshot.hasData) {
-                                              return Center(
-                                                child: SizedBox(
-                                                  width: 120,
-                                                  height: 2,
-                                                  child: LinearProgressIndicator(),
-                                                ),
-                                              );
-                                            } else {
-                                              Duration totalDuration = Duration();
-                                              snapshot.data!.docs.forEach((doc) {
-                                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                                              });
 
-                                              return totalDuration > Duration()
-                                                  ? Text(
-                                                      "IN " + printDuration(totalDuration, true),
-                                                      style: TextStyle(
-                                                        fontSize: 20,
-                                                        fontFamily: 'NovecentoSans',
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    )
-                                                  : Container();
+                                            return Text(
+                                              total.toString() + " Lifetime Shots".toLowerCase(),
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontFamily: 'NovecentoSans',
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            );
+                                          }
+                                        }),
+                                    StreamBuilder(
+                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
+                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                                          if (!snapshot.hasData) {
+                                            return const Center(
+                                              child: SizedBox(
+                                                width: 120,
+                                                height: 2,
+                                                child: LinearProgressIndicator(),
+                                              ),
+                                            );
+                                          } else {
+                                            Duration totalDuration = const Duration();
+                                            for (var doc in snapshot.data!.docs) {
+                                              totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                             }
-                                          }),
-                                    ),
+
+                                            return totalDuration > const Duration()
+                                                ? Text(
+                                                    "IN ${printDuration(totalDuration, true)}",
+                                                    style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontFamily: 'NovecentoSans',
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  )
+                                                : Container();
+                                          }
+                                        }),
                                   ],
                                 ),
                               ],
                             ),
                             Container(
                               width: (MediaQuery.of(context).size.width - 100) * 0.4,
-                              margin: EdgeInsets.only(right: 10),
+                              margin: const EdgeInsets.only(right: 10),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Container(
-                                    child: AutoSizeText(
-                                      _userFriend!.email!,
-                                      maxLines: 1,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 22,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                                  AutoSizeText(
+                                    _userFriend!.email!,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 22,
+                                      fontFamily: 'NovecentoSans',
                                     ),
                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       Container(
-                                        margin: EdgeInsets.only(top: 10, right: 5),
+                                        margin: const EdgeInsets.only(top: 10, right: 5),
                                         child: Text(
                                           "challenge ".toUpperCase(),
                                           textAlign: TextAlign.right,
@@ -538,9 +533,9 @@ class _FriendState extends State<Friend> {
                                 Container(
                                   width: 30,
                                   height: 25,
-                                  margin: EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(color: wristShotColor),
-                                  child: Column(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  decoration: const BoxDecoration(color: wristShotColor),
+                                  child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
@@ -573,9 +568,9 @@ class _FriendState extends State<Friend> {
                                 Container(
                                   width: 30,
                                   height: 25,
-                                  margin: EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(color: snapShotColor),
-                                  child: Column(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  decoration: const BoxDecoration(color: snapShotColor),
+                                  child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
@@ -608,9 +603,9 @@ class _FriendState extends State<Friend> {
                                 Container(
                                   width: 30,
                                   height: 25,
-                                  margin: EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(color: backhandShotColor),
-                                  child: Column(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  decoration: const BoxDecoration(color: backhandShotColor),
+                                  child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
@@ -643,9 +638,9 @@ class _FriendState extends State<Friend> {
                                 Container(
                                   width: 30,
                                   height: 25,
-                                  margin: EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(color: slapShotColor),
-                                  child: Column(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  decoration: const BoxDecoration(color: slapShotColor),
+                                  child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
@@ -667,7 +662,7 @@ class _FriendState extends State<Friend> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 15,
                         ),
                         Expanded(
@@ -688,7 +683,7 @@ class _FriendState extends State<Friend> {
                                   return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
                                 }
                                 return Container(
-                                  margin: EdgeInsets.only(top: 9, bottom: 35),
+                                  margin: const EdgeInsets.only(top: 9, bottom: 35),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.max,
                                     mainAxisAlignment: MainAxisAlignment.start,
@@ -700,7 +695,7 @@ class _FriendState extends State<Friend> {
                                               width: 25,
                                               child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
                                             )
-                                          : _sessions.length < 1
+                                          : _sessions.isEmpty
                                               ? Text(
                                                   "${_userFriend!.displayName!.substring(0, _userFriend!.displayName!.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
                                                   style: TextStyle(
@@ -748,7 +743,7 @@ class _FriendState extends State<Friend> {
 
   Widget _buildSessionItem(ShootingSession s, bool showBackground) {
     return Container(
-      padding: EdgeInsets.only(top: 5, bottom: 15),
+      padding: const EdgeInsets.only(top: 5, bottom: 15),
       decoration: BoxDecoration(
         color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
       ),
@@ -758,7 +753,7 @@ class _FriendState extends State<Friend> {
         mainAxisSize: MainAxisSize.max,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -805,7 +800,7 @@ class _FriendState extends State<Friend> {
                     Container(
                       width: calculateSessionShotWidth(s, s.totalWrist!),
                       height: 30,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: wristShotColor,
                       ),
                       child: s.totalWrist! < 1
@@ -816,7 +811,7 @@ class _FriendState extends State<Friend> {
                               children: [
                                 Text(
                                   s.totalWrist.toString(),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -829,7 +824,7 @@ class _FriendState extends State<Friend> {
                     Container(
                       width: calculateSessionShotWidth(s, s.totalSnap!),
                       height: 30,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: snapShotColor,
                       ),
                       child: s.totalSnap! < 1
@@ -840,7 +835,7 @@ class _FriendState extends State<Friend> {
                               children: [
                                 Text(
                                   s.totalSnap.toString(),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -853,7 +848,7 @@ class _FriendState extends State<Friend> {
                     Container(
                       width: calculateSessionShotWidth(s, s.totalBackhand!),
                       height: 30,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: backhandShotColor,
                       ),
                       child: s.totalBackhand! < 1
@@ -864,7 +859,7 @@ class _FriendState extends State<Friend> {
                               children: [
                                 Text(
                                   s.totalBackhand.toString(),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -877,7 +872,7 @@ class _FriendState extends State<Friend> {
                     Container(
                       width: calculateSessionShotWidth(s, s.totalSlap!),
                       height: 30,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: slapShotColor,
                       ),
                       child: s.totalSlap! < 1
@@ -888,7 +883,7 @@ class _FriendState extends State<Friend> {
                               children: [
                                 Text(
                                   s.totalSlap.toString(),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -910,7 +905,7 @@ class _FriendState extends State<Friend> {
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    Container(
+                    SizedBox(
                       width: calculateSessionShotWidth(s, s.totalWrist!),
                       child: s.totalWrist! < 1
                           ? Container()
@@ -933,7 +928,7 @@ class _FriendState extends State<Friend> {
                               ],
                             ),
                     ),
-                    Container(
+                    SizedBox(
                       width: calculateSessionShotWidth(s, s.totalSnap!),
                       child: s.totalSnap! < 1
                           ? Container()
@@ -956,7 +951,7 @@ class _FriendState extends State<Friend> {
                               ],
                             ),
                     ),
-                    Container(
+                    SizedBox(
                       width: calculateSessionShotWidth(s, s.totalBackhand!),
                       child: s.totalBackhand! < 1
                           ? Container()
@@ -979,7 +974,7 @@ class _FriendState extends State<Friend> {
                               ],
                             ),
                     ),
-                    Container(
+                    SizedBox(
                       width: calculateSessionShotWidth(s, s.totalSlap!),
                       child: s.totalSlap! < 1
                           ? Container()

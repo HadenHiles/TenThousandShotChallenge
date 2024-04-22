@@ -18,10 +18,10 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Explore extends StatefulWidget {
-  Explore({Key? key}) : super(key: key);
+  const Explore({Key? key}) : super(key: key);
 
   @override
-  _ExploreState createState() => _ExploreState();
+  State<Explore> createState() => _ExploreState();
 }
 
 class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
@@ -33,11 +33,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   ScrollController? _exploreScrollController;
 
   String _coachJeremyPhoto = "";
-  bool _loadingCoachJeremyVideos = true;
-  List<YouTubeVideo> _coachJeremyVideos = [];
+  final bool _loadingCoachJeremyVideos = true;
+  final List<YouTubeVideo> _coachJeremyVideos = [];
   String _hthPhoto = "";
-  bool _loadingHthVideos = true;
-  List<YouTubeVideo> _hthVideos = [];
+  final bool _loadingHthVideos = true;
+  final List<YouTubeVideo> _hthVideos = [];
 
   bool _loadingPrograms = true;
   List<TrainingProgram> _programs = [];
@@ -62,10 +62,10 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     _loadYoutubeChannels();
 
     _exploreScrollController = ScrollController();
-    _exploreScrollController!.addListener(this.swapPageListener);
+    _exploreScrollController!.addListener(swapPageListener);
 
     _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
-    _tabController!.addListener(this.changeTabListener);
+    _tabController!.addListener(changeTabListener);
 
     super.initState();
   }
@@ -94,12 +94,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     List<YouTubeVideo> videos = [];
     await FirebaseFirestore.instance.collection('learn_videos').orderBy('order', descending: false).get().then((snapshot) {
       if (snapshot.docs.isNotEmpty) {
-        snapshot.docs.forEach((vDoc) {
+        for (var vDoc in snapshot.docs) {
           YouTubeVideo vid = YouTubeVideo.fromSnapshot(vDoc);
           videos.add(vid);
-        });
+        }
       }
-    }).timeout(Duration(seconds: 10), onTimeout: () {
+    }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadExploringVideos timed out");
       setState(() {
         _loadingExploreVideos = false;
@@ -136,11 +136,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   Future<Null> _loadTrainingPrograms() async {
     List<TrainingProgram> programs = [];
     await FirebaseFirestore.instance.collection('trainingPrograms').orderBy('order', descending: false).get().then((snapshot) {
-      snapshot.docs.forEach((pDoc) {
+      for (var pDoc in snapshot.docs) {
         TrainingProgram program = TrainingProgram.fromSnapshot(pDoc);
         programs.add(program);
-      });
-    }).timeout(Duration(seconds: 10), onTimeout: () {
+      }
+    }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadTrainingPrograms timed out");
       setState(() {
         _loadingPrograms = false;
@@ -161,11 +161,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   Future<Null> _loadLearnToPlayItems() async {
     List<LearnToPlayItem> items = [];
     await FirebaseFirestore.instance.collection('learn_to_play').orderBy('order', descending: false).get().then((snapshot) {
-      snapshot.docs.forEach((pDoc) {
+      for (var pDoc in snapshot.docs) {
         LearnToPlayItem item = LearnToPlayItem.fromSnapshot(pDoc);
         items.add(item);
-      });
-    }).timeout(Duration(seconds: 10), onTimeout: () {
+      }
+    }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadLearnToPlayItems timed out");
       setState(() {
         _loadingLearnToPlayItems = false;
@@ -186,11 +186,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   Future<Null> _loadMerch() async {
     List<Merch> merch = [];
     await FirebaseFirestore.instance.collection('merch').orderBy('order', descending: false).get().then((snapshot) {
-      snapshot.docs.forEach((mDoc) {
+      for (var mDoc in snapshot.docs) {
         Merch product = Merch.fromSnapshot(mDoc);
         merch.add(product);
-      });
-    }).timeout(Duration(seconds: 30), onTimeout: () {
+      }
+    }).timeout(const Duration(seconds: 30), onTimeout: () {
       print("_loadMerch timed out");
       setState(() {
         _loadingMerch = false;
@@ -210,7 +210,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   Future<Null> _checkIfChallengeCompletedOnce() async {
     await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
-      if (snap.docs.length > 0) {
+      if (snap.docs.isNotEmpty) {
         setState(() {
           _oneChallengeCompleted = true;
         });
@@ -221,14 +221,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   void swapPageListener() {
     if (_exploreScrollController!.offset > _exploreScrollController!.position.maxScrollExtent + 50) {
       _explorePageController.nextPage(
-        duration: Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeIn,
       );
     }
 
     if (_exploreScrollController!.offset < _exploreScrollController!.position.minScrollExtent - 50) {
       _explorePageController.previousPage(
-        duration: Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeIn,
       );
     }
@@ -240,7 +240,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       children: [
         Container(
           height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-          margin: EdgeInsets.only(
+          margin: const EdgeInsets.only(
             top: 0,
             right: 0,
             bottom: 0,
@@ -266,35 +266,35 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                     backgroundColor: HomeTheme.darkTheme.colorScheme.primaryContainer,
                     bottom: TabBar(
                       controller: _tabController,
-                      labelStyle: TextStyle(
+                      labelStyle: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 18,
                       ),
-                      labelPadding: EdgeInsets.all(0),
+                      labelPadding: const EdgeInsets.all(0),
                       indicatorColor: Theme.of(context).primaryColor,
                       tabs: [
                         Tab(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.video_collection_rounded,
                             color: Colors.white70,
                           ),
-                          iconMargin: EdgeInsets.all(0),
+                          iconMargin: const EdgeInsets.all(0),
                           text: "Tips".toUpperCase(),
                         ),
                         Tab(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.sports_hockey_rounded,
                             color: Colors.white70,
                           ),
-                          iconMargin: EdgeInsets.all(0),
+                          iconMargin: const EdgeInsets.all(0),
                           text: "Train".toUpperCase(),
                         ),
                         Tab(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.add_box_rounded,
                             color: Colors.white70,
                           ),
-                          iconMargin: EdgeInsets.all(0),
+                          iconMargin: const EdgeInsets.all(0),
                           text: "More".toUpperCase(),
                         ),
                       ],
@@ -309,9 +309,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                 Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _loadingExploreVideos || _exploreVideos.length < 1
+                    _loadingExploreVideos || _exploreVideos.isEmpty
                         ? Container(
-                            margin: EdgeInsets.symmetric(vertical: 25),
+                            margin: const EdgeInsets.symmetric(vertical: 25),
                             child: Column(
                               children: [
                                 Center(
@@ -328,9 +328,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               scrollDirection: Axis.vertical,
                               itemCount: _exploreVideos.length,
                               itemBuilder: (BuildContext context, int i) {
-                                YoutubePlayerController _ytController = YoutubePlayerController(
+                                YoutubePlayerController ytController = YoutubePlayerController(
                                   initialVideoId: _exploreVideos[i].id,
-                                  flags: YoutubePlayerFlags(
+                                  flags: const YoutubePlayerFlags(
                                     autoPlay: false,
                                     mute: false,
                                   ),
@@ -343,7 +343,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   children: [
                                     YoutubePlayerBuilder(
                                       player: YoutubePlayer(
-                                        controller: _ytController,
+                                        controller: ytController,
                                         aspectRatio: 16 / 9,
                                         showVideoProgressIndicator: true,
                                         progressIndicatorColor: Theme.of(context).primaryColor,
@@ -361,7 +361,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           RemainingDuration(),
                                           const PlaybackSpeedButton(),
                                         ],
-                                        actionsPadding: EdgeInsets.all(2),
+                                        actionsPadding: const EdgeInsets.all(2),
                                         liveUIColor: Theme.of(context).primaryColor,
                                         onReady: () {
                                           // _ytController.addListener(listener);
@@ -383,12 +383,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           horizontal: MediaQuery.of(context).size.width * .075,
                                         ),
                                         child: SingleChildScrollView(
-                                          physics: BouncingScrollPhysics(),
+                                          physics: const BouncingScrollPhysics(),
                                           controller: _exploreScrollController,
                                           child: Column(
                                             children: [
                                               Container(
-                                                margin: EdgeInsets.only(top: 15),
+                                                margin: const EdgeInsets.only(top: 15),
                                                 child: Text(
                                                   _exploreVideos[i].title.toUpperCase(),
                                                   textAlign: TextAlign.center,
@@ -444,7 +444,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               ),
                                               _exploreVideos[i].buttonUrl!.isNotEmpty
                                                   ? Container(
-                                                      margin: EdgeInsets.only(bottom: 25),
+                                                      margin: const EdgeInsets.only(bottom: 25),
                                                       child: TextButton(
                                                         onPressed: () async {
                                                           await canLaunchUrlString(_exploreVideos[i].buttonUrl!).then((can) {
@@ -454,20 +454,20 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                             });
                                                           });
                                                         },
-                                                        child: Text(
-                                                          _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 24,
-                                                          ),
-                                                        ),
                                                         style: ButtonStyle(
                                                           padding: MaterialStateProperty.all(
-                                                            EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                            const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                                           ),
                                                           backgroundColor: MaterialStateProperty.all(
                                                             Theme.of(context).primaryColor,
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
+                                                          style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontFamily: "NovecentoSans",
+                                                            fontSize: 24,
                                                           ),
                                                         ),
                                                       ),
@@ -488,19 +488,17 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _loadingPrograms || _programs.length < 1
+                    _loadingPrograms || _programs.isEmpty
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              Container(
-                                child: Text(
-                                  "Coming Soon!".toUpperCase(),
-                                  style: Theme.of(context).textTheme.headlineSmall,
-                                ),
+                              Text(
+                                "Coming Soon!".toUpperCase(),
+                                style: Theme.of(context).textTheme.headlineSmall,
                               ),
-                              SizedBox(height: 15),
-                              Container(
+                              const SizedBox(height: 15),
+                              SizedBox(
                                 height: 50,
                                 child: Center(
                                   child: CircularProgressIndicator(
@@ -516,7 +514,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.only(top: 10),
+                                  padding: const EdgeInsets.only(top: 10),
                                   width: MediaQuery.of(context).size.width - 15,
                                   height: 40,
                                   child: Text(
@@ -525,15 +523,15 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
-                                Container(
+                                SizedBox(
                                   height: 280,
                                   child: ListView.builder(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _programs.length,
                                     shrinkWrap: false,
-                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                                     itemBuilder: (BuildContext context, int i) {
-                                      return Container(
+                                      return SizedBox(
                                         height: 240,
                                         width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
                                         child: GestureDetector(
@@ -567,7 +565,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: EdgeInsets.all(4),
+                                                  padding: const EdgeInsets.all(4),
                                                   child: AutoSizeText(
                                                     _programs[i].title!.toUpperCase(),
                                                     maxLines: 2,
@@ -591,12 +589,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               ],
                             ),
                           ),
-                    _loadingLearnToPlayItems || _learnToPlayItems.length < 1
+                    _loadingLearnToPlayItems || _learnToPlayItems.isEmpty
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              Container(
+                              SizedBox(
                                 height: 50,
                                 child: Center(
                                   child: CircularProgressIndicator(
@@ -612,7 +610,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.only(top: 10),
+                                  padding: const EdgeInsets.only(top: 10),
                                   width: MediaQuery.of(context).size.width - 25,
                                   height: 40,
                                   child: Text(
@@ -621,15 +619,15 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
-                                Container(
+                                SizedBox(
                                   height: 280,
                                   child: ListView.builder(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _learnToPlayItems.length,
                                     shrinkWrap: false,
-                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
+                                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                                     itemBuilder: (BuildContext context, int i) {
-                                      return Container(
+                                      return SizedBox(
                                         height: 240,
                                         width: MediaQuery.of(context).size.width - (MediaQuery.of(context).size.width * 0.25),
                                         child: GestureDetector(
@@ -663,7 +661,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: EdgeInsets.all(4),
+                                                  padding: const EdgeInsets.all(4),
                                                   child: AutoSizeText(
                                                     _learnToPlayItems[i].title!.toUpperCase(),
                                                     maxLines: 2,
@@ -694,7 +692,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                     Row(
                       children: [
                         Padding(
-                          padding: EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(10),
                           child: GestureDetector(
                             onTap: () async {
                               Uri merchLink = Uri(scheme: "https", host: "merch.howtohockey.com");
@@ -716,12 +714,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     clipBehavior: Clip.antiAlias,
                                     child: CircleAvatar(
                                       radius: 50,
-                                      backgroundImage: AssetImage("assets/images/avatar.png"),
+                                      backgroundImage: const AssetImage("assets/images/avatar.png"),
                                       backgroundColor: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 15,
                                 ),
                                 AutoSizeText(
@@ -755,9 +753,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                         ),
                       ],
                     ),
-                    _loadingMerch || _merch.length < 1
+                    _loadingMerch || _merch.isEmpty
                         ? Container(
-                            margin: EdgeInsets.symmetric(vertical: 25),
+                            margin: const EdgeInsets.symmetric(vertical: 25),
                             height: 50,
                             child: Column(
                               children: [
@@ -769,11 +767,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                               ],
                             ),
                           )
-                        : Container(
+                        : SizedBox(
                             height: 220.0,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              physics: AlwaysScrollableScrollPhysics(),
+                              physics: const AlwaysScrollableScrollPhysics(),
                               shrinkWrap: true,
                               itemCount: _merch.length,
                               itemBuilder: (BuildContext context, int i) {
@@ -793,7 +791,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                 clipBehavior: Clip.none,
                                                 alignment: Alignment.topCenter,
                                                 children: [
-                                                  Container(
+                                                  SizedBox(
                                                     height: 550,
                                                     child: Padding(
                                                       padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
@@ -808,11 +806,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               fontSize: 32,
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 5,
                                                           ),
                                                           Text(
-                                                            "Nice job, ya beauty!\n10,000 shots isn\'t easy.",
+                                                            "Nice job, ya beauty!\n10,000 shots isn't easy.",
                                                             textAlign: TextAlign.center,
                                                             style: TextStyle(
                                                               color: Theme.of(context).colorScheme.onPrimary,
@@ -820,13 +818,13 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               fontSize: 22,
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 5,
                                                           ),
                                                           Opacity(
                                                             opacity: 0.8,
                                                             child: Text(
-                                                              "To celebrate, here\'s 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                              "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
                                                               textAlign: TextAlign.center,
                                                               style: TextStyle(
                                                                 color: Theme.of(context).colorScheme.onPrimary,
@@ -835,7 +833,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               ),
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 15,
                                                           ),
                                                           GestureDetector(
@@ -851,13 +849,13 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                             child: Card(
                                                               color: Theme.of(context).cardTheme.color,
                                                               elevation: 4,
-                                                              child: Container(
+                                                              child: SizedBox(
                                                                 width: 125,
                                                                 height: 180,
                                                                 child: Column(
                                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                                   children: [
-                                                                    Image(
+                                                                    const Image(
                                                                       image: NetworkImage(
                                                                         "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
                                                                       ),
@@ -868,7 +866,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                                         children: [
                                                                           Container(
-                                                                            padding: EdgeInsets.all(5),
+                                                                            padding: const EdgeInsets.all(5),
                                                                             child: AutoSizeText(
                                                                               "Sniper Snapback".toUpperCase(),
                                                                               maxLines: 2,
@@ -889,14 +887,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               ),
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 5,
                                                           ),
                                                           Container(
                                                             decoration: BoxDecoration(
                                                               color: Theme.of(context).colorScheme.primaryContainer,
                                                             ),
-                                                            padding: EdgeInsets.all(5),
+                                                            padding: const EdgeInsets.all(5),
                                                             child: SelectableText(
                                                               "TENKSNIPER",
                                                               style: TextStyle(
@@ -906,7 +904,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               ),
                                                             ),
                                                           ),
-                                                          SizedBox(
+                                                          const SizedBox(
                                                             height: 5,
                                                           ),
                                                           TextButton(
@@ -924,11 +922,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               backgroundColor: MaterialStateProperty.all(
                                                                 Theme.of(context).primaryColor,
                                                               ),
-                                                              padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                             ),
                                                             child: Text(
                                                               "Get yours".toUpperCase(),
-                                                              style: TextStyle(
+                                                              style: const TextStyle(
                                                                 fontFamily: "NovecentoSans",
                                                                 fontSize: 30,
                                                                 color: Colors.white,
@@ -939,9 +937,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                       ),
                                                     ),
                                                   ),
-                                                  Positioned(
+                                                  const Positioned(
                                                     top: -40,
-                                                    child: Container(
+                                                    child: SizedBox(
                                                       width: 100,
                                                       height: 100,
                                                       child: Image(
@@ -967,7 +965,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   child: Card(
                                     color: Theme.of(context).cardTheme.color,
                                     elevation: 4,
-                                    child: Container(
+                                    child: SizedBox(
                                       width: 150.0,
                                       height: 32.25,
                                       child: Column(
@@ -992,7 +990,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               mainAxisSize: MainAxisSize.max,
                                               children: [
                                                 Container(
-                                                  padding: EdgeInsets.all(5),
+                                                  padding: const EdgeInsets.all(5),
                                                   child: AutoSizeText(
                                                     _merch[i].title!.toUpperCase(),
                                                     maxLines: 2,
@@ -1020,14 +1018,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Container(
-                          padding: EdgeInsets.only(left: 5),
+                          padding: const EdgeInsets.only(left: 5),
                           width: (MediaQuery.of(context).size.width * 0.5),
                           child: Column(
                             children: [
                               Row(
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.symmetric(vertical: 5),
+                                    padding: const EdgeInsets.symmetric(vertical: 5),
                                     child: GestureDetector(
                                       onTap: () async {
                                         String channelLink = "https://www.youtube.com/CoachJeremy";
@@ -1056,7 +1054,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                               ),
                                             ),
                                           ),
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 5,
                                           ),
                                           AutoSizeText(
@@ -1090,7 +1088,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                              _loadingCoachJeremyVideos || _coachJeremyVideos.length < 1
+                              _loadingCoachJeremyVideos || _coachJeremyVideos.isEmpty
                                   ? Container(
                                       // margin: EdgeInsets.symmetric(vertical: 25),
                                       // child: Center(
@@ -1099,7 +1097,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       //   ),
                                       // ),
                                       )
-                                  : Container(
+                                  : SizedBox(
                                       height: 185.0,
                                       child: ListView.builder(
                                         scrollDirection: Axis.horizontal,
@@ -1119,7 +1117,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                             child: Card(
                                               color: Theme.of(context).cardTheme.color,
                                               elevation: 4,
-                                              child: Container(
+                                              child: SizedBox(
                                                 width: 200.0,
                                                 child: Column(
                                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -1133,7 +1131,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                         children: [
                                                           Container(
-                                                            padding: EdgeInsets.all(5),
+                                                            padding: const EdgeInsets.all(5),
                                                             child: AutoSizeText(
                                                               _coachJeremyVideos[i].title,
                                                               maxLines: 2,
@@ -1159,12 +1157,12 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             ],
                           ),
                         ),
-                        Container(
+                        SizedBox(
                           width: (MediaQuery.of(context).size.width * 0.5),
                           child: Column(
                             children: [
                               Container(
-                                padding: EdgeInsets.symmetric(vertical: 5),
+                                padding: const EdgeInsets.symmetric(vertical: 5),
                                 child: GestureDetector(
                                   onTap: () async {
                                     String channelLink = "https://www.youtube.com/howtohockeydotcom";
@@ -1193,7 +1191,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           ),
                                         ),
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         width: 5,
                                       ),
                                       AutoSizeText(
@@ -1226,7 +1224,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                   ),
                                 ),
                               ),
-                              _loadingHthVideos || _hthVideos.length < 1
+                              _loadingHthVideos || _hthVideos.isEmpty
                                   ? Container(
                                       // margin: EdgeInsets.symmetric(vertical: 25),
                                       // child: Center(
@@ -1235,7 +1233,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       //   ),
                                       // ),
                                       )
-                                  : Container(
+                                  : SizedBox(
                                       height: 185.0,
                                       child: ListView.builder(
                                         scrollDirection: Axis.horizontal,
@@ -1255,7 +1253,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                             child: Card(
                                               color: Theme.of(context).cardTheme.color,
                                               elevation: 4,
-                                              child: Container(
+                                              child: SizedBox(
                                                 width: 200.0,
                                                 child: Column(
                                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -1269,7 +1267,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                         children: [
                                                           Container(
-                                                            padding: EdgeInsets.all(5),
+                                                            padding: const EdgeInsets.all(5),
                                                             child: AutoSizeText(
                                                               _hthVideos[i].title,
                                                               maxLines: 2,
@@ -1298,128 +1296,120 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                       ],
                     ),
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 25),
-                      padding: EdgeInsets.only(top: 15, bottom: 15),
+                      margin: const EdgeInsets.symmetric(horizontal: 25),
+                      padding: const EdgeInsets.only(top: 15, bottom: 15),
                       child: Column(
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.instagram.com/howtohockey";
-                                    await canLaunchUrlString(videoLink).then((can) {
-                                      launchUrlString(videoLink).catchError((err) {
-                                        print(err);
-                                        return false;
-                                      });
+                              GestureDetector(
+                                onTap: () async {
+                                  String videoLink = "https://www.instagram.com/howtohockey";
+                                  await canLaunchUrlString(videoLink).then((can) {
+                                    launchUrlString(videoLink).catchError((err) {
+                                      print(err);
+                                      return false;
                                     });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/instagram.png"),
-                                          ),
+                                  });
+                                },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 50,
+                                      height: 50,
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Image(
+                                          image: AssetImage("assets/images/instagram.png"),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.facebook.com/howtohockey";
-                                    await canLaunchUrlString(videoLink).then((can) {
-                                      launchUrlString(videoLink).catchError((err) {
-                                        print(err);
-                                        return false;
-                                      });
+                              GestureDetector(
+                                onTap: () async {
+                                  String videoLink = "https://www.facebook.com/howtohockey";
+                                  await canLaunchUrlString(videoLink).then((can) {
+                                    launchUrlString(videoLink).catchError((err) {
+                                      print(err);
+                                      return false;
                                     });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/facebook.png"),
-                                          ),
+                                  });
+                                },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 50,
+                                      height: 50,
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Image(
+                                          image: AssetImage("assets/images/facebook.png"),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.tiktok.com/@coachjeremyhth";
-                                    await canLaunchUrlString(videoLink).then((can) {
-                                      launchUrlString(videoLink).catchError((err) {
-                                        print(err);
-                                        return false;
-                                      });
+                              GestureDetector(
+                                onTap: () async {
+                                  String videoLink = "https://www.tiktok.com/@coachjeremyhth";
+                                  await canLaunchUrlString(videoLink).then((can) {
+                                    launchUrlString(videoLink).catchError((err) {
+                                      print(err);
+                                      return false;
                                     });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/tiktok.png"),
-                                          ),
+                                  });
+                                },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 50,
+                                      height: 50,
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Image(
+                                          image: AssetImage("assets/images/tiktok.png"),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Container(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    String videoLink = "https://www.twitter.com/howtohockey";
-                                    await canLaunchUrlString(videoLink).then((can) {
-                                      launchUrlString(videoLink).catchError((err) {
-                                        print(err);
-                                        return false;
-                                      });
+                              GestureDetector(
+                                onTap: () async {
+                                  String videoLink = "https://www.twitter.com/howtohockey";
+                                  await canLaunchUrlString(videoLink).then((can) {
+                                    launchUrlString(videoLink).catchError((err) {
+                                      print(err);
+                                      return false;
                                     });
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: FittedBox(
-                                          fit: BoxFit.cover,
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Image(
-                                            image: AssetImage("assets/images/twitter.png"),
-                                          ),
+                                  });
+                                },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 50,
+                                      height: 50,
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Image(
+                                          image: AssetImage("assets/images/twitter.png"),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

@@ -20,9 +20,9 @@ class Iteration {
       : assert(map['start_date'] != null),
         assert(map['total'] != null),
         id = map['id'],
-        startDate = map['start_date'] != null ? map['start_date'].toDate() : null,
-        targetDate = map['target_date'] != null ? map['target_date'].toDate() : null,
-        endDate = map['end_date'] != null ? map['end_date'].toDate() : null,
+        startDate = map['start_date']?.toDate(),
+        targetDate = map['target_date']?.toDate(),
+        endDate = map['end_date']?.toDate(),
         totalDuration = Duration(seconds: map['total_duration']),
         total = map['total'],
         totalWrist = map['total_wrist'],
@@ -35,9 +35,7 @@ class Iteration {
     return {
       'id': id,
       'start_date': startDate,
-      'target_date': targetDate != null
-          ? targetDate
-          : DateTime(
+      'target_date': targetDate ?? DateTime(
               DateTime.now().year,
               DateTime.now().month,
               DateTime.now().day + 100,

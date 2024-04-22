@@ -22,7 +22,7 @@ Future<void> bootstrapIterations() async {
             DateTime.now(),
             DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
             null,
-            Duration(),
+            const Duration(),
             0,
             0,
             0,
@@ -40,11 +40,7 @@ Future<void> bootstrapIterations() async {
       DocumentReference ref = iSnap.docs[0].reference;
       Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
 
-      DateTime? targetDate = i.targetDate != null
-          ? i.targetDate
-          : preferences!.targetDate != null
-              ? preferences!.targetDate
-              : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+      DateTime? targetDate = i.targetDate ?? (preferences!.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
 
       if (i.targetDate == null || preferences!.targetDate != null) {
         Iteration updatedIteration = Iteration(

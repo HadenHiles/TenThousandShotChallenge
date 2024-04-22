@@ -4,20 +4,20 @@ import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 void dialog(BuildContext context, ConfirmDialog dialog) {
   // set up the buttons
   Widget cancelButton = TextButton(
+    onPressed: dialog.cancelCallback ?? () {},
     child: Text(
       dialog.cancelText ?? "Cancel",
       style: TextStyle(
         color: Theme.of(context).colorScheme.onBackground,
       ),
     ),
-    onPressed: dialog.cancelCallback ?? () {},
   );
   Widget continueButton = TextButton(
+    onPressed: dialog.continueCallback ?? () {},
     child: Text(
       dialog.continueText ?? "Continue",
-      style: TextStyle(color: Colors.red),
+      style: const TextStyle(color: Colors.red),
     ),
-    onPressed: dialog.continueCallback ?? () {},
   );
 
   // set up the AlertDialog
@@ -30,9 +30,7 @@ void dialog(BuildContext context, ConfirmDialog dialog) {
       ),
     ),
     backgroundColor: Theme.of(context).colorScheme.background,
-    content: dialog.body != null
-        ? dialog.body
-        : Text(
+    content: dialog.body ?? Text(
             "This action cannot be undone.",
             style: TextStyle(
               color: Theme.of(context).colorScheme.onBackground,
