@@ -22,13 +22,13 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
-  History({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  const History({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;
 
   @override
-  _HistoryState createState() => _HistoryState();
+  State<History> createState() => _HistoryState();
 }
 
 class _HistoryState extends State<History> {
@@ -37,7 +37,7 @@ class _HistoryState extends State<History> {
   ScrollController? sessionsController;
   DocumentSnapshot? _lastVisible;
   bool? _isLoading = true;
-  List<DocumentSnapshot> _sessions = [];
+  final List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem> _attemptDropdownItems = [];
   String? _selectedIterationId;
 
@@ -46,7 +46,7 @@ class _HistoryState extends State<History> {
 
   @override
   void initState() {
-    sessionsController = new ScrollController()..addListener(_scrollListener);
+    sessionsController = ScrollController()..addListener(_scrollListener);
 
     super.initState();
 
@@ -58,7 +58,7 @@ class _HistoryState extends State<History> {
   Future<Null> _loadFirstLastSession() async {
     if (_selectedIterationId == null) {
       await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) {
-        if (iterationSnap.docs.length > 0) {
+        if (iterationSnap.docs.isNotEmpty) {
           setState(() {
             _selectedIterationId = iterationSnap.docs.first.id;
           });
@@ -67,7 +67,7 @@ class _HistoryState extends State<History> {
     }
 
     await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
-      if (sessionsSnap.docs.length > 0) {
+      if (sessionsSnap.docs.isNotEmpty) {
         ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
         ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
 
@@ -86,7 +86,7 @@ class _HistoryState extends State<History> {
         iterations.add(DropdownMenuItem<String>(
           value: iDoc.reference.id,
           child: Text(
-            "challenge " + (i + 1).toString().toLowerCase(),
+            "challenge ${(i + 1).toString().toLowerCase()}",
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 26,
@@ -104,17 +104,17 @@ class _HistoryState extends State<History> {
   }
 
   Future<Null> _loadHistory() async {
-    await new Future.delayed(new Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (_lastVisible == null) {
       await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
         snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(8).get().then((sSnap) {
-          sSnap.docs.forEach((s) {
+          for (var s in sSnap.docs) {
             sessions.add(s);
-          });
+          }
 
-          if (sessions.length > 0) {
+          if (sessions.isNotEmpty) {
             _lastVisible = sessions[sessions.length - 1];
 
             if (mounted) {
@@ -134,11 +134,11 @@ class _HistoryState extends State<History> {
       await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
         List<DocumentSnapshot> sessions = [];
         snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible!['date']]).limit(5).get().then((sSnap) {
-              sSnap.docs.forEach((s) {
+              for (var s in sSnap.docs) {
                 sessions.add(s);
-              });
+              }
 
-              if (sessions.length > 0) {
+              if (sessions.isNotEmpty) {
                 _lastVisible = sessions[sessions.length - 1];
                 if (mounted) {
                   setState(() {
@@ -177,21 +177,21 @@ class _HistoryState extends State<History> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image(
+                const Image(
                   image: AssetImage('assets/images/logo.png'),
                 ),
                 Text(
                   "Where's the wifi bud?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontFamily: "NovecentoSans",
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 25,
                 ),
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: Colors.white70,
                 ),
               ],
@@ -213,7 +213,7 @@ class _HistoryState extends State<History> {
                   floating: true,
                   pinned: true,
                   leading: Container(
-                    margin: EdgeInsets.only(top: 10),
+                    margin: const EdgeInsets.only(top: 10),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
@@ -225,7 +225,7 @@ class _HistoryState extends State<History> {
                       },
                     ),
                   ),
-                  actions: [],
+                  actions: const [],
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
                       color: HomeTheme.darkTheme.colorScheme.primaryContainer,
@@ -242,543 +242,537 @@ class _HistoryState extends State<History> {
                 ),
               ];
             },
-            body: Container(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        DropdownButton<dynamic>(
-                          onChanged: (value) {
-                            setState(() {
-                              _isLoading = true;
-                              _sessions.clear();
-                              _lastVisible = null;
-                              _selectedIterationId = value;
-                              _loadFirstLastSession();
-                              _loadHistory();
-                            });
-                          },
-                          underline: Container(),
-                          dropdownColor: Theme.of(context).colorScheme.primary,
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      DropdownButton<dynamic>(
+                        onChanged: (value) {
+                          setState(() {
+                            _isLoading = true;
+                            _sessions.clear();
+                            _lastVisible = null;
+                            _selectedIterationId = value;
+                            _loadFirstLastSession();
+                            _loadHistory();
+                          });
+                        },
+                        underline: Container(),
+                        dropdownColor: Theme.of(context).colorScheme.primary,
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                        value: _selectedIterationId,
+                        items: _attemptDropdownItems,
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Wrist".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 18,
+                              fontFamily: 'NovecentoSans',
+                            ),
                           ),
-                          value: _selectedIterationId,
-                          items: _attemptDropdownItems,
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "Wrist".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 18,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                            Container(
-                              width: 30,
-                              height: 25,
-                              margin: EdgeInsets.only(top: 2),
-                              decoration: BoxDecoration(color: wristShotColor),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.75,
-                                    child: Text(
-                                      "W",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                          Container(
+                            width: 30,
+                            height: 25,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: const BoxDecoration(color: wristShotColor),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Opacity(
+                                  opacity: 0.75,
+                                  child: Text(
+                                    "W",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'NovecentoSans',
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "Snap".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 18,
-                                fontFamily: 'NovecentoSans',
-                              ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Snap".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 18,
+                              fontFamily: 'NovecentoSans',
                             ),
-                            Container(
-                              width: 30,
-                              height: 25,
-                              margin: EdgeInsets.only(top: 2),
-                              decoration: BoxDecoration(color: snapShotColor),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.75,
-                                    child: Text(
-                                      "SN",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                          ),
+                          Container(
+                            width: 30,
+                            height: 25,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: const BoxDecoration(color: snapShotColor),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Opacity(
+                                  opacity: 0.75,
+                                  child: Text(
+                                    "SN",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'NovecentoSans',
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "Backhand".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 18,
-                                fontFamily: 'NovecentoSans',
-                              ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Backhand".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 18,
+                              fontFamily: 'NovecentoSans',
                             ),
-                            Container(
-                              width: 30,
-                              height: 25,
-                              margin: EdgeInsets.only(top: 2),
-                              decoration: BoxDecoration(color: backhandShotColor),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.75,
-                                    child: Text(
-                                      "B",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                          ),
+                          Container(
+                            width: 30,
+                            height: 25,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: const BoxDecoration(color: backhandShotColor),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Opacity(
+                                  opacity: 0.75,
+                                  child: Text(
+                                    "B",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'NovecentoSans',
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "Slap".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 18,
-                                fontFamily: 'NovecentoSans',
-                              ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Slap".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 18,
+                              fontFamily: 'NovecentoSans',
                             ),
-                            Container(
-                              width: 30,
-                              height: 25,
-                              margin: EdgeInsets.only(top: 2),
-                              decoration: BoxDecoration(color: slapShotColor),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: 0.75,
-                                    child: Text(
-                                      "SL",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                          ),
+                          Container(
+                            width: 30,
+                            height: 25,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: const BoxDecoration(color: slapShotColor),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Opacity(
+                                  opacity: 0.75,
+                                  child: Text(
+                                    "SL",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'NovecentoSans',
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
-                    child: StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
-
-                          if (i.endDate != null) {
-                            int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
-                            daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                            String endDate = DateFormat('MMMM d, y').format(i.endDate!);
-                            String iterationDescription;
-                            String goalDescription = "";
-                            String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-
-                            if (daysTaken <= 1) {
-                              iterationDescription = "$fTotal shots in $daysTaken day";
-                            } else {
-                              iterationDescription = "$fTotal shots in $daysTaken days";
-                            }
-
-                            if (i.targetDate != null) {
-                              String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
-                              int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
-
-                              if (daysBeforeAfterTarget > 0) {
-                                if (daysBeforeAfterTarget.abs() <= 1) {
-                                  goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
-                                } else {
-                                  goalDescription += " ${daysBeforeAfterTarget.abs()} days before goal";
-                                }
-                              } else if (daysBeforeAfterTarget < 0) {
-                                if (daysBeforeAfterTarget.abs() <= 1) {
-                                  goalDescription += " ${daysBeforeAfterTarget.abs()} day after goal";
-                                } else {
-                                  goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
-                                }
+                ),
+                Container(
+                  decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
+            
+                        if (i.endDate != null) {
+                          int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
+                          daysTaken = daysTaken < 1 ? 1 : daysTaken;
+                          String endDate = DateFormat('MMMM d, y').format(i.endDate!);
+                          String iterationDescription;
+                          String goalDescription = "";
+                          String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+            
+                          if (daysTaken <= 1) {
+                            iterationDescription = "$fTotal shots in $daysTaken day";
+                          } else {
+                            iterationDescription = "$fTotal shots in $daysTaken days";
+                          }
+            
+                          if (i.targetDate != null) {
+                            String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
+                            int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
+            
+                            if (daysBeforeAfterTarget > 0) {
+                              if (daysBeforeAfterTarget.abs() <= 1) {
+                                goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
+                              } else {
+                                goalDescription += " ${daysBeforeAfterTarget.abs()} days before goal";
                               }
-
-                              goalDescription += " ($targetDate)";
-                            } else {
-                              goalDescription += "completed on $endDate";
+                            } else if (daysBeforeAfterTarget < 0) {
+                              if (daysBeforeAfterTarget.abs() <= 1) {
+                                goalDescription += " ${daysBeforeAfterTarget.abs()} day after goal";
+                              } else {
+                                goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
+                              }
                             }
-
-                            return Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 60,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 8,
-                                      ),
-                                      Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          Icon(
+            
+                            goalDescription += " ($targetDate)";
+                          } else {
+                            goalDescription += "completed on $endDate";
+                          }
+            
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            height: 60,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(
+                                      width: 8,
+                                    ),
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          FontAwesomeIcons.hockeyPuck,
+                                          size: 14,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                        // Top Left
+                                        Positioned(
+                                          left: -6,
+                                          top: -6,
+                                          child: Icon(
                                             FontAwesomeIcons.hockeyPuck,
-                                            size: 14,
+                                            size: 8,
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
-                                          // Top Left
-                                          Positioned(
-                                            left: -6,
-                                            top: -6,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 8,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
+                                        ),
+                                        // Bottom Left
+                                        Positioned(
+                                          left: -5,
+                                          bottom: -5,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 6,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
-                                          // Bottom Left
-                                          Positioned(
-                                            left: -5,
-                                            bottom: -5,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 6,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
+                                        ),
+                                        // Top right
+                                        Positioned(
+                                          right: -4,
+                                          top: -6,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 6,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
-                                          // Top right
-                                          Positioned(
-                                            right: -4,
-                                            top: -6,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 6,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
+                                        ),
+                                        // Bottom right
+                                        Positioned(
+                                          right: -4,
+                                          bottom: -8,
+                                          child: Icon(
+                                            FontAwesomeIcons.hockeyPuck,
+                                            size: 8,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
-                                          // Bottom right
-                                          Positioned(
-                                            right: -4,
-                                            bottom: -8,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 8,
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(
+                                      width: 8,
+                                    ),
+                                    AutoSizeText(
+                                      iterationDescription.toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      FontAwesomeIcons.calendarCheck,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(
+                                      width: 4,
+                                    ),
+                                    AutoSizeText(
+                                      goalDescription.toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
+                          daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
+                          String? targetDate;
+                          String? iterationDescription;
+                          String goalDescription = "";
+                          int remainingShots = 10000 - i.total!;
+                          String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
+                          String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+            
+                          if (daysSoFar <= 1 && daysSoFar != 0) {
+                            iterationDescription = "$fTotal shots in $daysSoFar day";
+                          } else {
+                            iterationDescription = "$fTotal shots in $daysSoFar days";
+                          }
+            
+                          if (i.targetDate != null && remainingShots > 0) {
+                            int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
+                            if (i.targetDate!.compareTo(DateTime.now()) < 0) {
+                              daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
+                            }
+            
+                            if (daysBeforeAfterTarget > 0) {
+                              if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
+                                goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
+                              } else {
+                                goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
+                              }
+                            } else if (daysBeforeAfterTarget < 0) {
+                              if (daysBeforeAfterTarget == -1) {
+                                goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
+                              } else {
+                                goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
+                              }
+                            } else {
+                              goalDescription += "1 day left to take $fRemainingShots shots";
+                            }
+                          }
+            
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            height: 60,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
+                              children: [
+                                remainingShots >= 10000
+                                    ? Container()
+                                    : Row(
+                                        children: [
+                                          Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 14,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                              // Top Left
+                                              Positioned(
+                                                left: -6,
+                                                top: -6,
+                                                child: Icon(
+                                                  FontAwesomeIcons.hockeyPuck,
+                                                  size: 8,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              // Bottom Left
+                                              Positioned(
+                                                left: -5,
+                                                bottom: -5,
+                                                child: Icon(
+                                                  FontAwesomeIcons.hockeyPuck,
+                                                  size: 6,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              // Top right
+                                              Positioned(
+                                                right: -4,
+                                                top: -6,
+                                                child: Icon(
+                                                  FontAwesomeIcons.hockeyPuck,
+                                                  size: 6,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              // Bottom right
+                                              Positioned(
+                                                right: -4,
+                                                bottom: -8,
+                                                child: Icon(
+                                                  FontAwesomeIcons.hockeyPuck,
+                                                  size: 8,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            width: 8,
+                                          ),
+                                          SizedBox(
+                                            width: MediaQuery.of(context).size.width * .3,
+                                            child: AutoSizeText(
+                                              iterationDescription.toLowerCase(),
+                                              maxFontSize: 18,
+                                              maxLines: 1,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 18,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                      SizedBox(
-                                        width: 8,
-                                      ),
-                                      Container(
-                                        child: AutoSizeText(
-                                          iterationDescription.toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontFamily: "NovecentoSans",
-                                            fontSize: 18,
+                                remainingShots <= 0
+                                    ? Container()
+                                    : Row(
+                                        children: [
+                                          const Icon(
+                                            FontAwesomeIcons.calendarCheck,
+                                            size: 20,
                                           ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        FontAwesomeIcons.calendarCheck,
-                                        size: 20,
-                                      ),
-                                      SizedBox(
-                                        width: 4,
-                                      ),
-                                      Container(
-                                        child: AutoSizeText(
-                                          goalDescription.toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontFamily: "NovecentoSans",
-                                            fontSize: 18,
+                                          const SizedBox(
+                                            width: 2,
                                           ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          } else {
-                            int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
-                            daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                            String? targetDate;
-                            String? iterationDescription;
-                            String goalDescription = "";
-                            int remainingShots = 10000 - i.total!;
-                            String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
-                            String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-
-                            if (daysSoFar <= 1 && daysSoFar != 0) {
-                              iterationDescription = "$fTotal shots in $daysSoFar day";
-                            } else {
-                              iterationDescription = "$fTotal shots in $daysSoFar days";
-                            }
-
-                            if (i.targetDate != null && remainingShots > 0) {
-                              int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
-                              if (i.targetDate!.compareTo(DateTime.now()) < 0) {
-                                daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
-                              }
-
-                              if (daysBeforeAfterTarget > 0) {
-                                if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
-                                  goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
-                                } else {
-                                  goalDescription += "${daysBeforeAfterTarget.abs()} days left to take $fRemainingShots shots";
-                                }
-                              } else if (daysBeforeAfterTarget < 0) {
-                                if (daysBeforeAfterTarget == -1) {
-                                  goalDescription += "${daysBeforeAfterTarget.abs()} day past goal ($targetDate)";
-                                } else {
-                                  goalDescription += "${daysBeforeAfterTarget.abs()} days past goal ($targetDate)";
-                                }
-                              } else {
-                                goalDescription += "1 day left to take $fRemainingShots shots";
-                              }
-                            }
-
-                            return Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 60,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  remainingShots >= 10000
-                                      ? Container()
-                                      : Row(
-                                          children: [
-                                            Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                Icon(
-                                                  FontAwesomeIcons.hockeyPuck,
-                                                  size: 14,
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                                // Top Left
-                                                Positioned(
-                                                  left: -6,
-                                                  top: -6,
-                                                  child: Icon(
-                                                    FontAwesomeIcons.hockeyPuck,
-                                                    size: 8,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                // Bottom Left
-                                                Positioned(
-                                                  left: -5,
-                                                  bottom: -5,
-                                                  child: Icon(
-                                                    FontAwesomeIcons.hockeyPuck,
-                                                    size: 6,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                // Top right
-                                                Positioned(
-                                                  right: -4,
-                                                  top: -6,
-                                                  child: Icon(
-                                                    FontAwesomeIcons.hockeyPuck,
-                                                    size: 6,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                // Bottom right
-                                                Positioned(
-                                                  right: -4,
-                                                  bottom: -8,
-                                                  child: Icon(
-                                                    FontAwesomeIcons.hockeyPuck,
-                                                    size: 8,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              width: 8,
-                                            ),
-                                            Container(
-                                              width: MediaQuery.of(context).size.width * .3,
-                                              child: AutoSizeText(
-                                                iterationDescription.toLowerCase(),
-                                                maxFontSize: 18,
-                                                maxLines: 1,
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontFamily: "NovecentoSans",
-                                                  fontSize: 18,
-                                                ),
+                                          SizedBox(
+                                            width: MediaQuery.of(context).size.width * .4,
+                                            child: AutoSizeText(
+                                              goalDescription != "" ? goalDescription.toLowerCase() : "N/A".toLowerCase(),
+                                              maxFontSize: 18,
+                                              maxLines: 1,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 18,
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                  remainingShots <= 0
-                                      ? Container()
-                                      : Row(
-                                          children: [
-                                            Icon(
-                                              FontAwesomeIcons.calendarCheck,
-                                              size: 20,
-                                            ),
-                                            SizedBox(
-                                              width: 2,
-                                            ),
-                                            Container(
-                                              width: MediaQuery.of(context).size.width * .4,
-                                              child: AutoSizeText(
-                                                goalDescription != "" ? goalDescription.toLowerCase() : "N/A".toLowerCase(),
-                                                maxFontSize: 18,
-                                                maxLines: 1,
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontFamily: "NovecentoSans",
-                                                  fontSize: 18,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ],
-                              ),
-                            );
-                          }
-                        }
-
-                        return Container();
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      color: Theme.of(context).primaryColor,
-                      child: ListView.builder(
-                        controller: sessionsController,
-                        padding: EdgeInsets.only(
-                          top: 0,
-                          right: 0,
-                          bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                          left: 0,
-                        ),
-                        itemCount: _sessions.length + 1,
-                        itemBuilder: (_, int index) {
-                          if (index < _sessions.length) {
-                            final DocumentSnapshot document = _sessions[index];
-                            return _buildSessionItem(ShootingSession.fromSnapshot(document), index);
-                          }
-                          return Container(
-                            margin: EdgeInsets.only(top: 25, bottom: 35),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                _isLoading!
-                                    ? SizedBox(
-                                        height: 25,
-                                        width: 25,
-                                        child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                                      )
-                                    : _sessions.length < 1
-                                        ? Text(
-                                            "You don't have any sessions yet".toUpperCase(),
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 16,
-                                            ),
-                                          )
-                                        : Container()
+                                          ),
+                                        ],
+                                      ),
                               ],
                             ),
                           );
-                        },
+                        }
+                      }
+            
+                      return Container();
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    color: Theme.of(context).primaryColor,
+                    child: ListView.builder(
+                      controller: sessionsController,
+                      padding: EdgeInsets.only(
+                        top: 0,
+                        right: 0,
+                        bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                        left: 0,
                       ),
-                      onRefresh: () async {
-                        _sessions.clear();
-                        _lastVisible = null;
-                        await _loadHistory();
+                      itemCount: _sessions.length + 1,
+                      itemBuilder: (_, int index) {
+                        if (index < _sessions.length) {
+                          final DocumentSnapshot document = _sessions[index];
+                          return _buildSessionItem(ShootingSession.fromSnapshot(document), index);
+                        }
+                        return Container(
+                          margin: const EdgeInsets.only(top: 25, bottom: 35),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              _isLoading!
+                                  ? SizedBox(
+                                      height: 25,
+                                      width: 25,
+                                      child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                                    )
+                                  : _sessions.isEmpty
+                                      ? Text(
+                                          "You don't have any sessions yet".toUpperCase(),
+                                          style: TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16,
+                                          ),
+                                        )
+                                      : Container()
+                            ],
+                          ),
+                        );
                       },
                     ),
+                    onRefresh: () async {
+                      _sessions.clear();
+                      _lastVisible = null;
+                      await _loadHistory();
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -822,13 +816,13 @@ class _HistoryState extends State<History> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Theme.of(context).cardTheme.color,
-                  content: new Text(
+                  content: Text(
                     "Sorry this session can't be deleted",
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
-                  duration: Duration(milliseconds: 1500),
+                  duration: const Duration(milliseconds: 1500),
                 ),
               );
             }
@@ -845,7 +839,7 @@ class _HistoryState extends State<History> {
               return AlertDialog(
                 title: Text(
                   "Delete Session?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 24,
                   ),
@@ -863,7 +857,7 @@ class _HistoryState extends State<History> {
                     ),
                     Container(
                       height: 120,
-                      margin: EdgeInsets.only(top: 15),
+                      margin: const EdgeInsets.only(top: 15),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -875,7 +869,7 @@ class _HistoryState extends State<History> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -886,7 +880,7 @@ class _HistoryState extends State<History> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -896,7 +890,7 @@ class _HistoryState extends State<History> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Text(
@@ -943,10 +937,10 @@ class _HistoryState extends State<History> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                margin: EdgeInsets.only(left: 15),
+                margin: const EdgeInsets.only(left: 15),
                 child: Text(
                   "Delete".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 16,
                     color: Colors.white,
@@ -954,8 +948,8 @@ class _HistoryState extends State<History> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(right: 15),
-                child: Icon(
+                margin: const EdgeInsets.only(right: 15),
+                child: const Icon(
                   Icons.delete,
                   size: 16,
                   color: Colors.white,
@@ -965,7 +959,7 @@ class _HistoryState extends State<History> {
           ),
         ),
         child: Container(
-          padding: EdgeInsets.only(top: 5, bottom: 15),
+          padding: const EdgeInsets.only(top: 5, bottom: 15),
           decoration: BoxDecoration(
             color: i % 2 == 0 ? Colors.transparent : Theme.of(context).cardTheme.color,
           ),
@@ -975,7 +969,7 @@ class _HistoryState extends State<History> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1007,13 +1001,13 @@ class _HistoryState extends State<History> {
                         ),
                         _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value
                             ? Container()
-                            : Container(
+                            : SizedBox(
                                 height: 24,
                                 width: 24,
                                 child: PopupMenuButton(
                                   key: UniqueKey(),
                                   color: Theme.of(context).colorScheme.primary,
-                                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+                                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
                                   icon: Icon(
                                     Icons.more_horiz_rounded,
                                     color: Theme.of(context).colorScheme.onPrimary,
@@ -1023,6 +1017,7 @@ class _HistoryState extends State<History> {
                                     i >= 0
                                         ? PopupMenuItem<String>(child: Container())
                                         : PopupMenuItem<String>(
+                                            value: 'resume',
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
@@ -1033,15 +1028,15 @@ class _HistoryState extends State<History> {
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
                                                 ),
-                                                Icon(
+                                                const Icon(
                                                   Icons.play_arrow,
                                                   color: wristShotColor,
                                                 ),
                                               ],
                                             ),
-                                            value: 'resume',
                                           ),
                                     PopupMenuItem<String>(
+                                      value: 'delete',
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
@@ -1058,7 +1053,6 @@ class _HistoryState extends State<History> {
                                           ),
                                         ],
                                       ),
-                                      value: 'delete',
                                     ),
                                   ],
                                   onSelected: (value) async {
@@ -1101,7 +1095,7 @@ class _HistoryState extends State<History> {
                                           return AlertDialog(
                                             title: Text(
                                               "Delete Session?".toUpperCase(),
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontFamily: 'NovecentoSans',
                                                 fontSize: 24,
                                               ),
@@ -1119,7 +1113,7 @@ class _HistoryState extends State<History> {
                                                 ),
                                                 Container(
                                                   height: 120,
-                                                  margin: EdgeInsets.only(top: 15),
+                                                  margin: const EdgeInsets.only(top: 15),
                                                   child: Column(
                                                     mainAxisAlignment: MainAxisAlignment.center,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1131,7 +1125,7 @@ class _HistoryState extends State<History> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1142,7 +1136,7 @@ class _HistoryState extends State<History> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1152,7 +1146,7 @@ class _HistoryState extends State<History> {
                                                           color: Theme.of(context).colorScheme.onPrimary,
                                                         ),
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 5,
                                                       ),
                                                       Text(
@@ -1198,13 +1192,13 @@ class _HistoryState extends State<History> {
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                         SnackBar(
                                                           backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: new Text(
+                                                          content: Text(
                                                             "Sorry this session can't be deleted",
                                                             style: TextStyle(
                                                               color: Theme.of(context).colorScheme.onPrimary,
                                                             ),
                                                           ),
-                                                          duration: Duration(milliseconds: 1500),
+                                                          duration: const Duration(milliseconds: 1500),
                                                         ),
                                                       );
                                                     }
@@ -1248,7 +1242,7 @@ class _HistoryState extends State<History> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalWrist!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: wristShotColor,
                           ),
                           child: s.totalWrist! < 1
@@ -1257,14 +1251,14 @@ class _HistoryState extends State<History> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalWrist!),
                                       child: AutoSizeText(
                                         s.totalWrist.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1279,7 +1273,7 @@ class _HistoryState extends State<History> {
                           width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: snapShotColor,
                           ),
                           child: s.totalSnap! < 1
@@ -1288,14 +1282,14 @@ class _HistoryState extends State<History> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalSnap!),
                                       child: AutoSizeText(
                                         s.totalSnap.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1309,7 +1303,7 @@ class _HistoryState extends State<History> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalBackhand!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: backhandShotColor,
                           ),
                           child: s.totalBackhand! < 1
@@ -1318,14 +1312,14 @@ class _HistoryState extends State<History> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalBackhand!),
                                       child: AutoSizeText(
                                         s.totalBackhand.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1339,7 +1333,7 @@ class _HistoryState extends State<History> {
                         Container(
                           width: calculateSessionShotWidth(s, s.totalSlap!),
                           height: 30,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: slapShotColor,
                           ),
                           child: s.totalSlap! < 1
@@ -1348,14 +1342,14 @@ class _HistoryState extends State<History> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Container(
+                                    SizedBox(
                                       width: calculateSessionShotWidth(s, s.totalSlap!),
                                       child: AutoSizeText(
                                         s.totalSlap.toString(),
                                         maxFontSize: 14,
                                         maxLines: 1,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1378,7 +1372,7 @@ class _HistoryState extends State<History> {
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalWrist!),
                           child: s.totalWrist! < 1
                               ? Container()
@@ -1401,7 +1395,7 @@ class _HistoryState extends State<History> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalSnap!),
                           child: s.totalSnap! < 1
                               ? Container()
@@ -1424,7 +1418,7 @@ class _HistoryState extends State<History> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalBackhand!),
                           child: s.totalBackhand! < 1
                               ? Container()
@@ -1447,7 +1441,7 @@ class _HistoryState extends State<History> {
                                   ],
                                 ),
                         ),
-                        Container(
+                        SizedBox(
                           width: calculateSessionShotWidth(s, s.totalSlap!),
                           child: s.totalSlap! < 1
                               ? Container()

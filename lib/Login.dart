@@ -12,7 +12,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 
 class Login extends StatefulWidget {
-  Login({Key? key}) : super(key: key);
+  const Login({Key? key}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -24,7 +24,7 @@ class Login extends StatefulWidget {
   // always marked "final".
 
   @override
-  _LoginState createState() => _LoginState();
+  State<Login> createState() => _LoginState();
 }
 
 class _LoginState extends State<Login> {
@@ -59,7 +59,7 @@ class _LoginState extends State<Login> {
 
     //If user is signed in
     if (_signedIn) {
-      return Navigation(title: null, selectedIndex: 0);
+      return const Navigation(title: null, selectedIndex: 0);
     }
 
     return Scaffold(
@@ -106,7 +106,7 @@ class _LoginState extends State<Login> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
-                                duration: Duration(seconds: 10),
+                                duration: const Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: "Dismiss",
                                   onPressed: () {
@@ -123,7 +123,7 @@ class _LoginState extends State<Login> {
                     !appleSignInAvailable.isAvailable
                         ? Container()
                         : Container(
-                            margin: EdgeInsets.only(top: 10),
+                            margin: const EdgeInsets.only(top: 10),
                             child: SizedBox(
                               height: 50,
                               width: 300,
@@ -144,7 +144,7 @@ class _LoginState extends State<Login> {
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
-                                        duration: Duration(seconds: 10),
+                                        duration: const Duration(seconds: 10),
                                         action: SnackBarAction(
                                           label: "Dismiss",
                                           onPressed: () {
@@ -159,7 +159,7 @@ class _LoginState extends State<Login> {
                               ),
                             ),
                           ),
-                    Divider(
+                    const Divider(
                       color: Colors.transparent,
                       height: 5,
                     ),
@@ -169,13 +169,13 @@ class _LoginState extends State<Login> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            margin: EdgeInsets.only(
+                            margin: const EdgeInsets.only(
                               top: 15,
                               bottom: 15,
                             ),
                             child: Text(
                               'Or'.toUpperCase(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -197,15 +197,15 @@ class _LoginState extends State<Login> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              margin: EdgeInsets.only(right: 15),
+                              margin: const EdgeInsets.only(right: 15),
                               child: Icon(
                                 Icons.email,
                                 color: Theme.of(context).primaryColor,
                               ),
                             ),
                             Container(
-                              margin: EdgeInsets.only(right: 50),
-                              child: Text(
+                              margin: const EdgeInsets.only(right: 50),
+                              child: const Text(
                                 'Sign in with Email',
                                 style: TextStyle(
                                   color: Colors.black54,
@@ -223,7 +223,7 @@ class _LoginState extends State<Login> {
                             context: context,
                             builder: (context) {
                               return SimpleDialog(
-                                contentPadding: EdgeInsets.all(25),
+                                contentPadding: const EdgeInsets.all(25),
                                 children: [
                                   Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
@@ -232,14 +232,14 @@ class _LoginState extends State<Login> {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         mainAxisSize: MainAxisSize.max,
                                         children: [
-                                          Container(
+                                          SizedBox(
                                             height: 50,
                                             child: Image.asset(
                                               'assets/images/logo-small-red.png',
                                               width: 120,
                                             ),
                                           ),
-                                          Text(
+                                          const Text(
                                             'SIGN IN',
                                             style: TextStyle(
                                               fontSize: 16,
@@ -254,7 +254,7 @@ class _LoginState extends State<Login> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: <Widget>[
                                             Padding(
-                                              padding: EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: TextFormField(
                                                 controller: _signInEmail,
                                                 decoration: InputDecoration(
@@ -280,7 +280,7 @@ class _LoginState extends State<Login> {
                                               ),
                                             ),
                                             Padding(
-                                              padding: EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: TextFormField(
                                                 controller: _signInPass,
                                                 obscureText: _hidePassword,
@@ -313,7 +313,7 @@ class _LoginState extends State<Login> {
                                                     backgroundColor: Theme.of(context).primaryColor,
                                                     foregroundColor: Colors.white,
                                                   ),
-                                                  child: Text("Sign in"),
+                                                  child: const Text("Sign in"),
                                                   onPressed: () async {
                                                     if (_signInFormKey.currentState!.validate()) {
                                                       _signInFormKey.currentState!.save();
@@ -337,7 +337,7 @@ class _LoginState extends State<Login> {
                                                                 color: Theme.of(context).colorScheme.onPrimary,
                                                               ),
                                                             ),
-                                                            duration: Duration(seconds: 10),
+                                                            duration: const Duration(seconds: 10),
                                                             action: SnackBarAction(
                                                               label: "Dismiss",
                                                               onPressed: () {
@@ -356,13 +356,13 @@ class _LoginState extends State<Login> {
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: ElevatedButton(
-                                                child: Text("Forgot password?"),
+                                                child: const Text("Forgot password?"),
                                                 onPressed: () {
                                                   showDialog(
                                                     context: context,
                                                     builder: (context) {
                                                       return SimpleDialog(
-                                                        contentPadding: EdgeInsets.all(25),
+                                                        contentPadding: const EdgeInsets.all(25),
                                                         children: [
                                                           Column(
                                                             mainAxisAlignment: MainAxisAlignment.start,
@@ -371,14 +371,14 @@ class _LoginState extends State<Login> {
                                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                 mainAxisSize: MainAxisSize.max,
                                                                 children: [
-                                                                  Container(
+                                                                  SizedBox(
                                                                     height: 50,
                                                                     child: Image.asset(
                                                                       'assets/images/logo-small-red.png',
                                                                       width: 120,
                                                                     ),
                                                                   ),
-                                                                  Text(
+                                                                  const Text(
                                                                     'Forgot Password',
                                                                     style: TextStyle(
                                                                       fontSize: 16,
@@ -393,7 +393,7 @@ class _LoginState extends State<Login> {
                                                                   mainAxisSize: MainAxisSize.min,
                                                                   children: <Widget>[
                                                                     Padding(
-                                                                      padding: EdgeInsets.all(8.0),
+                                                                      padding: const EdgeInsets.all(8.0),
                                                                       child: TextFormField(
                                                                         controller: _forgotPasswordEmail,
                                                                         decoration: InputDecoration(
@@ -421,7 +421,7 @@ class _LoginState extends State<Login> {
                                                                     Padding(
                                                                       padding: const EdgeInsets.all(8.0),
                                                                       child: ElevatedButton(
-                                                                        child: Text("Send reset email"),
+                                                                        child: const Text("Send reset email"),
                                                                         onPressed: () {
                                                                           if (_forgotPasswordFormKey.currentState!.validate()) {
                                                                             FirebaseAuth.instance.sendPasswordResetEmail(email: _forgotPasswordEmail.text.toString()).then((value) {
@@ -439,7 +439,7 @@ class _LoginState extends State<Login> {
                                                                                       color: Theme.of(context).colorScheme.onPrimary,
                                                                                     ),
                                                                                   ),
-                                                                                  duration: Duration(seconds: 10),
+                                                                                  duration: const Duration(seconds: 10),
                                                                                   action: SnackBarAction(
                                                                                     label: "Dismiss",
                                                                                     onPressed: () {
@@ -492,7 +492,7 @@ class _LoginState extends State<Login> {
                           ),
                           child: Text(
                             'Sign up'.toUpperCase(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -507,7 +507,7 @@ class _LoginState extends State<Login> {
                               context: context,
                               builder: (context) {
                                 return SimpleDialog(
-                                  contentPadding: EdgeInsets.all(25),
+                                  contentPadding: const EdgeInsets.all(25),
                                   children: [
                                     SingleChildScrollView(
                                       child: Column(
@@ -517,14 +517,14 @@ class _LoginState extends State<Login> {
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             mainAxisSize: MainAxisSize.max,
                                             children: [
-                                              Container(
+                                              SizedBox(
                                                 height: 50,
                                                 child: Image.asset(
                                                   'assets/images/logo-small-red.png',
                                                   width: 120,
                                                 ),
                                               ),
-                                              Text(
+                                              const Text(
                                                 'SIGN UP',
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
@@ -539,7 +539,7 @@ class _LoginState extends State<Login> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: <Widget>[
                                                 Padding(
-                                                  padding: EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
                                                     controller: _signUpEmail,
                                                     decoration: InputDecoration(
@@ -566,7 +566,7 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding: EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
                                                     controller: _signUpPass,
                                                     obscureText: _hidePassword,
@@ -593,7 +593,7 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding: EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
                                                     controller: _signUpConfirmPass,
                                                     obscureText: _hidePassword,
@@ -628,7 +628,7 @@ class _LoginState extends State<Login> {
                                                         backgroundColor: Theme.of(context).primaryColor,
                                                         foregroundColor: Colors.white,
                                                       ),
-                                                      child: Text("Sign up"),
+                                                      child: const Text("Sign up"),
                                                       onPressed: () async {
                                                         if (_signUpFormKey.currentState!.validate()) {
                                                           _signUpFormKey.currentState!.save();
@@ -651,7 +651,7 @@ class _LoginState extends State<Login> {
                                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                                   ),
                                                                 ),
-                                                                duration: Duration(seconds: 10),
+                                                                duration: const Duration(seconds: 10),
                                                                 action: SnackBarAction(
                                                                   label: "Dismiss",
                                                                   onPressed: () {
@@ -710,7 +710,9 @@ class _LoginState extends State<Login> {
           'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
 
-        Navigator.of(context, rootNavigator: true).pop('dialog');
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop('dialog');
+        }
 
         bootstrap();
 

@@ -8,7 +8,7 @@ class NavigationTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 2),
+      margin: const EdgeInsets.only(bottom: 2),
       child: Text(
         title!.toUpperCase(),
         style: TextStyle(

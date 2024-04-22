@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'dart:io';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,8 +21,8 @@ versionCheck(context) async {
   try {
     // Using default duration to force fetching from remote server.
     await remoteConfig.setConfigSettings(RemoteConfigSettings(
-      fetchTimeout: Duration(seconds: 5),
-      minimumFetchInterval: Duration(minutes: 15),
+      fetchTimeout: const Duration(seconds: 5),
+      minimumFetchInterval: const Duration(minutes: 15),
     ));
     await remoteConfig.fetchAndActivate();
     double newVersion = double.parse(remoteConfig.getString('force_update_current_version').trim().replaceAll(".", ""));
@@ -74,7 +76,7 @@ _showVersionDialog(context) async {
                 ),
               ],
             )
-          : new AlertDialog(
+          : AlertDialog(
               title: Text(
                 title.toUpperCase(),
                 style: TextStyle(

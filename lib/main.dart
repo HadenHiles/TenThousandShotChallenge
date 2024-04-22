@@ -17,16 +17,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:global_configuration/global_configuration.dart';
 
 // Setup a navigation key so that we can navigate without context
-final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
 Preferences? preferences = Preferences(false, 25, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null);
 final sessionService = SessionService();
-final Color wristShotColor = Color(0xff00BCD4);
-final Color snapShotColor = Color(0xff2296F3);
-final Color backhandShotColor = Color(0xff4050B5);
-final Color slapShotColor = Color(0xff009688);
+const Color wristShotColor = Color(0xff00BCD4);
+const Color snapShotColor = Color(0xff2296F3);
+const Color backhandShotColor = Color(0xff4050B5);
+const Color slapShotColor = Color(0xff009688);
 bool introShown = false;
 
 void main() async {
@@ -86,7 +86,7 @@ void main() async {
       value: appleSignInAvailable,
       child: ChangeNotifierProvider<PreferencesStateNotifier>(
         create: (_) => PreferencesStateNotifier(),
-        child: Home(),
+        child: const Home(),
       ),
     ),
   );
@@ -104,6 +104,8 @@ Future<void> _messageClickHandler(RemoteMessage message) async {
 }
 
 class Home extends StatelessWidget {
+  const Home({Key? key}) : super(key: key);
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -130,13 +132,13 @@ class Home extends StatelessWidget {
             FirebaseAnalyticsObserver(analytics: analytics),
           ],
           home: !introShown
-              ? IntroScreen()
+              ? const IntroScreen()
               : (user != null
-                  ? Navigation(
+                  ? const Navigation(
                       title: null,
                       selectedIndex: 0,
                     )
-                  : Login()),
+                  : const Login()),
         );
       },
     );

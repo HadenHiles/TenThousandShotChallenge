@@ -10,7 +10,7 @@ void showQRCode(User? user) {
       return AlertDialog(
         title: Text(
           "Friends can add you with this".toUpperCase(),
-          style: TextStyle(
+          style: const TextStyle(
             fontFamily: 'NovecentoSans',
             fontSize: 24,
           ),
@@ -20,7 +20,7 @@ void showQRCode(User? user) {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
+            SizedBox(
               width: 200,
               height: 200,
               child: QrImageView(

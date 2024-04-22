@@ -14,10 +14,10 @@ class ShotTypeButton extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: active! ? Colors.white : Theme.of(context).colorScheme.onPrimary,
         backgroundColor: active! ? Theme.of(context).primaryColor : Theme.of(context).cardTheme.color,
-        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 5),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 5),
       ),
       onPressed: onPressed,
-      child: Container(
+      child: SizedBox(
         width: MediaQuery.of(context).size.width * .2,
         child: AutoSizeText(
           type!.toUpperCase(),

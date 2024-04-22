@@ -22,10 +22,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfileSettings extends StatefulWidget {
-  ProfileSettings({Key? key}) : super(key: key);
+  const ProfileSettings({Key? key}) : super(key: key);
 
   @override
-  _ProfileSettingsState createState() => _ProfileSettingsState();
+  State<ProfileSettings> createState() => _ProfileSettingsState();
 }
 
 class _ProfileSettingsState extends State<ProfileSettings> {
@@ -81,21 +81,21 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image(
+                const Image(
                   image: AssetImage('assets/images/logo.png'),
                 ),
                 Text(
                   "Where's the wifi bud?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontFamily: "NovecentoSans",
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 25,
                 ),
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: Colors.white70,
                 ),
               ],
@@ -114,7 +114,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                   floating: true,
                   pinned: true,
                   leading: Container(
-                    margin: EdgeInsets.only(top: 10),
+                    margin: const EdgeInsets.only(top: 10),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
@@ -134,118 +134,118 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       collapseMode: CollapseMode.parallax,
                       titlePadding: null,
                       centerTitle: false,
-                      title: BasicTitle(title: "Settings"),
+                      title: const BasicTitle(title: "Settings"),
                       background: Container(
                         color: Theme.of(context).scaffoldBackgroundColor,
                       ),
                     ),
                   ),
-                  actions: [],
+                  actions: const [],
                 ),
               ];
             },
             body: Stack(
               children: [
-                Container(
-                  child: SettingsList(
-                    lightTheme: SettingsThemeData(
-                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    darkTheme: SettingsThemeData(
-                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    sections: [
-                      SettingsSection(
-                        title: Text(
-                          'General',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        tiles: [
-                          SettingsTile(
-                            title: Text(
-                              'How many pucks do you have?',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Container(
-                              margin: EdgeInsets.only(left: 10),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Icon(
+                SettingsList(
+                  lightTheme: SettingsThemeData(
+                    settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  darkTheme: SettingsThemeData(
+                    settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  sections: [
+                    SettingsSection(
+                      title: Text(
+                        'General',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      tiles: [
+                        SettingsTile(
+                          title: Text(
+                            'How many pucks do you have?',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          leading: Container(
+                            margin: const EdgeInsets.only(left: 10),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(
+                                  FontAwesomeIcons.hockeyPuck,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                                // Top Left
+                                Positioned(
+                                  left: -6,
+                                  top: -6,
+                                  child: Icon(
                                     FontAwesomeIcons.hockeyPuck,
-                                    size: 14,
+                                    size: 8,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  // Top Left
-                                  Positioned(
-                                    left: -6,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Bottom Left
-                                  Positioned(
-                                    left: -5,
-                                    bottom: -5,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Top right
-                                  Positioned(
-                                    right: -4,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Bottom right
-                                  Positioned(
-                                    right: -4,
-                                    bottom: -8,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            onPressed: (BuildContext context) {
-                              navigatorKey.currentState!.push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return EditPuckCount();
-                                  },
                                 ),
-                              );
-                            },
+                                // Bottom Left
+                                Positioned(
+                                  left: -5,
+                                  bottom: -5,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 6,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                                // Top right
+                                Positioned(
+                                  right: -4,
+                                  top: -6,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 6,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                                // Bottom right
+                                Positioned(
+                                  right: -4,
+                                  bottom: -8,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 8,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          SettingsTile.switchTile(
-                            title: Text(
-                              'Dark Mode',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.brightness_2,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            initialValue: _darkMode,
-                            onToggle: (bool value) async {
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              setState(() {
-                                _darkMode = !_darkMode;
-                                prefs.setBool('dark_mode', _darkMode);
-                              });
+                          onPressed: (BuildContext context) {
+                            navigatorKey.currentState!.push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return const EditPuckCount();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        SettingsTile.switchTile(
+                          title: Text(
+                            'Dark Mode',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          leading: Icon(
+                            Icons.brightness_2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          initialValue: _darkMode,
+                          onToggle: (bool value) async {
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            setState(() {
+                              _darkMode = !_darkMode;
+                              prefs.setBool('dark_mode', _darkMode);
+                            });
 
+                            if (context.mounted) {
                               Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
                                 Preferences(
                                   value,
@@ -254,247 +254,247 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   prefs.getString('fcm_token'),
                                 ),
                               );
-                            },
+                            }
+                          },
+                        ),
+                        SettingsTile(
+                          title: Text(
+                            "Recalculate Shot Totals",
+                            style: Theme.of(context).textTheme.bodyLarge,
                           ),
-                          SettingsTile(
-                            title: Text(
-                              "Recalculate Shot Totals",
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            description: Text(
-                              "Use this if your shot count is out of sync",
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            enabled: true,
-                            leading: _refreshingShots
-                                ? Container(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.refresh_rounded,
+                          description: Text(
+                            "Use this if your shot count is out of sync",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          enabled: true,
+                          leading: _refreshingShots
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.refresh_rounded,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                          onPressed: (context) async {
+                            if (_shotsRefreshedOnce) {
+                              setState(() {
+                                _refreshingShots = true;
+                              });
+
+                              Future.delayed(const Duration(milliseconds: 800)).then(
+                                (value) => setState(() {
+                                  _refreshingShots = false;
+                                }),
+                              );
+                            } else {
+                              setState(() {
+                                _refreshingShots = true;
+                              });
+                              await recalculateIterationTotals().then((_) {
+                                Future.delayed(const Duration(milliseconds: 200)).then(
+                                  (value) {
+                                    setState(() {
+                                      _refreshingShots = false;
+                                      _shotsRefreshedOnce = true;
+                                    });
+
+                                    Fluttertoast.showToast(
+                                      msg: 'Finished recalculating shot totals',
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.BOTTOM,
+                                      timeInSecForIosWeb: 1,
+                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                      textColor: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 16.0,
+                                    );
+                                  },
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: Text(
+                        'Account',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      tiles: [
+                        SettingsTile.switchTile(
+                          title: Text(
+                            'Public',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          leading: Icon(
+                            Icons.privacy_tip_rounded,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          initialValue: _publicProfile,
+                          onToggle: (bool value) async {
+                            await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
+                              setState(() {
+                                _publicProfile = !_publicProfile;
+                              });
+                            });
+                          },
+                        ),
+                        SettingsTile(
+                          title: Text(
+                            'Edit Profile',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          leading: Icon(
+                            Icons.person,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          onPressed: (BuildContext context) {
+                            navigatorKey.currentState!.push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return const EditProfile();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        SettingsTile(
+                          title: Row(
+                            children: [
+                              Text(
+                                'Delete Account',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 5),
+                                child: RotatedBox(
+                                  quarterTurns: 2,
+                                  child: Icon(
+                                    Icons.info_outlined,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                            onPressed: (context) async {
-                              if (_shotsRefreshedOnce) {
-                                setState(() {
-                                  _refreshingShots = true;
-                                });
-
-                                Future.delayed(Duration(milliseconds: 800)).then(
-                                  (value) => setState(() {
-                                    _refreshingShots = false;
-                                  }),
-                                );
-                              } else {
-                                setState(() {
-                                  _refreshingShots = true;
-                                });
-                                await recalculateIterationTotals().then((_) {
-                                  Future.delayed(Duration(milliseconds: 200)).then(
-                                    (value) {
-                                      setState(() {
-                                        _refreshingShots = false;
-                                        _shotsRefreshedOnce = true;
-                                      });
-
-                                      Fluttertoast.showToast(
-                                        msg: 'Finished recalculating shot totals',
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.BOTTOM,
-                                        timeInSecForIosWeb: 1,
-                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                        textColor: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16.0,
-                                      );
-                                    },
-                                  );
-                                });
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      SettingsSection(
-                        title: Text(
-                          'Account',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        tiles: [
-                          SettingsTile.switchTile(
-                            title: Text(
-                              'Public',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.privacy_tip_rounded,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            initialValue: _publicProfile,
-                            onToggle: (bool value) async {
-                              await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
-                                setState(() {
-                                  _publicProfile = !_publicProfile;
-                                });
-                              });
-                            },
-                          ),
-                          SettingsTile(
-                            title: Text(
-                              'Edit Profile',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.person,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            onPressed: (BuildContext context) {
-                              navigatorKey.currentState!.push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return EditProfile();
-                                  },
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                          SettingsTile(
-                            title: Row(
-                              children: [
-                                Text(
-                                  'Delete Account',
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(left: 5),
-                                  child: RotatedBox(
-                                    quarterTurns: 2,
-                                    child: Icon(
-                                      Icons.info_outlined,
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                          leading: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          ),
+                          onPressed: (BuildContext context) {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return AlertDialog(
+                                  title: const Text(
+                                    "Are you absolutely sure you want to delete your account?",
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 24,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            leading: Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                            ),
-                            onPressed: (BuildContext context) {
-                              showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return AlertDialog(
-                                    title: Text(
-                                      "Are you absolutely sure you want to delete your account?",
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 24,
-                                      ),
-                                    ),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    backgroundColor: Theme.of(context).colorScheme.primary,
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(false),
-                                        child: Text(
-                                          "Cancel".toUpperCase(),
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          FirebaseAuth.instance.currentUser!.delete().then((_) {
-                                            navigatorKey.currentState!.pop();
-                                            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
-                                              return Login();
-                                            }));
-
-                                            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                                          }).onError((FirebaseAuthException error, stackTrace) {
-                                            String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
-                                            Fluttertoast.showToast(
-                                              msg: msg,
-                                              toastLength: Toast.LENGTH_LONG,
-                                              gravity: ToastGravity.BOTTOM,
-                                              timeInSecForIosWeb: 1,
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              textColor: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 16.0,
-                                            );
-                                          });
-                                        },
-                                        child: Text(
-                                          "Delete Account".toUpperCase(),
-                                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
                                     ],
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          SettingsTile(
-                            title: Text(
-                              'Logout',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
-                              ),
-                            ),
-                            leading: Icon(
-                              Icons.logout,
-                              color: Colors.red,
-                            ),
-                            onPressed: (BuildContext context) {
-                              signOut();
+                                  ),
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: Text(
+                                        "Cancel".toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        FirebaseAuth.instance.currentUser!.delete().then((_) {
+                                          navigatorKey.currentState!.pop();
+                                          navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
+                                            return const Login();
+                                          }));
 
-                              navigatorKey.currentState!.pop();
-                              navigatorKey.currentState!.pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return Login();
-                                  },
-                                ),
-                              );
-                            },
+                                          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                        }).onError((FirebaseAuthException error, stackTrace) {
+                                          String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                          Fluttertoast.showToast(
+                                            msg: msg,
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.BOTTOM,
+                                            timeInSecForIosWeb: 1,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        });
+                                      },
+                                      child: Text(
+                                        "Delete Account".toUpperCase(),
+                                        style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        SettingsTile(
+                          title: Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
+                            ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          leading: const Icon(
+                            Icons.logout,
+                            color: Colors.red,
+                          ),
+                          onPressed: (BuildContext context) {
+                            signOut();
+
+                            navigatorKey.currentState!.pop();
+                            navigatorKey.currentState!.pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return const Login();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 Positioned(
                   bottom: 0,
                   child: Container(
-                    padding: EdgeInsets.only(top: 0, bottom: 5),
+                    padding: const EdgeInsets.only(top: 0, bottom: 5),
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.3), //color of shadow
                           spreadRadius: 2, //spread radius
                           blurRadius: 10, // blur radius
-                          offset: Offset(0, 0), // changes position of shadow
+                          offset: const Offset(0, 0), // changes position of shadow
                           //first paramerter of offset is left-right
                           //second parameter is top to down
                         ),
@@ -515,16 +515,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               size: 16,
                             ),
                             TextButton(
-                              child: Text(
-                                "Developed by Haden Hiles".toLowerCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16,
-                                  fontFamily: "NovecentoSans",
-                                ),
-                              ),
                               style: ButtonStyle(
-                                padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
+                                padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
                                 backgroundColor: MaterialStateProperty.all(Colors.transparent),
                               ),
                               onPressed: () async {
@@ -536,11 +528,19 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   });
                                 });
                               },
+                              child: Text(
+                                "Developed by Haden Hiles".toLowerCase(),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16,
+                                  fontFamily: "NovecentoSans",
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         Container(
-                          margin: EdgeInsets.all(0),
+                          margin: const EdgeInsets.all(0),
                           height: 20,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -552,16 +552,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 size: 10,
                               ),
                               TextButton(
-                                child: Text(
-                                  "How To Hockey Inc.".toLowerCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 14,
-                                    fontFamily: "NovecentoSans",
-                                  ),
-                                ),
                                 style: ButtonStyle(
-                                  padding: MaterialStateProperty.all(EdgeInsets.only(bottom: 2, left: 5)),
+                                  padding: MaterialStateProperty.all(const EdgeInsets.only(bottom: 2, left: 5)),
                                   backgroundColor: MaterialStateProperty.all(Colors.transparent),
                                 ),
                                 onPressed: () async {
@@ -573,6 +565,14 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     });
                                   });
                                 },
+                                child: Text(
+                                  "How To Hockey Inc.".toLowerCase(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 14,
+                                    fontFamily: "NovecentoSans",
+                                  ),
+                                ),
                               ),
                             ],
                           ),

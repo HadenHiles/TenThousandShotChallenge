@@ -13,7 +13,7 @@ class Invite {
         assert(map['date'] != null),
         id = map['id'],
         fromUid = map['from_uid'],
-        date = map['date'] != null ? map['date'].toDate() : null;
+        date = map['date']?.toDate();
 
   Map<String, dynamic> toMap() {
     return {

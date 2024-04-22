@@ -41,14 +41,14 @@ Future<List<YouTubeVideo>> getVideos(String channelId) async {
       final Map<String, dynamic> data = json.decode(response.body);
       final List items = data["items"];
 
-      if (items.length > 0) {
-        items.forEach((dynamic i) {
+      if (items.isNotEmpty) {
+        for (var i in items) {
           videos.add(YouTubeVideo(
             i["id"],
             i["snippet"]["title"],
             i["snippet"]["thumbnails"]["medium"]["url"],
           ));
-        });
+        }
       }
 
       return videos;

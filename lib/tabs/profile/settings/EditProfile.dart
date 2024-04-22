@@ -14,10 +14,10 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class EditProfile extends StatefulWidget {
-  EditProfile({Key? key}) : super(key: key);
+  const EditProfile({Key? key}) : super(key: key);
 
   @override
-  _EditProfileState createState() => _EditProfileState();
+  State<EditProfile> createState() => _EditProfileState();
 }
 
 class _EditProfileState extends State<EditProfile> {
@@ -26,7 +26,7 @@ class _EditProfileState extends State<EditProfile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController displayNameTextFieldController = TextEditingController();
 
-  List<String> _avatars = [];
+  final List<String> _avatars = [];
   String _avatar = "";
 
   @override
@@ -70,7 +70,7 @@ class _EditProfileState extends State<EditProfile> {
       fontSize: 16.0,
     );
     navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-      return Navigation(selectedIndex: 3);
+      return const Navigation(selectedIndex: 3);
     }));
   }
 
@@ -97,21 +97,21 @@ class _EditProfileState extends State<EditProfile> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image(
+                const Image(
                   image: AssetImage('assets/images/logo.png'),
                 ),
                 Text(
                   "Where's the wifi bud?".toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontFamily: "NovecentoSans",
                     fontSize: 24,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 25,
                 ),
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: Colors.white70,
                 ),
               ],
@@ -130,7 +130,7 @@ class _EditProfileState extends State<EditProfile> {
                   floating: true,
                   pinned: true,
                   leading: Container(
-                    margin: EdgeInsets.only(top: 10),
+                    margin: const EdgeInsets.only(top: 10),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
@@ -150,7 +150,7 @@ class _EditProfileState extends State<EditProfile> {
                       collapseMode: CollapseMode.parallax,
                       titlePadding: null,
                       centerTitle: false,
-                      title: BasicTitle(title: "Edit Profile"),
+                      title: const BasicTitle(title: "Edit Profile"),
                       background: Container(
                         color: Theme.of(context).scaffoldBackgroundColor,
                       ),
@@ -158,7 +158,7 @@ class _EditProfileState extends State<EditProfile> {
                   ),
                   actions: [
                     Container(
-                      margin: EdgeInsets.only(top: 10),
+                      margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         icon: Icon(
                           Icons.check,
@@ -180,13 +180,13 @@ class _EditProfileState extends State<EditProfile> {
               child: Column(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         children: [
                           Padding(
-                            padding: EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             child: BasicTextField(
                               keyboardType: TextInputType.text,
                               hintText: 'Enter a display name',
@@ -204,7 +204,7 @@ class _EditProfileState extends State<EditProfile> {
                     ),
                   ),
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -217,7 +217,7 @@ class _EditProfileState extends State<EditProfile> {
                             color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 15,
                         ),
                         Wrap(
@@ -248,7 +248,7 @@ class _EditProfileState extends State<EditProfile> {
           _saveProfile();
         },
         child: Container(
-          margin: EdgeInsets.only(bottom: 10, right: 4),
+          margin: const EdgeInsets.only(bottom: 10, right: 4),
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(55),
@@ -268,7 +268,7 @@ class _EditProfileState extends State<EditProfile> {
         ),
       ),
     ];
-    _avatars.forEach((a) {
+    for (var a in _avatars) {
       avatars.add(
         GestureDetector(
           onTap: () {
@@ -281,7 +281,7 @@ class _EditProfileState extends State<EditProfile> {
             _saveProfile();
           },
           child: Container(
-            margin: EdgeInsets.only(bottom: 10, right: 4),
+            margin: const EdgeInsets.only(bottom: 10, right: 4),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(55),
@@ -304,7 +304,7 @@ class _EditProfileState extends State<EditProfile> {
           ),
         ),
       );
-    });
+    }
 
     return avatars;
   }

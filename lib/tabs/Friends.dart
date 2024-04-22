@@ -14,10 +14,10 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Friends extends StatefulWidget {
-  Friends({Key? key}) : super(key: key);
+  const Friends({Key? key}) : super(key: key);
 
   @override
-  _FriendsState createState() => _FriendsState();
+  State<Friends> createState() => _FriendsState();
 }
 
 class _FriendsState extends State<Friends> {
@@ -46,8 +46,8 @@ class _FriendsState extends State<Friends> {
     });
 
     await FirebaseFirestore.instance.collection('invites').doc(user!.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
-      if (snapshot.docs.length > 0) {
-        await new Future.delayed(new Duration(milliseconds: 500));
+      if (snapshot.docs.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 500));
 
         await Future.forEach(snapshot.docs, (doc) {
           Invite invite = Invite.fromSnapshot(doc as DocumentSnapshot);
@@ -85,8 +85,8 @@ class _FriendsState extends State<Friends> {
     });
 
     await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
-      if (snapshot.docs.length > 0) {
-        await new Future.delayed(new Duration(milliseconds: 500));
+      if (snapshot.docs.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 500));
 
         await Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
           FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
@@ -116,7 +116,7 @@ class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(0),
+      margin: const EdgeInsets.all(0),
       child: DefaultTabController(
         length: 2,
         initialIndex: 0,
@@ -128,26 +128,26 @@ class _FriendsState extends State<Friends> {
               ),
               child: TabBar(
                 indicatorColor: Theme.of(context).primaryColor,
-                labelStyle: TextStyle(
+                labelStyle: const TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 18,
                 ),
-                labelPadding: EdgeInsets.all(0),
+                labelPadding: const EdgeInsets.all(0),
                 tabs: [
                   Tab(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.people,
                       color: Colors.white70,
                     ),
-                    iconMargin: EdgeInsets.all(0),
+                    iconMargin: const EdgeInsets.all(0),
                     text: "Friends".toUpperCase(),
                   ),
                   Tab(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.person_add,
                       color: Colors.white70,
                     ),
-                    iconMargin: EdgeInsets.all(0),
+                    iconMargin: const EdgeInsets.all(0),
                     text: "Invites".toUpperCase(),
                   ),
                 ],
@@ -160,7 +160,7 @@ class _FriendsState extends State<Friends> {
                     color: Theme.of(context).primaryColor,
                     child: _isLoadingFriends
                         ? Container(
-                            margin: EdgeInsets.only(top: 25),
+                            margin: const EdgeInsets.only(top: 25),
                             child: Center(
                               child: SizedBox(
                                 height: 30,
@@ -171,8 +171,8 @@ class _FriendsState extends State<Friends> {
                               ),
                             ),
                           )
-                        : _friends.length < 1
-                            ? Container(
+                        : _friends.isEmpty
+                            ? SizedBox(
                                 width: MediaQuery.of(context).size.width - 30,
                                 child: Column(
                                   mainAxisSize: MainAxisSize.max,
@@ -180,7 +180,7 @@ class _FriendsState extends State<Friends> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Container(
-                                      margin: EdgeInsets.only(top: 40),
+                                      margin: const EdgeInsets.only(top: 40),
                                       child: Text(
                                         "Tap + to invite a friend".toUpperCase(),
                                         textAlign: TextAlign.center,
@@ -192,18 +192,18 @@ class _FriendsState extends State<Friends> {
                                       ),
                                     ),
                                     Container(
-                                      margin: EdgeInsets.only(top: 15),
+                                      margin: const EdgeInsets.only(top: 15),
                                       child: Center(
                                         child: Ink(
                                           decoration: ShapeDecoration(
                                             color: Theme.of(context).cardTheme.color,
-                                            shape: CircleBorder(),
+                                            shape: const CircleBorder(),
                                           ),
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
                                               navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                                return AddFriend();
+                                                return const AddFriend();
                                               }));
                                             },
                                             iconSize: 40,
@@ -230,22 +230,18 @@ class _FriendsState extends State<Friends> {
 
                                   return !_isLoadingFriends
                                       ? Container()
-                                      : Container(
-                                          child: Center(
-                                            child: Container(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 25,
-                                                    width: 25,
-                                                    child: CircularProgressIndicator(),
-                                                  ),
-                                                ],
+                                      : const Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                height: 25,
+                                                width: 25,
+                                                child: CircularProgressIndicator(),
                                               ),
-                                            ),
+                                            ],
                                           ),
                                         );
                                 },
@@ -259,7 +255,7 @@ class _FriendsState extends State<Friends> {
                     color: Theme.of(context).primaryColor,
                     child: _isLoadingInvites
                         ? Container(
-                            margin: EdgeInsets.only(top: 25),
+                            margin: const EdgeInsets.only(top: 25),
                             child: Center(
                               child: SizedBox(
                                 height: 30,
@@ -270,10 +266,10 @@ class _FriendsState extends State<Friends> {
                               ),
                             ),
                           )
-                        : _invites.length < 1
+                        : _invites.isEmpty
                             ? Container(
-                                margin: EdgeInsets.symmetric(vertical: 25),
-                                child: Center(
+                                margin: const EdgeInsets.symmetric(vertical: 25),
+                                child: const Center(
                                   child: Text("No invites"),
                                 ),
                               )
@@ -288,22 +284,18 @@ class _FriendsState extends State<Friends> {
 
                                   return !_isLoadingInvites
                                       ? Container()
-                                      : Container(
-                                          child: Center(
-                                            child: Container(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 25,
-                                                    width: 25,
-                                                    child: CircularProgressIndicator(),
-                                                  ),
-                                                ],
+                                      : const Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                height: 25,
+                                                width: 25,
+                                                child: CircularProgressIndicator(),
                                               ),
-                                            ),
+                                            ],
                                           ),
                                         );
                                 },
@@ -335,11 +327,11 @@ class _FriendsState extends State<Friends> {
         decoration: BoxDecoration(
           color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
         ),
-        padding: EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           children: [
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 15),
+              margin: const EdgeInsets.symmetric(horizontal: 15),
               width: 60,
               height: 60,
               clipBehavior: Clip.antiAlias,
@@ -364,7 +356,7 @@ class _FriendsState extends State<Friends> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     friend.displayName != null
-                        ? Container(
+                        ? SizedBox(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
                               friend.displayName!,
@@ -383,13 +375,13 @@ class _FriendsState extends State<Friends> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
+                    SizedBox(
                       width: 135,
                       child: StreamBuilder(
                           stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
-                              return Center(
+                              return const Center(
                                 child: SizedBox(
                                   width: 120,
                                   height: 2,
@@ -398,12 +390,12 @@ class _FriendsState extends State<Friends> {
                               );
                             } else {
                               int total = 0;
-                              snapshot.data!.docs.forEach((doc) {
+                              for (var doc in snapshot.data!.docs) {
                                 total += Iteration.fromSnapshot(doc).total!;
-                              });
+                              }
 
                               return AutoSizeText(
-                                total.toString() + " Lifetime Shots",
+                                "$total Lifetime Shots",
                                 maxLines: 1,
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
@@ -415,38 +407,36 @@ class _FriendsState extends State<Friends> {
                             }
                           }),
                     ),
-                    Container(
-                      child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                          builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                            if (!snapshot.hasData) {
-                              return Center(
-                                child: SizedBox(
-                                  width: 120,
-                                  height: 2,
-                                  child: LinearProgressIndicator(),
-                                ),
-                              );
-                            } else {
-                              Duration totalDuration = Duration();
-                              snapshot.data!.docs.forEach((doc) {
-                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                              });
-
-                              return totalDuration > Duration()
-                                  ? Text(
-                                      "IN " + printDuration(totalDuration, true),
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : Container();
+                    StreamBuilder(
+                        stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return const Center(
+                              child: SizedBox(
+                                width: 120,
+                                height: 2,
+                                child: LinearProgressIndicator(),
+                              ),
+                            );
+                          } else {
+                            Duration totalDuration = const Duration();
+                            for (var doc in snapshot.data!.docs) {
+                              totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                             }
-                          }),
-                    ),
+
+                            return totalDuration > const Duration()
+                                ? Text(
+                                    "IN ${printDuration(totalDuration, true)}",
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  )
+                                : Container();
+                          }
+                        }),
                   ],
                 ),
               ],
@@ -466,26 +456,26 @@ class _FriendsState extends State<Friends> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: Theme.of(context).cardTheme.color,
-                content: new Text(
+                content: Text(
                   "The invite couldn't be deleted",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
-                duration: Duration(milliseconds: 1500),
+                duration: const Duration(milliseconds: 1500),
               ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: Theme.of(context).cardTheme.color,
-                content: new Text(
+                content: Text(
                   "Invite from ${friend.displayName} deleted",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
-                duration: Duration(milliseconds: 1500),
+                duration: const Duration(milliseconds: 1500),
               ),
             );
           }
@@ -501,7 +491,7 @@ class _FriendsState extends State<Friends> {
             return AlertDialog(
               title: Text(
                 "Delete Invite from ${friend.displayName}?".toUpperCase(),
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 24,
                 ),
@@ -550,10 +540,10 @@ class _FriendsState extends State<Friends> {
           mainAxisSize: MainAxisSize.max,
           children: [
             Container(
-              margin: EdgeInsets.only(left: 15),
+              margin: const EdgeInsets.only(left: 15),
               child: Text(
                 "Delete".toUpperCase(),
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 16,
                   color: Colors.white,
@@ -561,8 +551,8 @@ class _FriendsState extends State<Friends> {
               ),
             ),
             Container(
-              margin: EdgeInsets.only(right: 15),
-              child: Icon(
+              margin: const EdgeInsets.only(right: 15),
+              child: const Icon(
                 Icons.delete,
                 size: 16,
                 color: Colors.white,
@@ -575,7 +565,7 @@ class _FriendsState extends State<Friends> {
         decoration: BoxDecoration(
           color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
         ),
-        padding: EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           mainAxisSize: MainAxisSize.max,
@@ -585,7 +575,7 @@ class _FriendsState extends State<Friends> {
               mainAxisSize: MainAxisSize.max,
               children: [
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 15),
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
                   width: 60,
                   height: 60,
                   clipBehavior: Clip.antiAlias,
@@ -613,7 +603,7 @@ class _FriendsState extends State<Friends> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     friend.displayName != null
-                        ? Container(
+                        ? SizedBox(
                             width: MediaQuery.of(context).size.width - 235,
                             child: AutoSizeText(
                               friend.displayName!,
@@ -634,7 +624,7 @@ class _FriendsState extends State<Friends> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
+                SizedBox(
                   width: 40,
                   child: AutoSizeText(
                     printDuration(DateTime.now().difference(invite.date!), false),
@@ -648,7 +638,7 @@ class _FriendsState extends State<Friends> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
                       acceptInvite(Invite(friend.reference!.id, DateTime.now())).then((accepted) {
@@ -656,26 +646,26 @@ class _FriendsState extends State<Friends> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Theme.of(context).cardTheme.color,
-                              content: new Text(
+                              content: Text(
                                 "Error accepting invite from ${friend.displayName} :(",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
-                              duration: Duration(milliseconds: 2500),
+                              duration: const Duration(milliseconds: 2500),
                             ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Theme.of(context).cardTheme.color,
-                              content: new Text(
+                              content: Text(
                                 "Invite from ${friend.displayName} accepted!",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
-                              duration: Duration(milliseconds: 1500),
+                              duration: const Duration(milliseconds: 1500),
                             ),
                           );
 
@@ -684,16 +674,16 @@ class _FriendsState extends State<Friends> {
                         }
                       });
                     },
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(Colors.blue.shade600),
+                    ),
                     child: Text(
                       "Accept".toUpperCase(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 20,
                         color: Colors.white,
                       ),
-                    ),
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.blue.shade600),
                     ),
                   ),
                 ),
