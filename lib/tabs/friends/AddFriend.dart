@@ -15,7 +15,7 @@ import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
-import 'package:wc_flutter_share/wc_flutter_share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AddFriend extends StatefulWidget {
   const AddFriend({Key? key}) : super(key: key);
@@ -131,11 +131,9 @@ class _AddFriendState extends State<AddFriend> {
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         onPressed: () {
-                          WcFlutterShare.share(
-                            sharePopupTitle: 'Share 10,000 Shots App',
+                          Share.share(
+                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
                             subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                            text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                            mimeType: 'text/plain',
                           );
                         },
                         icon: Icon(
@@ -251,7 +249,7 @@ class _AddFriendState extends State<AddFriend> {
                                       setState(() {
                                         _isSearching = true;
                                       });
-                    
+
                                       List<DocumentSnapshot> users = [];
                                       if (value.isNotEmpty) {
                                         await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
@@ -270,15 +268,15 @@ class _AddFriendState extends State<AddFriend> {
                                                 }
                                               });
                                         }
-                    
+
                                         await Future.delayed(const Duration(milliseconds: 500));
-                    
+
                                         setState(() {
                                           _friends = users;
                                           _isSearching = false;
                                         });
                                       }
-                    
+
                                       setState(() {
                                         _friends = users;
                                         _isSearching = false;
@@ -334,7 +332,7 @@ class _AddFriendState extends State<AddFriend> {
                                           duration: const Duration(milliseconds: 2500),
                                         ),
                                       );
-                    
+
                                       navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
                                         return Navigation(
                                           title: NavigationTitle(title: "Friends".toUpperCase()),
@@ -413,11 +411,9 @@ class _AddFriendState extends State<AddFriend> {
                                       margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
-                                          WcFlutterShare.share(
-                                            sharePopupTitle: 'Share 10,000 Shots App',
+                                          Share.share(
+                                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
                                             subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                                            text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                                            mimeType: 'text/plain',
                                           );
                                         },
                                         icon: Icon(
@@ -583,7 +579,7 @@ class _AddFriendState extends State<AddFriend> {
                                 for (var doc in snapshot.data!.docs) {
                                   totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                                 }
-                        
+
                                 return totalDuration > const Duration()
                                     ? Text(
                                         "IN ${printDuration(totalDuration, true)}",

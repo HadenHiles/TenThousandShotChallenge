@@ -743,7 +743,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     });
                                   },
                                   icon: Icon(
-                                    FontAwesomeIcons.shoppingBag,
+                                    FontAwesomeIcons.bagShopping,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
