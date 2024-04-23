@@ -311,7 +311,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                 Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    _loadingExploreVideos || _exploreVideos.isEmpty
+                    _loadingExploreVideos
                         ? Container(
                             margin: const EdgeInsets.symmetric(vertical: 25),
                             child: Column(
@@ -325,165 +325,179 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             ),
                           )
                         : Expanded(
-                            child: PageView.builder(
-                              controller: _explorePageController,
-                              scrollDirection: Axis.vertical,
-                              itemCount: _exploreVideos.length,
-                              itemBuilder: (BuildContext context, int i) {
-                                YoutubePlayerController ytController = YoutubePlayerController(
-                                  initialVideoId: _exploreVideos[i].id,
-                                  flags: const YoutubePlayerFlags(
-                                    autoPlay: false,
-                                    mute: false,
-                                  ),
-                                );
-
-                                return Flex(
-                                  direction: Axis.vertical,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    YoutubePlayerBuilder(
-                                      player: YoutubePlayer(
-                                        controller: ytController,
-                                        aspectRatio: 16 / 9,
-                                        showVideoProgressIndicator: true,
-                                        progressIndicatorColor: Theme.of(context).primaryColor,
-                                        progressColors: ProgressBarColors(
-                                          playedColor: Theme.of(context).primaryColor,
-                                          handleColor: Theme.of(context).primaryColor,
-                                        ),
-                                        bottomActions: [
-                                          const SizedBox(width: 14.0),
-                                          CurrentPosition(),
-                                          const SizedBox(width: 8.0),
-                                          ProgressBar(
-                                            isExpanded: true,
+                            child: _exploreVideos.isEmpty
+                                ? Center(
+                                    child: _exploreVideos.isNotEmpty
+                                        ? LinearProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          )
+                                        : Padding(
+                                            padding: const EdgeInsets.all(50),
+                                            child: Text(
+                                              "No tips yet!",
+                                              style: Theme.of(context).textTheme.headlineSmall,
+                                            ),
                                           ),
-                                          RemainingDuration(),
-                                          const PlaybackSpeedButton(),
-                                        ],
-                                        actionsPadding: const EdgeInsets.all(2),
-                                        liveUIColor: Theme.of(context).primaryColor,
-                                        onReady: () {
-                                          // _ytController.addListener(listener);
-                                        },
-                                      ),
-                                      builder: (context, player) {
-                                        return Column(
-                                          children: [
-                                            player,
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                    Flexible(
-                                      flex: 2,
-                                      child: Container(
-                                        margin: EdgeInsets.symmetric(
-                                          vertical: 5,
-                                          horizontal: MediaQuery.of(context).size.width * .075,
+                                  )
+                                : PageView.builder(
+                                    controller: _explorePageController,
+                                    scrollDirection: Axis.vertical,
+                                    itemCount: _exploreVideos.length,
+                                    itemBuilder: (BuildContext context, int i) {
+                                      YoutubePlayerController ytController = YoutubePlayerController(
+                                        initialVideoId: _exploreVideos[i].id,
+                                        flags: const YoutubePlayerFlags(
+                                          autoPlay: false,
+                                          mute: false,
                                         ),
-                                        child: SingleChildScrollView(
-                                          physics: const BouncingScrollPhysics(),
-                                          controller: _exploreScrollController,
-                                          child: Column(
-                                            children: [
-                                              Container(
-                                                margin: const EdgeInsets.only(top: 15),
-                                                child: Text(
-                                                  _exploreVideos[i].title.toUpperCase(),
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: 42,
-                                                  ),
+                                      );
+
+                                      return Flex(
+                                        direction: Axis.vertical,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          YoutubePlayerBuilder(
+                                            player: YoutubePlayer(
+                                              controller: ytController,
+                                              aspectRatio: 16 / 9,
+                                              showVideoProgressIndicator: true,
+                                              progressIndicatorColor: Theme.of(context).primaryColor,
+                                              progressColors: ProgressBarColors(
+                                                playedColor: Theme.of(context).primaryColor,
+                                                handleColor: Theme.of(context).primaryColor,
+                                              ),
+                                              bottomActions: [
+                                                const SizedBox(width: 14.0),
+                                                CurrentPosition(),
+                                                const SizedBox(width: 8.0),
+                                                ProgressBar(
+                                                  isExpanded: true,
                                                 ),
+                                                RemainingDuration(),
+                                                const PlaybackSpeedButton(),
+                                              ],
+                                              actionsPadding: const EdgeInsets.all(2),
+                                              liveUIColor: Theme.of(context).primaryColor,
+                                              onReady: () {
+                                                // _ytController.addListener(listener);
+                                              },
+                                            ),
+                                            builder: (context, player) {
+                                              return Column(
+                                                children: [
+                                                  player,
+                                                ],
+                                              );
+                                            },
+                                          ),
+                                          Flexible(
+                                            flex: 2,
+                                            child: Container(
+                                              margin: EdgeInsets.symmetric(
+                                                vertical: 5,
+                                                horizontal: MediaQuery.of(context).size.width * .075,
                                               ),
-                                              Html(
-                                                data: _exploreVideos[i].content,
-                                                style: {
-                                                  "h1": Style(
-                                                    textAlign: TextAlign.center,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(36),
-                                                  ),
-                                                  "h2": Style(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(30),
-                                                  ),
-                                                  "h3": Style(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(23),
-                                                  ),
-                                                  "ul": Style(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(23),
-                                                    listStyleType: ListStyleType.disc,
-                                                  ),
-                                                  "ol": Style(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: FontSize(23),
-                                                    listStyleType: ListStyleType.decimal,
-                                                    listStylePosition: ListStylePosition.inside,
-                                                    lineHeight: LineHeight.em(1.1),
-                                                  ),
-                                                  "ul li, ol li": Style(
-                                                    padding: HtmlPaddings.symmetric(vertical: 5),
-                                                    margin: Margins.only(bottom: 2),
-                                                  ),
-                                                  "p": Style(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: FontSize(16),
-                                                  ),
-                                                },
-                                              ),
-                                              _exploreVideos[i].buttonUrl!.isNotEmpty
-                                                  ? Container(
-                                                      margin: const EdgeInsets.only(bottom: 25),
-                                                      child: TextButton(
-                                                        onPressed: () async {
-                                                          await canLaunchUrlString(_exploreVideos[i].buttonUrl!).then((can) {
-                                                            launchUrlString(_exploreVideos[i].buttonUrl!).catchError((err) {
-                                                              print(err);
-                                                              return false;
-                                                            });
-                                                          });
-                                                        },
-                                                        style: ButtonStyle(
-                                                          padding: MaterialStateProperty.all(
-                                                            const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                          ),
-                                                          backgroundColor: MaterialStateProperty.all(
-                                                            Theme.of(context).primaryColor,
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
-                                                          style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 24,
-                                                          ),
+                                              child: SingleChildScrollView(
+                                                physics: const BouncingScrollPhysics(),
+                                                controller: _exploreScrollController,
+                                                child: Column(
+                                                  children: [
+                                                    Container(
+                                                      margin: const EdgeInsets.only(top: 15),
+                                                      child: Text(
+                                                        _exploreVideos[i].title.toUpperCase(),
+                                                        textAlign: TextAlign.center,
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 42,
                                                         ),
                                                       ),
-                                                    )
-                                                  : Container(),
-                                            ],
+                                                    ),
+                                                    Html(
+                                                      data: _exploreVideos[i].content,
+                                                      style: {
+                                                        "h1": Style(
+                                                          textAlign: TextAlign.center,
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: FontSize(36),
+                                                        ),
+                                                        "h2": Style(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: FontSize(30),
+                                                        ),
+                                                        "h3": Style(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: FontSize(23),
+                                                        ),
+                                                        "ul": Style(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: FontSize(23),
+                                                          listStyleType: ListStyleType.disc,
+                                                        ),
+                                                        "ol": Style(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: FontSize(23),
+                                                          listStyleType: ListStyleType.decimal,
+                                                          listStylePosition: ListStylePosition.inside,
+                                                          lineHeight: LineHeight.em(1.1),
+                                                        ),
+                                                        "ul li, ol li": Style(
+                                                          padding: HtmlPaddings.symmetric(vertical: 5),
+                                                          margin: Margins.only(bottom: 2),
+                                                        ),
+                                                        "p": Style(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: FontSize(16),
+                                                        ),
+                                                      },
+                                                    ),
+                                                    _exploreVideos[i].buttonUrl!.isNotEmpty
+                                                        ? Container(
+                                                            margin: const EdgeInsets.only(bottom: 25),
+                                                            child: TextButton(
+                                                              onPressed: () async {
+                                                                await canLaunchUrlString(_exploreVideos[i].buttonUrl!).then((can) {
+                                                                  launchUrlString(_exploreVideos[i].buttonUrl!).catchError((err) {
+                                                                    print(err);
+                                                                    return false;
+                                                                  });
+                                                                });
+                                                              },
+                                                              style: ButtonStyle(
+                                                                padding: MaterialStateProperty.all(
+                                                                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                                ),
+                                                                backgroundColor: MaterialStateProperty.all(
+                                                                  Theme.of(context).primaryColor,
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
+                                                                style: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontFamily: "NovecentoSans",
+                                                                  fontSize: 24,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        : Container(),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
+                                        ],
+                                      );
+                                    },
+                                  ),
                           ),
                   ],
                 ),
@@ -794,7 +808,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                 alignment: Alignment.topCenter,
                                                 children: [
                                                   SizedBox(
-                                                    height: 550,
+                                                    height: 580,
                                                     child: Padding(
                                                       padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
                                                       child: Column(
@@ -976,7 +990,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                         children: [
                                           Container(
                                             width: 150,
-                                            height: 175,
+                                            height: 165,
                                             decoration: BoxDecoration(
                                               image: DecorationImage(
                                                 fit: BoxFit.cover,
@@ -995,8 +1009,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                   padding: const EdgeInsets.all(5),
                                                   child: AutoSizeText(
                                                     _merch[i].title!.toUpperCase(),
-                                                    maxLines: 2,
-                                                    maxFontSize: 22,
+                                                    maxLines: 1,
+                                                    maxFontSize: 18,
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       fontFamily: "NovecentoSans",
@@ -1062,7 +1076,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                           AutoSizeText(
                                             "Coach Jeremy".toUpperCase(),
                                             maxLines: 2,
-                                            maxFontSize: 20,
+                                            maxFontSize: 18,
                                             style: TextStyle(
                                               fontFamily: "NovecentoSans",
                                               fontSize: 20,
@@ -1199,7 +1213,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       AutoSizeText(
                                         "How To Hockey".toUpperCase(),
                                         maxLines: 2,
-                                        maxFontSize: 20,
+                                        maxFontSize: 18,
                                         style: TextStyle(
                                           fontFamily: "NovecentoSans",
                                           fontSize: 20,

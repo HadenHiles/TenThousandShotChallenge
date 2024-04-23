@@ -15,11 +15,11 @@ class YouTubeVideo {
       : assert(map['id'] != null),
         assert(map['title'] != null),
         id = map['id'],
-        title = map['title'],
-        thumbnail = map['thumbnail'],
-        buttonUrl = map['button_url'],
-        buttonText = map['button_text'],
-        content = map['content'];
+        title = map['title'].isNotEmpty ? map['title'] : "",
+        thumbnail = map['thumbnail'].isNotEmpty ? map['thumbnail'] : "",
+        buttonUrl = map['button_url'].isNotEmpty ? map['button_url'] : "",
+        buttonText = map['button_text'].isNotEmpty ? map['button_text'] : "",
+        content = map['content'].isNotEmpty ? map['content'] : "";
 
   Map<String, dynamic> toMap() {
     return {
