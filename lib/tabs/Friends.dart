@@ -128,6 +128,8 @@ class _FriendsState extends State<Friends> {
               ),
               child: TabBar(
                 indicatorColor: Theme.of(context).primaryColor,
+                unselectedLabelColor: Colors.white70,
+                labelColor: Colors.white70,
                 labelStyle: const TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 18,

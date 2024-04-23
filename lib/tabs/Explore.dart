@@ -272,6 +272,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                       ),
                       labelPadding: const EdgeInsets.all(0),
                       indicatorColor: Theme.of(context).primaryColor,
+                      unselectedLabelColor: Colors.white70,
+                      labelColor: Colors.white70,
                       tabs: [
                         Tab(
                           icon: const Icon(
