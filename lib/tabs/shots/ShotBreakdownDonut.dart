@@ -8,16 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 
 class ShotBreakdownDonut extends StatelessWidget {
-  final List<charts.Series> seriesList;
+  final List<charts.Series<dynamic, String>> seriesList;
   final bool? animate;
 
   const ShotBreakdownDonut(this.seriesList, {Key? key, this.animate}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return charts.PieChart(
+    return charts.PieChart<String>(
       seriesList,
-      animate: animate,
+      animate: animate!,
       animationDuration: const Duration(milliseconds: 500),
       selectionModels: const [],
       // Configure the width of the pie slices to 60px. The remaining space in

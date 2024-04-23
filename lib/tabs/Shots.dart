@@ -471,8 +471,8 @@ class _ShotsState extends State<Shots> {
                     ShotCount('SL'.toUpperCase(), iteration.totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
                   ];
 
-                  List<charts.Series<ShotCount, dynamic>> shotCountSeries = [
-                    charts.Series<ShotCount, dynamic>(
+                  List<charts.Series<ShotCount, String>> shotCountSeries = [
+                    charts.Series<ShotCount, String>(
                       id: 'Shots',
                       domainFn: (ShotCount shot, _) => shot.type,
                       measureFn: (ShotCount shot, _) => shot.count,
@@ -776,7 +776,10 @@ class _ShotsState extends State<Shots> {
                                       ),
                                     ),
                                   ),
-                                  ShotBreakdownDonut(shotCountSeries),
+                                  ShotBreakdownDonut(
+                                    shotCountSeries,
+                                    animate: true,
+                                  ),
                                 ],
                               ),
                       ),
