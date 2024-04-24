@@ -15,131 +15,16 @@ class Team extends StatefulWidget {
 
 class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
   final user = FirebaseAuth.instance.currentUser;
-  AnimationController? _rotationController;
 
   @override
   void initState() {
-    _rotationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(0),
-      child: Column(
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height - (MediaQuery.of(context).padding.top + 1) - TEAM_HEADER_HEIGHT,
-            child: NestedScrollView(
-              clipBehavior: Clip.antiAlias,
-              scrollDirection: Axis.vertical,
-              headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                // These are the slivers that show up in the "outer" scroll view.
-                return [
-                  SliverOverlapAbsorber(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                    sliver: SliverAppBar(
-                      floating: true,
-                      primary: true,
-                      collapsedHeight: TEAM_HEADER_HEIGHT,
-                      expandedHeight: TEAM_HEADER_HEIGHT,
-                      forceElevated: false,
-                      titleSpacing: 2,
-                      backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                      title: GestureDetector(
-                        onTap: () {
-                          _rotationController!.forward();
-                          _showTeamBottomSheetModal();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Team Name",
-                              style: HomeTheme.darkTheme.textTheme.bodyLarge,
-                            ),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            RotationTransition(
-                              turns: Tween(begin: 0.0, end: 0.5).animate(_rotationController!),
-                              child: RotatedBox(
-                                quarterTurns: 1,
-                                child: Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  color: HomeTheme.darkTheme.textTheme.bodyLarge!.color,
-                                  size: HomeTheme.darkTheme.textTheme.bodyLarge!.fontSize,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ];
-              },
-              body: const Column(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTeamBottomSheetModal() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height - 105,
-          color: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(15.0),
-                topRight: Radius.circular(15.0),
-              ),
-            ),
-            child: const Column(
-              children: [
-                TeamList(),
-              ],
-            ),
-          ),
-        );
-      },
-      enableDrag: true,
-      isScrollControlled: true,
-      isDismissible: true,
-    ).whenComplete(() {
-      _rotationController!.reverse();
-    });
-  }
-}
-
-class TeamList extends StatefulWidget {
-  const TeamList({Key? key}) : super(key: key);
-
-  @override
-  State<TeamList> createState() => _TeamListState();
-}
-
-class _TeamListState extends State<TeamList> {
-  @override
-  Widget build(BuildContext context) {
     return const Column(
-      children: [
-        ListTile(
-          title: Text("Old Paint Cans"),
-        ),
-      ],
+      children: [],
     );
   }
 }
