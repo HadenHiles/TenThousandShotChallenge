@@ -262,7 +262,7 @@ class _EditProfileState extends State<EditProfile> {
           width: 70,
           height: 70,
           child: UserAvatar(
-            user: UserProfile(user!.displayName, user!.email, user!.photoURL, true, preferences!.fcmToken),
+            user: UserProfile(user!.displayName, user!.email, user!.photoURL, true, null, false, preferences!.fcmToken),
             backgroundColor: _avatar == user!.photoURL ? Theme.of(context).cardTheme.color : Colors.transparent,
           ),
         ),
@@ -298,7 +298,7 @@ class _EditProfileState extends State<EditProfile> {
             width: 70,
             height: 70,
             child: UserAvatar(
-              user: UserProfile(user!.displayName, user!.email, a, true, preferences!.fcmToken),
+              user: UserProfile(user!.displayName, user!.email, a, true, null, false, preferences!.fcmToken),
               backgroundColor: _avatar == a ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
           ),
