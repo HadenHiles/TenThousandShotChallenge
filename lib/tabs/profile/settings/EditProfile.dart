@@ -70,7 +70,7 @@ class _EditProfileState extends State<EditProfile> {
       fontSize: 16.0,
     );
     navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-      return const Navigation(selectedIndex: 3);
+      return const Navigation(selectedIndex: 4);
     }));
   }
 
