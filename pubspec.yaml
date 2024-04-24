@@ -49,6 +49,7 @@ dependencies:
   youtube_player_flutter: ^9.0.1
   flutter: 
     sdk: flutter
+  auto_size_text_field: ^2.2.3
 dev_dependencies: 
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^3.0.2

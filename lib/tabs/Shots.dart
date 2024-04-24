@@ -1,4 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
@@ -136,14 +137,16 @@ class _ShotsState extends State<Shots> {
 
                                     _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
 
-                                    return TextField(
+                                    return AutoSizeTextField(
                                       controller: _targetDateController,
+                                      style: const TextStyle(fontSize: 20),
+                                      maxLines: 1,
+                                      maxFontSize: 20,
                                       decoration: InputDecoration(
                                         labelText: "10,000 Shots By:".toLowerCase(),
                                         labelStyle: TextStyle(
                                           color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                           fontFamily: "NovecentoSans",
-                                          fontSize: 22,
                                         ),
                                         focusColor: Theme.of(context).colorScheme.primary,
                                         border: null,
