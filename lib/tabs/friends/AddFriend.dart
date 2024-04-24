@@ -218,7 +218,7 @@ class _AddFriendState extends State<AddFriend> {
                       children: [
                         Container(
                           margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
-                          width: MediaQuery.of(context).size.width * 0.7,
+                          width: (MediaQuery.of(context).size.width * 0.7) - 10,
                           child: Form(
                             key: _formKey,
                             child: Column(
@@ -316,7 +316,7 @@ class _AddFriendState extends State<AddFriend> {
                                 ),
                               ),
                               Container(
-                                margin: const EdgeInsets.only(right: 15),
+                                margin: const EdgeInsets.only(right: 0),
                                 child: IconButton(
                                   onPressed: () {
                                     scanBarcodeNormal().then((success) {
