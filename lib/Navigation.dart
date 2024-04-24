@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/tabs/Explore.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Friends.dart';
+import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
@@ -85,10 +86,10 @@ class _NavigationState extends State<Navigation> {
       ],
       body: const Friends(),
     ),
-    // NavigationTab(
-    //   title: NavigationTitle(title: "Team".toUpperCase()),
-    //   body: Team(),
-    // ),
+    NavigationTab(
+      title: NavigationTitle(title: "Team".toUpperCase()),
+      body: const Team(),
+    ),
     const NavigationTab(
       title: null,
       body: Explore(),
@@ -344,16 +345,17 @@ class _NavigationState extends State<Navigation> {
             child: NetworkAwareWidget(
               onlineChild: NestedScrollView(
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return [2].contains(_selectedIndex)
+                  return [3].contains(_selectedIndex)
                       ? []
                       : [
                           SliverAppBar(
                             collapsedHeight: 65,
                             expandedHeight: 85,
-                            automaticallyImplyLeading: false,
+                            automaticallyImplyLeading: [4].contains(_selectedIndex) ? true : false,
                             backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                             iconTheme: Theme.of(context).iconTheme,
                             actionsIconTheme: Theme.of(context).iconTheme,
+                            centerTitle: true,
                             floating: true,
                             pinned: true,
                             flexibleSpace: DecoratedBox(
@@ -362,7 +364,7 @@ class _NavigationState extends State<Navigation> {
                               ),
                               child: FlexibleSpaceBar(
                                 collapseMode: CollapseMode.parallax,
-                                centerTitle: true,
+                                centerTitle: [4].contains(_selectedIndex) ? false : true,
                                 title: _title,
                                 background: Container(
                                   color: HomeTheme.darkTheme.colorScheme.primaryContainer,
@@ -429,17 +431,17 @@ class _NavigationState extends State<Navigation> {
                 label: 'Start',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.people),
+                icon: Icon(Icons.people_rounded),
                 label: 'Friends',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.emoji_events_rounded),
+                label: 'Team',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.dashboard_rounded),
                 label: 'Explore',
               ),
-              // BottomNavigationBarItem(
-              //   icon: Icon(Icons.groups_rounded),
-              //   label: 'Team',
-              // ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
                 label: 'Profile',

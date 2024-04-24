@@ -64,7 +64,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     _exploreScrollController = ScrollController();
     _exploreScrollController!.addListener(swapPageListener);
 
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 4, vsync: this, initialIndex: 0);
     _tabController!.addListener(changeTabListener);
 
     super.initState();
@@ -85,6 +85,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
         case 1:
           break;
         case 2:
+          break;
+        case 3:
           break;
       }
     }

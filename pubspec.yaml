@@ -74,6 +74,5 @@ flutter:
     - 
       family: NovecentoSans
       fonts: 
-        - 
-          asset: assets/fonts/novecento-sans-condensed-medium.otf
+        - asset: assets/fonts/novecento-sans-condensed-medium.otf
   uses-material-design: true
