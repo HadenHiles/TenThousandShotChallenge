@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import '../main.dart';
@@ -27,11 +28,29 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
+  bool hasTeam = false;
+  UserProfile? userProfile;
 
   @override
   void initState() {
+    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
+      userProfile = UserProfile.fromSnapshot(uDoc);
+    });
+
     super.initState();
+    _loadTeam();
     _loadTargetDate();
+  }
+
+  Future<Null> _loadTeam() async {
+    if (userProfile!.teamId!.isNotEmpty) {
+      setState(() {
+        hasTeam = true;
+      });
+      await FirebaseFirestore.instance.collection('teams').where('owner', isEqualTo: user!.uid).limit(1).get().then((tSnap) async {
+        if (tSnap.docs.isNotEmpty) {}
+      });
+    }
   }
 
   Future<Null> _loadTargetDate() async {
