@@ -606,12 +606,12 @@ class _FriendsState extends State<Friends> {
                   children: [
                     friend.displayName != null
                         ? SizedBox(
-                            width: MediaQuery.of(context).size.width - 235,
+                            width: MediaQuery.of(context).size.width - 255,
                             child: AutoSizeText(
                               friend.displayName!,
                               maxLines: 1,
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).textTheme.bodyLarge!.color,
                               ),
