@@ -238,7 +238,7 @@ Future<bool?> startNewIteration() async {
   });
 }
 
-Future<bool?> sendInvite(String fromUid, String toUid) async {
+Future<bool?> joinTeam(String fromUid, String toUid) async {
   Invite invite = Invite(fromUid, DateTime.now());
   return await FirebaseFirestore.instance.collection('teammates').doc(fromUid).collection('teammates').doc(toUid).get().then((t) async {
     if (!t.exists) {
@@ -297,7 +297,7 @@ Future<bool> deleteInvite(String fromUid, String toUid) async {
   return false;
 }
 
-Future<bool> acceptFriendBarcode(String friendUid) async {
+Future<bool> joinTeamBarcode(String friendUid) async {
   // Get the teammate
   return await FirebaseFirestore.instance.collection('users').doc(friendUid).get().then((u) async {
     UserProfile friend = UserProfile.fromSnapshot(u);
