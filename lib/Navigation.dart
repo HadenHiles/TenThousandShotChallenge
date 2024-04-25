@@ -88,7 +88,7 @@ class _NavigationState extends State<Navigation> {
     ),
     NavigationTab(
       title: NavigationTitle(title: "Team".toUpperCase()),
-      body: const Team(),
+      body: const TeamPage(),
     ),
     const NavigationTab(
       title: null,
