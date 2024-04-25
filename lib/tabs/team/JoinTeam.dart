@@ -13,11 +13,8 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
-import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
-import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
-import 'package:share_plus/share_plus.dart';
 
 class JoinTeam extends StatefulWidget {
   const JoinTeam({Key? key}) : super(key: key);
@@ -436,41 +433,24 @@ class _JoinTeamState extends State<JoinTeam> {
             padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
-                _selectedTeam == i
-                    ? Container(
-                        height: 60,
-                        width: 60,
-                        margin: const EdgeInsets.symmetric(horizontal: 15),
-                        decoration: BoxDecoration(color: Colors.blue.shade600, borderRadius: BorderRadius.circular(30)),
-                        child: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedTeam = null;
-                              searchFieldController.text = searchFieldController.text;
-                            });
-                          },
-                          icon: const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 15),
-                        width: 60,
-                        height: 60,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(60),
-                        ),
-                        child: SizedBox(
-                          height: 60,
-                          child: UserAvatar(
-                            user: friend,
-                            backgroundColor: Colors.transparent,
-                          ),
-                        ),
-                      ),
+                Container(
+                  height: 60,
+                  width: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(color: Colors.blue.shade600, borderRadius: BorderRadius.circular(30)),
+                  child: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedTeam = null;
+                        searchFieldController.text = searchFieldController.text;
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   mainAxisSize: MainAxisSize.max,
