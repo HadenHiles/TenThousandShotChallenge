@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -15,20 +16,21 @@ import '../main.dart';
 
 const TEAM_HEADER_HEIGHT = 65.0;
 
-class Team extends StatefulWidget {
-  const Team({Key? key}) : super(key: key);
+class TeamPage extends StatefulWidget {
+  const TeamPage({Key? key}) : super(key: key);
 
   @override
-  State<Team> createState() => _TeamState();
+  State<TeamPage> createState() => _TeamPageState();
 }
 
-class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
+class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
   bool hasTeam = false;
+  Team? team;
   UserProfile? userProfile;
 
   @override
@@ -48,7 +50,13 @@ class _TeamState extends State<Team> with SingleTickerProviderStateMixin {
         hasTeam = true;
       });
       await FirebaseFirestore.instance.collection('teams').where('owner', isEqualTo: user!.uid).limit(1).get().then((tSnap) async {
-        if (tSnap.docs.isNotEmpty) {}
+        if (tSnap.docs.isNotEmpty) {
+          Team t = Team.fromSnapshot(tSnap.docs[0]);
+
+          setState(() {
+            team = t;
+          });
+        }
       });
     }
   }
