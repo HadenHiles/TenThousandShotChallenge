@@ -7,32 +7,34 @@ import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:share_plus/share_plus.dart';
 
-class AddFriend extends StatefulWidget {
-  const AddFriend({Key? key}) : super(key: key);
+class JoinTeam extends StatefulWidget {
+  const JoinTeam({Key? key}) : super(key: key);
 
   @override
-  State<AddFriend> createState() => _AddFriendState();
+  State<JoinTeam> createState() => _JoinTeamState();
 }
 
-class _AddFriendState extends State<AddFriend> {
+class _JoinTeamState extends State<JoinTeam> {
   final user = FirebaseAuth.instance.currentUser;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController searchFieldController = TextEditingController();
 
-  List<DocumentSnapshot> _friends = [];
+  List<DocumentSnapshot> _teams = [];
   bool _isSearching = false;
-  int? _selectedFriend;
+  int? _selectedTeam;
 
   Future<bool> scanBarcodeNormal() async {
     String barcodeScanRes;
@@ -112,38 +114,8 @@ class _AddFriendState extends State<AddFriend> {
                       },
                     ),
                   ),
-                  flexibleSpace: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.background,
-                    ),
-                    child: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.parallax,
-                      titlePadding: null,
-                      centerTitle: false,
-                      title: const BasicTitle(title: "Invite Friend"),
-                      background: Container(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                      ),
-                    ),
-                  ),
                   actions: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      child: IconButton(
-                        onPressed: () {
-                          Share.share(
-                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                          );
-                        },
-                        icon: Icon(
-                          Icons.share,
-                          size: 28,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                    _selectedFriend == null
+                    _selectedTeam == null
                         ? Container()
                         : Container(
                             margin: const EdgeInsets.only(top: 10),
@@ -154,13 +126,13 @@ class _AddFriendState extends State<AddFriend> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                joinTeam(user!.uid, _friends[_selectedFriend!].id).then((success) {
+                                joinTeam(user!.uid, _teams[_selectedTeam!].id).then((success) {
                                   if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          "${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} Invited!",
+                                          "Joined team ${Team.fromSnapshot(_teams[_selectedTeam!]).name}!",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -170,8 +142,8 @@ class _AddFriendState extends State<AddFriend> {
                                     );
 
                                     setState(() {
-                                      _selectedFriend = null;
-                                      _friends = [];
+                                      _selectedTeam = null;
+                                      _teams = [];
                                     });
                                     searchFieldController.text = "";
                                   } else {
@@ -179,7 +151,7 @@ class _AddFriendState extends State<AddFriend> {
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
-                                          "Failed to invite ${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} :(",
+                                          "Failed to join ${Team.fromSnapshot(_teams[_selectedTeam!]).name} :(",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -226,8 +198,8 @@ class _AddFriendState extends State<AddFriend> {
                                 TextFormField(
                                   keyboardType: TextInputType.text,
                                   decoration: InputDecoration(
-                                    hintText: 'Enter Name or Email'.toUpperCase(),
-                                    labelText: "Find a friend".toUpperCase(),
+                                    hintText: 'Enter Team Name or ID'.toUpperCase(),
+                                    labelText: "Find team".toUpperCase(),
                                     alignLabelWithHint: true,
                                     labelStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -250,21 +222,19 @@ class _AddFriendState extends State<AddFriend> {
                                         _isSearching = true;
                                       });
 
-                                      List<DocumentSnapshot> users = [];
+                                      List<DocumentSnapshot> teams = [];
                                       if (value.isNotEmpty) {
-                                        await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
-                                              for (var uDoc in uSnaps.docs) {
-                                                if (uDoc.reference.id != user!.uid) {
-                                                  users.add(uDoc);
+                                        await FirebaseFirestore.instance.collection('teams').orderBy('name_lowercase', descending: false).orderBy('name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
+                                              for (var tDoc in tSnaps.docs) {
+                                                if (tDoc.reference.id != user!.uid) {
+                                                  teams.add(tDoc);
                                                 }
                                               }
                                             });
-                                        if (users.isEmpty) {
-                                          await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
-                                                for (var uDoc in uSnaps.docs) {
-                                                  if (uDoc.reference.id != user!.uid) {
-                                                    users.add(uDoc);
-                                                  }
+                                        if (teams.isEmpty) {
+                                          await FirebaseFirestore.instance.collection('teams').orderBy('id', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
+                                                for (var tDoc in tSnaps.docs) {
+                                                  teams.add(tDoc);
                                                 }
                                               });
                                         }
@@ -272,18 +242,18 @@ class _AddFriendState extends State<AddFriend> {
                                         await Future.delayed(const Duration(milliseconds: 500));
 
                                         setState(() {
-                                          _friends = users;
+                                          _teams = teams;
                                           _isSearching = false;
                                         });
                                       }
 
                                       setState(() {
-                                        _friends = users;
+                                        _teams = teams;
                                         _isSearching = false;
                                       });
                                     } else {
                                       setState(() {
-                                        _friends = [];
+                                        _teams = [];
                                         _isSearching = false;
                                       });
                                     }
@@ -291,7 +261,7 @@ class _AddFriendState extends State<AddFriend> {
                                   controller: searchFieldController,
                                   validator: (value) {
                                     if (value!.isEmpty) {
-                                      return 'Enter a name or email address';
+                                      return 'Enter team name or ID';
                                     }
                                     return null;
                                   },
@@ -324,7 +294,7 @@ class _AddFriendState extends State<AddFriend> {
                                         SnackBar(
                                           backgroundColor: Theme.of(context).cardTheme.color,
                                           content: Text(
-                                            "You are now friends!",
+                                            "You joined the team!",
                                             style: TextStyle(
                                               color: Theme.of(context).colorScheme.onPrimary,
                                             ),
@@ -335,8 +305,8 @@ class _AddFriendState extends State<AddFriend> {
 
                                       navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
                                         return Navigation(
-                                          title: NavigationTitle(title: "Friends".toUpperCase()),
-                                          selectedIndex: 1,
+                                          title: NavigationTitle(title: "Team".toUpperCase()),
+                                          selectedIndex: 2,
                                         );
                                       }));
                                     }).onError((error, stackTrace) {
@@ -344,7 +314,7 @@ class _AddFriendState extends State<AddFriend> {
                                         SnackBar(
                                           backgroundColor: Theme.of(context).cardTheme.color,
                                           content: Text(
-                                            "There was an error scanning your friend's QR code :(",
+                                            "There was an error scanning your teams QR code :(",
                                             style: TextStyle(
                                               color: Theme.of(context).colorScheme.onPrimary,
                                             ),
@@ -368,7 +338,7 @@ class _AddFriendState extends State<AddFriend> {
                       ],
                     ),
                     Flexible(
-                      child: _isSearching && _friends.isEmpty && searchFieldController.text.isNotEmpty
+                      child: _isSearching && _teams.isEmpty && searchFieldController.text.isNotEmpty
                           ? Column(
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -379,7 +349,7 @@ class _AddFriendState extends State<AddFriend> {
                                 )
                               ],
                             )
-                          : _friends.isEmpty && searchFieldController.text.isNotEmpty
+                          : _teams.isEmpty && searchFieldController.text.isNotEmpty
                               ? Column(
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -388,7 +358,7 @@ class _AddFriendState extends State<AddFriend> {
                                     Container(
                                       margin: const EdgeInsets.only(top: 40),
                                       child: Text(
-                                        "Couldn't find your friend?",
+                                        "Couldn't find your team?",
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
@@ -399,7 +369,7 @@ class _AddFriendState extends State<AddFriend> {
                                     Container(
                                       margin: const EdgeInsets.only(top: 25),
                                       child: Text(
-                                        "Challenge them!".toUpperCase(),
+                                        "Create a new team!".toUpperCase(),
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 26,
@@ -411,13 +381,12 @@ class _AddFriendState extends State<AddFriend> {
                                       margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
-                                          Share.share(
-                                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                                          );
+                                          navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
+                                            return const CreateTeam();
+                                          }));
                                         },
                                         icon: Icon(
-                                          Icons.share,
+                                          Icons.add_circle_outline_rounded,
                                           size: 40,
                                           color: Theme.of(context).colorScheme.onPrimary,
                                         ),
@@ -441,7 +410,7 @@ class _AddFriendState extends State<AddFriend> {
 
   List<Widget> _buildFriendResults() {
     List<Widget> friends = [];
-    _friends.asMap().forEach((i, doc) {
+    _teams.asMap().forEach((i, doc) {
       UserProfile friend = UserProfile.fromSnapshot(doc);
 
       friends.add(
@@ -456,18 +425,18 @@ class _AddFriendState extends State<AddFriend> {
             }
 
             setState(() {
-              _selectedFriend = _selectedFriend == i ? null : i;
+              _selectedTeam = _selectedTeam == i ? null : i;
               searchFieldController.text = searchFieldController.text;
             });
           },
           child: Container(
             decoration: BoxDecoration(
-              color: _selectedFriend == i ? Theme.of(context).cardTheme.color : Colors.transparent,
+              color: _selectedTeam == i ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
             padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
-                _selectedFriend == i
+                _selectedTeam == i
                     ? Container(
                         height: 60,
                         width: 60,
@@ -476,7 +445,7 @@ class _AddFriendState extends State<AddFriend> {
                         child: IconButton(
                           onPressed: () {
                             setState(() {
-                              _selectedFriend = null;
+                              _selectedTeam = null;
                               searchFieldController.text = searchFieldController.text;
                             });
                           },
