@@ -2,26 +2,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Team {
   String? id;
-  final String? name;
+  String? name;
   final DateTime? startDate;
   final DateTime? targetDate;
   final int? goalTotal;
+  final String? ownerId;
   final bool? ownerParticipating;
-  final bool? public;
+  bool? public;
   DocumentReference? reference;
 
-  Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerParticipating, this.public);
+  Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerId, this.ownerParticipating, this.public);
 
   Team.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
         assert(map['start_date'] != null),
         assert(map['goal_total'] != null),
+        assert(map['owner_id'] != null),
         assert(map['owner_participating'] != null),
         id = map['id'],
         name = map['name'],
         startDate = map['start_date']?.toDate(),
         targetDate = map['target_date']?.toDate(),
         goalTotal = map['goal_total'],
+        ownerId = map['owner_id'],
         ownerParticipating = map['owner_participating'],
         public = map['public'];
 
@@ -37,6 +40,7 @@ class Team {
             DateTime.now().day + 100,
           ),
       'goal_total': goalTotal,
+      'owner_id': ownerId,
       'owner_participating': ownerParticipating,
       'public': public
     };
