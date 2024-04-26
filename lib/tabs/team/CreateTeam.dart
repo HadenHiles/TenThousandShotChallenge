@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -18,6 +22,24 @@ class _CreateTeamState extends State<CreateTeam> {
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController searchFieldController = TextEditingController();
+  Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true);
+
+  void _saveTeam() {
+    FirebaseFirestore.instance.collection('teams').add(team!.toMap()).then((value) {});
+
+    Fluttertoast.showToast(
+      msg: 'Team "${team!.name}" was created!'.toLowerCase(),
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      textColor: Theme.of(context).colorScheme.onPrimary,
+      fontSize: 16.0,
+    );
+    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+      return const Navigation(selectedIndex: 2);
+    }));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +123,23 @@ class _CreateTeamState extends State<CreateTeam> {
                       ),
                     ),
                   ),
-                  actions: const [],
+                  actions: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.check,
+                          color: Colors.green.shade600,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            _saveTeam();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ];
             },
@@ -154,7 +192,13 @@ class _CreateTeamState extends State<CreateTeam> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   onChanged: (value) async {
-                                    if (value.isNotEmpty) {}
+                                    if (value.isNotEmpty) {
+                                      team!.name = value;
+
+                                      setState(() {
+                                        team = team;
+                                      });
+                                    }
                                   },
                                   controller: searchFieldController,
                                   validator: (value) {
@@ -163,6 +207,28 @@ class _CreateTeamState extends State<CreateTeam> {
                                     }
                                     return null;
                                   },
+                                ),
+                                const SizedBox(
+                                  height: 20,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Public',
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    Switch(
+                                      value: team!.public!,
+                                      onChanged: (bool value) {
+                                        team!.public = value;
+                                        setState(() {
+                                          team = team;
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

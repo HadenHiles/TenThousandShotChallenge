@@ -56,10 +56,18 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       await FirebaseFirestore.instance.collection('teams').where('owner', isEqualTo: user!.uid).limit(1).get().then((tSnap) async {
         if (tSnap.docs.isNotEmpty) {
           Team t = Team.fromSnapshot(tSnap.docs[0]);
-
           setState(() {
             team = t;
+            _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
           });
+
+          _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+        } else {
+          setState(() {
+            _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+          });
+
+          _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
         }
       });
     }
