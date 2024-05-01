@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -89,6 +90,21 @@ class _NavigationState extends State<Navigation> {
     NavigationTab(
       title: NavigationTitle(title: "Team".toUpperCase()),
       body: const TeamPage(),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(top: 10),
+          child: IconButton(
+            icon: Icon(
+              Icons.qr_code_2_rounded,
+              color: HomeTheme.darkTheme.colorScheme.onPrimary,
+              size: 28,
+            ),
+            onPressed: () {
+              showTeamQRCode(Team("test", DateTime.now(), DateTime.now().add(const Duration(days: 100)), 100000, user!.uid, true, true)); // TODO: Get team from database
+            },
+          ),
+        ),
+      ],
     ),
     const NavigationTab(
       title: null,

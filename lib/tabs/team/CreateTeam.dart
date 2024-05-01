@@ -21,24 +21,54 @@ class _CreateTeamState extends State<CreateTeam> {
   final user = FirebaseAuth.instance.currentUser;
 
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController searchFieldController = TextEditingController();
+  final TextEditingController nameFieldController = TextEditingController();
   Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true);
 
   void _saveTeam() {
-    FirebaseFirestore.instance.collection('teams').add(team!.toMap()).then((value) {});
+    setState(() {
+      team!.name = nameFieldController.text;
+    });
+    FirebaseFirestore.instance.collection('teams').add(team!.toMap()).then((value) {
+      setState(() {
+        team!.id = value.id;
+      });
 
-    Fluttertoast.showToast(
-      msg: 'Team "${team!.name}" was created!'.toLowerCase(),
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      textColor: Theme.of(context).colorScheme.onPrimary,
-      fontSize: 16.0,
-    );
-    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-      return const Navigation(selectedIndex: 2);
-    }));
+      FirebaseFirestore.instance.collection('teams').doc(value.id).update({'id': value.id}).then((uValue) {
+        Fluttertoast.showToast(
+          msg: 'Team "${team!.name}" was created!'.toLowerCase(),
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Theme.of(context).cardTheme.color,
+          textColor: Theme.of(context).colorScheme.onPrimary,
+          fontSize: 16.0,
+        );
+
+        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+          return const Navigation(selectedIndex: 2);
+        }));
+      }).onError((error, stackTrace) {
+        Fluttertoast.showToast(
+          msg: 'There was an error creating team "${team!.name}" :('.toLowerCase(),
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Theme.of(context).colorScheme.error,
+          textColor: Colors.white70,
+          fontSize: 16.0,
+        );
+      });
+    }).onError((error, stackTrace) {
+      Fluttertoast.showToast(
+        msg: 'There was an error creating team "${team!.name}" :('.toLowerCase(),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        textColor: Colors.white70,
+        fontSize: 16.0,
+      );
+    });
   }
 
   @override
@@ -200,7 +230,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                       });
                                     }
                                   },
-                                  controller: searchFieldController,
+                                  controller: nameFieldController,
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return 'Enter a team name';
