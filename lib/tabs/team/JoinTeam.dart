@@ -221,7 +221,7 @@ class _JoinTeamState extends State<JoinTeam> {
 
                                       List<DocumentSnapshot> teams = [];
                                       if (value.isNotEmpty) {
-                                        await FirebaseFirestore.instance.collection('teams').orderBy('name_lowercase', descending: false).orderBy('name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
+                                        await FirebaseFirestore.instance.collection('teams').orderBy('name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
                                               for (var tDoc in tSnaps.docs) {
                                                 if (tDoc.reference.id != user!.uid) {
                                                   teams.add(tDoc);
