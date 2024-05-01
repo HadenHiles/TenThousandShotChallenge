@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Team {
   String? id;
   String? name;
+  String? nameLowercase;
   final DateTime? startDate;
   final DateTime? targetDate;
   final int? goalTotal;
@@ -21,6 +22,7 @@ class Team {
         assert(map['owner_participating'] != null),
         id = map['id'],
         name = map['name'],
+        nameLowercase = map['name_lowercase'],
         startDate = map['start_date']?.toDate(),
         targetDate = map['target_date']?.toDate(),
         goalTotal = map['goal_total'],
@@ -32,6 +34,7 @@ class Team {
     return {
       'id': id,
       'name': name,
+      'name_lowercase': name!.toLowerCase(),
       'start_date': startDate,
       'target_date': targetDate ??
           DateTime(
