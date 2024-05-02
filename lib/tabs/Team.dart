@@ -47,44 +47,45 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Future<Null> _loadTeam() async {
-    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
+    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
       userProfile = UserProfile.fromSnapshot(uDoc);
-    });
 
-    if (userProfile!.teamId!.isNotEmpty) {
-      setState(() {
-        hasTeam = true;
-      });
       await Future.delayed(const Duration(milliseconds: 500));
 
-      await FirebaseFirestore.instance.collection('teams').where('id', isEqualTo: userProfile!.teamId).limit(1).get().then((tSnap) async {
-        if (tSnap.docs.isNotEmpty) {
-          Team t = Team.fromSnapshot(tSnap.docs[0]);
-          setState(() {
-            team = t;
-            if (t.ownerId == user!.uid) {
-              isOwner = true;
-            }
+      if (userProfile!.teamId != null) {
+        setState(() {
+          hasTeam = true;
+        });
 
-            _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-          });
+        await FirebaseFirestore.instance.collection('teams').where('id', isEqualTo: userProfile!.teamId).limit(1).get().then((tSnap) async {
+          if (tSnap.docs.isNotEmpty) {
+            Team t = Team.fromSnapshot(tSnap.docs[0]);
+            setState(() {
+              team = t;
+              if (t.ownerId == user!.uid) {
+                isOwner = true;
+              }
 
-          _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-        } else {
-          setState(() {
-            _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-          });
+              _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+            });
 
-          _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-        }
+            _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+          } else {
+            setState(() {
+              _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+            });
 
-        await FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: userProfile!.teamId).get().then((p) {
-          setState(() {
-            numPlayers = p.docs.length;
+            _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+          }
+
+          await FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: userProfile!.teamId).get().then((p) {
+            setState(() {
+              numPlayers = p.docs.length;
+            });
           });
         });
-      });
-    }
+      }
+    });
   }
 
   void _editTargetDate() {
