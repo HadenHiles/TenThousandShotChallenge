@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -100,7 +99,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              showTeamQRCode(user); // TODO: Get team from database
+              showTeamQRCode(user);
             },
           ),
         ),
