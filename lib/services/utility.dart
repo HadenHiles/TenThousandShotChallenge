@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-var numberFormat = NumberFormat('#,##,000');
+var numberFormat = NumberFormat('###,###,###');
 
 String printDuration(Duration duration, bool showSeconds) {
   String twoDigits(int n) => n.toString().padLeft(2, "0");

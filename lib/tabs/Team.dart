@@ -102,10 +102,20 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     );
   }
 
+  _updateTeamTotal(List<ShootingSession> sList, int teamTotal) {
+    if (mounted) {
+      setState(() {
+        sessions = sList;
+        teamTotalShots = teamTotal;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var f = NumberFormat("###,###,###", "en_US");
     _targetDateController.text = DateFormat('MMMM d, y').format(team?.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+    double totalShotsWidth = (teamTotalShots / team!.goalTotal!) * (MediaQuery.of(context).size.width - 60);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -314,8 +324,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                                       });
                                                     }
 
-                                                    sessions = sList;
-                                                    teamTotalShots = teamTotal;
+                                                    _updateTeamTotal(sList, teamTotal);
 
                                                     int? total = teamTotalShots;
                                                     int shotsRemaining = team!.goalTotal! - total;
@@ -423,150 +432,90 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   const SizedBox(
                     height: 5,
                   ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(
-                          child: LinearProgressIndicator(),
-                        );
-                      } else if (snapshot.data!.docs.isNotEmpty) {
-                        Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                        int? maxIterationTotalForWidth = iteration.total! <= 10000 ? iteration.total : 10000;
-                        int? iterationTotal = iteration.total;
-                        double totalShotsWidth = (maxIterationTotalForWidth! / 10000) * (MediaQuery.of(context).size.width - 60);
-
-                        return Column(
+                  Column(
+                    children: [
+                      Container(
+                        width: (MediaQuery.of(context).size.width),
+                        margin: const EdgeInsets.symmetric(horizontal: 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).cardTheme.color,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
                           children: [
-                            Container(
-                              width: (MediaQuery.of(context).size.width),
-                              margin: const EdgeInsets.symmetric(horizontal: 30),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: Theme.of(context).cardTheme.color,
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Tooltip(
-                                    message: "${iteration.totalWrist} Wrist Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: iteration.totalWrist! > 0 ? (iteration.totalWrist! / iterationTotal!) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(
-                                        color: wristShotColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Tooltip(
-                                    message: "${iteration.totalSnap} Snap Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: iteration.totalSnap! > 0 ? (iteration.totalSnap! / iterationTotal!) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(
-                                        color: snapShotColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Tooltip(
-                                    message: "${iteration.totalBackhand} Backhands".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: iteration.totalBackhand! > 0 ? (iteration.totalBackhand! / iterationTotal!) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(
-                                        color: backhandShotColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Tooltip(
-                                    message: "${iteration.totalSlap} Slap Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: iteration.totalSlap! > 0 ? (iteration.totalSlap! / iterationTotal!) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(
-                                        color: slapShotColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: (MediaQuery.of(context).size.width - 30),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Container(
-                                    height: 40,
-                                    width: totalShotsWidth < 35
-                                        ? 40
-                                        : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
-                                            ? totalShotsWidth - 65
-                                            : totalShotsWidth,
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                                    child: Text(
-                                      iteration.total! <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 22,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                                        child: Text(
-                                          " / ${numberFormat.format(10000)}",
-                                          textAlign: TextAlign.right,
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 22,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                            Tooltip(
+                              message: "$teamTotalShots Shots".toLowerCase(),
+                              preferBelow: false,
+                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              child: Container(
+                                height: 40,
+                                width: teamTotalShots > 0 ? (teamTotalShots / team!.goalTotal!) * totalShotsWidth : 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                decoration: const BoxDecoration(
+                                  color: wristShotColor,
+                                ),
                               ),
                             ),
                           ],
-                        );
-                      } else {
-                        return Container();
-                      }
-                    },
+                        ),
+                      ),
+                      Container(
+                        width: (MediaQuery.of(context).size.width - 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: totalShotsWidth < 35
+                                  ? 40
+                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                      ? totalShotsWidth - 65
+                                      : totalShotsWidth,
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: Text(
+                                teamTotalShots <= 999 ? teamTotalShots.toString() : numberFormat.format(teamTotalShots),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 22,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  child: Text(
+                                    " / ${numberFormat.format(team!.goalTotal)}",
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 22,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(
                     height: 5,
