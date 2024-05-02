@@ -53,14 +53,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (userProfile!.teamId != null) {
-        setState(() {
-          hasTeam = true;
-        });
-
         await FirebaseFirestore.instance.collection('teams').where('id', isEqualTo: userProfile!.teamId).limit(1).get().then((tSnap) async {
           if (tSnap.docs.isNotEmpty) {
             Team t = Team.fromSnapshot(tSnap.docs[0]);
             setState(() {
+              hasTeam = true;
               team = t;
               if (t.ownerId == user!.uid) {
                 isOwner = true;
@@ -70,15 +67,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             });
 
             _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-          } else {
-            setState(() {
-              _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-            });
-
-            _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
           }
 
-          await FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: userProfile!.teamId).get().then((p) {
+          await FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: userProfile!.teamId).get().then((p) {
             setState(() {
               numPlayers = p.docs.length;
             });
@@ -114,7 +105,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     var f = NumberFormat("###,###,###", "en_US");
-    _targetDateController.text = DateFormat('MMMM d, y').format(team!.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+    _targetDateController.text = DateFormat('MMMM d, y').format(team?.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
