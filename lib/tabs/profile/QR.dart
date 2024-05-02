@@ -78,7 +78,7 @@ void showTeamQRCode(User? u) {
                   width: 200,
                   height: 200,
                   child: QrImageView(
-                    data: team!.id!,
+                    data: team.id!,
                     backgroundColor: Colors.white70,
                   ),
                 ),

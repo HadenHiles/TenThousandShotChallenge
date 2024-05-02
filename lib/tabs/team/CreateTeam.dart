@@ -50,7 +50,7 @@ class _CreateTeamState extends State<CreateTeam> {
           user.teamId = team!.id;
           user.teamOwner = true;
           // Save the updated user doc with the new team id
-          return await FirebaseFirestore.instance.doc(u.reference.id).set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+          u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
         });
 
         navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {

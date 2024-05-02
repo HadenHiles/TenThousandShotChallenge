@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -32,32 +33,39 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
   bool hasTeam = false;
+  bool isOwner = false;
+  int numPlayers = 1;
+  List<ShootingSession>? sessions;
+  int teamTotalShots = 0;
   Team? team;
   UserProfile? userProfile;
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
-      userProfile = UserProfile.fromSnapshot(uDoc);
-    });
-
     super.initState();
     _loadTeam();
-    _loadTargetDate();
   }
 
   Future<Null> _loadTeam() async {
+    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
+      userProfile = UserProfile.fromSnapshot(uDoc);
+    });
+
     if (userProfile!.teamId!.isNotEmpty) {
       setState(() {
         hasTeam = true;
       });
       await Future.delayed(const Duration(milliseconds: 500));
 
-      await FirebaseFirestore.instance.collection('teams').where('owner', isEqualTo: user!.uid).limit(1).get().then((tSnap) async {
+      await FirebaseFirestore.instance.collection('teams').where('id', isEqualTo: userProfile!.teamId).limit(1).get().then((tSnap) async {
         if (tSnap.docs.isNotEmpty) {
           Team t = Team.fromSnapshot(tSnap.docs[0]);
           setState(() {
             team = t;
+            if (t.ownerId == user!.uid) {
+              isOwner = true;
+            }
+
             _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
           });
 
@@ -69,27 +77,14 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
           _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
         }
+
+        await FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: userProfile!.teamId).get().then((p) {
+          setState(() {
+            numPlayers = p.docs.length;
+          });
+        });
       });
     }
-  }
-
-  Future<Null> _loadTargetDate() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
-      if (iSnap.docs.isNotEmpty) {
-        Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
-        setState(() {
-          _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-        });
-
-        _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-      } else {
-        setState(() {
-          _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-        });
-
-        _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-      }
-    });
   }
 
   void _editTargetDate() {
@@ -105,17 +100,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         });
 
         _targetDateController.text = DateFormat('MMMM d, y').format(date);
+        Team updatedTeam = team!;
+        updatedTeam.targetDate = date;
 
-        await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
-          if (iSnap.docs.isNotEmpty) {
-            DocumentReference ref = iSnap.docs[0].reference;
-            Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
-            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete);
-            await ref.update(updated.toMap()).then((_) async {
-              _loadTargetDate();
-            });
-          }
-        });
+        await team!.reference!.update(updatedTeam.toMap()).then((_) {});
       },
       currentTime: _targetDate,
       locale: LocaleType.en,
@@ -124,11 +112,14 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    var f = NumberFormat("###,###,###", "en_US");
+    _targetDateController.text = DateFormat('MMMM d, y').format(team!.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        team == null
+        !hasTeam
             ? SizedBox(
                 width: MediaQuery.of(context).size.width - 30,
                 child: Column(
@@ -243,65 +234,52 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 children: [
                                   SizedBox(
                                     width: 150,
-                                    child: StreamBuilder<QuerySnapshot>(
-                                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData) {
-                                          return CircularProgressIndicator(
-                                            color: Theme.of(context).primaryColor,
-                                          );
-                                        } else if (snapshot.data!.docs.isNotEmpty) {
-                                          Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-
-                                          _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-
-                                          return AutoSizeTextField(
-                                            controller: _targetDateController,
-                                            style: const TextStyle(fontSize: 20),
-                                            maxLines: 1,
-                                            maxFontSize: 20,
-                                            decoration: InputDecoration(
-                                              labelText: "10,000 Shots By:".toLowerCase(),
-                                              labelStyle: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 22,
-                                              ),
-                                              focusColor: Theme.of(context).colorScheme.primary,
-                                              border: null,
-                                              disabledBorder: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              contentPadding: const EdgeInsets.all(2),
-                                              fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                            ),
-                                            readOnly: true,
-                                            onTap: () {
-                                              _editTargetDate();
-                                            },
-                                          );
-                                        } else {
-                                          return Container();
+                                    child: AutoSizeTextField(
+                                      controller: _targetDateController,
+                                      style: const TextStyle(fontSize: 20),
+                                      maxLines: 1,
+                                      maxFontSize: 20,
+                                      decoration: InputDecoration(
+                                        labelText: "${f.format(int.parse(team!.goalTotal.toString()))} Shots By:".toLowerCase(),
+                                        labelStyle: TextStyle(
+                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 22,
+                                        ),
+                                        focusColor: Theme.of(context).colorScheme.primary,
+                                        border: null,
+                                        disabledBorder: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        contentPadding: const EdgeInsets.all(2),
+                                        fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                      ),
+                                      readOnly: true,
+                                      onTap: () {
+                                        if (isOwner) {
+                                          _editTargetDate();
                                         }
                                       },
                                     ),
                                   ),
-                                  Positioned(
-                                    top: -2,
-                                    right: 0,
-                                    child: InkWell(
-                                      enableFeedback: true,
-                                      focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                      onTap: _editTargetDate,
-                                      borderRadius: BorderRadius.circular(30),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(10),
-                                        child: Icon(
-                                          Icons.edit,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  isOwner
+                                      ? Positioned(
+                                          top: -2,
+                                          right: 0,
+                                          child: InkWell(
+                                            enableFeedback: true,
+                                            focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                            onTap: _editTargetDate,
+                                            borderRadius: BorderRadius.circular(30),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(10),
+                                              child: Icon(
+                                                Icons.edit,
+                                                size: 18,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Container(),
                                 ],
                               ),
                               Row(
@@ -312,7 +290,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   SizedBox(
                                     width: 80,
                                     child: StreamBuilder<QuerySnapshot>(
-                                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                      stream: FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: team?.id).snapshots(),
                                       builder: (context, snapshot) {
                                         if (!snapshot.hasData) {
                                           return Center(
@@ -321,64 +299,97 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                             ),
                                           );
                                         } else if (snapshot.data!.docs.isNotEmpty) {
-                                          Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                          int? total = i.total! >= 10000 ? 10000 : i.total;
-                                          int shotsRemaining = 10000 - total!;
-                                          int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-                                          double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+                                          numPlayers = snapshot.data!.docs.length;
 
-                                          int shotsPerDay = 0;
-                                          if (daysRemaining <= 1) {
-                                            shotsPerDay = shotsRemaining;
-                                          } else {
-                                            shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                          for (var p in snapshot.data!.docs) {
+                                            UserProfile u = UserProfile.fromSnapshot(p);
+                                            List<ShootingSession> sList = [];
+                                            int teamTotal = 0;
+
+                                            return StreamBuilder<QuerySnapshot>(
+                                                stream: FirebaseFirestore.instance.collection('iterations').doc(u.id).collection('iterations').snapshots(),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot.hasData) {
+                                                    for (var iDoc in snapshot.data!.docs) {
+                                                      Iteration i = Iteration.fromSnapshot(iDoc);
+
+                                                      i.reference!.collection("sessions").get().then((seshs) {
+                                                        for (var sDoc in seshs.docs) {
+                                                          ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+                                                          sList.add(s);
+                                                          teamTotal += s.total!;
+                                                        }
+                                                      });
+                                                    }
+
+                                                    sessions = sList;
+                                                    teamTotalShots = teamTotal;
+
+                                                    int? total = teamTotalShots;
+                                                    int shotsRemaining = team!.goalTotal! - total;
+                                                    int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
+                                                    double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+
+                                                    int shotsPerDay = 0;
+                                                    if (daysRemaining <= 1) {
+                                                      shotsPerDay = shotsRemaining;
+                                                    } else {
+                                                      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                                    }
+
+                                                    int shotsPerWeek = 0;
+                                                    if (weeksRemaining <= 1) {
+                                                      shotsPerWeek = shotsRemaining;
+                                                    } else {
+                                                      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                                    }
+
+                                                    int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
+                                                    int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
+
+                                                    String shotsPerDayText = shotsRemaining < 1
+                                                        ? "Done!".toLowerCase()
+                                                        : shotsPerDay <= 999
+                                                            ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
+                                                            : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
+                                                    String shotsPerWeekText = shotsRemaining < 1
+                                                        ? "Done!".toLowerCase()
+                                                        : shotsPerWeek <= 999
+                                                            ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
+                                                            : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
+
+                                                    if (_targetDate!.compareTo(DateTime.now()) < 0) {
+                                                      daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
+
+                                                      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                                      shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                                    }
+
+                                                    return GestureDetector(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          _showShotsPerDay = !_showShotsPerDay;
+                                                        });
+                                                      },
+                                                      child: AutoSizeText(
+                                                        _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                                        maxFontSize: 26,
+                                                        maxLines: 1,
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 26,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    return Container();
+                                                  }
+                                                });
                                           }
-
-                                          int shotsPerWeek = 0;
-                                          if (weeksRemaining <= 1) {
-                                            shotsPerWeek = shotsRemaining;
-                                          } else {
-                                            shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                          }
-
-                                          String shotsPerDayText = shotsRemaining < 1
-                                              ? "Done!".toLowerCase()
-                                              : shotsPerDay <= 999
-                                                  ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                                  : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
-                                          String shotsPerWeekText = shotsRemaining < 1
-                                              ? "Done!".toLowerCase()
-                                              : shotsPerWeek <= 999
-                                                  ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                                  : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
-
-                                          if (_targetDate!.compareTo(DateTime.now()) < 0) {
-                                            daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
-
-                                            shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                            shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                          }
-
-                                          return GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _showShotsPerDay = !_showShotsPerDay;
-                                              });
-                                            },
-                                            child: AutoSizeText(
-                                              _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                              maxFontSize: 26,
-                                              maxLines: 1,
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 26,
-                                              ),
-                                            ),
-                                          );
-                                        } else {
-                                          return Container();
                                         }
+
+                                        return Container();
                                       },
                                     ),
                                   ),

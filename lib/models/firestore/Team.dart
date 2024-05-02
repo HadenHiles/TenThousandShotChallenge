@@ -8,8 +8,8 @@ class Team {
   String? code;
   String? name;
   String? nameLowercase;
-  final DateTime? startDate;
-  final DateTime? targetDate;
+  DateTime? startDate;
+  DateTime? targetDate;
   final int? goalTotal;
   final String? ownerId;
   final bool? ownerParticipating;

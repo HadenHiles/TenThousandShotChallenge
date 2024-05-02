@@ -494,7 +494,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                   int total = snapshot.data!.docs.length;
 
                                   return AutoSizeText(
-                                    "$total Team Members",
+                                    "$total Players",
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
