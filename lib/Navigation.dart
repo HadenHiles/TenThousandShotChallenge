@@ -100,7 +100,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              showTeamQRCode(Team("test", DateTime.now(), DateTime.now().add(const Duration(days: 100)), 100000, user!.uid, true, true)); // TODO: Get team from database
+              showTeamQRCode(user); // TODO: Get team from database
             },
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firebaseMessageService.dart';
 
@@ -238,7 +239,7 @@ Future<bool?> startNewIteration() async {
   });
 }
 
-Future<bool?> joinTeam(String fromUid, String toUid) async {
+Future<bool?> inviteTeammate(String fromUid, String toUid) async {
   Invite invite = Invite(fromUid, DateTime.now());
   return await FirebaseFirestore.instance.collection('teammates').doc(fromUid).collection('teammates').doc(toUid).get().then((t) async {
     if (!t.exists) {
@@ -297,7 +298,7 @@ Future<bool> deleteInvite(String fromUid, String toUid) async {
   return false;
 }
 
-Future<bool> joinTeamBarcode(String friendUid) async {
+Future<bool> addFriendBarcode(String friendUid) async {
   // Get the teammate
   return await FirebaseFirestore.instance.collection('users').doc(friendUid).get().then((u) async {
     UserProfile friend = UserProfile.fromSnapshot(u);
@@ -316,5 +317,19 @@ Future<bool> joinTeamBarcode(String friendUid) async {
 Future<bool> deleteFriend(String uid) async {
   return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser!.uid).collection('teammates').doc(uid).delete().then((_) async {
     return await FirebaseFirestore.instance.collection('teammates').doc(uid).collection('teammates').doc(auth.currentUser!.uid).delete().then((value) => true).onError((error, stackTrace) => false);
+  });
+}
+
+Future<bool> joinTeam(String teamId) async {
+  // Get the teammate
+  return await FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((u) async {
+    Team team = Team.fromSnapshot(u);
+    // Set the current user's team
+    return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
+      UserProfile user = UserProfile.fromSnapshot(u);
+      user.teamId = team.id;
+      // Save the updated user doc with the new team id
+      return await FirebaseFirestore.instance.doc(u.reference.id).set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+    });
   });
 }

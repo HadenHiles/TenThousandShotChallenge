@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -43,6 +44,14 @@ class _CreateTeamState extends State<CreateTeam> {
           textColor: Theme.of(context).colorScheme.onPrimary,
           fontSize: 16.0,
         );
+
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get().then((u) async {
+          UserProfile user = UserProfile.fromSnapshot(u);
+          user.teamId = team!.id;
+          user.teamOwner = true;
+          // Save the updated user doc with the new team id
+          return await FirebaseFirestore.instance.doc(u.reference.id).set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+        });
 
         navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
           return const Navigation(selectedIndex: 2);

@@ -6,12 +6,9 @@ import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
-import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -40,7 +37,7 @@ class _JoinTeamState extends State<JoinTeam> {
     barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
     print(barcodeScanRes);
 
-    return joinTeamBarcode(barcodeScanRes);
+    return joinTeam(barcodeScanRes);
   }
 
   @override
@@ -123,7 +120,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                joinTeam(user!.uid, _teams[_selectedTeam!].id).then((success) {
+                                inviteTeammate(user!.uid, _teams[_selectedTeam!].id).then((success) {
                                   if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -229,7 +226,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                               }
                                             });
                                         if (teams.isEmpty) {
-                                          await FirebaseFirestore.instance.collection('teams').orderBy('id', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
+                                          await FirebaseFirestore.instance.collection('teams').orderBy('code', descending: false).where('public', isEqualTo: true).startAt([value.toUpperCase()]).endAt(['${value.toUpperCase()}\uf8ff']).get().then((tSnaps) async {
                                                 for (var tDoc in tSnaps.docs) {
                                                   teams.add(tDoc);
                                                 }
@@ -392,7 +389,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                   ],
                                 )
                               : ListView(
-                                  children: _buildFriendResults(),
+                                  children: _buildTeamResults(),
                                 ),
                     ),
                   ],
@@ -405,12 +402,12 @@ class _JoinTeamState extends State<JoinTeam> {
     );
   }
 
-  List<Widget> _buildFriendResults() {
-    List<Widget> friends = [];
+  List<Widget> _buildTeamResults() {
+    List<Widget> teams = [];
     _teams.asMap().forEach((i, doc) {
-      UserProfile friend = UserProfile.fromSnapshot(doc);
+      Team team = Team.fromSnapshot(doc);
 
-      friends.add(
+      teams.add(
         GestureDetector(
           onTap: () {
             Feedback.forTap(context);
@@ -460,11 +457,11 @@ class _JoinTeamState extends State<JoinTeam> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        friend.displayName != null
+                        team.name != null
                             ? SizedBox(
                                 width: MediaQuery.of(context).size.width - 235,
                                 child: AutoSizeText(
-                                  friend.displayName!,
+                                  team.name!,
                                   maxLines: 1,
                                   style: TextStyle(
                                     fontSize: 22,
@@ -483,7 +480,7 @@ class _JoinTeamState extends State<JoinTeam> {
                         SizedBox(
                           width: 135,
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                              stream: FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: team.reference!.id).snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return const Center(
@@ -494,13 +491,10 @@ class _JoinTeamState extends State<JoinTeam> {
                                     ),
                                   );
                                 } else {
-                                  int total = 0;
-                                  for (var doc in snapshot.data!.docs) {
-                                    total += Iteration.fromSnapshot(doc).total!;
-                                  }
+                                  int total = snapshot.data!.docs.length;
 
                                   return AutoSizeText(
-                                    "$total Lifetime Shots",
+                                    "$total Team Members",
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
@@ -512,36 +506,6 @@ class _JoinTeamState extends State<JoinTeam> {
                                 }
                               }),
                         ),
-                        StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                              if (!snapshot.hasData) {
-                                return const Center(
-                                  child: SizedBox(
-                                    width: 120,
-                                    height: 2,
-                                    child: LinearProgressIndicator(),
-                                  ),
-                                );
-                              } else {
-                                Duration totalDuration = const Duration();
-                                for (var doc in snapshot.data!.docs) {
-                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                                }
-
-                                return totalDuration > const Duration()
-                                    ? Text(
-                                        "IN ${printDuration(totalDuration, true)}",
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      )
-                                    : Container();
-                              }
-                            }),
                       ],
                     ),
                   ],
@@ -553,6 +517,6 @@ class _JoinTeamState extends State<JoinTeam> {
       );
     });
 
-    return friends;
+    return teams;
   }
 }
