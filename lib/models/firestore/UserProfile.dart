@@ -6,8 +6,8 @@ class UserProfile {
   final String? email;
   final String? photoUrl;
   final bool? public;
-  final String? teamId;
-  final bool? teamOwner;
+  String? teamId;
+  bool? teamOwner;
   final String? fcmToken;
   DocumentReference? reference;
 

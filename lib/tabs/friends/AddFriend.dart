@@ -41,7 +41,7 @@ class _AddFriendState extends State<AddFriend> {
     barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
     print(barcodeScanRes);
 
-    return joinTeamBarcode(barcodeScanRes);
+    return addFriendBarcode(barcodeScanRes);
   }
 
   @override
@@ -154,7 +154,7 @@ class _AddFriendState extends State<AddFriend> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                joinTeam(user!.uid, _friends[_selectedFriend!].id).then((success) {
+                                inviteTeammate(user!.uid, _friends[_selectedFriend!].id).then((success) {
                                   if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

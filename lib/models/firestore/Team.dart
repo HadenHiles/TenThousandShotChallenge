@@ -1,7 +1,11 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:word_generator/word_generator.dart';
 
 class Team {
   String? id;
+  String? code;
   String? name;
   String? nameLowercase;
   final DateTime? startDate;
@@ -16,11 +20,13 @@ class Team {
 
   Team.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
+        assert(map['code'] != null),
         assert(map['start_date'] != null),
         assert(map['goal_total'] != null),
         assert(map['owner_id'] != null),
         assert(map['owner_participating'] != null),
         id = map['id'],
+        code = map['code'],
         name = map['name'],
         nameLowercase = map['name_lowercase'],
         startDate = map['start_date']?.toDate(),
@@ -31,8 +37,13 @@ class Team {
         public = map['public'];
 
   Map<String, dynamic> toMap() {
+    final wordGenerator = WordGenerator();
+    String code = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
+    int id = DateTime.now().millisecondsSinceEpoch;
+
     return {
       'id': id,
+      'code': code,
       'name': name,
       'name_lowercase': name!.toLowerCase(),
       'start_date': startDate,
