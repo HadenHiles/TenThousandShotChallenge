@@ -329,7 +329,7 @@ Future<bool> joinTeam(String teamId) async {
       UserProfile user = UserProfile.fromSnapshot(u);
       user.teamId = team.id;
       // Save the updated user doc with the new team id
-      return await FirebaseFirestore.instance.doc(u.reference.id).set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+      return await u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
     });
   });
 }

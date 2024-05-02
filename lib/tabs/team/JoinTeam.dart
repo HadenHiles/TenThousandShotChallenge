@@ -115,13 +115,13 @@ class _JoinTeamState extends State<JoinTeam> {
                             margin: const EdgeInsets.only(top: 10),
                             child: IconButton(
                               icon: Icon(
-                                Icons.send,
+                                Icons.group_add_rounded,
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 size: 28,
                               ),
                               onPressed: () {
-                                inviteTeammate(user!.uid, _teams[_selectedTeam!].id).then((success) {
-                                  if (success!) {
+                                joinTeam(_teams[_selectedTeam!].id).then((success) {
+                                  if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
@@ -140,6 +140,8 @@ class _JoinTeamState extends State<JoinTeam> {
                                       _teams = [];
                                     });
                                     searchFieldController.text = "";
+
+                                    Navigator.of(context).pop();
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
