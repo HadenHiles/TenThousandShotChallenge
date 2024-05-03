@@ -37,6 +37,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   int numPlayers = 1;
   List<ShootingSession>? sessions;
   int teamTotalShots = 0;
+  String? shotsPerDayText;
+  String? shotsPerWeekText;
   Team? team;
   UserProfile? userProfile;
 
@@ -44,6 +46,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _loadTeam();
+    _loadTeamTotal();
   }
 
   Future<Null> _loadTeam() async {
@@ -77,6 +80,83 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         });
       }
     });
+  }
+
+  Future<Null> _loadTeamTotal() async {
+    await FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: team?.id).get().then((u) async {
+      if (u.docs.isNotEmpty) {
+        numPlayers = u.docs.length;
+
+        for (var p in u.docs) {
+          UserProfile u = UserProfile.fromSnapshot(p);
+          List<ShootingSession> sList = [];
+          int teamTotal = 0;
+
+          await FirebaseFirestore.instance.collection('iterations').doc(u.id).collection('iterations').get().then((i) {
+            if (i.docs.isNotEmpty) {
+              for (var iDoc in i.docs) {
+                Iteration i = Iteration.fromSnapshot(iDoc);
+
+                i.reference!.collection("sessions").get().then((seshs) {
+                  for (var sDoc in seshs.docs) {
+                    ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+                    sList.add(s);
+                    teamTotal += s.total!;
+                  }
+                });
+              }
+
+              _updateTeamTotal(sList, teamTotal);
+
+              int? total = teamTotalShots;
+              int shotsRemaining = team!.goalTotal! - total;
+              int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
+              double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+
+              int shotsPerDay = 0;
+              if (daysRemaining <= 1) {
+                shotsPerDay = shotsRemaining;
+              } else {
+                shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+              }
+
+              int shotsPerWeek = 0;
+              if (weeksRemaining <= 1) {
+                shotsPerWeek = shotsRemaining;
+              } else {
+                shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+              }
+
+              int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
+              int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
+
+              shotsPerDayText = shotsRemaining < 1
+                  ? "Done!".toLowerCase()
+                  : shotsPerDay <= 999
+                      ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
+                      : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
+              shotsPerWeekText = shotsRemaining < 1
+                  ? "Done!".toLowerCase()
+                  : shotsPerWeek <= 999
+                      ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
+                      : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
+
+              if (_targetDate!.compareTo(DateTime.now()) < 0) {
+                daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
+
+                shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+              }
+
+              setState(() {
+                shotsPerDayText = shotsPerDayText;
+                shotsPerWeekText = shotsPerWeekText;
+              });
+            }
+          });
+        }
+      }
+    }).onError((error, stackTrace) => null);
   }
 
   void _editTargetDate() {
@@ -291,108 +371,29 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 children: [
                                   SizedBox(
                                     width: 80,
-                                    child: StreamBuilder<QuerySnapshot>(
-                                      stream: FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: team?.id).snapshots(),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData) {
-                                          return Center(
+                                    child: teamTotalShots == 0
+                                        ? Center(
                                             child: CircularProgressIndicator(
                                               color: Theme.of(context).primaryColor,
                                             ),
-                                          );
-                                        } else if (snapshot.data!.docs.isNotEmpty) {
-                                          numPlayers = snapshot.data!.docs.length;
-
-                                          for (var p in snapshot.data!.docs) {
-                                            UserProfile u = UserProfile.fromSnapshot(p);
-                                            List<ShootingSession> sList = [];
-                                            int teamTotal = 0;
-
-                                            return StreamBuilder<QuerySnapshot>(
-                                                stream: FirebaseFirestore.instance.collection('iterations').doc(u.id).collection('iterations').snapshots(),
-                                                builder: (context, snapshot) {
-                                                  if (snapshot.hasData) {
-                                                    for (var iDoc in snapshot.data!.docs) {
-                                                      Iteration i = Iteration.fromSnapshot(iDoc);
-
-                                                      i.reference!.collection("sessions").get().then((seshs) {
-                                                        for (var sDoc in seshs.docs) {
-                                                          ShootingSession s = ShootingSession.fromSnapshot(sDoc);
-                                                          sList.add(s);
-                                                          teamTotal += s.total!;
-                                                        }
-                                                      });
-                                                    }
-
-                                                    _updateTeamTotal(sList, teamTotal);
-
-                                                    int? total = teamTotalShots;
-                                                    int shotsRemaining = team!.goalTotal! - total;
-                                                    int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-                                                    double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
-
-                                                    int shotsPerDay = 0;
-                                                    if (daysRemaining <= 1) {
-                                                      shotsPerDay = shotsRemaining;
-                                                    } else {
-                                                      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                                    }
-
-                                                    int shotsPerWeek = 0;
-                                                    if (weeksRemaining <= 1) {
-                                                      shotsPerWeek = shotsRemaining;
-                                                    } else {
-                                                      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                                    }
-
-                                                    int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
-                                                    int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
-
-                                                    String shotsPerDayText = shotsRemaining < 1
-                                                        ? "Done!".toLowerCase()
-                                                        : shotsPerDay <= 999
-                                                            ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
-                                                            : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
-                                                    String shotsPerWeekText = shotsRemaining < 1
-                                                        ? "Done!".toLowerCase()
-                                                        : shotsPerWeek <= 999
-                                                            ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
-                                                            : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
-
-                                                    if (_targetDate!.compareTo(DateTime.now()) < 0) {
-                                                      daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
-
-                                                      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                                      shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                                    }
-
-                                                    return GestureDetector(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          _showShotsPerDay = !_showShotsPerDay;
-                                                        });
-                                                      },
-                                                      child: AutoSizeText(
-                                                        _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                                        maxFontSize: 26,
-                                                        maxLines: 1,
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 26,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    return Container();
-                                                  }
-                                                });
-                                          }
-                                        }
-
-                                        return Container();
-                                      },
-                                    ),
+                                          )
+                                        : GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _showShotsPerDay = !_showShotsPerDay;
+                                              });
+                                            },
+                                            child: AutoSizeText(
+                                              _showShotsPerDay ? shotsPerDayText! : shotsPerWeekText!,
+                                              maxFontSize: 26,
+                                              maxLines: 1,
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 26,
+                                              ),
+                                            ),
+                                          ),
                                   ),
                                   InkWell(
                                     enableFeedback: true,
