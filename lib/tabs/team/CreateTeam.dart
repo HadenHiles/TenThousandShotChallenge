@@ -34,7 +34,7 @@ class _CreateTeamState extends State<CreateTeam> {
         team!.id = value.id;
       });
 
-      FirebaseFirestore.instance.collection('teams').doc(value.id).update({'id': value.id}).then((uValue) {
+      FirebaseFirestore.instance.collection('teams').doc(team!.id).update({'id': team!.id}).then((uValue) {
         Fluttertoast.showToast(
           msg: 'Team "${team!.name}" was created!'.toLowerCase(),
           toastLength: Toast.LENGTH_SHORT,
@@ -155,7 +155,9 @@ class _CreateTeamState extends State<CreateTeam> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                          return const Navigation(selectedIndex: 2);
+                        }));
                       },
                     ),
                   ),
