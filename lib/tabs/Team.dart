@@ -45,117 +45,65 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _loadTeam().then((value) {
-      if (team != null) {
-        _loadTeamTotal();
-      }
-    });
+    _loadTeam();
   }
 
   Future<Null> _loadTeam() async {
     await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
-      userProfile = UserProfile.fromSnapshot(uDoc);
+      if (uDoc.exists) {
+        userProfile = UserProfile.fromSnapshot(uDoc);
 
-      await Future.delayed(const Duration(milliseconds: 500));
+        if (userProfile!.teamId != null) {
+          await FirebaseFirestore.instance.collection('teams').doc(userProfile!.teamId).get().then((tSnap) async {
+            if (tSnap.exists) {
+              Team t = Team.fromSnapshot(tSnap);
+              setState(() {
+                hasTeam = true;
+                team = t;
+                if (t.ownerId == user!.uid) {
+                  isOwner = true;
+                }
 
-      if (userProfile!.teamId != null) {
-        await FirebaseFirestore.instance.collection('teams').where('id', isEqualTo: userProfile!.teamId).limit(1).get().then((tSnap) async {
-          if (tSnap.docs.isNotEmpty) {
-            Team t = Team.fromSnapshot(tSnap.docs[0]);
-            setState(() {
-              hasTeam = true;
-              team = t;
-              if (t.ownerId == user!.uid) {
-                isOwner = true;
-              }
+                _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+              });
 
-              _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-            });
+              _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
 
-            _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-          }
+              // Load the team total
+              List<ShootingSession> sList = [];
+              int teamTotal = 0;
 
-          setState(() {
-            numPlayers = team!.players!.length;
+              await Future.forEach(team!.players!, (String pId) async {
+                numPlayers = team == null ? 1 : team!.players!.length;
+                await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
+                  UserProfile u = UserProfile.fromSnapshot(uDoc);
+
+                  await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
+                    if (i.docs.isNotEmpty) {
+                      await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
+                        Iteration i = Iteration.fromSnapshot(iDoc);
+
+                        await i.reference!.collection("sessions").get().then((seshs) {
+                          for (var sDoc in seshs.docs) {
+                            ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+                            sList.add(s);
+                            teamTotal += s.total!;
+                          }
+                        });
+                      }).then((result) {
+                        _updateShotCalculations();
+                      });
+                    }
+                  });
+                });
+              }).then((value) {
+                _updateTeamTotal(sList, teamTotal);
+              }).onError((error, stackTrace) => null);
+            }
           });
-        });
+        }
       }
     });
-  }
-
-  Future<Null> _loadTeamTotal() async {
-    List<ShootingSession> sList = [];
-    int teamTotal = 0;
-
-    await Future.forEach(team!.players!, (String pId) async {
-      numPlayers = team!.players!.length;
-      await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
-        UserProfile u = UserProfile.fromSnapshot(uDoc);
-
-        await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
-          if (i.docs.isNotEmpty) {
-            await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
-              Iteration i = Iteration.fromSnapshot(iDoc);
-
-              await i.reference!.collection("sessions").get().then((seshs) {
-                for (var sDoc in seshs.docs) {
-                  ShootingSession s = ShootingSession.fromSnapshot(sDoc);
-                  sList.add(s);
-                  teamTotal += s.total!;
-                }
-              });
-            }).then((result) {
-              int? total = teamTotalShots;
-              int shotsRemaining = team!.goalTotal! - total;
-              int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-              double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
-
-              int shotsPerDay = 0;
-              if (daysRemaining <= 1) {
-                shotsPerDay = shotsRemaining;
-              } else {
-                shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-              }
-
-              int shotsPerWeek = 0;
-              if (weeksRemaining <= 1) {
-                shotsPerWeek = shotsRemaining;
-              } else {
-                shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-              }
-
-              int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
-              int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
-
-              shotsPerDayText = shotsRemaining < 1
-                  ? "Done!".toLowerCase()
-                  : shotsPerDay <= 999
-                      ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
-                      : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
-              shotsPerWeekText = shotsRemaining < 1
-                  ? "Done!".toLowerCase()
-                  : shotsPerWeek <= 999
-                      ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
-                      : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
-
-              if (_targetDate!.compareTo(DateTime.now()) < 0) {
-                daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
-
-                shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-              }
-
-              setState(() {
-                shotsPerDayText = shotsPerDayText;
-                shotsPerWeekText = shotsPerWeekText;
-              });
-            });
-          }
-        });
-      });
-    }).then((value) {
-      _updateTeamTotal(sList, teamTotal);
-    }).onError((error, stackTrace) => null);
   }
 
   void _editTargetDate() {
@@ -166,15 +114,16 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
       onChanged: (date) {},
       onConfirm: (date) async {
-        setState(() {
-          _targetDate = date;
-        });
-
         _targetDateController.text = DateFormat('MMMM d, y').format(date);
-        Team updatedTeam = team!;
-        updatedTeam.targetDate = date;
 
-        await team!.reference!.update(updatedTeam.toMap()).then((_) {});
+        await team!.reference!.update({'target_date': date}).then((_) {
+          setState(() {
+            _targetDate = date;
+            team!.targetDate = date;
+          });
+
+          _updateShotCalculations();
+        });
       },
       currentTime: _targetDate,
       locale: LocaleType.en,
@@ -185,6 +134,53 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     setState(() {
       sessions = sList;
       teamTotalShots = teamTotal;
+    });
+  }
+
+  _updateShotCalculations() {
+    int? total = teamTotalShots;
+    int shotsRemaining = team!.goalTotal! - total;
+    int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
+    double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+
+    int shotsPerDay = 0;
+    if (daysRemaining <= 1) {
+      shotsPerDay = shotsRemaining;
+    } else {
+      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+    }
+
+    int shotsPerWeek = 0;
+    if (weeksRemaining <= 1) {
+      shotsPerWeek = shotsRemaining;
+    } else {
+      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+    }
+
+    int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
+    int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
+
+    shotsPerDayText = shotsRemaining < 1
+        ? "Done!".toLowerCase()
+        : shotsPerDay <= 999
+            ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
+            : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
+    shotsPerWeekText = shotsRemaining < 1
+        ? "Done!".toLowerCase()
+        : shotsPerWeek <= 999
+            ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
+            : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
+
+    if (_targetDate!.compareTo(DateTime.now()) < 0) {
+      daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
+
+      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+      shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+    }
+
+    setState(() {
+      shotsPerDayText = shotsPerDayText;
+      shotsPerWeekText = shotsPerWeekText;
     });
   }
 
@@ -486,17 +482,19 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 Container(
                                   height: 40,
                                   width: totalShotsWidth < 35
-                                      ? 40
-                                      : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                      ? 50
+                                      : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
                                           ? totalShotsWidth - 65
                                           : totalShotsWidth,
                                   padding: const EdgeInsets.symmetric(horizontal: 2),
-                                  child: Text(
+                                  child: AutoSizeText(
                                     teamTotalShots <= 999 ? teamTotalShots.toString() : numberFormat.format(teamTotalShots),
                                     textAlign: TextAlign.right,
+                                    maxFontSize: 18,
+                                    maxLines: 1,
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
-                                      fontSize: 22,
+                                      fontSize: 18,
                                       color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
@@ -513,7 +511,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
-                                          fontSize: 22,
+                                          fontSize: 18,
                                           color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
