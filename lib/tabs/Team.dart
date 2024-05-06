@@ -163,13 +163,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     shotsPerDayText = shotsRemaining < 1
         ? "Done!".toLowerCase()
         : shotsPerDay <= 999
-            ? shotsPerPlayerDay.toString() + " / Day".toLowerCase()
-            : numberFormat.format(shotsPerPlayerDay) + " / Day".toLowerCase();
+            ? "$shotsPerPlayerDay${" / Day".toLowerCase()} / Player"
+            : "${numberFormat.format(shotsPerPlayerDay)}${" / Day".toLowerCase()} / Player";
     shotsPerWeekText = shotsRemaining < 1
         ? "Done!".toLowerCase()
         : shotsPerWeek <= 999
-            ? shotsPerPlayerWeek.toString() + " / Week".toLowerCase()
-            : numberFormat.format(shotsPerPlayerWeek) + " / Week".toLowerCase();
+            ? "$shotsPerPlayerWeek${" / Week".toLowerCase()} / Player"
+            : "${numberFormat.format(shotsPerPlayerWeek)}${" / Week".toLowerCase()} / Player";
 
     if (_targetDate!.compareTo(DateTime.now()) < 0) {
       daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
@@ -373,7 +373,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     mainAxisSize: MainAxisSize.max,
                                     children: [
                                       SizedBox(
-                                        width: 80,
+                                        width: 110,
                                         child: teamTotalShots == 0
                                             ? Center(
                                                 child: CircularProgressIndicator(
@@ -388,12 +388,12 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                                 },
                                                 child: AutoSizeText(
                                                   _showShotsPerDay ? shotsPerDayText! : shotsPerWeekText!,
-                                                  maxFontSize: 26,
+                                                  maxFontSize: 20,
                                                   maxLines: 1,
                                                   style: TextStyle(
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                     fontFamily: "NovecentoSans",
-                                                    fontSize: 26,
+                                                    fontSize: 20,
                                                   ),
                                                 ),
                                               ),
