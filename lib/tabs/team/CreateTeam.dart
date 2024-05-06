@@ -23,7 +23,7 @@ class _CreateTeamState extends State<CreateTeam> {
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameFieldController = TextEditingController();
-  Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true);
+  Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true, []);
 
   void _saveTeam() {
     setState(() {
@@ -47,10 +47,21 @@ class _CreateTeamState extends State<CreateTeam> {
 
         FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get().then((u) async {
           UserProfile user = UserProfile.fromSnapshot(u);
+          user.id = FirebaseAuth.instance.currentUser!.uid;
           user.teamId = team!.id;
           user.teamOwner = true;
           // Save the updated user doc with the new team id
-          u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+          u.reference.set(user.toMap()).then((value) {
+            // Add the current user to the team players list
+            return FirebaseFirestore.instance
+                .collection('teams')
+                .doc(team!.id)
+                .update({
+                  'players': [user.id]
+                })
+                .then((value) => true)
+                .onError((error, stackTrace) => false);
+          }).onError((error, stackTrace) => false);
         });
 
         navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {

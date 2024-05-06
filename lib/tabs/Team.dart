@@ -45,8 +45,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _loadTeam();
-    _loadTeamTotal();
+    _loadTeam().then((value) {
+      if (team != null) {
+        _loadTeamTotal();
+      }
+    });
   }
 
   Future<Null> _loadTeam() async {
@@ -72,10 +75,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
           }
 
-          await FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: userProfile!.teamId).get().then((p) {
-            setState(() {
-              numPlayers = p.docs.length;
-            });
+          setState(() {
+            numPlayers = team!.players!.length;
           });
         });
       }
@@ -83,31 +84,27 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Future<Null> _loadTeamTotal() async {
-    await FirebaseFirestore.instance.collection('users').where('team_id', isEqualTo: team?.id).get().then((u) async {
-      if (u.docs.isNotEmpty) {
-        numPlayers = u.docs.length;
+    List<ShootingSession> sList = [];
+    int teamTotal = 0;
 
-        for (var p in u.docs) {
-          UserProfile u = UserProfile.fromSnapshot(p);
-          List<ShootingSession> sList = [];
-          int teamTotal = 0;
+    await Future.forEach(team!.players!, (String pId) async {
+      numPlayers = team!.players!.length;
+      await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
+        UserProfile u = UserProfile.fromSnapshot(uDoc);
 
-          await FirebaseFirestore.instance.collection('iterations').doc(u.id).collection('iterations').get().then((i) {
-            if (i.docs.isNotEmpty) {
-              for (var iDoc in i.docs) {
-                Iteration i = Iteration.fromSnapshot(iDoc);
+        await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
+          if (i.docs.isNotEmpty) {
+            await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
+              Iteration i = Iteration.fromSnapshot(iDoc);
 
-                i.reference!.collection("sessions").get().then((seshs) {
-                  for (var sDoc in seshs.docs) {
-                    ShootingSession s = ShootingSession.fromSnapshot(sDoc);
-                    sList.add(s);
-                    teamTotal += s.total!;
-                  }
-                });
-              }
-
-              _updateTeamTotal(sList, teamTotal);
-
+              await i.reference!.collection("sessions").get().then((seshs) {
+                for (var sDoc in seshs.docs) {
+                  ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+                  sList.add(s);
+                  teamTotal += s.total!;
+                }
+              });
+            }).then((result) {
               int? total = teamTotalShots;
               int shotsRemaining = team!.goalTotal! - total;
               int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
@@ -152,10 +149,12 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 shotsPerDayText = shotsPerDayText;
                 shotsPerWeekText = shotsPerWeekText;
               });
-            }
-          });
-        }
-      }
+            });
+          }
+        });
+      });
+    }).then((value) {
+      _updateTeamTotal(sList, teamTotal);
     }).onError((error, stackTrace) => null);
   }
 
@@ -200,10 +199,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     }
 
     return Column(
-      mainAxisAlignment: team == null || (team == null && hasTeam) ? MainAxisAlignment.center : MainAxisAlignment.start,
+      mainAxisAlignment: (team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) ? MainAxisAlignment.center : MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        team == null || (team == null && hasTeam)
+        team == null && userProfile != null && userProfile!.teamId!.isNotEmpty
             ? Center(
                 child: CircularProgressIndicator(
                   color: Theme.of(context).primaryColor,
@@ -326,9 +325,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                         width: 150,
                                         child: AutoSizeTextField(
                                           controller: _targetDateController,
-                                          style: const TextStyle(fontSize: 20),
+                                          style: const TextStyle(fontSize: 12),
                                           maxLines: 1,
-                                          maxFontSize: 20,
+                                          maxFontSize: 14,
                                           decoration: InputDecoration(
                                             labelText: "${f.format(int.parse(team!.goalTotal.toString()))} Shots By:".toLowerCase(),
                                             labelStyle: TextStyle(

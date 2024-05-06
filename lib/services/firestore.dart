@@ -322,14 +322,20 @@ Future<bool> deleteFriend(String uid) async {
 
 Future<bool> joinTeam(String teamId) async {
   // Get the teammate
-  return await FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((u) async {
-    Team team = Team.fromSnapshot(u);
-    // Set the current user's team
-    return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
-      UserProfile user = UserProfile.fromSnapshot(u);
-      user.teamId = team.id;
-      // Save the updated user doc with the new team id
-      return await u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
-    });
+  return await FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((t) async {
+    Team team = Team.fromSnapshot(t);
+    team.players!.add(auth.currentUser!.uid);
+
+    // Add the current user to the team players list
+    return await t.reference.update({'players': team.players}).then((value) async {
+      // Set the current user's team
+      return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
+        UserProfile user = UserProfile.fromSnapshot(u);
+        user.id = auth.currentUser!.uid;
+        user.teamId = team.id;
+        // Save the updated user doc with the new team id
+        return await u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+      });
+    }).onError((error, stackTrace) => false);
   });
 }
