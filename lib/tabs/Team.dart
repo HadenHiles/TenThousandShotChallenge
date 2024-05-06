@@ -85,20 +85,28 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 numPlayers = team == null ? 1 : team!.players!.length;
                 await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
                   UserProfile u = UserProfile.fromSnapshot(uDoc);
+                  Player p = Player(u, 0);
 
                   await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
                     if (i.docs.isNotEmpty) {
                       await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                         Iteration i = Iteration.fromSnapshot(iDoc);
+                        int pShots = 0;
 
                         await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) {
                           for (var sDoc in seshs.docs) {
                             ShootingSession s = ShootingSession.fromSnapshot(sDoc);
                             sList.add(s);
                             teamTotal += s.total!;
+                            pShots += s.total!;
                           }
+
+                          p.shots = pShots;
                         });
                       }).then((result) {
+                        setState(() {
+                          players!.add(p);
+                        });
                         _updateShotCalculations();
                       });
                     }
