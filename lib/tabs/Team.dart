@@ -183,12 +183,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   _updateTeamTotal(List<ShootingSession> sList, int teamTotal) {
-    if (mounted) {
-      setState(() {
-        sessions = sList;
-        teamTotalShots = teamTotal;
-      });
-    }
+    setState(() {
+      sessions = sList;
+      teamTotalShots = teamTotal;
+    });
   }
 
   @override
