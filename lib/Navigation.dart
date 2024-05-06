@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -48,6 +50,7 @@ class _NavigationState extends State<Navigation> {
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
   double _bottomNavOffsetPercentage = 0;
+  Team? team;
 
   final logo = Container(
     height: 40,
@@ -55,7 +58,7 @@ class _NavigationState extends State<Navigation> {
     child: Image.asset('assets/images/logo-text-only.png'),
   );
 
-  static final List<NavigationTab> _tabs = [
+  final List<NavigationTab> _tabs = [
     NavigationTab(
       title: Container(
         height: 40,
@@ -173,6 +176,8 @@ class _NavigationState extends State<Navigation> {
 
     _loadPreferences();
 
+    _loadTeam();
+
     setState(() {
       _title = widget.title ?? logo;
       _leading = Container();
@@ -203,6 +208,46 @@ class _NavigationState extends State<Navigation> {
     if (mounted) {
       Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     }
+  }
+
+  Future<Null> _loadTeam() async {
+    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
+      if (uDoc.exists) {
+        UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
+
+        if (userProfile.teamId != null) {
+          await FirebaseFirestore.instance.collection('teams').doc(userProfile.teamId).get().then((tSnap) async {
+            if (tSnap.exists) {
+              Team t = Team.fromSnapshot(tSnap);
+
+              setState(() {
+                team = t;
+
+                _tabs[2] = NavigationTab(
+                  title: NavigationTitle(title: team!.name ?? "Team".toUpperCase()),
+                  body: const TeamPage(),
+                  actions: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.qr_code_2_rounded,
+                          color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          showTeamQRCode(user);
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              });
+            }
+          });
+        }
+      }
+    });
   }
 
   @override
