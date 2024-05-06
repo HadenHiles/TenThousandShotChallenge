@@ -14,9 +14,10 @@ class Team {
   final String? ownerId;
   final bool? ownerParticipating;
   bool? public;
+  List<String>? players;
   DocumentReference? reference;
 
-  Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerId, this.ownerParticipating, this.public);
+  Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerId, this.ownerParticipating, this.public, this.players);
 
   Team.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
@@ -34,7 +35,8 @@ class Team {
         goalTotal = map['goal_total'],
         ownerId = map['owner_id'],
         ownerParticipating = map['owner_participating'],
-        public = map['public'];
+        public = map['public'],
+        players = List<String>.from(map['players'] ?? [])..sort((a, b) => a.compareTo(b));
 
   Map<String, dynamic> toMap() {
     final wordGenerator = WordGenerator();
@@ -56,7 +58,8 @@ class Team {
       'goal_total': goalTotal,
       'owner_id': ownerId,
       'owner_participating': ownerParticipating,
-      'public': public
+      'public': public,
+      'players': players
     };
   }
 
