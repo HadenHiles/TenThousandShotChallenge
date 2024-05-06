@@ -80,6 +80,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               // Load the team total
               List<ShootingSession> sList = [];
               int teamTotal = 0;
+              List<Player> plyrs = [];
 
               await Future.forEach(team!.players!, (String pId) async {
                 numPlayers = team == null ? 1 : team!.players!.length;
@@ -104,15 +105,18 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           p.shots = pShots;
                         });
                       }).then((result) {
-                        setState(() {
-                          players!.add(p);
-                        });
                         _updateShotCalculations();
                       });
                     }
                   });
+
+                  plyrs.add(p);
                 });
               }).then((value) {
+                setState(() {
+                  players = plyrs;
+                });
+
                 _updateTeamTotal(sList, teamTotal);
               }).onError((error, stackTrace) => null);
             }
