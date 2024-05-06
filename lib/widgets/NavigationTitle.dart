@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 class NavigationTitle extends StatelessWidget {
@@ -9,11 +10,13 @@ class NavigationTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
-      child: Text(
+      child: AutoSizeText(
         title!.toUpperCase(),
+        maxLines: 1,
+        maxFontSize: 18,
         style: TextStyle(
           fontFamily: 'NovecentoSans',
-          fontSize: 20,
+          fontSize: 18,
           color: Theme.of(context).appBarTheme.backgroundColor,
         ),
         textAlign: TextAlign.center,
