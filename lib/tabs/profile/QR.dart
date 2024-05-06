@@ -63,11 +63,12 @@ void showTeamQRCode(User? u) {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(
-              "People can join your team with this".toUpperCase(),
+              "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
               style: const TextStyle(
                 fontFamily: 'NovecentoSans',
-                fontSize: 24,
+                fontSize: 20,
               ),
+              textAlign: TextAlign.center,
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -80,6 +81,38 @@ void showTeamQRCode(User? u) {
                   child: QrImageView(
                     data: team.id!,
                     backgroundColor: Colors.white70,
+                  ),
+                ),
+                Divider(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  height: 20,
+                ),
+                Text(
+                  "Or use your team code:".toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(
+                  height: 60,
+                  width: 220,
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      padding: const EdgeInsets.all(5),
+                      child: SelectableText(
+                        team.code!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontFamily: "NovecentoSans",
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
