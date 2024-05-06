@@ -26,6 +26,13 @@ class TeamPage extends StatefulWidget {
   State<TeamPage> createState() => _TeamPageState();
 }
 
+class Player {
+  UserProfile? profile;
+  int? shots;
+
+  Player(this.profile, this.shots);
+}
+
 class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
@@ -35,6 +42,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool hasTeam = false;
   bool isOwner = false;
   int numPlayers = 1;
+  List<Player>? players;
   List<ShootingSession>? sessions;
   int teamTotalShots = 0;
   String? shotsPerDayText;
@@ -83,7 +91,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                         Iteration i = Iteration.fromSnapshot(iDoc);
 
-                        await i.reference!.collection("sessions").get().then((seshs) {
+                        await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) {
                           for (var sDoc in seshs.docs) {
                             ShootingSession s = ShootingSession.fromSnapshot(sDoc);
                             sList.add(s);
@@ -163,13 +171,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     shotsPerDayText = shotsRemaining < 1
         ? "Done!".toLowerCase()
         : shotsPerDay <= 999
-            ? "$shotsPerPlayerDay${" / Day".toLowerCase()} / Player"
-            : "${numberFormat.format(shotsPerPlayerDay)}${" / Day".toLowerCase()} / Player";
+            ? "$shotsPerPlayerDay / Day / Player".toLowerCase()
+            : "${numberFormat.format(shotsPerPlayerDay)} / Day / Player".toLowerCase();
     shotsPerWeekText = shotsRemaining < 1
         ? "Done!".toLowerCase()
         : shotsPerWeek <= 999
-            ? "$shotsPerPlayerWeek${" / Week".toLowerCase()} / Player"
-            : "${numberFormat.format(shotsPerPlayerWeek)}${" / Week".toLowerCase()} / Player";
+            ? "$shotsPerPlayerWeek / Week / Player".toLowerCase()
+            : "${numberFormat.format(shotsPerPlayerWeek)} / Week / Player".toLowerCase();
 
     if (_targetDate!.compareTo(DateTime.now()) < 0) {
       daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
