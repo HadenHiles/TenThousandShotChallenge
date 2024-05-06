@@ -193,314 +193,307 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     var f = NumberFormat("###,###,###", "en_US");
     _targetDateController.text = DateFormat('MMMM d, y').format(team?.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-    double totalShotsWidth = (teamTotalShots / team!.goalTotal!) * (MediaQuery.of(context).size.width - 60);
+    double totalShotsWidth = 0;
+
+    if (team != null) {
+      totalShotsWidth = (teamTotalShots / team!.goalTotal!) * (MediaQuery.of(context).size.width - 60);
+    }
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: team == null || (team == null && hasTeam) ? MainAxisAlignment.center : MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        !hasTeam
-            ? SizedBox(
-                width: MediaQuery.of(context).size.width - 30,
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 40),
-                      child: Text(
-                        "Tap + to create a team".toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(top: 15),
-                      child: Center(
-                        child: Ink(
-                          decoration: ShapeDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            shape: const CircleBorder(),
-                          ),
-                          child: IconButton(
-                            color: Theme.of(context).cardTheme.color,
-                            onPressed: () {
-                              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                return const CreateTeam();
-                              }));
-                            },
-                            iconSize: 40,
-                            icon: Icon(
-                              Icons.add,
-                              size: 40,
+        team == null || (team == null && hasTeam)
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).primaryColor,
+                ),
+              )
+            : !hasTeam
+                ? SizedBox(
+                    width: MediaQuery.of(context).size.width - 30,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(top: 40),
+                          child: Text(
+                            "Tap + to create a team".toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const Divider(
-                      height: 50,
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(top: 40),
-                      child: Text(
-                        "Or join an existing team".toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(top: 15),
-                      child: Center(
-                        child: Ink(
-                          child: MaterialButton(
-                            color: Theme.of(context).cardTheme.color,
-                            child: Text(
-                              "Join Team".toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 20,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                        Container(
+                          margin: const EdgeInsets.only(top: 15),
+                          child: Center(
+                            child: Ink(
+                              decoration: ShapeDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                shape: const CircleBorder(),
                               ),
-                            ),
-                            onPressed: () {
-                              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                return const JoinTeam();
-                              }));
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : Column(
-                children: [
-                  _targetDate == null
-                      ? Container(
-                          margin: const EdgeInsets.only(top: 10),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.only(top: 5, bottom: 0),
-                          margin: const EdgeInsets.only(
-                            bottom: 10,
-                            top: 15,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Goal".toUpperCase(),
-                                style: TextStyle(
+                              child: IconButton(
+                                color: Theme.of(context).cardTheme.color,
+                                onPressed: () {
+                                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
+                                    return const CreateTeam();
+                                  }));
+                                },
+                                iconSize: 40,
+                                icon: Icon(
+                                  Icons.add,
+                                  size: 40,
                                   color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 26,
-                                  fontFamily: 'NovecentoSans',
                                 ),
                               ),
-                              Stack(
-                                children: [
-                                  SizedBox(
-                                    width: 150,
-                                    child: AutoSizeTextField(
-                                      controller: _targetDateController,
-                                      style: const TextStyle(fontSize: 20),
-                                      maxLines: 1,
-                                      maxFontSize: 20,
-                                      decoration: InputDecoration(
-                                        labelText: "${f.format(int.parse(team!.goalTotal.toString()))} Shots By:".toLowerCase(),
-                                        labelStyle: TextStyle(
-                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                          fontFamily: "NovecentoSans",
-                                          fontSize: 22,
-                                        ),
-                                        focusColor: Theme.of(context).colorScheme.primary,
-                                        border: null,
-                                        disabledBorder: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        contentPadding: const EdgeInsets.all(2),
-                                        fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                      ),
-                                      readOnly: true,
-                                      onTap: () {
-                                        if (isOwner) {
-                                          _editTargetDate();
-                                        }
-                                      },
-                                    ),
+                            ),
+                          ),
+                        ),
+                        const Divider(
+                          height: 50,
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 40),
+                          child: Text(
+                            "Or join an existing team".toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 15),
+                          child: Center(
+                            child: Ink(
+                              child: MaterialButton(
+                                color: Theme.of(context).cardTheme.color,
+                                child: Text(
+                                  "Join Team".toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 20,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  isOwner
-                                      ? Positioned(
-                                          top: -2,
-                                          right: 0,
-                                          child: InkWell(
-                                            enableFeedback: true,
-                                            focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                            onTap: _editTargetDate,
-                                            borderRadius: BorderRadius.circular(30),
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(10),
-                                              child: Icon(
-                                                Icons.edit,
-                                                size: 18,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      : Container(),
-                                ],
+                                ),
+                                onPressed: () {
+                                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
+                                    return const JoinTeam();
+                                  }));
+                                },
                               ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    children: [
+                      _targetDate == null
+                          ? Container(
+                              margin: const EdgeInsets.only(top: 10),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.only(top: 5, bottom: 0),
+                              margin: const EdgeInsets.only(
+                                bottom: 10,
+                                top: 15,
+                              ),
+                              child: Row(
                                 mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  SizedBox(
-                                    width: 80,
-                                    child: teamTotalShots == 0
-                                        ? Center(
-                                            child: CircularProgressIndicator(
-                                              color: Theme.of(context).primaryColor,
-                                            ),
-                                          )
-                                        : GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _showShotsPerDay = !_showShotsPerDay;
-                                              });
-                                            },
-                                            child: AutoSizeText(
-                                              _showShotsPerDay ? shotsPerDayText! : shotsPerWeekText!,
-                                              maxFontSize: 26,
-                                              maxLines: 1,
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 26,
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                  InkWell(
-                                    enableFeedback: true,
-                                    focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                    onTap: () {
-                                      setState(() {
-                                        _showShotsPerDay = !_showShotsPerDay;
-                                      });
-                                    },
-                                    borderRadius: BorderRadius.circular(30),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(10),
-                                      child: Icon(
-                                        Icons.swap_vert,
-                                        size: 18,
-                                      ),
+                                  Text(
+                                    "Goal".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 26,
+                                      fontFamily: 'NovecentoSans',
                                     ),
+                                  ),
+                                  Stack(
+                                    children: [
+                                      SizedBox(
+                                        width: 150,
+                                        child: AutoSizeTextField(
+                                          controller: _targetDateController,
+                                          style: const TextStyle(fontSize: 20),
+                                          maxLines: 1,
+                                          maxFontSize: 20,
+                                          decoration: InputDecoration(
+                                            labelText: "${f.format(int.parse(team!.goalTotal.toString()))} Shots By:".toLowerCase(),
+                                            labelStyle: TextStyle(
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 22,
+                                            ),
+                                            focusColor: Theme.of(context).colorScheme.primary,
+                                            border: null,
+                                            disabledBorder: InputBorder.none,
+                                            enabledBorder: InputBorder.none,
+                                            contentPadding: const EdgeInsets.all(2),
+                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                          ),
+                                          readOnly: true,
+                                          onTap: () {
+                                            if (isOwner) {
+                                              _editTargetDate();
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      isOwner
+                                          ? Positioned(
+                                              top: -2,
+                                              right: 0,
+                                              child: InkWell(
+                                                enableFeedback: true,
+                                                focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                                onTap: _editTargetDate,
+                                                borderRadius: BorderRadius.circular(30),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(10),
+                                                  child: Icon(
+                                                    Icons.edit,
+                                                    size: 18,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Container(),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [
+                                      SizedBox(
+                                        width: 80,
+                                        child: teamTotalShots == 0
+                                            ? Center(
+                                                child: CircularProgressIndicator(
+                                                  color: Theme.of(context).primaryColor,
+                                                ),
+                                              )
+                                            : GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _showShotsPerDay = !_showShotsPerDay;
+                                                  });
+                                                },
+                                                child: AutoSizeText(
+                                                  _showShotsPerDay ? shotsPerDayText! : shotsPerWeekText!,
+                                                  maxFontSize: 26,
+                                                  maxLines: 1,
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: 26,
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
+                                      InkWell(
+                                        enableFeedback: true,
+                                        focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                        onTap: () {
+                                          setState(() {
+                                            _showShotsPerDay = !_showShotsPerDay;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Icon(
+                                            Icons.swap_vert,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Progress".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 22,
+                              fontFamily: 'NovecentoSans',
+                            ),
                           ),
-                        ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Progress".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 22,
-                          fontFamily: 'NovecentoSans',
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 5,
-                  ),
-                  Column(
-                    children: [
-                      Container(
-                        width: (MediaQuery.of(context).size.width),
-                        margin: const EdgeInsets.symmetric(horizontal: 30),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Theme.of(context).cardTheme.color,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Tooltip(
-                              message: "$teamTotalShots Shots".toLowerCase(),
-                              preferBelow: false,
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                              child: Container(
-                                height: 40,
-                                width: teamTotalShots > 0 ? (teamTotalShots / team!.goalTotal!) * totalShotsWidth : 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                decoration: const BoxDecoration(
-                                  color: wristShotColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(
+                        height: 5,
                       ),
-                      Container(
-                        width: (MediaQuery.of(context).size.width - 30),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Container(
-                              height: 40,
-                              width: totalShotsWidth < 35
-                                  ? 40
-                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
-                                      ? totalShotsWidth - 65
-                                      : totalShotsWidth,
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                              child: Text(
-                                teamTotalShots <= 999 ? teamTotalShots.toString() : numberFormat.format(teamTotalShots),
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 22,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
+                      Column(
+                        children: [
+                          Container(
+                            width: (MediaQuery.of(context).size.width),
+                            margin: const EdgeInsets.symmetric(horizontal: 30),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Theme.of(context).cardTheme.color,
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Tooltip(
+                                  message: "$teamTotalShots Shots".toLowerCase(),
+                                  preferBelow: false,
+                                  textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                  child: Container(
+                                    height: 40,
+                                    width: teamTotalShots > 0 ? (teamTotalShots / team!.goalTotal!) * totalShotsWidth : 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    decoration: const BoxDecoration(
+                                      color: wristShotColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: (MediaQuery.of(context).size.width - 30),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
                                   height: 40,
+                                  width: totalShotsWidth < 35
+                                      ? 40
+                                      : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                          ? totalShotsWidth - 65
+                                          : totalShotsWidth,
                                   padding: const EdgeInsets.symmetric(horizontal: 2),
                                   child: Text(
-                                    " / ${numberFormat.format(team!.goalTotal)}",
+                                    teamTotalShots <= 999 ? teamTotalShots.toString() : numberFormat.format(teamTotalShots),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -509,18 +502,35 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     ),
                                   ),
                                 ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    Container(
+                                      height: 40,
+                                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                                      child: Text(
+                                        " / ${numberFormat.format(team!.goalTotal)}",
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 22,
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 5,
                       ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 5,
-                  ),
-                ],
-              ),
       ],
     );
   }
