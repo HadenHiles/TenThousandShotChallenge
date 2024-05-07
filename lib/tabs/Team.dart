@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
@@ -68,63 +70,107 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           await FirebaseFirestore.instance.collection('teams').doc(userProfile!.teamId).get().then((tSnap) async {
             if (tSnap.exists) {
               Team t = Team.fromSnapshot(tSnap);
-              setState(() {
-                hasTeam = true;
-                team = t;
-                if (t.ownerId == user!.uid) {
-                  isOwner = true;
-                }
 
-                _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-              });
-
-              _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-
-              // Load the team total
-              List<ShootingSession> sList = [];
-              int teamTotal = 0;
-              List<Plyr> plyrs = [];
-              numPlayers = team == null ? 1 : team!.players!.length;
-
-              await Future.forEach(team!.players!, (String pId) async {
-                await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
-                  UserProfile u = UserProfile.fromSnapshot(uDoc);
-                  Plyr p = Plyr(u, 0);
-
-                  await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
-                    if (i.docs.isNotEmpty) {
-                      await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
-                        Iteration i = Iteration.fromSnapshot(iDoc);
-
-                        await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                          int pShots = 0;
-                          for (var i = 0; i < seshs.docs.length; i++) {
-                            ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
-                            sList.add(s);
-                            teamTotal += s.total!;
-                            pShots += s.total!;
-
-                            if (i == seshs.docs.length - 1) {
-                              // Last session
-                              p.shots = pShots;
-                            }
-                          }
-                        });
-                      });
-                    }
-                  }).then((_) {
-                    plyrs.add(p);
-                    _updateShotCalculations();
-                  });
+              if (!t.players!.contains(user!.uid)) {
+                // Remove the user's assigned team so they can join a new one
+                uDoc.reference.update({'teamId': null}).then((value) {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(
+                          "You have been removed from team ${t.name} by the team owner.".toUpperCase(),
+                          style: const TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 24,
+                          ),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "You are free to join a new team whenever you wish.",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text(
+                              "Ok".toUpperCase(),
+                              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 });
-              }).then((value) {
+              } else {
                 setState(() {
-                  plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
-                  players = plyrs.reversed.toList();
+                  hasTeam = true;
+                  team = t;
+                  if (t.ownerId == user!.uid) {
+                    isOwner = true;
+                  }
+
+                  _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
                 });
 
-                _updateTeamTotal(sList, teamTotal);
-              }).onError((error, stackTrace) => null);
+                _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+
+                // Load the team total
+                List<ShootingSession> sList = [];
+                int teamTotal = 0;
+                List<Plyr> plyrs = [];
+                numPlayers = team == null ? 1 : team!.players!.length;
+
+                await Future.forEach(team!.players!, (String pId) async {
+                  await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
+                    UserProfile u = UserProfile.fromSnapshot(uDoc);
+                    Plyr p = Plyr(u, 0);
+
+                    await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
+                      if (i.docs.isNotEmpty) {
+                        await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
+                          Iteration i = Iteration.fromSnapshot(iDoc);
+
+                          await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
+                            int pShots = 0;
+                            for (var i = 0; i < seshs.docs.length; i++) {
+                              ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
+                              sList.add(s);
+                              teamTotal += s.total!;
+                              pShots += s.total!;
+
+                              if (i == seshs.docs.length - 1) {
+                                // Last session
+                                p.shots = pShots;
+                              }
+                            }
+                          });
+                        });
+                      }
+                    }).then((_) {
+                      plyrs.add(p);
+                      _updateShotCalculations();
+                    });
+                  });
+                }).then((value) {
+                  setState(() {
+                    plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
+                    players = plyrs.reversed.toList();
+                  });
+
+                  _updateTeamTotal(sList, teamTotal);
+                }).onError((error, stackTrace) => null);
+              }
             }
           });
         }
@@ -644,76 +690,186 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           return Player(uid: plyr.profile!.reference!.id);
         }));
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15),
-              width: 60,
-              height: 60,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(60),
-              ),
-              child: SizedBox(
-                height: 60,
-                child: UserAvatar(
-                  user: plyr.profile,
-                  backgroundColor: Colors.transparent,
+      child: Dismissible(
+        key: UniqueKey(),
+        onDismissed: (direction) async {
+          Fluttertoast.showToast(
+            msg: '${plyr.profile!.displayName} removed from the team',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Theme.of(context).cardTheme.color,
+            textColor: Theme.of(context).colorScheme.onPrimary,
+            fontSize: 16.0,
+          );
+
+          await removePlayerFromTeam(plyr.profile!).then((deleted) {
+            if (!deleted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: Text(
+                    "Sorry this player can't be removed from your team",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                  duration: const Duration(milliseconds: 1500),
                 ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              );
+            }
+
+            _loadTeam();
+          });
+        },
+        confirmDismiss: (DismissDirection direction) async {
+          return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  "Remove Player?".toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 24,
+                  ),
+                ),
+                content: Column(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    plyr.profile!.displayName != null
-                        ? SizedBox(
-                            width: MediaQuery.of(context).size.width - 235,
-                            child: AutoSizeText(
-                              plyr.profile!.displayName!,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyLarge!.color,
-                              ),
-                            ),
-                          )
-                        : Container(),
-                  ],
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    SizedBox(
-                      width: 135,
-                      child: AutoSizeText(
-                        "${plyr.shots} Shots",
-                        maxLines: 1,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontFamily: 'NovecentoSans',
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
+                    Text(
+                      "Are you sure you want to remove this player from your team?",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(
+                      "Cancel".toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(
+                      "Delete".toUpperCase(),
+                      style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        background: Container(
+          color: Theme.of(context).primaryColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(left: 15),
+                child: Text(
+                  "Delete".toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(right: 15),
+                child: const Icon(
+                  Icons.delete,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          child: Row(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 15),
+                width: 60,
+                height: 60,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(60),
+                ),
+                child: SizedBox(
+                  height: 60,
+                  child: UserAvatar(
+                    user: plyr.profile,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      plyr.profile!.displayName != null
+                          ? SizedBox(
+                              width: MediaQuery.of(context).size.width - 235,
+                              child: AutoSizeText(
+                                plyr.profile!.displayName!,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).textTheme.bodyLarge!.color,
+                                ),
+                              ),
+                            )
+                          : Container(),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 135,
+                        child: AutoSizeText(
+                          "${plyr.shots} Shots",
+                          maxLines: 1,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: 'NovecentoSans',
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
