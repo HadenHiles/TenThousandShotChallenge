@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
+import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -156,6 +157,10 @@ class _NavigationState extends State<Navigation> {
       _actions = _tabs[index].actions;
     });
 
+    if (index == 2) {
+      _loadTeam();
+    }
+
     if (sessionPanelController.isAttached) {
       if (!sessionPanelController.isPanelClosed) {
         sessionPanelController.close();
@@ -227,6 +232,23 @@ class _NavigationState extends State<Navigation> {
                   title: NavigationTitle(title: team!.name ?? "Team".toUpperCase()),
                   body: const TeamPage(),
                   actions: [
+                    team!.ownerId != user!.uid
+                        ? const SizedBox()
+                        : Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.edit,
+                                color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                                size: 28,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
+                                  return const EditTeam();
+                                }));
+                              },
+                            ),
+                          ),
                     Container(
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
