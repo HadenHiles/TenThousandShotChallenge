@@ -115,7 +115,7 @@ class _JoinTeamState extends State<JoinTeam> {
                             margin: const EdgeInsets.only(top: 10),
                             child: IconButton(
                               icon: Icon(
-                                Icons.group_add_rounded,
+                                Icons.add,
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 size: 28,
                               ),
