@@ -221,165 +221,169 @@ class _PlayerState extends State<Player> {
                   ),
                   actions: [
                     !_isFriend!
-                        ? Container(
-                            margin: const EdgeInsets.only(top: 10),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.add,
-                                color: Theme.of(context).colorScheme.onBackground,
-                                size: 28,
-                              ),
-                              onPressed: () {
-                                Feedback.forTap(context);
+                        ? widget.uid == user!.uid
+                            ? const SizedBox()
+                            : Container(
+                                margin: const EdgeInsets.only(top: 10),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.add,
+                                    color: Theme.of(context).colorScheme.onBackground,
+                                    size: 28,
+                                  ),
+                                  onPressed: () {
+                                    Feedback.forTap(context);
 
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text(
-                                        "Invite ${_userPlayer!.displayName} to be your friend?",
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onBackground,
-                                          fontSize: 20,
-                                        ),
-                                      ),
-                                      backgroundColor: Theme.of(context).colorScheme.background,
-                                      content: Text(
-                                        "They will receive an invite notification from you.",
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onBackground,
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text(
-                                            "Cancel",
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text(
+                                            "Invite ${_userPlayer!.displayName} to be your friend?",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onBackground,
+                                              fontSize: 20,
+                                            ),
+                                          ),
+                                          backgroundColor: Theme.of(context).colorScheme.background,
+                                          content: Text(
+                                            "They will receive an invite notification from you.",
                                             style: TextStyle(
                                               color: Theme.of(context).colorScheme.onBackground,
                                             ),
                                           ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                            Navigator.of(context).pop();
-                                            inviteTeammate(user!.uid, widget.uid!).then((success) {
-                                              if (success!) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    content: Text(
-                                                      "${_userPlayer!.displayName} Invited!",
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text(
+                                                "Cancel",
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onBackground,
+                                                ),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                Navigator.of(context).pop();
+                                                inviteTeammate(user!.uid, widget.uid!).then((success) {
+                                                  if (success!) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        content: Text(
+                                                          "${_userPlayer!.displayName} Invited!",
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                        duration: const Duration(seconds: 4),
                                                       ),
-                                                    ),
-                                                    duration: const Duration(seconds: 4),
-                                                  ),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    content: Text(
-                                                      "Failed to invite ${_userPlayer!.displayName} :(",
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                    );
+                                                  } else {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        content: Text(
+                                                          "Failed to invite ${_userPlayer!.displayName} :(",
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                        duration: const Duration(seconds: 4),
                                                       ),
-                                                    ),
-                                                    duration: const Duration(seconds: 4),
-                                                  ),
-                                                );
-                                              }
-                                            });
-                                          },
-                                          child: Text(
-                                            "Invite",
-                                            style: TextStyle(color: Theme.of(context).primaryColor),
-                                          ),
-                                        ),
-                                      ],
+                                                    );
+                                                  }
+                                                });
+                                              },
+                                              child: Text(
+                                                "Invite",
+                                                style: TextStyle(color: Theme.of(context).primaryColor),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
-                                );
-                              },
-                            ),
-                          )
-                        : Container(
-                            margin: const EdgeInsets.only(top: 10),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.delete,
-                                color: Theme.of(context).primaryColor,
-                                size: 28,
-                              ),
-                              onPressed: () {
-                                Feedback.forTap(context);
-                                dialog(
-                                  context,
-                                  ConfirmDialog(
-                                    "Remove Friend?",
-                                    Text(
-                                      "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onBackground,
-                                      ),
-                                    ),
-                                    "Cancel",
-                                    () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    "Continue",
-                                    () {
-                                      navigatorKey.currentState!.pushReplacement(
-                                        MaterialPageRoute(builder: (context) {
-                                          return Navigation(
-                                            title: NavigationTitle(title: "Players".toUpperCase()),
-                                            selectedIndex: 1,
-                                          );
-                                        }),
-                                      );
-
-                                      removePlayerFromFriends(_userPlayer!.reference!.id).then((success) {
-                                        if (success) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              duration: const Duration(milliseconds: 2500),
-                                              content: Text(
-                                                '${_userPlayer!.displayName} was removed.',
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              duration: const Duration(milliseconds: 4000),
-                                              content: Text(
-                                                'Error removing Player :(',
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-
-                                          Navigator.of(context).pop();
-                                        }
-                                      });
-                                    },
+                                ),
+                              )
+                        : widget.uid == user!.uid
+                            ? const SizedBox()
+                            : Container(
+                                margin: const EdgeInsets.only(top: 10),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 28,
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                  onPressed: () {
+                                    Feedback.forTap(context);
+                                    dialog(
+                                      context,
+                                      ConfirmDialog(
+                                        "Remove Friend?",
+                                        Text(
+                                          "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onBackground,
+                                          ),
+                                        ),
+                                        "Cancel",
+                                        () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        "Continue",
+                                        () {
+                                          navigatorKey.currentState!.pushReplacement(
+                                            MaterialPageRoute(builder: (context) {
+                                              return Navigation(
+                                                title: NavigationTitle(title: "Players".toUpperCase()),
+                                                selectedIndex: 1,
+                                              );
+                                            }),
+                                          );
+
+                                          removePlayerFromFriends(_userPlayer!.reference!.id).then((success) {
+                                            if (success) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 2500),
+                                                  content: Text(
+                                                    '${_userPlayer!.displayName} was removed.',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 4000),
+                                                  content: Text(
+                                                    'Error removing Player :(',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+
+                                              Navigator.of(context).pop();
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                   ],
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
