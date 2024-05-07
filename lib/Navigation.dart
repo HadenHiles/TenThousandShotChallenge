@@ -157,10 +157,6 @@ class _NavigationState extends State<Navigation> {
       _actions = _tabs[index].actions;
     });
 
-    if (index == 2) {
-      _loadTeam();
-    }
-
     if (sessionPanelController.isAttached) {
       if (!sessionPanelController.isPanelClosed) {
         sessionPanelController.close();
