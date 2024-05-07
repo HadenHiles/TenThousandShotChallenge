@@ -691,7 +691,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           return Player(uid: plyr.profile!.reference!.id);
         }));
       },
-      child: (team!.ownerId == user!.uid)
+      child: (team!.ownerId == user!.uid && user!.uid != plyr.profile!.reference!.id)
           ? Dismissible(
               key: UniqueKey(),
               onDismissed: (direction) async {
