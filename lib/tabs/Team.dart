@@ -73,45 +73,46 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
               if (!t.players!.contains(user!.uid)) {
                 // Remove the user's assigned team so they can join a new one
-                uDoc.reference.update({'teamId': null}).then((value) {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(
-                          "You have been removed from team ${t.name} by the team owner.".toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 24,
-                          ),
+                uDoc.reference.update({'team_id': null}).then((value) {});
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text(
+                        "You have been removed from team \"${t.name}\" by the team owner.".toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 24,
                         ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "You are free to join a new team whenever you wish.",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text(
-                              "Ok".toUpperCase(),
-                              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "You are free to join a new team whenever you wish.",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ],
-                      );
-                    },
-                  );
-                });
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
+                            return const JoinTeam();
+                          })),
+                          child: Text(
+                            "Ok".toUpperCase(),
+                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
               } else {
                 setState(() {
                   hasTeam = true;
@@ -690,188 +691,261 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           return Player(uid: plyr.profile!.reference!.id);
         }));
       },
-      child: Dismissible(
-        key: UniqueKey(),
-        onDismissed: (direction) async {
-          Fluttertoast.showToast(
-            msg: '${plyr.profile!.displayName} removed from the team',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Theme.of(context).cardTheme.color,
-            textColor: Theme.of(context).colorScheme.onPrimary,
-            fontSize: 16.0,
-          );
-
-          await removePlayerFromTeam(plyr.profile!).then((deleted) {
-            if (!deleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+      child: (team!.ownerId == user!.uid)
+          ? Dismissible(
+              key: UniqueKey(),
+              onDismissed: (direction) async {
+                Fluttertoast.showToast(
+                  msg: '${plyr.profile!.displayName} removed from the team',
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
+                  timeInSecForIosWeb: 1,
                   backgroundColor: Theme.of(context).cardTheme.color,
-                  content: Text(
-                    "Sorry this player can't be removed from your team",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  duration: const Duration(milliseconds: 1500),
-                ),
-              );
-            }
+                  textColor: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 16.0,
+                );
 
-            _loadTeam();
-          });
-        },
-        confirmDismiss: (DismissDirection direction) async {
-          return await showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  "Remove Player?".toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 24,
-                  ),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                await removePlayerFromTeam(plyr.profile!).then((deleted) {
+                  if (!deleted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Theme.of(context).cardTheme.color,
+                        content: Text(
+                          "Sorry this player can't be removed from your team",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                        duration: const Duration(milliseconds: 1500),
+                      ),
+                    );
+                  }
+
+                  _loadTeam();
+                });
+              },
+              confirmDismiss: (DismissDirection direction) async {
+                return await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text(
+                        "Remove Player?".toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 24,
+                        ),
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Are you sure you want to remove this player from your team?",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text(
+                            "Cancel".toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text(
+                            "Delete".toUpperCase(),
+                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              background: Container(
+                color: Theme.of(context).primaryColor,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
-                    Text(
-                      "Are you sure you want to remove this player from your team?",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                    Container(
+                      margin: const EdgeInsets.only(left: 15),
+                      child: Text(
+                        "Delete".toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(right: 15),
+                      child: const Icon(
+                        Icons.delete,
+                        size: 16,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(
-                      "Cancel".toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(
-                      "Delete".toUpperCase(),
-                      style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        background: Container(
-          color: Theme.of(context).primaryColor,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(left: 15),
-                child: Text(
-                  "Delete".toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
               ),
-              Container(
-                margin: const EdgeInsets.only(right: 15),
-                child: const Icon(
-                  Icons.delete,
-                  size: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          child: Row(
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 15),
-                width: 60,
-                height: 60,
-                clipBehavior: Clip.antiAlias,
+              child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(60),
+                  color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
                 ),
-                child: SizedBox(
-                  height: 60,
-                  child: UserAvatar(
-                    user: plyr.profile,
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      plyr.profile!.displayName != null
-                          ? SizedBox(
-                              width: MediaQuery.of(context).size.width - 235,
-                              child: AutoSizeText(
-                                plyr.profile!.displayName!,
-                                maxLines: 1,
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).textTheme.bodyLarge!.color,
-                                ),
-                              ),
-                            )
-                          : Container(),
-                    ],
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      SizedBox(
-                        width: 135,
-                        child: AutoSizeText(
-                          "${plyr.shots} Shots",
-                          maxLines: 1,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 15),
+                      width: 60,
+                      height: 60,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(60),
+                      ),
+                      child: SizedBox(
+                        height: 60,
+                        child: UserAvatar(
+                          user: plyr.profile,
+                          backgroundColor: Colors.transparent,
                         ),
                       ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            plyr.profile!.displayName != null
+                                ? SizedBox(
+                                    width: MediaQuery.of(context).size.width - 235,
+                                    child: AutoSizeText(
+                                      plyr.profile!.displayName!,
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).textTheme.bodyLarge!.color,
+                                      ),
+                                    ),
+                                  )
+                                : Container(),
+                          ],
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              width: 135,
+                              child: AutoSizeText(
+                                "${plyr.shots} Shots",
+                                maxLines: 1,
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontFamily: 'NovecentoSans',
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              child: Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    width: 60,
+                    height: 60,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(60),
+                    ),
+                    child: SizedBox(
+                      height: 60,
+                      child: UserAvatar(
+                        user: plyr.profile,
+                        backgroundColor: Colors.transparent,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          plyr.profile!.displayName != null
+                              ? SizedBox(
+                                  width: MediaQuery.of(context).size.width - 235,
+                                  child: AutoSizeText(
+                                    plyr.profile!.displayName!,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).textTheme.bodyLarge!.color,
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 135,
+                            child: AutoSizeText(
+                              "${plyr.shots} Shots",
+                              maxLines: 1,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'NovecentoSans',
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
