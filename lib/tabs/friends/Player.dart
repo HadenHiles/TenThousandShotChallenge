@@ -18,21 +18,21 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
-class Friend extends StatefulWidget {
-  const Friend({Key? key, this.uid}) : super(key: key);
+class Player extends StatefulWidget {
+  const Player({Key? key, this.uid}) : super(key: key);
 
   final String? uid;
 
   @override
-  State<Friend> createState() => _FriendState();
+  State<Player> createState() => _PlayerState();
 }
 
-class _FriendState extends State<Friend> {
+class _PlayerState extends State<Player> {
   // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
-  UserProfile? _userFriend;
-  bool _loadingFriend = false;
+  UserProfile? _userPlayer;
+  bool _loadingPlayer = false;
   ScrollController? sessionsController;
   DocumentSnapshot? _lastVisible;
   bool? _isLoading;
@@ -43,14 +43,14 @@ class _FriendState extends State<Friend> {
   @override
   void initState() {
     setState(() {
-      _loadingFriend = true;
+      _loadingPlayer = true;
     });
 
     FirebaseFirestore.instance.collection('users').doc(widget.uid).get().then((uDoc) {
-      _userFriend = UserProfile.fromSnapshot(uDoc);
+      _userPlayer = UserProfile.fromSnapshot(uDoc);
 
       setState(() {
-        _loadingFriend = false;
+        _loadingPlayer = false;
       });
     });
 
@@ -222,9 +222,9 @@ class _FriendState extends State<Friend> {
                           dialog(
                             context,
                             ConfirmDialog(
-                              "Remove Friend?",
+                              "Remove Player?",
                               Text(
-                                "Are you sure you want to unfriend ${_userFriend!.displayName}?",
+                                "Are you sure you want to unPlayer ${_userPlayer!.displayName}?",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onBackground,
                                 ),
@@ -238,20 +238,20 @@ class _FriendState extends State<Friend> {
                                 navigatorKey.currentState!.pushReplacement(
                                   MaterialPageRoute(builder: (context) {
                                     return Navigation(
-                                      title: NavigationTitle(title: "Friends".toUpperCase()),
+                                      title: NavigationTitle(title: "Players".toUpperCase()),
                                       selectedIndex: 1,
                                     );
                                   }),
                                 );
 
-                                deleteFriend(_userFriend!.reference!.id).then((success) {
+                                removePlayerFromFriends(_userPlayer!.reference!.id).then((success) {
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         duration: const Duration(milliseconds: 2500),
                                         content: Text(
-                                          '${_userFriend!.displayName} was removed.',
+                                          '${_userPlayer!.displayName} was removed.',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -264,7 +264,7 @@ class _FriendState extends State<Friend> {
                                         backgroundColor: Theme.of(context).cardTheme.color,
                                         duration: const Duration(milliseconds: 4000),
                                         content: Text(
-                                          'Error removing friend :(',
+                                          'Error removing Player :(',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                           ),
@@ -298,7 +298,7 @@ class _FriendState extends State<Friend> {
                 ),
               ];
             },
-            body: _loadingFriend
+            body: _loadingPlayer
                 ? const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -331,7 +331,7 @@ class _FriendState extends State<Friend> {
                                   child: SizedBox(
                                     height: 60,
                                     child: UserAvatar(
-                                      user: _userFriend,
+                                      user: _userPlayer,
                                       backgroundColor: Colors.transparent,
                                     ),
                                   ),
@@ -367,7 +367,7 @@ class _FriendState extends State<Friend> {
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                                           return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userFriend!.displayName!,
+                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userPlayer!.displayName!,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 22,
@@ -446,7 +446,7 @@ class _FriendState extends State<Friend> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   AutoSizeText(
-                                    _userFriend!.email!,
+                                    _userPlayer!.email!,
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
@@ -697,7 +697,7 @@ class _FriendState extends State<Friend> {
                                             )
                                           : _sessions.isEmpty
                                               ? Text(
-                                                  "${_userFriend!.displayName!.substring(0, _userFriend!.displayName!.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
+                                                  "${_userPlayer!.displayName!.substring(0, _userPlayer!.displayName!.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
                                                   style: TextStyle(
                                                     fontFamily: 'NovecentoSans',
                                                     color: Theme.of(context).colorScheme.onPrimary,

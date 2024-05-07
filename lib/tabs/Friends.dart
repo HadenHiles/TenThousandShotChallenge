@@ -9,7 +9,7 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
-import 'package:tenthousandshotchallenge/tabs/friends/Friend.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
@@ -322,7 +322,7 @@ class _FriendsState extends State<Friends> {
         Feedback.forTap(context);
 
         navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-          return Friend(uid: friend.reference!.id);
+          return Player(uid: friend.reference!.id);
         }));
       },
       child: Container(
@@ -590,7 +590,7 @@ class _FriendsState extends State<Friends> {
                       onTap: () {
                         Feedback.forTap(context);
                         navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                          return Friend(uid: friend.reference!.id);
+                          return Player(uid: friend.reference!.id);
                         }));
                       },
                       child: UserAvatar(

@@ -12,9 +12,12 @@ import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import '../main.dart';
 
 const TEAM_HEADER_HEIGHT = 65.0;
@@ -26,11 +29,11 @@ class TeamPage extends StatefulWidget {
   State<TeamPage> createState() => _TeamPageState();
 }
 
-class Player {
+class Plyr {
   UserProfile? profile;
   int? shots;
 
-  Player(this.profile, this.shots);
+  Plyr(this.profile, this.shots);
 }
 
 class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin {
@@ -42,7 +45,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool hasTeam = false;
   bool isOwner = false;
   int numPlayers = 1;
-  List<Player>? players;
+  List<Plyr>? players;
   List<ShootingSession>? sessions;
   int teamTotalShots = 0;
   String? shotsPerDayText;
@@ -80,13 +83,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               // Load the team total
               List<ShootingSession> sList = [];
               int teamTotal = 0;
-              List<Player> plyrs = [];
+              List<Plyr> plyrs = [];
 
               await Future.forEach(team!.players!, (String pId) async {
                 numPlayers = team == null ? 1 : team!.players!.length;
                 await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
                   UserProfile u = UserProfile.fromSnapshot(uDoc);
-                  Player p = Player(u, 0);
+                  Plyr p = Plyr(u, 0);
 
                   await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
                     if (i.docs.isNotEmpty) {
@@ -114,7 +117,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 });
               }).then((value) {
                 setState(() {
-                  players = plyrs;
+                  plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
+                  players = plyrs.reversed.toList();
                 });
 
                 _updateTeamTotal(sList, teamTotal);
@@ -311,6 +315,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     ),
                   )
                 : Column(
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       _targetDate == null
                           ? Container(
@@ -546,9 +551,165 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       const SizedBox(
                         height: 5,
                       ),
+                      players!.isEmpty
+                          ? Expanded(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 40),
+                                    child: Text(
+                                      "No Players on the Team (yet!)".toUpperCase(),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 20,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 15),
+                                    child: Center(
+                                      child: Ink(
+                                        decoration: ShapeDecoration(
+                                          color: Theme.of(context).cardTheme.color,
+                                          shape: const CircleBorder(),
+                                        ),
+                                        child: IconButton(
+                                          color: Theme.of(context).cardTheme.color,
+                                          onPressed: () {
+                                            showTeamQRCode(user);
+                                          },
+                                          iconSize: 40,
+                                          icon: Icon(
+                                            Icons.share,
+                                            size: 40,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : SizedBox(
+                              child: ListView.builder(
+                                padding: EdgeInsets.only(top: 0, right: 0, left: 0, bottom: AppBar().preferredSize.height),
+                                shrinkWrap: true,
+                                itemCount: players!.length + 1,
+                                itemBuilder: (_, int index) {
+                                  if (index < players!.length) {
+                                    final Plyr p = players![index];
+                                    return _buildPlayerItem(p, index % 2 == 0 ? true : false);
+                                  }
+
+                                  return players!.isNotEmpty
+                                      ? Container()
+                                      : const Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                height: 25,
+                                                width: 25,
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                },
+                              ),
+                            ),
                     ],
                   ),
       ],
+    );
+  }
+
+  Widget _buildPlayerItem(Plyr plyr, bool bg) {
+    return GestureDetector(
+      onTap: () {
+        Feedback.forTap(context);
+
+        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
+          return Player(uid: plyr.profile!.reference!.id);
+        }));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 15),
+              width: 60,
+              height: 60,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(60),
+              ),
+              child: SizedBox(
+                height: 60,
+                child: UserAvatar(
+                  user: plyr.profile,
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    plyr.profile!.displayName != null
+                        ? SizedBox(
+                            width: MediaQuery.of(context).size.width - 235,
+                            child: AutoSizeText(
+                              plyr.profile!.displayName!,
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).textTheme.bodyLarge!.color,
+                              ),
+                            ),
+                          )
+                        : Container(),
+                  ],
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 135,
+                      child: AutoSizeText(
+                        "${plyr.shots} Shots",
+                        maxLines: 1,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontFamily: 'NovecentoSans',
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

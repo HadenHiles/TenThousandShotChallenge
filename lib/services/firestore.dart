@@ -314,7 +314,7 @@ Future<bool> addFriendBarcode(String friendUid) async {
   });
 }
 
-Future<bool> deleteFriend(String uid) async {
+Future<bool> removePlayerFromFriends(String uid) async {
   return await FirebaseFirestore.instance.collection('teammates').doc(auth.currentUser!.uid).collection('teammates').doc(uid).delete().then((_) async {
     return await FirebaseFirestore.instance.collection('teammates').doc(uid).collection('teammates').doc(auth.currentUser!.uid).delete().then((value) => true).onError((error, stackTrace) => false);
   });
