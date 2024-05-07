@@ -57,9 +57,14 @@ class _EditTeamState extends State<EditTeam> {
       fontSize: 16.0,
     );
 
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
-      return Navigation(selectedIndex: 2, title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()));
-    }));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (BuildContext context) {
+          return Navigation(selectedIndex: 2, title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()));
+        },
+        maintainState: false,
+      ),
+    );
   }
 
   @override
