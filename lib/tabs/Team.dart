@@ -45,8 +45,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool hasTeam = false;
   bool isOwner = false;
   int numPlayers = 1;
-  List<Plyr>? players;
-  List<ShootingSession>? sessions;
+  List<Plyr>? players = [];
+  List<ShootingSession>? sessions = [];
   int teamTotalShots = 0;
   String? shotsPerDayText;
   String? shotsPerWeekText;
