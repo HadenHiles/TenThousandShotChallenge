@@ -339,3 +339,13 @@ Future<bool> joinTeam(String teamId) async {
     }).onError((error, stackTrace) => false);
   });
 }
+
+Future<bool> removePlayerFromTeam(UserProfile plyr) async {
+  return await FirebaseFirestore.instance.collection('teams').doc(plyr.teamId).get().then((t) async {
+    Team team = Team.fromSnapshot(t);
+    team.players!.remove(plyr.reference!.id);
+
+    // Remove the provided user/player from the team players list
+    return await t.reference.update({'players': team.players}).then((value) => true).onError((error, stackTrace) => false);
+  });
+}
