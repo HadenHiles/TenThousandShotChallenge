@@ -84,9 +84,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               List<ShootingSession> sList = [];
               int teamTotal = 0;
               List<Plyr> plyrs = [];
+              numPlayers = team == null ? 1 : team!.players!.length;
 
               await Future.forEach(team!.players!, (String pId) async {
-                numPlayers = team == null ? 1 : team!.players!.length;
                 await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
                   UserProfile u = UserProfile.fromSnapshot(uDoc);
                   Plyr p = Plyr(u, 0);
@@ -95,25 +95,27 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     if (i.docs.isNotEmpty) {
                       await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                         Iteration i = Iteration.fromSnapshot(iDoc);
-                        int pShots = 0;
 
-                        await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) {
-                          for (var sDoc in seshs.docs) {
-                            ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+                        await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
+                          int pShots = 0;
+                          for (var i = 0; i < seshs.docs.length; i++) {
+                            ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
                             sList.add(s);
                             teamTotal += s.total!;
                             pShots += s.total!;
-                          }
 
-                          p.shots = pShots;
+                            if (i == seshs.docs.length - 1) {
+                              // Last session
+                              p.shots = pShots;
+                            }
+                          }
                         });
-                      }).then((result) {
-                        _updateShotCalculations();
                       });
                     }
+                  }).then((_) {
+                    plyrs.add(p);
+                    _updateShotCalculations();
                   });
-
-                  plyrs.add(p);
                 });
               }).then((value) {
                 setState(() {
