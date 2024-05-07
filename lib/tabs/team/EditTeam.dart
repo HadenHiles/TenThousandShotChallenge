@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
@@ -58,7 +57,9 @@ class _EditTeamState extends State<EditTeam> {
       fontSize: 16.0,
     );
 
-    navigatorKey.currentState!.pop();
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
+      return Navigation(selectedIndex: 2, title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()));
+    }));
   }
 
   @override
@@ -126,7 +127,7 @@ class _EditTeamState extends State<EditTeam> {
                       ),
                       onPressed: () {
                         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
-                          return Navigation(selectedIndex: 2, title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()));
+                          return const Navigation(selectedIndex: 2);
                         }));
                       },
                     ),
