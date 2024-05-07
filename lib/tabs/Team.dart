@@ -195,7 +195,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             team!.targetDate = date;
           });
 
-          _updateShotCalculations();
+          _loadTeam();
         });
       },
       currentTime: _targetDate,
