@@ -210,9 +210,7 @@ class _EditTeamState extends State<EditTeam> {
                         size: 28,
                       ),
                       onPressed: () {
-                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
-                          return const Navigation(selectedIndex: 2);
-                        }));
+                        Navigator.of(context).pop();
                       },
                     ),
                   ),

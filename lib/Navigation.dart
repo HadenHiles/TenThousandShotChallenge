@@ -185,7 +185,7 @@ class _NavigationState extends State<Navigation> {
     _loadTeam();
 
     setState(() {
-      _title = widget.title ?? logo;
+      _title = widget.selectedIndex == 0 ? logo : widget.title;
       _leading = Container();
       _actions = widget.actions ?? [];
       _selectedIndex = widget.selectedIndex!;
