@@ -351,5 +351,13 @@ Future<bool> removePlayerFromTeam(String teamId, String uid) async {
 }
 
 Future<bool> deleteTeam(String teamId) async {
-  return await FirebaseFirestore.instance.collection('teams').doc(teamId).delete().then((_) => true).onError((error, stackTrace) => false);
+  return await FirebaseFirestore.instance.collection('teams').doc(teamId).delete().then((_) async {
+    return await FirebaseFirestore.instance.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
+      UserProfile user = UserProfile.fromSnapshot(u);
+      user.id = auth.currentUser!.uid;
+      user.teamId = null; // remove the user's teamId
+      // Save the updated user doc
+      return await u.reference.set(user.toMap()).then((_) => true).onError((error, stackTrace) => false);
+    });
+  }).onError((error, stackTrace) => false);
 }
