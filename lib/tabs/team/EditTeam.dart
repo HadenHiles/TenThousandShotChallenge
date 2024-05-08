@@ -40,6 +40,7 @@ class _EditTeamState extends State<EditTeam> {
   final TextEditingController targetDateController = TextEditingController();
   DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
   Team? team;
+  bool _public = false;
 
   @override
   void initState() {
@@ -52,6 +53,7 @@ class _EditTeamState extends State<EditTeam> {
           _goalTotal = team!.goalTotal;
           _startDate = team!.startDate;
           _targetDate = team!.targetDate;
+          _public = team!.public!;
         });
 
         teamNameTextFieldController.text = team!.name!;
@@ -64,14 +66,14 @@ class _EditTeamState extends State<EditTeam> {
     super.initState();
   }
 
-  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate) async {
+  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
     DateTime returnDate = currentDate;
 
     await DatePicker.showDatePicker(
       context,
       showTitleActions: true,
-      minTime: DateTime(DateTime.now().year - 1, DateTime.now().month, DateTime.now().day),
-      maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+      minTime: minTime,
+      maxTime: maxTime,
       onChanged: (date) {},
       onConfirm: (date) async {
         dateController.text = DateFormat('MMMM d, y').format(date);
@@ -90,6 +92,7 @@ class _EditTeamState extends State<EditTeam> {
       'goal_total': _goalTotal,
       'start_date': _startDate,
       'target_date': _targetDate,
+      'public': _public,
     }).then((value) {});
 
     Fluttertoast.showToast(
@@ -373,7 +376,12 @@ class _EditTeamState extends State<EditTeam> {
                                           ),
                                           readOnly: true,
                                           onTap: () async {
-                                            await _editDate(startDateController, team!.startDate!).then((date) {
+                                            await _editDate(
+                                              startDateController,
+                                              team!.startDate!,
+                                              DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
+                                              DateTime.now(),
+                                            ).then((date) {
                                               setState(() {
                                                 _startDate = date;
                                               });
@@ -407,7 +415,12 @@ class _EditTeamState extends State<EditTeam> {
                                           ),
                                           readOnly: true,
                                           onTap: () async {
-                                            await _editDate(targetDateController, team!.targetDate!).then((date) {
+                                            await _editDate(
+                                              targetDateController,
+                                              team!.targetDate!,
+                                              _startDate!,
+                                              DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                                            ).then((date) {
                                               setState(() {
                                                 _targetDate = date;
                                               });
@@ -416,6 +429,27 @@ class _EditTeamState extends State<EditTeam> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Public',
+                                          style: Theme.of(context).textTheme.bodyLarge,
+                                        ),
+                                        Switch(
+                                          value: _public,
+                                          onChanged: (bool value) {
+                                            setState(() {
+                                              _public = value;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               )),
