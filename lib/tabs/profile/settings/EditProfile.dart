@@ -70,9 +70,7 @@ class _EditProfileState extends State<EditProfile> {
       textColor: Theme.of(context).colorScheme.onPrimary,
       fontSize: 16.0,
     );
-    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-      return const Navigation(selectedIndex: 4, title: NavigationTitle(title: "Profile"));
-    }));
+    Navigator.of(context).pop();
   }
 
   @override
@@ -139,9 +137,7 @@ class _EditProfileState extends State<EditProfile> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                          return const Navigation(selectedIndex: 4, title: NavigationTitle(title: "Profile"));
-                        }));
+                        Navigator.of(context).pop();
                       },
                     ),
                   ),
