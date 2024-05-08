@@ -709,7 +709,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   fontSize: 16.0,
                 );
 
-                await removePlayerFromTeam(plyr.profile!).then((deleted) {
+                await removePlayerFromTeam(team!.id!, plyr.profile!.reference!.id).then((deleted) {
                   if (!deleted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
