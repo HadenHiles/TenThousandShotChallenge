@@ -55,6 +55,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   String? shotsPerDayText;
   String? shotsPerWeekText;
   Team? team;
+  bool isLoadingTeam = true;
   UserProfile? userProfile;
 
   @override
@@ -182,6 +183,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
       setState(() {
         isLoadingPlayers = false;
+        isLoadingTeam = false;
       });
     });
   }
@@ -458,7 +460,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                       children: [
                                         SizedBox(
                                           width: 110,
-                                          child: teamTotalShots == 0
+                                          child: teamTotalShots == 0 && isLoadingTeam
                                               ? Center(
                                                   child: CircularProgressIndicator(
                                                     color: Theme.of(context).primaryColor,
