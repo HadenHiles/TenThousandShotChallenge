@@ -48,6 +48,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool isOwner = false;
   int numPlayers = 1;
   List<Plyr>? players = [];
+  bool isLoadingPlayers = true;
   List<ShootingSession>? sessions = [];
   int teamTotalShots = 0;
   String? shotsPerDayText;
@@ -115,8 +116,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 );
               } else {
                 setState(() {
-                  hasTeam = true;
                   team = t;
+                  hasTeam = true;
                   if (t.ownerId == user!.uid) {
                     isOwner = true;
                   }
@@ -167,6 +168,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   setState(() {
                     plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
                     players = plyrs.reversed.toList();
+                    isLoadingPlayers = false;
                   });
 
                   _updateTeamTotal(sList, teamTotal);
@@ -270,11 +272,12 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return SingleChildScrollView(
       physics: const ScrollPhysics(),
       child: Column(
-        mainAxisAlignment: (team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) ? MainAxisAlignment.center : MainAxisAlignment.start,
+        mainAxisAlignment: ((team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
         children: [
-          team == null && userProfile != null && userProfile!.teamId!.isNotEmpty
-              ? Center(
+          (team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers
+              ? Container(
+                  margin: const EdgeInsets.only(top: 100),
                   child: CircularProgressIndicator(
                     color: Theme.of(context).primaryColor,
                   ),
