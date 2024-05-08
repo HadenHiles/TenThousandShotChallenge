@@ -154,7 +154,7 @@ class _AddFriendState extends State<AddFriend> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                inviteTeammate(user!.uid, _friends[_selectedFriend!].id).then((success) {
+                                inviteFriend(user!.uid, _friends[_selectedFriend!].id).then((success) {
                                   if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
