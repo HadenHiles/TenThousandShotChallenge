@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
@@ -70,7 +71,7 @@ class _EditProfileState extends State<EditProfile> {
       fontSize: 16.0,
     );
     navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-      return const Navigation(selectedIndex: 4);
+      return const Navigation(selectedIndex: 4, title: NavigationTitle(title: "Profile"));
     }));
   }
 
@@ -138,7 +139,9 @@ class _EditProfileState extends State<EditProfile> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                          return const Navigation(selectedIndex: 4, title: NavigationTitle(title: "Profile"));
+                        }));
                       },
                     ),
                   ),
