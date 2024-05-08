@@ -61,8 +61,10 @@ class _EditTeamState extends State<EditTeam> {
     super.initState();
   }
 
-  DateTime _editDate(TextEditingController dateController, DateTime currentDate) {
-    DatePicker.showDatePicker(
+  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate) async {
+    DateTime returnDate = currentDate;
+
+    await DatePicker.showDatePicker(
       context,
       showTitleActions: true,
       minTime: DateTime(DateTime.now().year - 1, DateTime.now().month, DateTime.now().day),
@@ -70,13 +72,13 @@ class _EditTeamState extends State<EditTeam> {
       onChanged: (date) {},
       onConfirm: (date) async {
         dateController.text = DateFormat('MMMM d, y').format(date);
-        return date;
+        returnDate = date;
       },
       currentTime: currentDate,
       locale: LocaleType.en,
     );
 
-    return currentDate;
+    return returnDate;
   }
 
   void _saveTeam() {
@@ -259,16 +261,30 @@ class _EditTeamState extends State<EditTeam> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: BasicTextField(
-                              keyboardType: TextInputType.text,
-                              hintText: 'Enter a team name',
-                              controller: teamNameTextFieldController,
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Please enter a team name';
-                                }
-                                return null;
-                              },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Team Name:".toLowerCase(),
+                                  style: TextStyle(
+                                    color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                                BasicTextField(
+                                  keyboardType: TextInputType.text,
+                                  hintText: 'Enter a team name',
+                                  controller: teamNameTextFieldController,
+                                  validator: (value) {
+                                    if (value.isEmpty) {
+                                      return 'Please enter a team name';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                           Padding(
@@ -287,7 +303,7 @@ class _EditTeamState extends State<EditTeam> {
                                 ),
                                 BasicTextField(
                                   keyboardType: TextInputType.number,
-                                  hintText: 'Update the team shooting goal (number of total team shots)',
+                                  hintText: '# of shots the team is aiming to take',
                                   controller: teamShotGoalTextFieldController,
                                   validator: (value) {
                                     if (value.isEmpty) {
@@ -349,16 +365,26 @@ class _EditTeamState extends State<EditTeam> {
                                             fillColor: Theme.of(context).colorScheme.primaryContainer,
                                           ),
                                           readOnly: true,
-                                          onTap: () {
-                                            setState(() {
-                                              _startDate = _editDate(startDateController, team!.startDate!);
+                                          onTap: () async {
+                                            await _editDate(startDateController, team!.startDate!).then((date) {
+                                              setState(() {
+                                                _startDate = date;
+                                              });
                                             });
                                           },
                                         ),
                                       ),
                                       SizedBox(
                                         width: MediaQuery.of(context).size.width * 0.1,
-                                        child: Text('To'.toLowerCase()),
+                                        child: Text(
+                                          'To'.toUpperCase(),
+                                          style: TextStyle(
+                                            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                            fontFamily: "NovecentoSans",
+                                            fontSize: 14,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
                                       SizedBox(
                                         width: MediaQuery.of(context).size.width * 0.4,
@@ -373,9 +399,11 @@ class _EditTeamState extends State<EditTeam> {
                                             fillColor: Theme.of(context).colorScheme.primaryContainer,
                                           ),
                                           readOnly: true,
-                                          onTap: () {
-                                            setState(() {
-                                              _targetDate = _editDate(targetDateController, team!.targetDate!);
+                                          onTap: () async {
+                                            await _editDate(targetDateController, team!.targetDate!).then((date) {
+                                              setState(() {
+                                                _targetDate = date;
+                                              });
                                             });
                                           },
                                         ),
