@@ -31,11 +31,11 @@ class _EditTeamState extends State<EditTeam> {
   final f = NumberFormat("###,###,###", "en_US");
   final TextEditingController teamNameTextFieldController = TextEditingController();
   final TextEditingController teamShotGoalTextFieldController = TextEditingController();
-  int? _goalTotal;
+  int? _goalTotal = 0;
   final TextEditingController startDateController = TextEditingController();
-  DateTime? _startDate;
+  DateTime? _startDate = DateTime.now();
   final TextEditingController targetDateController = TextEditingController();
-  DateTime? _targetDate;
+  DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
   Team? team;
 
   @override
@@ -329,7 +329,7 @@ class _EditTeamState extends State<EditTeam> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "${f.format(int.parse(_goalTotal.toString()))} Shots Starting From:".toLowerCase(),
+                                        "${f.format(int.parse(_goalTotal!.toString()))} Shots Starting From:".toLowerCase(),
                                         style: TextStyle(
                                           color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                           fontFamily: "NovecentoSans",
