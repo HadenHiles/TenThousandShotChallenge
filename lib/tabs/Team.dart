@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -656,7 +657,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   itemBuilder: (_, int index) {
                                     if (index < players!.length) {
                                       final Plyr p = players![index];
-                                      return _buildPlayerItem(p, index % 2 == 0 ? true : false);
+                                      return _buildPlayerItem(p, index % 2 == 0 ? true : false, index + 1);
                                     }
 
                                     return players!.isNotEmpty
@@ -685,7 +686,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildPlayerItem(Plyr plyr, bool bg) {
+  Widget _buildPlayerItem(Plyr plyr, bool bg, int place) {
     return GestureDetector(
       onTap: () {
         Feedback.forTap(context);
@@ -811,8 +812,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 child: Row(
                   children: [
+                    _outputPlace(place),
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 15),
+                      margin: const EdgeInsets.only(left: 0, right: 15),
                       width: 60,
                       height: 60,
                       clipBehavior: Clip.antiAlias,
@@ -838,7 +840,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           children: [
                             plyr.profile!.displayName != null
                                 ? SizedBox(
-                                    width: MediaQuery.of(context).size.width - 235,
+                                    width: MediaQuery.of(context).size.width - 250,
                                     child: AutoSizeText(
                                       plyr.profile!.displayName!,
                                       maxLines: 1,
@@ -884,8 +886,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               padding: const EdgeInsets.symmetric(vertical: 9),
               child: Row(
                 children: [
+                  _outputPlace(place),
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    margin: const EdgeInsets.only(left: 0, right: 15),
                     width: 60,
                     height: 60,
                     clipBehavior: Clip.antiAlias,
@@ -911,7 +914,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                         children: [
                           plyr.profile!.displayName != null
                               ? SizedBox(
-                                  width: MediaQuery.of(context).size.width - 235,
+                                  width: MediaQuery.of(context).size.width - 250,
                                   child: AutoSizeText(
                                     plyr.profile!.displayName!,
                                     maxLines: 1,
@@ -950,5 +953,98 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               ),
             ),
     );
+  }
+
+  Widget _outputPlace(int place) {
+    if ([1, 2, 3].contains(place)) {
+      switch (place) {
+        case 1:
+          return Container(
+            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+            width: 20,
+            height: 20,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.antiAlias,
+                child: SvgPicture.asset(
+                  "assets/images/1st.svg",
+                  semanticsLabel: '1st',
+                ),
+              ),
+            ),
+          );
+        case 2:
+          return Container(
+            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+            width: 20,
+            height: 20,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.antiAlias,
+                child: SvgPicture.asset(
+                  "assets/images/2nd.svg",
+                  semanticsLabel: '2nd',
+                ),
+              ),
+            ),
+          );
+        case 3:
+          return Container(
+            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+            width: 20,
+            height: 20,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.antiAlias,
+                child: SvgPicture.asset(
+                  "assets/images/3rd.svg",
+                  semanticsLabel: '3rd',
+                ),
+              ),
+            ),
+          );
+        default:
+          return Container(
+            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+            width: 20,
+            height: 20,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.antiAlias,
+                child: SvgPicture.asset(
+                  "assets/images/1st.svg",
+                  semanticsLabel: '1st',
+                ),
+              ),
+            ),
+          );
+      }
+    } else {
+      return Container(
+        margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+        width: 20,
+        height: 20,
+        child: Text(
+          place.toString().toUpperCase(),
+          style: TextStyle(
+            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+            fontFamily: "NovecentoSans",
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
   }
 }
