@@ -171,6 +171,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
                     players = plyrs.reversed.toList();
                     isLoadingPlayers = false;
+                    isLoadingTeam = false;
                   });
 
                   _updateTeamTotal(sList, teamTotal);
@@ -279,10 +280,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return SingleChildScrollView(
       physics: const ScrollPhysics(),
       child: Column(
-        mainAxisAlignment: (((team == null && userProfile != null && userProfile!.teamId != null) && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
+        mainAxisAlignment: ((team == null && userProfile != null && userProfile!.teamId == null) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
         children: [
-          ((team == null && userProfile != null && userProfile!.teamId != null) && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers
+          (team == null && userProfile != null && userProfile!.teamId == null) || isLoadingPlayers
               ? Container(
                   margin: const EdgeInsets.only(top: 100),
                   child: CircularProgressIndicator(
