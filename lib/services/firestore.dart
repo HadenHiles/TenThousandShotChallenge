@@ -239,7 +239,7 @@ Future<bool?> startNewIteration() async {
   });
 }
 
-Future<bool?> inviteTeammate(String fromUid, String toUid) async {
+Future<bool?> inviteFriend(String fromUid, String toUid) async {
   Invite invite = Invite(fromUid, DateTime.now());
   return await FirebaseFirestore.instance.collection('teammates').doc(fromUid).collection('teammates').doc(toUid).get().then((t) async {
     if (!t.exists) {

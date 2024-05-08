@@ -268,7 +268,7 @@ class _PlayerState extends State<Player> {
                                               onPressed: () {
                                                 Navigator.of(context).pop();
                                                 Navigator.of(context).pop();
-                                                inviteTeammate(user!.uid, widget.uid!).then((success) {
+                                                inviteFriend(user!.uid, widget.uid!).then((success) {
                                                   if (success!) {
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
