@@ -5,6 +5,8 @@ import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,14 +59,51 @@ class _EditTeamState extends State<EditTeam> {
       fontSize: 16.0,
     );
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (BuildContext context) {
-          return Navigation(selectedIndex: 2, title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()));
-        },
-        maintainState: false,
-      ),
-    );
+    Navigator.of(context)
+        .pushReplacement(
+          MaterialPageRoute(
+            builder: (BuildContext context) {
+              return Navigation(
+                selectedIndex: 2,
+                title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
+                actions: [
+                  team!.ownerId != user!.uid
+                      ? const SizedBox()
+                      : Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
+                                return const EditTeam();
+                              }));
+                            },
+                          ),
+                        ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.qr_code_2_rounded,
+                        color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        showTeamQRCode(user);
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+            maintainState: false,
+          ),
+        )
+        .then((value) => setState(() {}));
   }
 
   @override

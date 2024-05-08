@@ -32,10 +32,11 @@ final PanelController sessionPanelController = PanelController();
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  const Navigation({Key? key, this.title, this.selectedIndex}) : super(key: key);
+  const Navigation({Key? key, this.title, this.selectedIndex, this.actions}) : super(key: key);
 
   final Widget? title;
   final int? selectedIndex;
+  final List<Widget>? actions;
 
   @override
   State<Navigation> createState() => _NavigationState();
@@ -150,6 +151,10 @@ class _NavigationState extends State<Navigation> {
   ];
 
   void _onItemTapped(int index) async {
+    if (index == 2) {
+      _loadTeam();
+    }
+
     setState(() {
       _selectedIndex = index;
       _title = index == 0 ? logo : _tabs[index].title;
@@ -182,8 +187,14 @@ class _NavigationState extends State<Navigation> {
     setState(() {
       _title = widget.title ?? logo;
       _leading = Container();
-      _actions = [];
+      _actions = widget.actions ?? [];
       _selectedIndex = widget.selectedIndex!;
+      _tabs[widget.selectedIndex!] = NavigationTab(
+        title: _title,
+        body: _tabs[_selectedIndex].body,
+        actions: _actions!.isNotEmpty ? _actions : _tabs[_selectedIndex].actions,
+      );
+
       _onItemTapped(widget.selectedIndex!);
     });
 
