@@ -93,7 +93,7 @@ class _EditTeamState extends State<EditTeam> {
     }).then((value) {});
 
     Fluttertoast.showToast(
-      msg: 'Team saved!'.toLowerCase(),
+      msg: 'Team saved!'.toUpperCase(),
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.BOTTOM,
       timeInSecForIosWeb: 1,
