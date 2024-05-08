@@ -349,3 +349,7 @@ Future<bool> removePlayerFromTeam(String teamId, String uid) async {
     return await t.reference.update({'players': team.players}).then((value) => true).onError((error, stackTrace) => false);
   });
 }
+
+Future<bool> deleteTeam(String teamId) async {
+  return await FirebaseFirestore.instance.collection('teams').doc(teamId).delete().then((_) => true).onError((error, stackTrace) => false);
+}
