@@ -6,10 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
@@ -99,6 +102,10 @@ class _EditTeamState extends State<EditTeam> {
       fontSize: 16.0,
     );
 
+    _backToTeamPage();
+  }
+
+  void _backToTeamPage() {
     Navigator.of(context)
         .pushReplacement(
           MaterialPageRoute(
@@ -250,6 +257,8 @@ class _EditTeamState extends State<EditTeam> {
             },
             body: SingleChildScrollView(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(20),
@@ -415,6 +424,90 @@ class _EditTeamState extends State<EditTeam> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          floatingActionButton: Container(
+            width: MediaQuery.of(context).size.width,
+            margin: const EdgeInsets.all(0),
+            padding: const EdgeInsets.all(0),
+            child: TextButton(
+              onPressed: () {
+                dialog(
+                  context,
+                  ConfirmDialog(
+                    "Delete team \"${team!.name}\"?".toLowerCase(),
+                    Text(
+                      "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onBackground,
+                      ),
+                    ),
+                    "Cancel",
+                    () {
+                      Navigator.of(context).pop();
+                    },
+                    "Continue",
+                    () async {
+                      await deleteTeam(team!.id!).then((r) {
+                        if (r) {
+                          Fluttertoast.showToast(
+                            msg: 'Team deleted!'.toUpperCase(),
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            timeInSecForIosWeb: 1,
+                            backgroundColor: Theme.of(context).cardTheme.color,
+                            textColor: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 16.0,
+                          );
+
+                          _backToTeamPage();
+                        } else {
+                          Fluttertoast.showToast(
+                            msg: 'Failed to delete team :('.toUpperCase(),
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            timeInSecForIosWeb: 1,
+                            backgroundColor: Colors.redAccent,
+                            textColor: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 16.0,
+                          );
+
+                          Navigator.of(context).pop();
+                        }
+                      });
+                    },
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).cardTheme.color,
+                backgroundColor: Theme.of(context).cardTheme.color,
+                disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+              ),
+              child: FittedBox(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Delete Team".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 24,
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 3, left: 4),
+                      child: Icon(
+                        Icons.delete_forever,
+                        color: Theme.of(context).primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
