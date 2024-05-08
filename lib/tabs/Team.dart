@@ -179,6 +179,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           });
         }
       }
+
+      setState(() {
+        isLoadingPlayers = false;
+      });
     });
   }
 
@@ -273,10 +277,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return SingleChildScrollView(
       physics: const ScrollPhysics(),
       child: Column(
-        mainAxisAlignment: ((team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
+        mainAxisAlignment: (((team == null && userProfile != null && userProfile!.teamId != null) && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
         children: [
-          (team == null && userProfile != null && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers
+          ((team == null && userProfile != null && userProfile!.teamId != null) && userProfile!.teamId!.isNotEmpty) || isLoadingPlayers
               ? Container(
                   margin: const EdgeInsets.only(top: 100),
                   child: CircularProgressIndicator(
