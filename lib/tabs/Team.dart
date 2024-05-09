@@ -206,6 +206,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           });
 
           _loadTeam();
+          setState(() {});
         });
       },
       currentTime: _targetDate,
@@ -428,32 +429,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                               fillColor: Theme.of(context).colorScheme.primaryContainer,
                                             ),
                                             readOnly: true,
-                                            onTap: () {
-                                              if (isOwner) {
-                                                _editTargetDate();
-                                              }
-                                            },
                                           ),
                                         ),
-                                        isOwner
-                                            ? Positioned(
-                                                top: -2,
-                                                right: 0,
-                                                child: InkWell(
-                                                  enableFeedback: true,
-                                                  focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                                  onTap: _editTargetDate,
-                                                  borderRadius: BorderRadius.circular(30),
-                                                  child: const Padding(
-                                                    padding: EdgeInsets.all(10),
-                                                    child: Icon(
-                                                      Icons.edit,
-                                                      size: 18,
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                            : Container(),
                                       ],
                                     ),
                                     Row(
