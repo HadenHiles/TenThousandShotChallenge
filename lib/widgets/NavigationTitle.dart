@@ -19,7 +19,7 @@ class NavigationTitle extends StatelessWidget {
           fontSize: 18,
           color: Theme.of(context).appBarTheme.backgroundColor,
         ),
-        textAlign: TextAlign.center,
+        textAlign: TextAlign.left,
       ),
     );
   }
