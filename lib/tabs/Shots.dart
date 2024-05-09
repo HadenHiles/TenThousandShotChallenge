@@ -78,7 +78,7 @@ class _ShotsState extends State<Shots> {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
-            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete);
+            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
             await ref.update(updated.toMap()).then((_) async {
               _loadTargetDate();
             });
