@@ -552,7 +552,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                             : totalShotsWidth,
                                     padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: AutoSizeText(
-                                      teamTotalShots <= 999 ? teamTotalShots.toString() : numberFormat.format(teamTotalShots),
+                                      numberFormat.format(teamTotalShots), // TODO: this total doesn't seem to be correct
                                       textAlign: TextAlign.right,
                                       maxFontSize: 18,
                                       maxLines: 1,
