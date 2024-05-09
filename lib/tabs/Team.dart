@@ -5,7 +5,6 @@ import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -167,14 +166,15 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     });
                   });
                 }).then((value) {
+                  _updateTeamTotal(sList, teamTotal);
+                  _updateShotCalculations();
+
                   setState(() {
                     plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
                     players = plyrs.reversed.toList();
                     isLoadingPlayers = false;
                     isLoadingTeam = false;
                   });
-
-                  _updateTeamTotal(sList, teamTotal);
                 }).onError((error, stackTrace) => null);
               }
             }
