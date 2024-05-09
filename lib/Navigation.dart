@@ -190,7 +190,7 @@ class _NavigationState extends State<Navigation> {
       _actions = widget.actions ?? [];
       _selectedIndex = widget.selectedIndex!;
       _tabs[widget.selectedIndex!] = NavigationTab(
-        title: _title,
+        title: widget.selectedIndex == 0 ? logo : widget.title,
         body: _tabs[_selectedIndex].body,
         actions: _actions!.isNotEmpty ? _actions : _tabs[_selectedIndex].actions,
       );
@@ -453,7 +453,8 @@ class _NavigationState extends State<Navigation> {
                               ),
                               child: FlexibleSpaceBar(
                                 collapseMode: CollapseMode.parallax,
-                                centerTitle: [4].contains(_selectedIndex) ? false : true,
+                                centerTitle: true,
+                                titlePadding: const EdgeInsets.symmetric(vertical: 15),
                                 title: _title,
                                 background: Container(
                                   color: HomeTheme.darkTheme.colorScheme.primaryContainer,
