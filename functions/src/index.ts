@@ -137,7 +137,7 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
 // Update the iteration timestamp for caching purposes any time a new session is created
 export const sessionCreated = functions.firestore.document("/iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}").onCreate(async (change, context) => {
     // Retrieve the user who will be receiving the notification
-    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': Date.now()}).then((_) => true).catch((err) => {
+    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then((_) => true).catch((err) => {
         functions.logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
@@ -146,7 +146,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 // Update the iteration timestamp for caching purposes any time a session is updated
 export const sessionUpdated = functions.firestore.document("/iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}").onUpdate(async (change, context) => {
     // Retrieve the user who will be receiving the notification
-    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': Date.now()}).then((_) => true).catch((err) => {
+    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then((_) => true).catch((err) => {
         functions.logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
@@ -155,7 +155,7 @@ export const sessionUpdated = functions.firestore.document("/iterations/{userId}
 // Update the iteration timestamp for caching purposes any time a session is deleted
 export const sessionDeleted = functions.firestore.document("/iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}").onDelete(async (change, context) => {
     // Retrieve the user who will be receiving the notification
-    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': Date.now()}).then((_) => true).catch((err) => {
+    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then((_) => true).catch((err) => {
         functions.logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
