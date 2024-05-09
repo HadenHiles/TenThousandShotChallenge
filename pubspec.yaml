@@ -6,6 +6,7 @@ environment:
   sdk: '>=2.12.0 <4.0.0'
 dependencies: 
   auto_size_text: ^3.0.0
+  auto_size_text_field: ^2.2.3
   charts_flutter: ^0.12.0
   chewie: ^1.3.3
   cloud_firestore: ^4.17.0
@@ -17,11 +18,13 @@ dependencies:
   firebase_core: ^2.30.0
   firebase_messaging: ^14.8.2
   firebase_remote_config: ^4.4.2
+  firestore_cache: ^2.12.11
   flutter_barcode_scanner: ^2.0.0
   flutter_cache_manager: ^3.1.1
   flutter_datetime_picker_plus: ^2.2.0
   flutter_html: ^3.0.0-alpha.5
   flutter_local_notifications: ^17.0.1
+  flutter_svg: ^2.0.10+1
   fluttertoast: ^8.0.7
   font_awesome_flutter: ^10.7.0
   global_configuration: ^2.0.0-nullsafety.1
@@ -46,12 +49,10 @@ dependencies:
   url_launcher: ^6.0.6
   vibration: ^1.7.3
   video_player: any
+  word_generator: ^0.4.4
   youtube_player_flutter: ^9.0.1
   flutter: 
     sdk: flutter
-  auto_size_text_field: ^2.2.3
-  word_generator: ^0.4.4
-  flutter_svg: ^2.0.10+1
 dev_dependencies: 
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^3.0.2
@@ -76,5 +77,6 @@ flutter:
     - 
       family: NovecentoSans
       fonts: 
-        - asset: assets/fonts/novecento-sans-condensed-medium.otf
+        - 
+          asset: assets/fonts/novecento-sans-condensed-medium.otf
   uses-material-design: true
