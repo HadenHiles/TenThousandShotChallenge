@@ -272,9 +272,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     var f = NumberFormat("###,###,###", "en_US");
     _targetDateController.text = DateFormat('MMMM d, y').format(team?.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
     double totalShotsWidth = 0;
+    double totalShotsPercentage = 0;
 
     if (team != null) {
-      totalShotsWidth = (teamTotalShots / team!.goalTotal!) * (MediaQuery.of(context).size.width - 60);
+      totalShotsPercentage = (teamTotalShots / team!.goalTotal!) > 1 ? 1 : (teamTotalShots / team!.goalTotal!);
+      totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
     }
 
     return SingleChildScrollView(
@@ -545,7 +547,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                     child: Container(
                                       height: 40,
-                                      width: teamTotalShots > 0 ? (teamTotalShots / team!.goalTotal!) * totalShotsWidth : 0,
+                                      width: teamTotalShots > 0 ? totalShotsPercentage * totalShotsWidth : 0,
                                       padding: const EdgeInsets.symmetric(horizontal: 2),
                                       decoration: const BoxDecoration(
                                         color: wristShotColor,
@@ -571,7 +573,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     width: totalShotsWidth < 35
                                         ? 50
                                         : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
-                                            ? totalShotsWidth - 65
+                                            ? totalShotsWidth - 175
                                             : totalShotsWidth,
                                     padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: AutoSizeText(
