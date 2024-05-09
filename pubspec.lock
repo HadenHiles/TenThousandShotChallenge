@@ -377,6 +377,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.5"
+  firestore_cache:
+    dependency: "direct main"
+    description:
+      name: firestore_cache
+      sha256: "6ca1de1f171bac5968f7a4f17ec327d9c9be577faff42aebc11155e0a68f3b62"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.11"
   fixnum:
     dependency: transitive
     description:
@@ -1494,5 +1502,5 @@ packages:
     source: hosted
     version: "9.0.1"
 sdks:
-  dart: ">=3.3.0 <4.0.0"
-  flutter: ">=3.19.0"
+  dart: ">=3.3.4 <4.0.0"
+  flutter: ">=3.19.6"
