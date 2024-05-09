@@ -530,7 +530,6 @@ class _ProfileState extends State<Profile> {
                 } else {
                   int daysSoFar = latestSessionDate!.difference(firstSessionDate!).inDays + 1;
                   daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
-                  String? targetDate;
                   String? iterationDescription;
                   String goalDescription = "";
                   int remainingShots = 10000 - i.total!;
@@ -544,6 +543,7 @@ class _ProfileState extends State<Profile> {
                   }
 
                   if (i.targetDate != null && remainingShots > 0) {
+                    String? targetDate = DateFormat("MM/dd/yyyy").format(i.targetDate!);
                     int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
                     if (i.targetDate!.compareTo(DateTime.now()) < 0) {
                       daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
