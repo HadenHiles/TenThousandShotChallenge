@@ -2,6 +2,7 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:auto_size_text_field/auto_size_text_field.dart';
+import 'package:firestore_cache/firestore_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,8 +52,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool isLoadingPlayers = true;
   List<ShootingSession>? sessions = [];
   int teamTotalShots = 0;
-  String? shotsPerDayText;
-  String? shotsPerWeekText;
+  String? shotsPerDayText = "Not Available".toLowerCase();
+  String? shotsPerWeekText = "Not Available".toLowerCase();
   Team? team;
   bool isLoadingTeam = true;
   UserProfile? userProfile;
@@ -144,25 +145,47 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                         await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                           Iteration i = Iteration.fromSnapshot(iDoc);
 
-                          await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                            int pShots = 0;
-                            for (var i = 0; i < seshs.docs.length; i++) {
-                              ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
-                              sList.add(s);
-                              teamTotal += s.total!;
-                              pShots += s.total!;
+                          // If the players iteration doesn't have an updated_at field for some reason then just do a standard query
+                          if (i.udpatedAt != null) {
+                            await FirestoreCache.getDocuments(
+                              query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
+                              cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
+                              firestoreCacheField: 'updated_at',
+                            ).then((seshs) async {
+                              int pShots = 0;
+                              for (var i = 0; i < seshs.docs.length; i++) {
+                                ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
+                                sList.add(s);
+                                teamTotal += s.total!;
+                                pShots += s.total!;
 
-                              if (i == seshs.docs.length - 1) {
-                                // Last session
-                                p.shots = pShots;
+                                if (i == seshs.docs.length - 1) {
+                                  // Last session
+                                  p.shots = pShots;
+                                }
                               }
-                            }
-                          });
+                            }).onError((error, stackTrace) => null);
+                          } else {
+                            await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
+                              int pShots = 0;
+                              for (var i = 0; i < seshs.docs.length; i++) {
+                                ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
+                                sList.add(s);
+                                teamTotal += s.total!;
+                                pShots += s.total!;
+
+                                if (i == seshs.docs.length - 1) {
+                                  // Last session
+                                  p.shots = pShots;
+                                }
+                              }
+                            }).onError((error, stackTrace) => null);
+                          }
                         });
                       }
                     }).then((_) {
                       plyrs.add(p);
-                      _updateShotCalculations();
+                      // _updateShotCalculations();
                     });
                   });
                 }).then((value) {
