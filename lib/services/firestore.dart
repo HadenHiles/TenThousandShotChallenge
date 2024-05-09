@@ -41,7 +41,7 @@ Future<bool?> saveShootingSession(List<Shots> shots) async {
   ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now(), sessionService.currentDuration);
   shootingSession.shots = shots;
 
-  Iteration iteration = Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, const Duration(), 0, 0, 0, 0, 0, false);
+  Iteration iteration = Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, const Duration(), 0, 0, 0, 0, 0, false, DateTime.now());
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
@@ -83,6 +83,7 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
         (iteration.totalSlap! + shootingSession.totalSlap!),
         (iteration.totalBackhand! + shootingSession.totalBackhand!),
         iteration.complete,
+        iteration.udpatedAt,
       );
       batch.update(ref, iteration.toMap());
     });
@@ -109,6 +110,7 @@ Future<bool> deleteSession(ShootingSession shootingSession) async {
         (iteration.totalSlap! - shootingSession.totalSlap!),
         (iteration.totalBackhand! - shootingSession.totalBackhand!),
         iteration.complete,
+        iteration.udpatedAt,
       );
 
       batch.update(iDoc.reference, decrementedIteration.toMap());
@@ -182,7 +184,15 @@ Future<bool> recalculateIterationTotals() async {
                     }
                   }).then((_) {
                     // Update the session shot totals
-                    ShootingSession updatedSession = ShootingSession(sessionTotal, sessionTotalWrist, sessionTotalSnap, sessionTotalSlap, sessionTotalBackhand, s.date, s.duration);
+                    ShootingSession updatedSession = ShootingSession(
+                      sessionTotal,
+                      sessionTotalWrist,
+                      sessionTotalSnap,
+                      sessionTotalSlap,
+                      sessionTotalBackhand,
+                      s.date,
+                      s.duration,
+                    );
                     batch.update(s.reference!, updatedSession.toMap());
                   });
                 }
@@ -195,7 +205,19 @@ Future<bool> recalculateIterationTotals() async {
               totalBackhand += tBackhand;
 
               // Update the iteration total
-              Iteration updatedIteration = Iteration(i.startDate, i.targetDate, i.endDate, i.totalDuration, iTotal, totalWrist, totalSnap, totalSlap, totalBackhand, i.complete);
+              Iteration updatedIteration = Iteration(
+                i.startDate,
+                i.targetDate,
+                i.endDate,
+                i.totalDuration,
+                iTotal,
+                totalWrist,
+                totalSnap,
+                totalSlap,
+                totalBackhand,
+                i.complete,
+                i.udpatedAt,
+              );
               batch.update(i.reference!, updatedIteration.toMap());
             });
           }
@@ -230,6 +252,7 @@ Future<bool?> startNewIteration() async {
               0,
               0,
               false,
+              DateTime.now(),
             ).toMap())
             .then((value) => true);
       });

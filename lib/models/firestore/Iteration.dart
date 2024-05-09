@@ -12,9 +12,10 @@ class Iteration {
   final int? totalSlap;
   final int? totalBackhand;
   final bool? complete;
+  final DateTime? udpatedAt;
   DocumentReference? reference;
 
-  Iteration(this.startDate, this.targetDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete);
+  Iteration(this.startDate, this.targetDate, this.endDate, this.totalDuration, this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.complete, this.udpatedAt);
 
   Iteration.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['start_date'] != null),
@@ -29,17 +30,19 @@ class Iteration {
         totalSnap = map['total_snap'],
         totalSlap = map['total_slap'],
         totalBackhand = map['total_backhand'],
-        complete = map['complete'];
+        complete = map['complete'],
+        udpatedAt = map['updated_at'] != null ? map['updated_at']?.toDate() : DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'start_date': startDate,
-      'target_date': targetDate ?? DateTime(
-              DateTime.now().year,
-              DateTime.now().month,
-              DateTime.now().day + 100,
-            ),
+      'target_date': targetDate ??
+          DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            DateTime.now().day + 100,
+          ),
       'end_date': endDate,
       'total_duration': totalDuration!.inSeconds,
       'total': total,
@@ -48,6 +51,7 @@ class Iteration {
       'total_slap': totalSlap,
       'total_backhand': totalBackhand,
       'complete': complete,
+      'updated_at': udpatedAt
     };
   }
 

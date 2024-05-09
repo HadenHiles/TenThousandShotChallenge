@@ -13,24 +13,7 @@ Future<void> bootstrap() async {
 Future<void> bootstrapIterations() async {
   await FirebaseFirestore.instance.collection('iterations').doc(user?.uid).collection('iterations').get().then((iSnap) async {
     if (iSnap.docs.isEmpty) {
-      await FirebaseFirestore.instance
-          .collection('iterations')
-          .doc(user!.uid)
-          .collection('iterations')
-          .doc()
-          .set(Iteration(
-            DateTime.now(),
-            DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-            null,
-            const Duration(),
-            0,
-            0,
-            0,
-            0,
-            0,
-            false,
-          ).toMap())
-          .then((_) {});
+      await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc().set(Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, const Duration(), 0, 0, 0, 0, 0, false, DateTime.now()).toMap()).then((_) {});
     }
   });
 
@@ -54,6 +37,7 @@ Future<void> bootstrapIterations() async {
           i.totalSlap,
           i.totalBackhand,
           i.complete,
+          i.udpatedAt
         );
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
