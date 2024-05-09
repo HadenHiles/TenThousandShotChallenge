@@ -344,6 +344,20 @@ Future<bool> removePlayerFromFriends(String uid) async {
 }
 
 Future<bool> joinTeam(String teamId) async {
+  // Make sure the user's iterations have an updated_at field prior to joining - need this for Caching the team player data
+  await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').get().then((i) async {
+    if (i.docs.isNotEmpty) {
+      await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
+        Iteration i = Iteration.fromSnapshot(iDoc);
+
+        // Check if there is an updated_at field or not
+        if (i.udpatedAt == null) {
+          i.reference!.update({'updated_at': DateTime.now()});
+        }
+      });
+    }
+  });
+
   // Get the teammate
   return await FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((t) async {
     Team team = Team.fromSnapshot(t);
