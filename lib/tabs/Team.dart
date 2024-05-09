@@ -189,31 +189,6 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     });
   }
 
-  void _editTargetDate() {
-    DatePicker.showDatePicker(
-      context,
-      showTitleActions: true,
-      minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
-      maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-      onChanged: (date) {},
-      onConfirm: (date) async {
-        _targetDateController.text = DateFormat('MMMM d, y').format(date);
-
-        await team!.reference!.update({'target_date': date}).then((_) {
-          setState(() {
-            _targetDate = date;
-            team!.targetDate = date;
-          });
-
-          _loadTeam();
-          setState(() {});
-        });
-      },
-      currentTime: _targetDate,
-      locale: LocaleType.en,
-    );
-  }
-
   _updateTeamTotal(List<ShootingSession> sList, int teamTotal) {
     setState(() {
       sessions = sList;
@@ -695,6 +670,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   fontSize: 16.0,
                 );
 
+                setState(() {
+                  isLoadingPlayers = true;
+                });
+
                 await removePlayerFromTeam(team!.id!, plyr.profile!.reference!.id).then((deleted) {
                   if (!deleted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -711,7 +690,17 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     );
                   }
 
-                  _loadTeam();
+                  setState(() {
+                    players!.remove(plyr);
+                  });
+
+                  _loadTeam().then(
+                    (_) => setState(() {
+                      setState(() {
+                        isLoadingPlayers = false;
+                      });
+                    }),
+                  );
                 });
               },
               confirmDismiss: (DismissDirection direction) async {
