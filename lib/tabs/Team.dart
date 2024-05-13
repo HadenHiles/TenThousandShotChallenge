@@ -658,99 +658,101 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   },
                                 ),
                               ),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          margin: const EdgeInsets.all(0),
-                          padding: const EdgeInsets.all(0),
-                          child: TextButton(
-                            onPressed: () {
-                              dialog(
-                                context,
-                                ConfirmDialog(
-                                  "Leave team \"${team!.name}\"?".toLowerCase(),
-                                  Text(
-                                    "Are you sure you want to leave this team?",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onBackground,
+                        isOwner
+                            ? Container()
+                            : Container(
+                                width: MediaQuery.of(context).size.width,
+                                margin: const EdgeInsets.all(0),
+                                padding: const EdgeInsets.all(0),
+                                child: TextButton(
+                                  onPressed: () {
+                                    dialog(
+                                      context,
+                                      ConfirmDialog(
+                                        "Leave team \"${team!.name}\"?".toLowerCase(),
+                                        Text(
+                                          "Are you sure you want to leave this team?",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onBackground,
+                                          ),
+                                        ),
+                                        "Cancel",
+                                        () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        "Leave",
+                                        () async {
+                                          await removePlayerFromTeam(team!.id!, user!.uid).then((r) async {
+                                            if (r) {
+                                              await FirebaseFirestore.instance.collection("users").doc(user!.uid).update({"team_id": null}).then((_) {
+                                                Fluttertoast.showToast(
+                                                  msg: "You left team \"${team!.name}\"!".toLowerCase(),
+                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  gravity: ToastGravity.BOTTOM,
+                                                  timeInSecForIosWeb: 1,
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  textColor: Theme.of(context).colorScheme.onPrimary,
+                                                  fontSize: 16.0,
+                                                );
+
+                                                Navigator.of(context).pushReplacement(
+                                                  MaterialPageRoute(
+                                                    builder: (BuildContext context) {
+                                                      return const JoinTeam();
+                                                    },
+                                                    maintainState: false,
+                                                  ),
+                                                );
+                                              });
+                                            } else {
+                                              Fluttertoast.showToast(
+                                                msg: "Failed to leave team :(".toLowerCase(),
+                                                toastLength: Toast.LENGTH_SHORT,
+                                                gravity: ToastGravity.BOTTOM,
+                                                timeInSecForIosWeb: 1,
+                                                backgroundColor: Colors.redAccent,
+                                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                                fontSize: 16.0,
+                                              );
+
+                                              Navigator.of(context).pop();
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(context).cardTheme.color,
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                  ),
+                                  child: FittedBox(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Leave Team".toUpperCase(),
+                                          style: TextStyle(
+                                            color: Theme.of(context).primaryColor,
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 3, left: 4),
+                                          child: Icon(
+                                            Icons.exit_to_app_rounded,
+                                            color: Theme.of(context).primaryColor,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  "Cancel",
-                                  () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  "Leave",
-                                  () async {
-                                    await removePlayerFromTeam(team!.id!, user!.uid).then((r) async {
-                                      if (r) {
-                                        await FirebaseFirestore.instance.collection("users").doc(user!.uid).update({"team_id": null}).then((_) {
-                                          Fluttertoast.showToast(
-                                            msg: "You left team \"${team!.name}\"!".toLowerCase(),
-                                            toastLength: Toast.LENGTH_SHORT,
-                                            gravity: ToastGravity.BOTTOM,
-                                            timeInSecForIosWeb: 1,
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                            textColor: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 16.0,
-                                          );
-
-                                          Navigator.of(context).pushReplacement(
-                                            MaterialPageRoute(
-                                              builder: (BuildContext context) {
-                                                return const JoinTeam();
-                                              },
-                                              maintainState: false,
-                                            ),
-                                          );
-                                        });
-                                      } else {
-                                        Fluttertoast.showToast(
-                                          msg: "Failed to leave team :(".toLowerCase(),
-                                          toastLength: Toast.LENGTH_SHORT,
-                                          gravity: ToastGravity.BOTTOM,
-                                          timeInSecForIosWeb: 1,
-                                          backgroundColor: Colors.redAccent,
-                                          textColor: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 16.0,
-                                        );
-
-                                        Navigator.of(context).pop();
-                                      }
-                                    });
-                                  },
                                 ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: Theme.of(context).cardTheme.color,
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                              shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                            ),
-                            child: FittedBox(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Leave Team".toUpperCase(),
-                                    style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 24,
-                                    ),
-                                  ),
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 3, left: 4),
-                                    child: Icon(
-                                      Icons.exit_to_app_rounded,
-                                      color: Theme.of(context).primaryColor,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
         ],
