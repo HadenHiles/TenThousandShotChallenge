@@ -223,7 +223,7 @@ class _NavigationState extends State<Navigation> {
   }
 
   Future<Null> _loadTeam() async {
-    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
+    await FirebaseFirestore.instance.collection('users').doc(user?.uid).get().then((uDoc) async {
       if (uDoc.exists) {
         UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
