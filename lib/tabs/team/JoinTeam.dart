@@ -481,32 +481,16 @@ class _JoinTeamState extends State<JoinTeam> {
                       children: [
                         SizedBox(
                           width: 135,
-                          child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('users').where('teamId', isEqualTo: team.reference!.id).snapshots(),
-                              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const Center(
-                                    child: SizedBox(
-                                      width: 120,
-                                      height: 2,
-                                      child: LinearProgressIndicator(),
-                                    ),
-                                  );
-                                } else {
-                                  int total = snapshot.data!.docs.length;
-
-                                  return AutoSizeText(
-                                    "$total Players",
-                                    maxLines: 1,
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  );
-                                }
-                              }),
+                          child: AutoSizeText(
+                            "${team.players!.length} Players",
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'NovecentoSans',
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
