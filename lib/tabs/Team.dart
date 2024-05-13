@@ -153,39 +153,33 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               firestoreCacheField: 'updated_at',
                             ).then((seshs) async {
                               int pShots = 0;
-                              for (var i = 0; i < seshs.docs.length; i++) {
-                                ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
+                              await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                ShootingSession s = ShootingSession.fromSnapshot(sesh);
                                 sList.add(s);
                                 teamTotal += s.total!;
                                 pShots += s.total!;
-
-                                if (i == seshs.docs.length - 1) {
-                                  // Last session
-                                  p.shots = pShots;
-                                }
-                              }
+                              }).then((_) {
+                                p.shots = pShots;
+                              });
                             }).onError((error, stackTrace) => null);
                           } else {
                             await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
                               int pShots = 0;
-                              for (var i = 0; i < seshs.docs.length; i++) {
-                                ShootingSession s = ShootingSession.fromSnapshot(seshs.docs[i]);
+                              await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                ShootingSession s = ShootingSession.fromSnapshot(sesh);
                                 sList.add(s);
                                 teamTotal += s.total!;
                                 pShots += s.total!;
-
-                                if (i == seshs.docs.length - 1) {
-                                  // Last session
-                                  p.shots = pShots;
-                                }
-                              }
+                              }).then((_) {
+                                p.shots = pShots;
+                              });
                             }).onError((error, stackTrace) => null);
                           }
+                        }).then((_) {
+                          plyrs.add(p);
+                          // _updateShotCalculations();
                         });
                       }
-                    }).then((_) {
-                      plyrs.add(p);
-                      // _updateShotCalculations();
                     });
                   });
                 }).then((value) {
