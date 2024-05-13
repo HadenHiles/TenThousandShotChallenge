@@ -49,7 +49,6 @@ class _CreateTeamState extends State<CreateTeam> {
           UserProfile user = UserProfile.fromSnapshot(u);
           user.id = FirebaseAuth.instance.currentUser!.uid;
           user.teamId = team!.id;
-          user.teamOwner = true;
           // Save the updated user doc with the new team id
           u.reference.set(user.toMap()).then((value) {
             // Add the current user to the team players list

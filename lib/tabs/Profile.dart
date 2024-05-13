@@ -38,7 +38,7 @@ class _ProfileState extends State<Profile> {
 
   final GlobalKey _avatarMenuKey = GlobalKey();
 
-  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser!.photoURL, true, null, false, '');
+  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser!.photoURL, true, null, '');
   bool _isLoading = true;
   List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem> _attemptDropdownItems = [];
@@ -226,7 +226,7 @@ class _ProfileState extends State<Profile> {
                                   height: 60,
                                   width: 60,
                                   child: UserAvatar(
-                                    user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, null, false, preferences!.fcmToken),
+                                    user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, null, preferences!.fcmToken),
                                     backgroundColor: Colors.transparent,
                                   ),
                                 ),
