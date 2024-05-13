@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 // import 'package:tenthousandshotchallenge/tabs/Team.dart';
@@ -103,8 +105,26 @@ class _NavigationState extends State<Navigation> {
               color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
             ),
-            onPressed: () {
-              showTeamQRCode(user);
+            onPressed: () async {
+              FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) async {
+                UserProfile u = UserProfile.fromSnapshot(uDoc);
+
+                if (u.teamId != null) {
+                  showTeamQRCode(u);
+                } else {
+                  // Invitee uid (from_uid)
+                  String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
+
+                  joinTeam(barcodeScanRes).then((success) {
+                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                      return Navigation(
+                        title: NavigationTitle(title: "Team".toUpperCase()),
+                        selectedIndex: 2,
+                      );
+                    }));
+                  });
+                }
+              });
             },
           ),
         ),
@@ -265,7 +285,13 @@ class _NavigationState extends State<Navigation> {
                           size: 28,
                         ),
                         onPressed: () {
-                          showTeamQRCode(user);
+                          FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) {
+                            UserProfile u = UserProfile.fromSnapshot(uDoc);
+
+                            if (u.teamId != null) {
+                              showTeamQRCode(u);
+                            }
+                          });
                         },
                       ),
                     ),

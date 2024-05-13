@@ -51,88 +51,84 @@ void showQRCode(User? user) {
   );
 }
 
-void showTeamQRCode(User? u) {
-  FirebaseFirestore.instance.collection("users").doc(u!.uid).get().then((uDoc) {
-    UserProfile user = UserProfile.fromSnapshot(uDoc);
+void showTeamQRCode(UserProfile u) {
+  FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
+    Team team = Team.fromSnapshot(tDoc.docs[0]);
 
-    FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: user.teamId).limit(1).get().then((tDoc) {
-      Team team = Team.fromSnapshot(tDoc.docs[0]);
-
-      showDialog(
-        context: navigatorKey.currentContext!,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(
-              "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
-              style: const TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 20,
-              ),
-              textAlign: TextAlign.center,
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
+            style: const TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 20,
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: QrImageView(
-                    data: team.id!,
-                    backgroundColor: Colors.white70,
-                  ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: QrImageView(
+                  data: team.id!,
+                  backgroundColor: Colors.white70,
                 ),
-                Divider(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  height: 20,
+              ),
+              Divider(
+                color: Theme.of(context).colorScheme.onPrimary,
+                height: 20,
+              ),
+              Text(
+                "Or use your team code:".toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 20,
                 ),
-                Text(
-                  "Or use your team code:".toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 20,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(
-                  height: 60,
-                  width: 220,
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      padding: const EdgeInsets.all(5),
-                      child: SelectableText(
-                        team.code!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontFamily: "NovecentoSans",
-                          fontSize: 24,
-                        ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(
+                height: 60,
+                width: 220,
+                child: Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                    padding: const EdgeInsets.all(5),
+                    child: SelectableText(
+                      team.code!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: 24,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  "Close".toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
               ),
             ],
-          );
-        },
-      );
-    });
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                "Close".toUpperCase(),
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   });
 }
