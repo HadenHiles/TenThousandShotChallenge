@@ -141,6 +141,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     Plyr p = Plyr(u, 0);
 
                     await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
+                      int pShots = 0;
                       if (i.docs.isNotEmpty) {
                         await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                           Iteration i = Iteration.fromSnapshot(iDoc);
@@ -152,7 +153,6 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
                               firestoreCacheField: 'updated_at',
                             ).then((seshs) async {
-                              int pShots = 0;
                               await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
                                 ShootingSession s = ShootingSession.fromSnapshot(sesh);
                                 sList.add(s);
@@ -164,7 +164,6 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                             }).onError((error, stackTrace) => null);
                           } else {
                             await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                              int pShots = 0;
                               await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
                                 ShootingSession s = ShootingSession.fromSnapshot(sesh);
                                 sList.add(s);
