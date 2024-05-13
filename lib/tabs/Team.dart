@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -17,6 +18,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -274,10 +276,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return SingleChildScrollView(
       physics: const ScrollPhysics(),
       child: Column(
-        mainAxisAlignment: ((team == null && userProfile != null && userProfile!.teamId == null) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
+        mainAxisAlignment: ((userProfile != null && userProfile!.teamId == null) || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.max,
         children: [
-          (team == null && userProfile != null && userProfile!.teamId == null) || isLoadingPlayers
+          (userProfile != null && userProfile!.teamId == null) || isLoadingPlayers
               ? Container(
                   margin: const EdgeInsets.only(top: 100),
                   child: CircularProgressIndicator(
@@ -545,7 +547,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                             : totalShotsWidth,
                                     padding: const EdgeInsets.symmetric(horizontal: 2),
                                     child: AutoSizeText(
-                                      numberFormat.format(teamTotalShots), // TODO: this total doesn't seem to be correct
+                                      numberFormat.format(teamTotalShots),
                                       textAlign: TextAlign.right,
                                       maxFontSize: 18,
                                       maxLines: 1,
@@ -627,7 +629,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               )
                             : SizedBox(
                                 child: ListView.builder(
-                                  padding: EdgeInsets.only(top: 0, right: 0, left: 0, bottom: AppBar().preferredSize.height),
+                                  padding: const EdgeInsets.all(0),
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: players!.length + 1,
@@ -656,6 +658,99 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   },
                                 ),
                               ),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.all(0),
+                          padding: const EdgeInsets.all(0),
+                          child: TextButton(
+                            onPressed: () {
+                              dialog(
+                                context,
+                                ConfirmDialog(
+                                  "Leave team \"${team!.name}\"?".toLowerCase(),
+                                  Text(
+                                    "Are you sure you want to leave this team?",
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onBackground,
+                                    ),
+                                  ),
+                                  "Cancel",
+                                  () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  "Leave",
+                                  () async {
+                                    await removePlayerFromTeam(team!.id!, user!.uid).then((r) async {
+                                      if (r) {
+                                        await FirebaseFirestore.instance.collection("users").doc(user!.uid).update({"team_id": null}).then((_) {
+                                          Fluttertoast.showToast(
+                                            msg: "You left team \"${team!.name}\"!".toLowerCase(),
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            timeInSecForIosWeb: 1,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+
+                                          Navigator.of(context).pushReplacement(
+                                            MaterialPageRoute(
+                                              builder: (BuildContext context) {
+                                                return const JoinTeam();
+                                              },
+                                              maintainState: false,
+                                            ),
+                                          );
+                                        });
+                                      } else {
+                                        Fluttertoast.showToast(
+                                          msg: "Failed to leave team :(".toLowerCase(),
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.BOTTOM,
+                                          timeInSecForIosWeb: 1,
+                                          backgroundColor: Colors.redAccent,
+                                          textColor: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16.0,
+                                        );
+
+                                        Navigator.of(context).pop();
+                                      }
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Theme.of(context).cardTheme.color,
+                              backgroundColor: Theme.of(context).cardTheme.color,
+                              disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                              shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                            ),
+                            child: FittedBox(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Leave Team".toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 3, left: 4),
+                                    child: Icon(
+                                      Icons.exit_to_app_rounded,
+                                      color: Theme.of(context).primaryColor,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
         ],
