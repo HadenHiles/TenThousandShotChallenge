@@ -7,11 +7,10 @@ class UserProfile {
   final String? photoUrl;
   final bool? public;
   String? teamId;
-  bool? teamOwner;
   final String? fcmToken;
   DocumentReference? reference;
 
-  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.teamId, this.teamOwner, this.fcmToken);
+  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.teamId, this.fcmToken);
 
   UserProfile.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
@@ -20,7 +19,6 @@ class UserProfile {
         photoUrl = map['photo_url'],
         public = map['public'] ?? false,
         teamId = map['team_id'],
-        teamOwner = map['team_owner'] ?? false,
         fcmToken = map['fcm_token'];
 
   Map<String, dynamic> toMap() {
@@ -31,7 +29,6 @@ class UserProfile {
       'photo_url': photoUrl,
       'public': public ?? false,
       'team_id': teamId,
-      'team_owner': teamOwner ?? false,
       'fcm_token': fcmToken,
     };
   }
