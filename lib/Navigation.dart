@@ -226,6 +226,7 @@ class _NavigationState extends State<Navigation> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
+    bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
     DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
     String fcmToken = prefs.getString('fcm_token')!;
 
@@ -235,7 +236,7 @@ class _NavigationState extends State<Navigation> {
     }
 
     // Update the preferences reference with the latest settings
-    preferences = Preferences(darkMode, puckCount, targetDate, fcmToken);
+    preferences = Preferences(darkMode, puckCount, friendNotifications, targetDate, fcmToken);
 
     if (mounted) {
       Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);

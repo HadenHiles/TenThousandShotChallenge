@@ -6,11 +6,12 @@ class UserProfile {
   final String? email;
   final String? photoUrl;
   final bool? public;
+  final bool? friendNotifications;
   String? teamId;
   final String? fcmToken;
   DocumentReference? reference;
 
-  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.teamId, this.fcmToken);
+  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.friendNotifications, this.teamId, this.fcmToken);
 
   UserProfile.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
@@ -18,6 +19,7 @@ class UserProfile {
         email = map['email'],
         photoUrl = map['photo_url'],
         public = map['public'] ?? false,
+        friendNotifications = map['friend_notifications'] ?? true,
         teamId = map['team_id'],
         fcmToken = map['fcm_token'];
 
@@ -28,6 +30,7 @@ class UserProfile {
       'email': email,
       'photo_url': photoUrl,
       'public': public ?? false,
+      'friend_notifications': friendNotifications ?? true,
       'team_id': teamId,
       'fcm_token': fcmToken,
     };
