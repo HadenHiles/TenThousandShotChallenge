@@ -144,12 +144,10 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
         let friendNotifications : boolean = false;
         let session : any;
         let teammates : any[];
-        let fcmToken: string | null;
 
         // Retrieve the user who will be receiving the notification
         await admin.firestore().collection("users").doc(context.params.userId).get().then(async (doc) => {
             user = doc.data();
-            fcmToken = user != undefined ? user.fcm_token : null;
             
             await admin.firestore().collection(`/iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
                 session = sDoc.data();
@@ -166,8 +164,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                             "click_action": "FLUTTER_NOTIFICATION_CLICK", 
                             "id": "1", 
                             "status": "done",
-                        }, 
-                        "to": fcmToken,
+                        },
                     };
                 } else {
                     data = {
@@ -180,12 +177,11 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                             "click_action": "FLUTTER_NOTIFICATION_CLICK",
                             "id": "1", 
                             "status": "done",
-                        }, 
-                        "to": fcmToken,
+                        },
                     };
                 }
 
-                if (fcmToken != null && user! != null) {
+                if (user! != null) {
                     // Retrieve the teammate who accepted the invite
                     await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then((tDoc) => {
                         // Get the players teammates
@@ -194,9 +190,11 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                         teammates.forEach((teammate) => {
                             teammate = teammate.data();
                             friendNotifications = teammate != undefined ? teammate.friend_notifications : false;
+                            let fcmToken = teammate != undefined ? teammate.fcm_token : null;
 
-                            if (friendNotifications) {
+                            if (friendNotifications && fcmToken != null) {
                                 data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
+                                data.to = fcmToken;
 
                                 functions.logger.debug("Sending notification with data: " + JSON.stringify(data));
                                 
