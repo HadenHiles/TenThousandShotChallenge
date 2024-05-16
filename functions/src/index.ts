@@ -155,8 +155,8 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                 if (session != null) {
                     data = {
                         "notification": {
-                            "body": "${user.display_name} just finished shooting!",
-                            "title": "${user.display_name} just took ${session.total} shots! (${session.total_wrist}W, ${session.total_snap}SN, ${session.total_slap}SL, ${session.total_backhand}B)",
+                            "body": `${user.display_name} just finished shooting!`,
+                            "title": `${user.display_name} just took ${session.total} shots! (${session.total_wrist}W, ${session.total_snap}SN, ${session.total_slap}SL, ${session.total_backhand}B)`,
                         },
                         "priority": "high",
                         "data": {
@@ -168,8 +168,8 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                 } else {
                     data = {
                         "notification": {
-                            "body": "${user.display_name} just finished shooting",
-                            "title": "Look out! ${user.display_name} is a shooting machine!",
+                            "body": `${user.display_name} just finished shooting`,
+                            "title": `Look out! ${user.display_name} is a shooting machine!`,
                         }, 
                         "priority": "high", 
                         "data": {
