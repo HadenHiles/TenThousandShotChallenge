@@ -203,7 +203,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                         if (friendNotifications) {
                             data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
 
-                            functions.logger.log("Sending notification with data: " + JSON.stringify(data));
+                            functions.logger.debug("Sending notification with data: " + JSON.stringify(data));
                             
                             request({
                                 url: "https://fcm.googleapis.com/fcm/send",
@@ -217,17 +217,17 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                         }
                     });
                 }).catch((err) => {
-                    functions.logger.log("Error fetching teammate collection: " + err);
+                    functions.logger.error("Error fetching teammate collection: " + err);
                 });
             } else {
-                functions.logger.log("fcm_token not found");
+                functions.logger.warn("fcm_token not found");
             }
         }).catch((err) => {
-            functions.logger.log("Error fetching shooting session: " + err);
+            functions.logger.error("Error fetching shooting session: " + err);
             return null;
         });
     }).catch((err) => {
-        functions.logger.log("Error fetching user: " + err);
+        functions.logger.error("Error fetching user: " + err);
         return null;
     });
 });
