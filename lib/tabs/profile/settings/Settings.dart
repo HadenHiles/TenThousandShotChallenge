@@ -337,9 +337,12 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           initialValue: _darkMode,
                           onToggle: (bool value) async {
                             SharedPreferences prefs = await SharedPreferences.getInstance();
-                            setState(() {
-                              _friendNotifications = !_friendNotifications;
-                              prefs.setBool('friend_notifications', _friendNotifications);
+
+                            await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'friend_notifications': !_friendNotifications}).then((_) {
+                              setState(() {
+                                _friendNotifications = !_friendNotifications;
+                                prefs.setBool('friend_notifications', _friendNotifications);
+                              });
                             });
 
                             if (context.mounted) {
