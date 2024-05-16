@@ -145,8 +145,9 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 
     // Send friends notifications
 
-    let user;
-    let session;
+    let user : any;
+    let friendNotifications : boolean = false;
+    let session : any;
     let teammates : any[];
     let fcmToken: string | null;
 
@@ -154,72 +155,75 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
     await admin.firestore().collection("users").doc(context.params.userId).get().then(async (doc) => {
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
+        friendNotifications = user != undefined ? user.freind_notifications : false;
 
-        await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).get().then(async (sDoc) => {
-            session = sDoc.data();
-            let data;
-            
-            if (session != null) {
-                data = {
-                    "notification": {
-                        "body": "${user.display_name} just finished shooting!",
-                        "title": "${user.display_name} took ${session.total} shots! (${session.total_wrist}W, ${session.total_snap}SN, ${session.total_slap}SL, ${session.total_backhand}B)",
-                    }, 
-                    "priority": "high", 
-                    "data": {
-                        "click_action": "FLUTTER_NOTIFICATION_CLICK", 
-                        "id": "1", 
-                        "status": "done",
-                    }, 
-                    "to": fcmToken,
-                };
-            } else {
-                data = {
-                    "notification": {
-                        "body": "${user.display_name} just finished shooting",
-                        "title": "Look out! ${user.display_name} is a shooting machine!",
-                    }, 
-                    "priority": "high", 
-                    "data": {
-                        "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                        "id": "1", 
-                        "status": "done",
-                    }, 
-                    "to": fcmToken,
-                };
-            }
+        if (friendNotifications) {
+            await admin.firestore().collection(`/iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(`${context.params.sessionId}`).get().then(async (sDoc) => {
+                session = sDoc.data();
+                let data : any;
+                
+                if (session != null) {
+                    data = {
+                        "notification": {
+                            "body": "${user.display_name} just finished shooting!",
+                            "title": "${user.display_name} just took ${session.total} shots! (${session.total_wrist}W, ${session.total_snap}SN, ${session.total_slap}SL, ${session.total_backhand}B)",
+                        }, 
+                        "priority": "high",
+                        "data": {
+                            "click_action": "FLUTTER_NOTIFICATION_CLICK", 
+                            "id": "1", 
+                            "status": "done",
+                        }, 
+                        "to": fcmToken,
+                    };
+                } else {
+                    data = {
+                        "notification": {
+                            "body": "${user.display_name} just finished shooting",
+                            "title": "Look out! ${user.display_name} is a shooting machine!",
+                        }, 
+                        "priority": "high", 
+                        "data": {
+                            "click_action": "FLUTTER_NOTIFICATION_CLICK",
+                            "id": "1", 
+                            "status": "done",
+                        }, 
+                        "to": fcmToken,
+                    };
+                }
 
-            if (fcmToken != null && user! != null) {
-                // Retrieve the teammate who accepted the invite
-                await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then((tDoc) => {
-                    // Get the players teammates
-                    teammates = tDoc.docs;
+                if (fcmToken != null && user! != null) {
+                    // Retrieve the teammate who accepted the invite
+                    await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then((tDoc) => {
+                        // Get the players teammates
+                        teammates = tDoc.docs;
 
-                    teammates.forEach((teammate) => {
-                        data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
+                        teammates.forEach((teammate) => {
+                            data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
 
-                        functions.logger.log("Sending notification with data: " + JSON.stringify(data));
-                        
-                        request({
-                            url: "https://fcm.googleapis.com/fcm/send",
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": `key=${functions.config().messagingservice.key}`,
-                            },
-                            body: JSON.stringify(data),
+                            functions.logger.log("Sending notification with data: " + JSON.stringify(data));
+                            
+                            request({
+                                url: "https://fcm.googleapis.com/fcm/send",
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `key=${functions.config().messagingservice.key}`,
+                                },
+                                body: JSON.stringify(data),
+                            });
                         });
+                    }).catch((err) => {
+                        functions.logger.log("Error fetching teammate collection: " + err);
                     });
-                }).catch((err) => {
-                    functions.logger.log("Error fetching teammate collection: " + err);
-                });
-            } else {
-                functions.logger.log("fcm_token not found");
-            }
-        }).catch((err) => {
-            functions.logger.log("Error fetching shooting session: " + err);
-            return null;
-        });
+                } else {
+                    functions.logger.log("fcm_token not found");
+                }
+            }).catch((err) => {
+                functions.logger.log("Error fetching shooting session: " + err);
+                return null;
+            });
+        }
     }).catch((err) => {
         functions.logger.log("Error fetching user: " + err);
         return null;
@@ -316,5 +320,3 @@ const friendlyMessages = [
   "Looks like someone's got a case of the \"shotgun blues\" and they're taking it out on the nets! Get out there and show them some fancy stickwork, ${teammateName}!",
   "Is ${playerName} channeling their inner superhero? All they need is a cape to complete the look! Get out there and show them your own moves, ${teammateName}!"
 ];
-
-module.exports = { motivationalMessages, teasingMessages, razzingMessages, friendlyMessages };
