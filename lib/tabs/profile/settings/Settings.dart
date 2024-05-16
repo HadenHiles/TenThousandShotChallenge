@@ -31,6 +31,7 @@ class ProfileSettings extends StatefulWidget {
 class _ProfileSettingsState extends State<ProfileSettings> {
   // State settings values
   bool _darkMode = false;
+  bool _friendNotifications = true;
   bool _publicProfile = true;
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
@@ -54,6 +55,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
         _publicProfile = u.public ?? false;
+        _friendNotifications = u.friendNotifications ?? true;
       });
     });
   }
@@ -250,6 +252,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 Preferences(
                                   value,
                                   prefs.getInt('puck_count'),
+                                  prefs.getBool('friend_notifications'),
                                   DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
                                   prefs.getString('fcm_token'),
                                 ),
@@ -314,6 +317,41 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   },
                                 );
                               });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: Text('General', style: Theme.of(context).textTheme.titleLarge),
+                      tiles: [
+                        SettingsTile.switchTile(
+                          title: Text(
+                            'Friend Session Notifications',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          leading: Icon(
+                            Icons.brightness_2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          initialValue: _darkMode,
+                          onToggle: (bool value) async {
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            setState(() {
+                              _friendNotifications = !_friendNotifications;
+                              prefs.setBool('friend_notifications', _friendNotifications);
+                            });
+
+                            if (context.mounted) {
+                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                                Preferences(
+                                  prefs.getBool('dark_mode'),
+                                  prefs.getInt('puck_count'),
+                                  value,
+                                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                                  prefs.getString('fcm_token'),
+                                ),
+                              );
                             }
                           },
                         ),

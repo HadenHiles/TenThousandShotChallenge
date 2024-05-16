@@ -137,6 +137,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                                 Preferences(
                                   prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
                                   int.parse(puckCountTextFieldController.text),
+                                  prefs.getBool('friend_notifications') ?? true,
                                   DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
                                   prefs.getString('fcm_token'),
                                 ),
