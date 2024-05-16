@@ -192,7 +192,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                                 let friend = tmDoc.data();
                                 let friendNotifications = friend!.friend_notifications != undefined ? friend!.friend_notifications : false;
                                 let fcmToken = teammate.fcm_token != undefined ? teammate.fcm_token : null;
-                                functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
+                                //functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
 
                                 if (friendNotifications && fcmToken != null) {
                                     data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
