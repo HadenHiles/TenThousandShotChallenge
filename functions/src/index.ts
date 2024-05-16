@@ -141,7 +141,6 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
     await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(context.params.iterationId).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then(async (_) => {
         // Send friends notifications
         let user : any;
-        let friendNotifications : boolean = false;
         let session : any;
         let teammates : any[];
 
@@ -183,31 +182,35 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 
                 if (user! != null) {
                     // Retrieve the teammate who accepted the invite
-                    await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then((tDoc) => {
+                    await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
                         // Get the players teammates
                         teammates = tDoc.docs;
 
-                        teammates.forEach((teammate) => {
-                            teammate = teammate.data();
-                            friendNotifications = teammate != undefined ? teammate.friend_notifications : false;
-                            let fcmToken = teammate != undefined ? teammate.fcm_token : null;
+                        teammates.forEach(async (t) => {
+                            let teammate = t.data();
+                            await admin.firestore().collection("users").doc(t.id).get().then(async (tmDoc) => {
+                                let friend = tmDoc.data();
+                                let friendNotifications = friend!.friend_notifications != undefined ? friend!.friend_notifications : false;
+                                let fcmToken = teammate.fcm_token != undefined ? teammate.fcm_token : null;
+                                functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
 
-                            if (friendNotifications && fcmToken != null) {
-                                data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
-                                data.to = fcmToken;
+                                if (friendNotifications && fcmToken != null) {
+                                    data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
+                                    data.to = fcmToken;
 
-                                functions.logger.debug("Sending notification with data: " + JSON.stringify(data));
-                                
-                                request({
-                                    url: "https://fcm.googleapis.com/fcm/send",
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "Authorization": `key=${functions.config().messagingservice.key}`,
-                                    },
-                                    body: JSON.stringify(data),
-                                });
-                            }
+                                    functions.logger.debug("Sending notification with data: " + JSON.stringify(data));
+                                    
+                                    request({
+                                        url: "https://fcm.googleapis.com/fcm/send",
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                            "Authorization": `key=${functions.config().messagingservice.key}`,
+                                        },
+                                        body: JSON.stringify(data),
+                                    });
+                                }
+                            });
                         });
 
                         return true;
