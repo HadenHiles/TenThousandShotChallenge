@@ -138,7 +138,7 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
 // Send teammates(friends) a notification to inspire some friendly competition
 export const sessionCreated = functions.firestore.document("/iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}").onCreate(async (change, context) => {
     // Update the according iteration timestamp (updated_at)
-    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then((_) => true).catch((err) => {
+    await admin.firestore().collection(`/iterations/${context.params.userId}/iterations`).doc(context.params.iterationId).update({'updated_at': admin.firestore.Timestamp.fromDate(new Date(Date.now()))}).then((_) => true).catch((err) => {
         functions.logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
@@ -156,7 +156,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
         
-        await admin.firestore().collection(`/iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(`${context.params.sessionId}`).get().then(async (sDoc) => {
+        await admin.firestore().collection(`/iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
             session = sDoc.data();
             let data : any;
             
@@ -165,7 +165,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                     "notification": {
                         "body": "${user.display_name} just finished shooting!",
                         "title": "${user.display_name} just took ${session.total} shots! (${session.total_wrist}W, ${session.total_snap}SN, ${session.total_slap}SL, ${session.total_backhand}B)",
-                    }, 
+                    },
                     "priority": "high",
                     "data": {
                         "click_action": "FLUTTER_NOTIFICATION_CLICK", 
