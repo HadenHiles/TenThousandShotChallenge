@@ -7,7 +7,7 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-export const inviteSent = functions.firestore.document("/invites/{userId}/invites/{teammateId}").onWrite(async (change, context) => {
+export const inviteSent = functions.firestore.document("/invites/{userId}/invites/{teammateId}").onCreate(async (change, context) => {
     let user;
     let teammate;
     let teammateName;
@@ -62,7 +62,7 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
     });
 });
 
-export const inviteAccepted = functions.firestore.document("/teammates/{userId}/teammates/{teammateId}").onWrite(async (change, context) => {
+export const inviteAccepted = functions.firestore.document("/teammates/{userId}/teammates/{teammateId}").onCreate(async (change, context) => {
     let user;
     let teammate;
     let teammateName;
