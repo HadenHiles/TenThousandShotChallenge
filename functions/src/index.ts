@@ -198,7 +198,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 
                     teammates.forEach((teammate) => {
                         teammate = teammate.data();
-                        friendNotifications = teammate != undefined ? teammate.freind_notifications : false;
+                        friendNotifications = teammate != undefined ? teammate.friend_notifications : false;
 
                         if (friendNotifications) {
                             data.notification.body = getFriendNotificationMessage(teammate.display_name, user!.display_name);
