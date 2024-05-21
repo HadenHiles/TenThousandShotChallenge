@@ -13,7 +13,7 @@ dependencies:
   connectivity_plus: ^6.0.2
   cupertino_icons: ^1.0.2
   data_connection_checker_nulls: ^0.0.2
-  firebase_analytics: ^10.10.2
+  firebase_analytics: ^10.10.6
   firebase_auth: ^4.19.2
   firebase_core: ^2.30.0
   firebase_messaging: ^14.8.2
