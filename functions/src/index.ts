@@ -180,7 +180,7 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
                     };
                 }
 
-                if (user! != null) {
+                if (user! != null && user.friend_notifications == true) {
                     // Retrieve the teammate who accepted the invite
                     await admin.firestore().collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
                         // Get the players teammates
