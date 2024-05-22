@@ -2,8 +2,8 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -29,16 +29,6 @@ class _JoinTeamState extends State<JoinTeam> {
   List<DocumentSnapshot> _teams = [];
   bool _isSearching = false;
   int? _selectedTeam;
-
-  Future<bool> scanBarcodeNormal() async {
-    String barcodeScanRes;
-
-    // Invitee uid (from_uid)
-    barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
-    print(barcodeScanRes);
-
-    return joinTeam(barcodeScanRes);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -285,40 +275,46 @@ class _JoinTeamState extends State<JoinTeam> {
                                 margin: const EdgeInsets.only(right: 0),
                                 child: IconButton(
                                   onPressed: () {
-                                    scanBarcodeNormal().then((success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                          content: Text(
-                                            "You joined the team!",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                          duration: const Duration(milliseconds: 2500),
-                                        ),
-                                      );
+                                    QrcodeBarcodeScanner(
+                                      onScannedCallback: (String barcodeScanRes) {
+                                        print(barcodeScanRes);
 
-                                      navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                        return Navigation(
-                                          title: NavigationTitle(title: "Team".toUpperCase()),
-                                          selectedIndex: 2,
-                                        );
-                                      }));
-                                    }).onError((error, stackTrace) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                          content: Text(
-                                            "There was an error scanning your teams QR code :(",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                        joinTeam(barcodeScanRes).then((success) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              content: Text(
+                                                "You joined the team!",
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              duration: const Duration(milliseconds: 2500),
                                             ),
-                                          ),
-                                          duration: const Duration(milliseconds: 4000),
-                                        ),
-                                      );
-                                    });
+                                          );
+
+                                          navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                            return Navigation(
+                                              title: NavigationTitle(title: "Team".toUpperCase()),
+                                              selectedIndex: 2,
+                                            );
+                                          }));
+                                        }).onError((error, stackTrace) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              content: Text(
+                                                "There was an error scanning your teams QR code :(",
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                              ),
+                                              duration: const Duration(milliseconds: 4000),
+                                            ),
+                                          );
+                                        });
+                                      },
+                                    );
                                   },
                                   icon: Icon(
                                     Icons.qr_code_2_rounded,

@@ -19,7 +19,6 @@ dependencies:
   firebase_messaging: ^14.8.2
   firebase_remote_config: ^4.4.2
   firestore_cache: ^2.12.11
-  flutter_barcode_scanner: ^2.0.0
   flutter_cache_manager: ^3.1.1
   flutter_datetime_picker_plus: ^2.2.0
   flutter_html: ^3.0.0-alpha.5
@@ -40,6 +39,7 @@ dependencies:
   provider: ^6.0.1
   pubspec_dependency_sorter: ^1.0.4
   qr_flutter: ^4.0.0
+  qrcode_barcode_scanner: ^3.0.1
   settings_ui: ^2.0.1
   share_plus: ^9.0.0
   shared_preferences: ^2.0.5
