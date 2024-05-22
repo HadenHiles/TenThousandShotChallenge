@@ -841,8 +841,8 @@ class _ProfileState extends State<Profile> {
             children: [
               TextButton(
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(darken(Theme.of(context).colorScheme.primaryContainer, 0.05)),
-                  padding: MaterialStateProperty.all(const EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
+                  backgroundColor: WidgetStateProperty.all(darken(Theme.of(context).colorScheme.primaryContainer, 0.05)),
+                  padding: WidgetStateProperty.all(const EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
                 ),
                 onPressed: () {
                   navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
@@ -1199,7 +1199,7 @@ class _ProfileState extends State<Profile> {
                                             Text(
                                               "Starting a new session will override your existing one.\n\nWould you like to continue?",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onBackground,
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                             "Cancel",

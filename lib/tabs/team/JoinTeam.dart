@@ -85,7 +85,7 @@ class _JoinTeamState extends State<JoinTeam> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [

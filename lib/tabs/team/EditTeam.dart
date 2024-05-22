@@ -207,7 +207,7 @@ class _EditTeamState extends State<EditTeam> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -232,7 +232,7 @@ class _EditTeamState extends State<EditTeam> {
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.background,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
@@ -480,7 +480,7 @@ class _EditTeamState extends State<EditTeam> {
                     Text(
                       "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     "Cancel",

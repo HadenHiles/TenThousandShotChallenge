@@ -196,7 +196,7 @@ class _PlayerState extends State<Player> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -228,7 +228,7 @@ class _PlayerState extends State<Player> {
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.add,
-                                    color: Theme.of(context).colorScheme.onBackground,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     size: 28,
                                   ),
                                   onPressed: () {
@@ -241,15 +241,15 @@ class _PlayerState extends State<Player> {
                                           title: Text(
                                             "Invite ${_userPlayer!.displayName} to be your friend?",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onBackground,
+                                              color: Theme.of(context).colorScheme.onSurface,
                                               fontSize: 20,
                                             ),
                                           ),
-                                          backgroundColor: Theme.of(context).colorScheme.background,
+                                          backgroundColor: Theme.of(context).colorScheme.surface,
                                           content: Text(
                                             "They will receive an invite notification from you.",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onBackground,
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           actions: [
@@ -260,7 +260,7 @@ class _PlayerState extends State<Player> {
                                               child: Text(
                                                 "Cancel",
                                                 style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onBackground,
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                 ),
                                               ),
                                             ),
@@ -329,7 +329,7 @@ class _PlayerState extends State<Player> {
                                         Text(
                                           "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onBackground,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
                                         ),
                                         "Cancel",
@@ -387,7 +387,7 @@ class _PlayerState extends State<Player> {
                   ],
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.background,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,

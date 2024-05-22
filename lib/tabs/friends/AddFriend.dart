@@ -89,7 +89,7 @@ class _AddFriendState extends State<AddFriend> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -114,7 +114,7 @@ class _AddFriendState extends State<AddFriend> {
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.background,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,

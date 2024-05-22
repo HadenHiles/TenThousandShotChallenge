@@ -858,7 +858,7 @@ class _ShotsState extends State<Shots> {
                                                 Text(
                                                   "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
                                                   style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onBackground,
+                                                    color: Theme.of(context).colorScheme.onSurface,
                                                   ),
                                                 ),
                                                 "Cancel",
@@ -940,7 +940,7 @@ class _ShotsState extends State<Shots> {
                                             Text(
                                               "Starting a new session will override your existing one.\n\nWould you like to continue?",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onBackground,
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                             "Cancel",

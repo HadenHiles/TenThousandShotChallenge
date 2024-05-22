@@ -677,7 +677,7 @@ class _FriendsState extends State<Friends> {
                       });
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.blue.shade600),
+                      backgroundColor: WidgetStateProperty.all(Colors.blue.shade600),
                     ),
                     child: Text(
                       "Accept".toUpperCase(),

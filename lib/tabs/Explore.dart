@@ -473,10 +473,10 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                                 });
                                                               },
                                                               style: ButtonStyle(
-                                                                padding: MaterialStateProperty.all(
+                                                                padding: WidgetStateProperty.all(
                                                                   const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                                                 ),
-                                                                backgroundColor: MaterialStateProperty.all(
+                                                                backgroundColor: WidgetStateProperty.all(
                                                                   Theme.of(context).primaryColor,
                                                                 ),
                                                               ),
@@ -937,10 +937,10 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               });
                                                             },
                                                             style: ButtonStyle(
-                                                              backgroundColor: MaterialStateProperty.all(
+                                                              backgroundColor: WidgetStateProperty.all(
                                                                 Theme.of(context).primaryColor,
                                                               ),
-                                                              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                             ),
                                                             child: Text(
                                                               "Get yours".toUpperCase(),

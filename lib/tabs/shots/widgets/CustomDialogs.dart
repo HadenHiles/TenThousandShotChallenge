@@ -8,7 +8,7 @@ void dialog(BuildContext context, ConfirmDialog dialog) {
     child: Text(
       dialog.cancelText ?? "Cancel",
       style: TextStyle(
-        color: Theme.of(context).colorScheme.onBackground,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     ),
   );
@@ -29,13 +29,14 @@ void dialog(BuildContext context, ConfirmDialog dialog) {
         fontSize: 20,
       ),
     ),
-    backgroundColor: Theme.of(context).colorScheme.background,
-    content: dialog.body ?? Text(
-            "This action cannot be undone.",
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    content: dialog.body ??
+        Text(
+          "This action cannot be undone.",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+        ),
     actions: [
       cancelButton,
       continueButton,
