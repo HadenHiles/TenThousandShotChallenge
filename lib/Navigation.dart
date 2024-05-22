@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -113,16 +113,18 @@ class _NavigationState extends State<Navigation> {
                   showTeamQRCode(u);
                 } else {
                   // Invitee uid (from_uid)
-                  String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.QR);
-
-                  joinTeam(barcodeScanRes).then((success) {
-                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                      return Navigation(
-                        title: NavigationTitle(title: "Team".toUpperCase()),
-                        selectedIndex: 2,
-                      );
-                    }));
-                  });
+                  QrcodeBarcodeScanner(
+                    onScannedCallback: (String barcodeScanRes) {
+                      joinTeam(barcodeScanRes).then((success) {
+                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                          return Navigation(
+                            title: NavigationTitle(title: "Team".toUpperCase()),
+                            selectedIndex: 2,
+                          );
+                        }));
+                      });
+                    },
+                  );
                 }
               });
             },
