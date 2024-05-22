@@ -199,7 +199,7 @@ class _HistoryState extends State<History> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -421,7 +421,7 @@ class _HistoryState extends State<History> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
-            
+
                         if (i.endDate != null) {
                           int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
                           daysTaken = daysTaken < 1 ? 1 : daysTaken;
@@ -429,17 +429,17 @@ class _HistoryState extends State<History> {
                           String iterationDescription;
                           String goalDescription = "";
                           String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-            
+
                           if (daysTaken <= 1) {
                             iterationDescription = "$fTotal shots in $daysTaken day";
                           } else {
                             iterationDescription = "$fTotal shots in $daysTaken days";
                           }
-            
+
                           if (i.targetDate != null) {
                             String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
                             int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
-            
+
                             if (daysBeforeAfterTarget > 0) {
                               if (daysBeforeAfterTarget.abs() <= 1) {
                                 goalDescription += " ${daysBeforeAfterTarget.abs()} day before goal";
@@ -453,12 +453,12 @@ class _HistoryState extends State<History> {
                                 goalDescription += " ${daysBeforeAfterTarget.abs()} days after goal";
                               }
                             }
-            
+
                             goalDescription += " ($targetDate)";
                           } else {
                             goalDescription += "completed on $endDate";
                           }
-            
+
                           return SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: 60,
@@ -573,19 +573,19 @@ class _HistoryState extends State<History> {
                           int remainingShots = 10000 - i.total!;
                           String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
                           String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-            
+
                           if (daysSoFar <= 1 && daysSoFar != 0) {
                             iterationDescription = "$fTotal shots in $daysSoFar day";
                           } else {
                             iterationDescription = "$fTotal shots in $daysSoFar days";
                           }
-            
+
                           if (i.targetDate != null && remainingShots > 0) {
                             int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
                             if (i.targetDate!.compareTo(DateTime.now()) < 0) {
                               daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
                             }
-            
+
                             if (daysBeforeAfterTarget > 0) {
                               if (daysBeforeAfterTarget <= 1 && daysBeforeAfterTarget != 0) {
                                 goalDescription += "${daysBeforeAfterTarget.abs()} day left to take $fRemainingShots shots";
@@ -602,7 +602,7 @@ class _HistoryState extends State<History> {
                               goalDescription += "1 day left to take $fRemainingShots shots";
                             }
                           }
-            
+
                           return SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: 60,
@@ -715,7 +715,7 @@ class _HistoryState extends State<History> {
                           );
                         }
                       }
-            
+
                       return Container();
                     },
                   ),
@@ -1070,7 +1070,7 @@ class _HistoryState extends State<History> {
                                             Text(
                                               "Starting a new session will override your existing one.\n\nWould you like to continue?",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onBackground,
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                             "Cancel",

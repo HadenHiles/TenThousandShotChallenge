@@ -50,38 +50,58 @@ class HomeTheme {
         color: Colors.black87,
         fontSize: 12,
       ),
-    ), checkboxTheme: CheckboxThemeData(
- fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), radioTheme: RadioThemeData(
- fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), switchTheme: SwitchThemeData(
- thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), colorScheme: const ColorScheme.light(
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+      trackColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    colorScheme: const ColorScheme.light(
       brightness: Brightness.light,
       primary: Colors.white,
       onPrimary: Colors.black54,
       primaryContainer: Color(0xffF7F7F7),
       secondary: Color(0xff670101),
       onSecondary: Colors.white,
-      onBackground: Colors.black,
-    ).copyWith(background: Colors.white),
+      onSurface: Colors.black,
+    ).copyWith(surface: Colors.white),
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -131,38 +151,58 @@ class HomeTheme {
         color: Color.fromRGBO(255, 255, 255, 0.8),
         fontSize: 12,
       ),
-    ), checkboxTheme: CheckboxThemeData(
- fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), radioTheme: RadioThemeData(
- fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), switchTheme: SwitchThemeData(
- thumbColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- trackColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
- if (states.contains(MaterialState.disabled)) { return null; }
- if (states.contains(MaterialState.selected)) { return const Color(0xffCC3333); }
- return null;
- }),
- ), colorScheme: const ColorScheme.dark(
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+      trackColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) {
+          return null;
+        }
+        if (states.contains(WidgetState.selected)) {
+          return const Color(0xffCC3333);
+        }
+        return null;
+      }),
+    ),
+    colorScheme: const ColorScheme.dark(
       brightness: Brightness.dark,
       primary: Color(0xff1A1A1A),
       onPrimary: Color.fromRGBO(255, 255, 255, 0.75),
       primaryContainer: Color(0xff1D1D1D),
       secondary: Color(0xffCC3333),
       onSecondary: Colors.white,
-      onBackground: Colors.white,
-    ).copyWith(background: const Color(0xff222222)),
+      onSurface: Colors.white,
+    ).copyWith(surface: const Color(0xff222222)),
   );
 }
 

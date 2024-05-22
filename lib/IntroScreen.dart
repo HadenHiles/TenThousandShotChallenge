@@ -129,7 +129,7 @@ class _IntroScreenState extends State<IntroScreen> {
                               }
                             },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Colors.white),
+                              backgroundColor: WidgetStateProperty.all(Colors.white),
                             ),
                             child: Text(
                               "Light".toUpperCase(),
@@ -158,7 +158,7 @@ class _IntroScreenState extends State<IntroScreen> {
                               }
                             },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(const Color(0xff1A1A1A)),
+                              backgroundColor: WidgetStateProperty.all(const Color(0xff1A1A1A)),
                             ),
                             child: Text(
                               "Dark".toUpperCase(),

@@ -306,8 +306,8 @@ class _StartShootingState extends State<StartShooting> {
                       });
                     },
                     style: ButtonStyle(
-                      padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
-                      backgroundColor: MaterialStateProperty.all(Colors.green.shade600),
+                      padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
+                      backgroundColor: WidgetStateProperty.all(Colors.green.shade600),
                     ),
                     child: const Icon(
                       Icons.check,
@@ -574,10 +574,10 @@ class _StartShootingState extends State<StartShooting> {
                                                                     });
                                                                   },
                                                                   style: ButtonStyle(
-                                                                    backgroundColor: MaterialStateProperty.all(
+                                                                    backgroundColor: WidgetStateProperty.all(
                                                                       Theme.of(context).primaryColor,
                                                                     ),
-                                                                    padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                                    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                                   ),
                                                                   child: Text(
                                                                     "Get yours".toUpperCase(),

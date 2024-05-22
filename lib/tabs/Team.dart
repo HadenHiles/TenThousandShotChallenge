@@ -679,7 +679,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                         Text(
                                           "Are you sure you want to leave this team?",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onBackground,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
                                         ),
                                         "Cancel",

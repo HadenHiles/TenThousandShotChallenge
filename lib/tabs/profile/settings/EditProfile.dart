@@ -116,7 +116,7 @@ class _EditProfileState extends State<EditProfile> {
           ),
         ),
         onlineChild: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
@@ -141,7 +141,7 @@ class _EditProfileState extends State<EditProfile> {
                   ),
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.background,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,

@@ -47,7 +47,7 @@ dependencies:
   sliding_up_panel: ^2.0.0+1
   the_apple_sign_in: ^1.1.1
   url_launcher: ^6.0.6
-  vibration: ^1.7.3
+  vibration: ^1.9.0
   video_player: any
   word_generator: ^0.4.4
   youtube_player_flutter: ^9.0.1
