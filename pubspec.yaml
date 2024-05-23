@@ -8,47 +8,47 @@ dependencies:
   auto_size_text: ^3.0.0
   auto_size_text_field: ^2.2.3
   charts_flutter: ^0.12.0
-  chewie: ^1.3.3
-  cloud_firestore: ^4.17.0
-  connectivity_plus: ^6.0.2
-  cupertino_icons: ^1.0.2
+  chewie: ^1.8.1
+  cloud_firestore: ^4.17.4
+  connectivity_plus: ^6.0.3
+  cupertino_icons: ^1.0.8
   data_connection_checker_nulls: ^0.0.2
   firebase_analytics: ^10.10.6
-  firebase_auth: ^4.19.2
-  firebase_core: ^2.30.0
-  firebase_messaging: ^14.8.2
-  firebase_remote_config: ^4.4.2
+  firebase_auth: ^4.19.6
+  firebase_core: ^2.31.1
+  firebase_messaging: ^14.9.3
+  firebase_remote_config: ^4.4.6
   firestore_cache: ^2.12.11
-  flutter_cache_manager: ^3.1.1
+  flutter_cache_manager: ^3.3.2
   flutter_datetime_picker_plus: ^2.2.0
-  flutter_html: ^3.0.0-alpha.5
-  flutter_local_notifications: ^17.0.1
+  flutter_html: ^3.0.0-beta.2
+  flutter_local_notifications: ^17.1.2
   flutter_svg: ^2.0.10+1
-  fluttertoast: ^8.0.7
+  fluttertoast: ^8.2.5
   font_awesome_flutter: ^10.7.0
-  global_configuration: ^2.0.0-nullsafety.1
+  global_configuration: ^2.0.0
   google_sign_in: ^6.2.1
-  html: ^0.15.0
+  html: ^0.15.4
   http: ^1.2.1
   intl: ^0.17.0
-  introduction_screen: ^3.0.0
-  numberpicker: ^2.1.1
+  introduction_screen: ^3.1.14
+  numberpicker: ^2.1.2
   package_info: ^2.0.2
   password_strength: ^0.2.0
-  prompt_dialog: ^1.0.0
-  provider: ^6.0.1
+  prompt_dialog: ^1.0.16
+  provider: ^6.1.2
   pubspec_dependency_sorter: ^1.0.4
-  qr_flutter: ^4.0.0
+  qr_flutter: ^4.1.0
   qrcode_barcode_scanner: ^3.0.1
-  settings_ui: ^2.0.1
+  settings_ui: ^2.0.2
   share_plus: ^9.0.0
-  shared_preferences: ^2.0.5
+  shared_preferences: ^2.2.3
   sign_in_button: ^3.2.0
   sliding_up_panel: ^2.0.0+1
   the_apple_sign_in: ^1.1.1
-  url_launcher: ^6.0.6
+  url_launcher: ^6.2.6
   vibration: ^1.9.0
-  video_player: any
+  video_player: 2.8.6
   word_generator: ^0.4.4
   youtube_player_flutter: ^9.0.1
   flutter:
