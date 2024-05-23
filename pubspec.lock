@@ -73,14 +73,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.12.0"
-  charts_flutter:
+  charts_flutter_new:
     dependency: "direct main"
     description:
-      path: charts_flutter
-      ref: HEAD
-      resolved-ref: fcd0c524ac573ae4d0b79f3bdd6491fbbcdbfb61
-      url: "https://github.com/google/charts.git"
-    source: git
+      name: charts_flutter_new
+      sha256: c8c106c5d6acd145d6969f85aa65412ccf2c27bbb0177ec11c10a285a286524a
+      url: "https://pub.dev"
+    source: hosted
     version: "0.12.0"
   checked_yaml:
     dependency: transitive
