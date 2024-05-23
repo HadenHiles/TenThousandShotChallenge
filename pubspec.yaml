@@ -2,9 +2,9 @@ name: tenthousandshotchallenge
 version: 1.1.0+17
 publish_to: none
 description: A flutter project for the Ten Thousand Shot Challenge app
-environment: 
-  sdk: '>=2.12.0 <4.0.0'
-dependencies: 
+environment:
+  sdk: ">=2.12.0 <4.0.0"
+dependencies:
   auto_size_text: ^3.0.0
   auto_size_text_field: ^2.2.3
   charts_flutter: ^0.12.0
@@ -51,19 +51,19 @@ dependencies:
   video_player: any
   word_generator: ^0.4.4
   youtube_player_flutter: ^9.0.1
-  flutter: 
+  flutter:
     sdk: flutter
-dev_dependencies: 
+dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^4.0.0
-  flutter_test: 
+  flutter_test:
     sdk: flutter
-flutter_icons: 
+flutter_icons:
   android: launcher_icon
   image_path: assets/images/app-icon.png
   ios: true
-flutter: 
-  assets: 
+flutter:
+  assets:
     - assets/cfg/
     - assets/images/
     - assets/images/avatars/
@@ -73,10 +73,8 @@ flutter:
     - assets/images/shop/
     - assets/fonts/
     - assets/animations/
-  fonts: 
-    - 
-      family: NovecentoSans
-      fonts: 
-        - 
-          asset: assets/fonts/novecento-sans-condensed-medium.otf
+  fonts:
+    - family: NovecentoSans
+      fonts:
+        - asset: assets/fonts/novecento-sans-condensed-medium.otf
   uses-material-design: true
