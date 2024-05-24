@@ -2,13 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
-import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 
 void showQRCode(User? user) {
   showDialog(
@@ -55,11 +51,11 @@ void showQRCode(User? user) {
   );
 }
 
-void showTeamQRCode() {
+Future<bool> showTeamQRCode() async {
   User? user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
-    FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
+    return FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
       UserProfile u = UserProfile.fromSnapshot(uDoc);
 
       if (u.teamId != null) {
@@ -141,21 +137,15 @@ void showTeamQRCode() {
               );
             },
           );
+          return true;
         });
       } else {
-        QrcodeBarcodeScanner(
-          onScannedCallback: (String barcodeScanRes) {
-            joinTeam(barcodeScanRes).then((success) {
-              navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                return Navigation(
-                  title: NavigationTitle(title: "Team".toUpperCase()),
-                  selectedIndex: 2,
-                );
-              }));
-            });
-          },
-        );
+        return false;
       }
+
+      return false;
     });
+  } else {
+    return false;
   }
 }

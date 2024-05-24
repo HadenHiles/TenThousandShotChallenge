@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/Explore.dart';
@@ -103,8 +105,23 @@ class _NavigationState extends State<Navigation> {
               color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
             ),
-            onPressed: () {
-              showTeamQRCode();
+            onPressed: () async {
+              await showTeamQRCode().then((hasTeam) {
+                if (!hasTeam) {
+                  QrcodeBarcodeScanner(
+                    onScannedCallback: (String barcodeScanRes) {
+                      joinTeam(barcodeScanRes).then((success) {
+                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                          return Navigation(
+                            title: NavigationTitle(title: "Team".toUpperCase()),
+                            selectedIndex: 2,
+                          );
+                        }));
+                      });
+                    },
+                  );
+                }
+              });
             },
           ),
         ),
@@ -265,8 +282,23 @@ class _NavigationState extends State<Navigation> {
                           color: HomeTheme.darkTheme.colorScheme.onPrimary,
                           size: 28,
                         ),
-                        onPressed: () {
-                          showTeamQRCode();
+                        onPressed: () async {
+                          await showTeamQRCode().then((hasTeam) {
+                            if (!hasTeam) {
+                              QrcodeBarcodeScanner(
+                                onScannedCallback: (String barcodeScanRes) {
+                                  joinTeam(barcodeScanRes).then((success) {
+                                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                      return Navigation(
+                                        title: NavigationTitle(title: "Team".toUpperCase()),
+                                        selectedIndex: 2,
+                                      );
+                                    }));
+                                  });
+                                },
+                              );
+                            }
+                          });
                         },
                       ),
                     ),
