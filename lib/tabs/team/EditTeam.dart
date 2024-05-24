@@ -4,6 +4,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
@@ -142,8 +143,23 @@ class _EditTeamState extends State<EditTeam> {
                         color: HomeTheme.darkTheme.colorScheme.onPrimary,
                         size: 28,
                       ),
-                      onPressed: () {
-                        showTeamQRCode();
+                      onPressed: () async {
+                        await showTeamQRCode().then((hasTeam) {
+                          if (!hasTeam) {
+                            QrcodeBarcodeScanner(
+                              onScannedCallback: (String barcodeScanRes) {
+                                joinTeam(barcodeScanRes).then((success) {
+                                  navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                    return Navigation(
+                                      title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
+                                      selectedIndex: 2,
+                                    );
+                                  }));
+                                });
+                              },
+                            );
+                          }
+                        });
                       },
                     ),
                   ),

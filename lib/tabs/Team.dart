@@ -9,6 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
@@ -22,6 +24,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import '../main.dart';
 
@@ -611,8 +614,23 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                           ),
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
-                                            onPressed: () {
-                                              showTeamQRCode();
+                                            onPressed: () async {
+                                              await showTeamQRCode().then((hasTeam) {
+                                                if (!hasTeam) {
+                                                  QrcodeBarcodeScanner(
+                                                    onScannedCallback: (String barcodeScanRes) {
+                                                      joinTeam(barcodeScanRes).then((success) {
+                                                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                                          return Navigation(
+                                                            title: NavigationTitle(title: team!.name!.toUpperCase()),
+                                                            selectedIndex: 2,
+                                                          );
+                                                        }));
+                                                      });
+                                                    },
+                                                  );
+                                                }
+                                              });
                                             },
                                             iconSize: 40,
                                             icon: Icon(
