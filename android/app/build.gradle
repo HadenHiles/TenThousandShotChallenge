@@ -69,7 +69,7 @@ flutter {
 
 dependencies {
     // Import the Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:32.8.1')
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
     implementation('com.google.firebase:firebase-auth') {
         exclude module: "play-services-safetynet"
     }
@@ -79,7 +79,7 @@ dependencies {
     implementation('com.google.firebase:firebase-analytics')
     implementation('com.google.firebase:firebase-messaging')
 
-    implementation('androidx.window:window:1.0.0')
-    implementation('androidx.window:window-java:1.0.0')
-    coreLibraryDesugaring('com.android.tools:desugar_jdk_libs:1.2.2')
+    implementation('androidx.window:window:1.2.0')
+    implementation('androidx.window:window-java:1.2.0')
+    coreLibraryDesugaring('com.android.tools:desugar_jdk_libs:2.0.4')
 }
