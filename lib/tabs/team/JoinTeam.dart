@@ -145,14 +145,21 @@ class _JoinTeamState extends State<JoinTeam> {
                                 });
                               },
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    'Join'.toUpperCase(),
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 18,
+                                  SizedBox(
+                                    width: 125,
+                                    child: AutoSizeText(
+                                      ('Join ${Team.fromSnapshot(_teams[_selectedTeam!]).name}').toUpperCase(),
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontFamily: "NovecentoSans",
+                                        fontSize: 18,
+                                        height: 1.1,
+                                      ),
+                                      textAlign: TextAlign.right,
+                                      maxLines: 2,
+                                      maxFontSize: 18,
                                     ),
                                   ),
                                   Icon(
