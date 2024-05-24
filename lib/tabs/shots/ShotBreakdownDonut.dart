@@ -15,7 +15,7 @@ class ShotBreakdownDonut extends StatelessWidget {
           show: false,
         ),
         sectionsSpace: 0,
-        centerSpaceRadius: 40,
+        centerSpaceRadius: 50,
         sections: showingSections(),
       ),
     );
