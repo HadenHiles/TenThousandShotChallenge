@@ -836,6 +836,7 @@ class _ProfileState extends State<Profile> {
             ),
           ),
           _buildSessionList(_sessions),
+          const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
