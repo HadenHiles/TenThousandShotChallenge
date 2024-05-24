@@ -144,7 +144,24 @@ class _JoinTeamState extends State<JoinTeam> {
                                   }
                                 });
                               },
-                              child: const Text('Join Team'),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Join'.toUpperCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.add,
+                                    size: 16,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                   ],
