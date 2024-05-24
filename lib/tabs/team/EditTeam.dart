@@ -143,13 +143,7 @@ class _EditTeamState extends State<EditTeam> {
                         size: 28,
                       ),
                       onPressed: () {
-                        FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) {
-                          UserProfile u = UserProfile.fromSnapshot(uDoc);
-
-                          if (u.teamId != null) {
-                            showTeamQRCode(u);
-                          }
-                        });
+                        showTeamQRCode(user!);
                       },
                     ),
                   ),

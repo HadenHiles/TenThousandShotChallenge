@@ -2,9 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 
 void showQRCode(User? user) {
   showDialog(
@@ -51,84 +55,103 @@ void showQRCode(User? user) {
   );
 }
 
-void showTeamQRCode(UserProfile u) {
-  FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
-    Team team = Team.fromSnapshot(tDoc.docs[0]);
+void showTeamQRCode(User user) {
+  FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
+    UserProfile u = UserProfile.fromSnapshot(uDoc);
 
-    showDialog(
-      context: navigatorKey.currentContext!,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
-            style: const TextStyle(
-              fontFamily: 'NovecentoSans',
-              fontSize: 20,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 200,
-                height: 200,
-                child: QrImageView(
-                  data: team.id!,
-                  backgroundColor: Colors.white70,
-                ),
-              ),
-              Divider(
-                color: Theme.of(context).colorScheme.onPrimary,
-                height: 20,
-              ),
-              Text(
-                "Or use your team code:".toUpperCase(),
+    if (u.teamId != null) {
+      FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
+        Team team = Team.fromSnapshot(tDoc.docs[0]);
+
+        showDialog(
+          context: navigatorKey.currentContext!,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
                 style: const TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 20,
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(
-                height: 60,
-                width: 220,
-                child: Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: QrImageView(
+                      data: team.id!,
+                      backgroundColor: Colors.white70,
                     ),
-                    padding: const EdgeInsets.all(5),
-                    child: SelectableText(
-                      team.code!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontFamily: "NovecentoSans",
-                        fontSize: 24,
+                  ),
+                  Divider(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    height: 20,
+                  ),
+                  Text(
+                    "Or use your team code:".toUpperCase(),
+                    style: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 20,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(
+                    height: 60,
+                    width: 220,
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.all(5),
+                        child: SelectableText(
+                          team.code!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontFamily: "NovecentoSans",
+                            fontSize: 24,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                "Close".toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  color: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    "Close".toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         );
-      },
-    );
+      });
+    } else {
+      QrcodeBarcodeScanner(
+        onScannedCallback: (String barcodeScanRes) {
+          joinTeam(barcodeScanRes).then((success) {
+            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+              return Navigation(
+                title: NavigationTitle(title: "Team".toUpperCase()),
+                selectedIndex: 2,
+              );
+            }));
+          });
+        },
+      );
+    }
   });
 }
