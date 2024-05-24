@@ -55,103 +55,107 @@ void showQRCode(User? user) {
   );
 }
 
-void showTeamQRCode(User user) {
-  FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
-    UserProfile u = UserProfile.fromSnapshot(uDoc);
+void showTeamQRCode() {
+  User? user = FirebaseAuth.instance.currentUser;
 
-    if (u.teamId != null) {
-      FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
-        Team team = Team.fromSnapshot(tDoc.docs[0]);
+  if (user != null) {
+    FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
+      UserProfile u = UserProfile.fromSnapshot(uDoc);
 
-        showDialog(
-          context: navigatorKey.currentContext!,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 20,
+      if (u.teamId != null) {
+        FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
+          Team team = Team.fromSnapshot(tDoc.docs[0]);
+
+          showDialog(
+            context: navigatorKey.currentContext!,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: QrImageView(
-                      data: team.id!,
-                      backgroundColor: Colors.white70,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: QrImageView(
+                        data: team.id!,
+                        backgroundColor: Colors.white70,
+                      ),
                     ),
-                  ),
-                  Divider(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    height: 20,
-                  ),
-                  Text(
-                    "Or use your team code:".toUpperCase(),
-                    style: const TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 20,
+                    Divider(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      height: 20,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(
-                    height: 60,
-                    width: 220,
-                    child: Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                        ),
-                        padding: const EdgeInsets.all(5),
-                        child: SelectableText(
-                          team.code!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontFamily: "NovecentoSans",
-                            fontSize: 24,
+                    Text(
+                      "Or use your team code:".toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 20,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(
+                      height: 60,
+                      width: 220,
+                      child: Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                          ),
+                          padding: const EdgeInsets.all(5),
+                          child: SelectableText(
+                            team.code!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontFamily: "NovecentoSans",
+                              fontSize: 24,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    "Close".toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      color: Theme.of(context).colorScheme.onPrimary,
+                  ],
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(
+                      "Close".toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
+                ],
+              );
+            },
+          );
+        });
+      } else {
+        QrcodeBarcodeScanner(
+          onScannedCallback: (String barcodeScanRes) {
+            joinTeam(barcodeScanRes).then((success) {
+              navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                return Navigation(
+                  title: NavigationTitle(title: "Team".toUpperCase()),
+                  selectedIndex: 2,
+                );
+              }));
+            });
           },
         );
-      });
-    } else {
-      QrcodeBarcodeScanner(
-        onScannedCallback: (String barcodeScanRes) {
-          joinTeam(barcodeScanRes).then((success) {
-            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-              return Navigation(
-                title: NavigationTitle(title: "Team".toUpperCase()),
-                selectedIndex: 2,
-              );
-            }));
-          });
-        },
-      );
-    }
-  });
+      }
+    });
+  }
 }

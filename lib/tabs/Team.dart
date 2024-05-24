@@ -612,7 +612,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              showTeamQRCode(user!);
+                                              showTeamQRCode();
                                             },
                                             iconSize: 40,
                                             icon: Icon(
