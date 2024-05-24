@@ -143,7 +143,7 @@ class _EditTeamState extends State<EditTeam> {
                         size: 28,
                       ),
                       onPressed: () {
-                        showTeamQRCode(user!);
+                        showTeamQRCode();
                       },
                     ),
                   ),

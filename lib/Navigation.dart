@@ -104,7 +104,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              showTeamQRCode(user!);
+              showTeamQRCode();
             },
           ),
         ),
@@ -266,7 +266,7 @@ class _NavigationState extends State<Navigation> {
                           size: 28,
                         ),
                         onPressed: () {
-                          showTeamQRCode(user!);
+                          showTeamQRCode();
                         },
                       ),
                     ),
