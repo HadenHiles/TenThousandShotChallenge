@@ -2,7 +2,6 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:charts_flutter_new/flutter.dart' as charts;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
@@ -468,33 +467,10 @@ class _ShotsState extends State<Shots> {
                 } else if (snapshot.data!.docs.isNotEmpty) {
                   Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
                   List<ShotCount> shotCounts = [
-                    ShotCount('W'.toUpperCase(), iteration.totalWrist ?? 0, charts.MaterialPalette.cyan.shadeDefault),
-                    ShotCount('SN'.toUpperCase(), iteration.totalSnap ?? 0, charts.MaterialPalette.blue.shadeDefault),
-                    ShotCount('B'.toUpperCase(), iteration.totalBackhand ?? 0, charts.MaterialPalette.indigo.shadeDefault),
-                    ShotCount('SL'.toUpperCase(), iteration.totalSlap ?? 0, charts.MaterialPalette.teal.shadeDefault),
-                  ];
-
-                  List<charts.Series<ShotCount, String>> shotCountSeries = [
-                    charts.Series<ShotCount, String>(
-                      id: 'Shots',
-                      domainFn: (ShotCount shot, _) => shot.type,
-                      measureFn: (ShotCount shot, _) => shot.count,
-                      data: shotCounts,
-                      colorFn: (ShotCount shot, _) => shot.color,
-                      strokeWidthPxFn: (ShotCount row, _) => 0,
-                      // Set a label accessor to control the text of the arc label.
-                      labelAccessorFn: (ShotCount row, _) => '${row.count}',
-                      outsideLabelStyleAccessorFn: (ShotCount row, _) => charts.TextStyleSpec(
-                        fontFamily: "NovecentoSans",
-                        color: preferences!.darkMode! ? charts.MaterialPalette.gray.shade300 : charts.MaterialPalette.gray.shade600,
-                        fontSize: 18,
-                      ),
-                      insideLabelStyleAccessorFn: (ShotCount row, _) => const charts.TextStyleSpec(
-                        fontFamily: "NovecentoSans",
-                        color: charts.Color.white,
-                        fontSize: 16,
-                      ),
-                    ),
+                    ShotCount('W'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
+                    ShotCount('SN'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
+                    ShotCount('B'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
+                    ShotCount('SL'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
                   ];
 
                   return Column(
@@ -779,10 +755,7 @@ class _ShotsState extends State<Shots> {
                                       ),
                                     ),
                                   ),
-                                  ShotBreakdownDonut(
-                                    shotCountSeries,
-                                    animate: true,
-                                  ),
+                                  ShotBreakdownDonut(shotCounts),
                                 ],
                               ),
                       ),
