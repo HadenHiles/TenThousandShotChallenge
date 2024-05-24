@@ -1,9 +1,9 @@
-import 'package:charts_flutter_new/flutter.dart' as charts;
+import 'dart:ui';
 
 class ShotCount {
   final String type;
   final int count;
-  final charts.Color color;
+  final Color color;
 
   ShotCount(this.type, this.count, this.color);
 }
