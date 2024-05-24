@@ -34,6 +34,16 @@ class ShotBreakdownDonut extends StatelessWidget {
           color: sc.color,
           value: (sc.count / totalShots) * 100,
           title: sc.count.toString(),
+          badgeWidget: Text(
+            sc.type,
+            style: const TextStyle(
+              color: Colors.black38,
+              fontFamily: 'Novecento',
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          badgePositionPercentageOffset: 1.5,
           radius: radius,
           titleStyle: const TextStyle(
             fontSize: fontSize,
