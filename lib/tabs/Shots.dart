@@ -467,10 +467,10 @@ class _ShotsState extends State<Shots> {
                 } else if (snapshot.data!.docs.isNotEmpty) {
                   Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
                   List<ShotCount> shotCounts = [
-                    ShotCount('W'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
-                    ShotCount('SN'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
-                    ShotCount('B'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
-                    ShotCount('SL'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
+                    ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
+                    ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
+                    ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
+                    ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
                   ];
 
                   return Column(
@@ -696,67 +696,70 @@ class _ShotsState extends State<Shots> {
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               )
-                            : Stack(
-                                children: [
-                                  Positioned(
-                                    top: MediaQuery.of(context).size.height * (0.3 / 2),
-                                    left: MediaQuery.of(context).size.width * (0.7 / 2),
-                                    child: Transform.translate(
-                                      offset: const Offset(-14, -16),
-                                      child: Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          Icon(
-                                            FontAwesomeIcons.hockeyPuck,
-                                            size: 30,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                          // Top Left
-                                          Positioned(
-                                            left: -13,
-                                            top: -13,
-                                            child: Icon(
+                            : Container(
+                                margin: const EdgeInsets.only(top: 50),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: MediaQuery.of(context).size.height * (0.3 / 2),
+                                      left: MediaQuery.of(context).size.width * (0.7 / 2),
+                                      child: Transform.translate(
+                                        offset: const Offset(-14, -40),
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Icon(
                                               FontAwesomeIcons.hockeyPuck,
-                                              size: 18,
+                                              size: 30,
                                               color: Theme.of(context).colorScheme.onPrimary,
                                             ),
-                                          ),
-                                          // Bottom Left
-                                          Positioned(
-                                            left: -12,
-                                            bottom: -12,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 14,
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            // Top Left
+                                            Positioned(
+                                              left: -13,
+                                              top: -13,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
                                             ),
-                                          ),
-                                          // Top right
-                                          Positioned(
-                                            right: -12,
-                                            top: -12,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 14,
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            // Bottom Left
+                                            Positioned(
+                                              left: -12,
+                                              bottom: -12,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 14,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
                                             ),
-                                          ),
-                                          // Bottom right
-                                          Positioned(
-                                            right: -12,
-                                            bottom: -14,
-                                            child: Icon(
-                                              FontAwesomeIcons.hockeyPuck,
-                                              size: 18,
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            // Top right
+                                            Positioned(
+                                              right: -12,
+                                              top: -12,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 14,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            // Bottom right
+                                            Positioned(
+                                              right: -12,
+                                              bottom: -14,
+                                              child: Icon(
+                                                FontAwesomeIcons.hockeyPuck,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  ShotBreakdownDonut(shotCounts),
-                                ],
+                                    ShotBreakdownDonut(shotCounts),
+                                  ],
+                                ),
                               ),
                       ),
                     ],
