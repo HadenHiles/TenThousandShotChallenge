@@ -612,13 +612,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) {
-                                                UserProfile u = UserProfile.fromSnapshot(uDoc);
-
-                                                if (u.teamId != null) {
-                                                  showTeamQRCode(u);
-                                                }
-                                              });
+                                              showTeamQRCode(user!);
                                             },
                                             iconSize: 40,
                                             icon: Icon(

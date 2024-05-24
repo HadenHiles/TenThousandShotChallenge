@@ -103,12 +103,8 @@ class _JoinTeamState extends State<JoinTeam> {
                         ? Container()
                         : Container(
                             margin: const EdgeInsets.only(top: 10),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.add,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                size: 28,
-                              ),
+                            child: TextButton(
+                              style: Theme.of(context).textButtonTheme.style,
                               onPressed: () {
                                 joinTeam(_teams[_selectedTeam!].id).then((success) {
                                   if (success) {
@@ -148,6 +144,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                   }
                                 });
                               },
+                              child: const Text('Join Team'),
                             ),
                           ),
                   ],
@@ -425,27 +422,9 @@ class _JoinTeamState extends State<JoinTeam> {
             decoration: BoxDecoration(
               color: _selectedTeam == i ? Theme.of(context).cardTheme.color : Colors.transparent,
             ),
-            padding: const EdgeInsets.symmetric(vertical: 9),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
             child: Row(
               children: [
-                Container(
-                  height: 60,
-                  width: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(color: Colors.blue.shade600, borderRadius: BorderRadius.circular(30)),
-                  child: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedTeam = null;
-                        searchFieldController.text = searchFieldController.text;
-                      });
-                    },
-                    icon: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   mainAxisSize: MainAxisSize.max,

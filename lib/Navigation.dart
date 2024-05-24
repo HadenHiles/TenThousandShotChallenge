@@ -1,15 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-// import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/Explore.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
@@ -55,6 +52,7 @@ class _NavigationState extends State<Navigation> {
   PanelState _sessionPanelState = PanelState.CLOSED;
   double _bottomNavOffsetPercentage = 0;
   Team? team;
+  UserProfile? userProfile;
 
   final logo = Container(
     height: 40,
@@ -105,28 +103,8 @@ class _NavigationState extends State<Navigation> {
               color: HomeTheme.darkTheme.colorScheme.onPrimary,
               size: 28,
             ),
-            onPressed: () async {
-              FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) async {
-                UserProfile u = UserProfile.fromSnapshot(uDoc);
-
-                if (u.teamId != null) {
-                  showTeamQRCode(u);
-                } else {
-                  // Invitee uid (from_uid)
-                  QrcodeBarcodeScanner(
-                    onScannedCallback: (String barcodeScanRes) {
-                      joinTeam(barcodeScanRes).then((success) {
-                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                          return Navigation(
-                            title: NavigationTitle(title: "Team".toUpperCase()),
-                            selectedIndex: 2,
-                          );
-                        }));
-                      });
-                    },
-                  );
-                }
-              });
+            onPressed: () {
+              showTeamQRCode(user!);
             },
           ),
         ),
@@ -288,13 +266,7 @@ class _NavigationState extends State<Navigation> {
                           size: 28,
                         ),
                         onPressed: () {
-                          FirebaseFirestore.instance.collection("users").doc(user!.uid).get().then((uDoc) {
-                            UserProfile u = UserProfile.fromSnapshot(uDoc);
-
-                            if (u.teamId != null) {
-                              showTeamQRCode(u);
-                            }
-                          });
+                          showTeamQRCode(user!);
                         },
                       ),
                     ),
