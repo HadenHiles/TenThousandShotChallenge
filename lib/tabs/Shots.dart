@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/ShotsOverTimeLineChart.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -33,6 +34,7 @@ class _ShotsState extends State<Shots> {
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
+  Iteration? currentIteration;
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _ShotsState extends State<Shots> {
         Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
         setState(() {
           _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+          currentIteration = i;
         });
 
         _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
@@ -77,6 +80,10 @@ class _ShotsState extends State<Shots> {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
+            setState(() {
+              currentIteration = i;
+            });
+
             Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
             await ref.update(updated.toMap()).then((_) async {
               _loadTargetDate();
