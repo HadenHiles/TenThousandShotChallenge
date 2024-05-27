@@ -13,7 +13,6 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/ShotsOverTimeLineChart.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
