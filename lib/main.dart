@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
@@ -84,6 +85,9 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_messageHandler);
   // Listen for message clicks
   FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
+
+  // Check for camera permissions
+  await Permission.camera.request();
 
   runApp(
     Provider<AppleSignInAvailable>.value(
