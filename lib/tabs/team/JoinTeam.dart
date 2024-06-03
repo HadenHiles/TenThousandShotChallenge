@@ -10,7 +10,6 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
-import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class JoinTeam extends StatefulWidget {
@@ -319,8 +318,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                       if (context.mounted) {
                                         Navigator.of(context).pushReplacement(MaterialPageRoute(
                                           builder: (context) {
-                                            return Navigation(
-                                              title: NavigationTitle(title: "Team".toUpperCase()),
+                                            return const Navigation(
                                               selectedIndex: 2,
                                             );
                                           },
