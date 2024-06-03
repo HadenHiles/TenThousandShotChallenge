@@ -302,7 +302,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                       ),
                                     );
 
-                                    joinTeam(barcodeScanRes).then((success) {
+                                    joinTeam(barcodeScanRes).then((success) async {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           backgroundColor: Theme.of(context).cardTheme.color,
@@ -316,12 +316,17 @@ class _JoinTeamState extends State<JoinTeam> {
                                         ),
                                       );
 
-                                      navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                        return Navigation(
-                                          title: NavigationTitle(title: "Team".toUpperCase()),
-                                          selectedIndex: 2,
-                                        );
-                                      }));
+                                      if (context.mounted) {
+                                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                          builder: (context) {
+                                            return Navigation(
+                                              title: NavigationTitle(title: "Team".toUpperCase()),
+                                              selectedIndex: 2,
+                                            );
+                                          },
+                                          maintainState: false,
+                                        ));
+                                      }
                                     }).onError((error, stackTrace) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(

@@ -624,7 +624,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                                   );
 
                                                   joinTeam(barcodeScanRes).then((success) {
-                                                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
                                                       return Navigation(
                                                         title: NavigationTitle(title: team!.name!.toUpperCase()),
                                                         selectedIndex: 2,
@@ -715,14 +715,15 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                                   fontSize: 16.0,
                                                 );
 
-                                                Navigator.of(context).pushReplacement(
-                                                  MaterialPageRoute(
-                                                    builder: (BuildContext context) {
-                                                      return const JoinTeam();
-                                                    },
-                                                    maintainState: false,
-                                                  ),
-                                                );
+                                                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                                  builder: (context) {
+                                                    return Navigation(
+                                                      title: NavigationTitle(title: "Team".toUpperCase()),
+                                                      selectedIndex: 2,
+                                                    );
+                                                  },
+                                                  maintainState: false,
+                                                ));
                                               });
                                             } else {
                                               Fluttertoast.showToast(
