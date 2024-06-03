@@ -139,11 +139,11 @@ Future<bool> showTeamQRCode() async {
           );
           return true;
         });
+
+        return true;
       } else {
         return false;
       }
-
-      return false;
     });
   } else {
     return false;
