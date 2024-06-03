@@ -4,7 +4,9 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 
 class BarcodeScannerSimple extends StatefulWidget {
-  const BarcodeScannerSimple({super.key});
+  const BarcodeScannerSimple({super.key, this.title});
+
+  final String? title;
 
   @override
   State<BarcodeScannerSimple> createState() => _BarcodeScannerSimpleState();
@@ -15,10 +17,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
 
   Widget _buildBarcode(Barcode? value) {
     if (value == null) {
-      return const Text(
-        'Scan your friend\'s QR Code!',
+      return Text(
+        widget.title ?? 'Scan QR Code',
         overflow: TextOverflow.fade,
-        style: TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white),
       );
     }
 
@@ -38,7 +40,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     return Scaffold(
       appBar: AppBar(
         leading: Container(),
-        title: NavigationTitle(title: "Scan Friend's QR Code".toUpperCase()),
+        title: NavigationTitle(title: widget.title ?? 'Scan QR Code'.toUpperCase()),
         centerTitle: true,
         backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
         actions: [

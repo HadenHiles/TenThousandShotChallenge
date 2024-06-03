@@ -4,7 +4,6 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
@@ -19,6 +18,7 @@ import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
@@ -144,20 +144,22 @@ class _EditTeamState extends State<EditTeam> {
                         size: 28,
                       ),
                       onPressed: () async {
-                        await showTeamQRCode().then((hasTeam) {
+                        await showTeamQRCode().then((hasTeam) async {
                           if (!hasTeam) {
-                            QrcodeBarcodeScanner(
-                              onScannedCallback: (String barcodeScanRes) {
-                                joinTeam(barcodeScanRes).then((success) {
-                                  navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                    return Navigation(
-                                      title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
-                                      selectedIndex: 2,
-                                    );
-                                  }));
-                                });
-                              },
+                            final barcodeScanRes = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                              ),
                             );
+
+                            joinTeam(barcodeScanRes).then((success) {
+                              navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                return Navigation(
+                                  title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
+                                  selectedIndex: 2,
+                                );
+                              }));
+                            });
                           }
                         });
                       },

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -25,6 +24,7 @@ import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'models/Preferences.dart';
@@ -106,20 +106,22 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () async {
-              await showTeamQRCode().then((hasTeam) {
+              await showTeamQRCode().then((hasTeam) async {
                 if (!hasTeam) {
-                  QrcodeBarcodeScanner(
-                    onScannedCallback: (String barcodeScanRes) {
-                      joinTeam(barcodeScanRes).then((success) {
-                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                          return Navigation(
-                            title: NavigationTitle(title: "Team".toUpperCase()),
-                            selectedIndex: 2,
-                          );
-                        }));
-                      });
-                    },
+                  final barcodeScanRes = await navigatorKey.currentState!.push(
+                    MaterialPageRoute(
+                      builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                    ),
                   );
+
+                  joinTeam(barcodeScanRes).then((success) {
+                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                      return Navigation(
+                        title: NavigationTitle(title: "Team".toUpperCase()),
+                        selectedIndex: 2,
+                      );
+                    }));
+                  });
                 }
               });
             },
@@ -283,20 +285,22 @@ class _NavigationState extends State<Navigation> {
                           size: 28,
                         ),
                         onPressed: () async {
-                          await showTeamQRCode().then((hasTeam) {
+                          await showTeamQRCode().then((hasTeam) async {
                             if (!hasTeam) {
-                              QrcodeBarcodeScanner(
-                                onScannedCallback: (String barcodeScanRes) {
-                                  joinTeam(barcodeScanRes).then((success) {
-                                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                      return Navigation(
-                                        title: NavigationTitle(title: "Team".toUpperCase()),
-                                        selectedIndex: 2,
-                                      );
-                                    }));
-                                  });
-                                },
+                              final barcodeScanRes = await navigatorKey.currentState!.push(
+                                MaterialPageRoute(
+                                  builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                                ),
                               );
+
+                              joinTeam(barcodeScanRes).then((success) {
+                                navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                  return Navigation(
+                                    title: NavigationTitle(title: "Team".toUpperCase()),
+                                    selectedIndex: 2,
+                                  );
+                                }));
+                              });
                             }
                           });
                         },

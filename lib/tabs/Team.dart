@@ -9,7 +9,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -24,6 +23,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import '../main.dart';
@@ -615,20 +615,22 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () async {
-                                              await showTeamQRCode().then((hasTeam) {
+                                              await showTeamQRCode().then((hasTeam) async {
                                                 if (!hasTeam) {
-                                                  QrcodeBarcodeScanner(
-                                                    onScannedCallback: (String barcodeScanRes) {
-                                                      joinTeam(barcodeScanRes).then((success) {
-                                                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                                          return Navigation(
-                                                            title: NavigationTitle(title: team!.name!.toUpperCase()),
-                                                            selectedIndex: 2,
-                                                          );
-                                                        }));
-                                                      });
-                                                    },
+                                                  final barcodeScanRes = await Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                                                    ),
                                                   );
+
+                                                  joinTeam(barcodeScanRes).then((success) {
+                                                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                                                      return Navigation(
+                                                        title: NavigationTitle(title: team!.name!.toUpperCase()),
+                                                        selectedIndex: 2,
+                                                      );
+                                                    }));
+                                                  });
                                                 }
                                               });
                                             },
