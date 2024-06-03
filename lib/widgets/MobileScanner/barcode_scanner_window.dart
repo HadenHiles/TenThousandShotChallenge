@@ -88,6 +88,11 @@ class _BarcodeScannerWithScanWindowState extends State<BarcodeScannerWithScanWin
             fit: BoxFit.contain,
             scanWindow: scanWindow,
             controller: controller,
+            onDetect: (barcodes) {
+              if (barcodes.toString().isNotEmpty) {
+                Navigator.of(context).pop(barcodes);
+              }
+            },
             errorBuilder: (context, error, child) {
               return ScannerErrorWidget(error: error);
             },
