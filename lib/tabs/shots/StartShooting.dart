@@ -20,7 +20,7 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
-  const StartShooting({Key? key, required this.sessionPanelController, this.shots}) : super(key: key);
+  const StartShooting({super.key, required this.sessionPanelController, this.shots});
 
   final PanelController sessionPanelController;
   final List<Shots>? shots;

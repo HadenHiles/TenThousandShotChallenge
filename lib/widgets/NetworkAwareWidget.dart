@@ -3,7 +3,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:provider/provider.dart';
 
 class NetworkAwareWidget extends StatelessWidget {
-  const NetworkAwareWidget({Key? key, required this.onlineChild, required this.offlineChild}) : super(key: key);
+  const NetworkAwareWidget({super.key, required this.onlineChild, required this.offlineChild});
 
   final Widget onlineChild;
   final Widget offlineChild;

@@ -23,7 +23,7 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditTeam extends StatefulWidget {
-  const EditTeam({Key? key}) : super(key: key);
+  const EditTeam({super.key});
 
   @override
   State<EditTeam> createState() => _EditTeamState();

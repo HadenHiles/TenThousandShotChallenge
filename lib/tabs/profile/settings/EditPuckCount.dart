@@ -11,7 +11,7 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditPuckCount extends StatefulWidget {
-  const EditPuckCount({Key? key}) : super(key: key);
+  const EditPuckCount({super.key});
 
   @override
   State<EditPuckCount> createState() => _EditPuckCountState();

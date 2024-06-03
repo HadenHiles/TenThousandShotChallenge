@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BasicTitle extends StatelessWidget {
-  const BasicTitle({Key? key, this.title}) : super(key: key);
+  const BasicTitle({super.key, this.title});
 
   final String? title;
 

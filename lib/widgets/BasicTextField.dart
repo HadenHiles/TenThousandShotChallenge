@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BasicTextField extends StatefulWidget {
-  const BasicTextField({Key? key, this.hintText, this.controller, this.keyboardType, this.validator}) : super(key: key);
+  const BasicTextField({super.key, this.hintText, this.controller, this.keyboardType, this.validator});
 
   final String? hintText;
   final TextEditingController? controller;

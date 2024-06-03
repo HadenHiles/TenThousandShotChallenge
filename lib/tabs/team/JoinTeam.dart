@@ -14,7 +14,7 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class JoinTeam extends StatefulWidget {
-  const JoinTeam({Key? key}) : super(key: key);
+  const JoinTeam({super.key});
 
   @override
   State<JoinTeam> createState() => _JoinTeamState();

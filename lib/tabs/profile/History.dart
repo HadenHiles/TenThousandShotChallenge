@@ -22,7 +22,7 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
-  const History({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  const History({super.key, this.sessionPanelController, this.updateSessionShotsCB});
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;

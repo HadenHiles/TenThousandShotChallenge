@@ -31,7 +31,7 @@ import '../main.dart';
 const TEAM_HEADER_HEIGHT = 65.0;
 
 class TeamPage extends StatefulWidget {
-  const TeamPage({Key? key}) : super(key: key);
+  const TeamPage({super.key});
 
   @override
   State<TeamPage> createState() => _TeamPageState();

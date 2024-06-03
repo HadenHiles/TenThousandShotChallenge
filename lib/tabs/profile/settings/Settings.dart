@@ -22,7 +22,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class ProfileSettings extends StatefulWidget {
-  const ProfileSettings({Key? key}) : super(key: key);
+  const ProfileSettings({super.key});
 
   @override
   State<ProfileSettings> createState() => _ProfileSettingsState();

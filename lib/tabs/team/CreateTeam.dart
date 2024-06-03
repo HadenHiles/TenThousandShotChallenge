@@ -12,7 +12,7 @@ import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class CreateTeam extends StatefulWidget {
-  const CreateTeam({Key? key}) : super(key: key);
+  const CreateTeam({super.key});
 
   @override
   State<CreateTeam> createState() => _CreateTeamState();
