@@ -215,7 +215,7 @@ class _PlayerState extends State<Player> {
                         size: 28,
                       ),
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        navigatorKey.currentState!.pop();
                       },
                     ),
                   ),
