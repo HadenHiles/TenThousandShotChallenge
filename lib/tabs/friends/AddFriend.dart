@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qrcode_barcode_scanner/qrcode_barcode_scanner.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -12,13 +11,14 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_window.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AddFriend extends StatefulWidget {
-  const AddFriend({Key? key}) : super(key: key);
+  const AddFriend({super.key});
 
   @override
   State<AddFriend> createState() => _AddFriendState();
@@ -308,49 +308,51 @@ class _AddFriendState extends State<AddFriend> {
                               Container(
                                 margin: const EdgeInsets.only(right: 0),
                                 child: IconButton(
-                                  onPressed: () {
-                                    QrcodeBarcodeScanner(
-                                      onScannedCallback: (String barcodeScanRes) {
-                                        addFriendBarcode(barcodeScanRes).then(
-                                          (success) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                backgroundColor: Theme.of(context).cardTheme.color,
-                                                content: Text(
-                                                  "You are now friends!",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                duration: const Duration(milliseconds: 2500),
-                                              ),
-                                            );
-
-                                            navigatorKey.currentState!.pushReplacement(
-                                              MaterialPageRoute(builder: (context) {
-                                                return Navigation(
-                                                  title: NavigationTitle(title: "Friends".toUpperCase()),
-                                                  selectedIndex: 1,
-                                                );
-                                              }),
-                                            );
-                                          },
-                                        ).onError((error, stackTrace) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              content: Text(
-                                                "There was an error scanning your friend's QR code :(",
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                              ),
-                                              duration: const Duration(milliseconds: 4000),
-                                            ),
-                                          );
-                                        });
-                                      },
+                                  onPressed: () async {
+                                    final barcodeScanRes = await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const BarcodeScannerWithScanWindow(),
+                                      ),
                                     );
+
+                                    addFriendBarcode(barcodeScanRes).then(
+                                      (success) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            content: Text(
+                                              "You are now friends!",
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            duration: const Duration(milliseconds: 2500),
+                                          ),
+                                        );
+
+                                        navigatorKey.currentState!.pushReplacement(
+                                          MaterialPageRoute(builder: (context) {
+                                            return Navigation(
+                                              title: NavigationTitle(title: "Friends".toUpperCase()),
+                                              selectedIndex: 1,
+                                            );
+                                          }),
+                                        );
+                                      },
+                                    ).onError((error, stackTrace) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          content: Text(
+                                            "There was an error scanning your friend's QR code :(",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          duration: const Duration(milliseconds: 4000),
+                                        ),
+                                      );
+                                    });
                                   },
                                   icon: Icon(
                                     Icons.qr_code_2_rounded,
