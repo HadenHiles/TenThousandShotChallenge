@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 
 class UserAvatar extends StatelessWidget {
-  const UserAvatar({Key? key, this.user, this.radius, this.backgroundColor}) : super(key: key);
+  const UserAvatar({super.key, this.user, this.radius, this.backgroundColor});
 
   final UserProfile? user;
   final double? radius;

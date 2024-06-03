@@ -2,7 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 class NavigationTitle extends StatelessWidget {
-  const NavigationTitle({Key? key, this.title}) : super(key: key);
+  const NavigationTitle({super.key, this.title});
 
   final String? title;
 

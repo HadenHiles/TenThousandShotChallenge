@@ -70,7 +70,7 @@ class SessionService extends ChangeNotifier {
 }
 
 class SessionServiceProvider extends InheritedWidget {
-  const SessionServiceProvider({Key? key, this.service, required Widget child}) : super(key: key, child: child);
+  const SessionServiceProvider({super.key, this.service, required super.child});
 
   final SessionService? service;
 

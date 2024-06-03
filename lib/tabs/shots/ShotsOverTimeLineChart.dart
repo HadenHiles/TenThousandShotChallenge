@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class ShotsOverTimeLineChart extends StatefulWidget {
-  const ShotsOverTimeLineChart({Key? key}) : super(key: key);
+  const ShotsOverTimeLineChart({super.key});
 
   @override
   State<ShotsOverTimeLineChart> createState() => _ShotsOverTimeLineChartState();

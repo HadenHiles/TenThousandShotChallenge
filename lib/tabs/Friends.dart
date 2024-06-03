@@ -14,7 +14,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Friends extends StatefulWidget {
-  const Friends({Key? key}) : super(key: key);
+  const Friends({super.key});
 
   @override
   State<Friends> createState() => _FriendsState();

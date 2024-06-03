@@ -23,7 +23,7 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Profile extends StatefulWidget {
-  const Profile({Key? key, this.sessionPanelController, this.updateSessionShotsCB}) : super(key: key);
+  const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;

@@ -2,7 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 class ShotTypeButton extends StatelessWidget {
-  const ShotTypeButton({Key? key, this.type, this.active, this.onPressed}) : super(key: key);
+  const ShotTypeButton({super.key, this.type, this.active, this.onPressed});
 
   final String? type;
   final bool? active;

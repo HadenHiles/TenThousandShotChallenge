@@ -33,7 +33,7 @@ final PanelController sessionPanelController = PanelController();
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  const Navigation({Key? key, this.title, this.selectedIndex, this.actions}) : super(key: key);
+  const Navigation({super.key, this.title, this.selectedIndex, this.actions});
 
   final Widget? title;
   final int? selectedIndex;

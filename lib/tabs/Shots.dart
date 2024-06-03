@@ -19,7 +19,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
-  const Shots({Key? key, required this.sessionPanelController}) : super(key: key);
+  const Shots({super.key, required this.sessionPanelController});
 
   final PanelController sessionPanelController;
 

@@ -4,7 +4,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoStream extends StatefulWidget {
-  const VideoStream({Key? key, required this.url}) : super(key: key);
+  const VideoStream({super.key, required this.url});
 
   final String url;
 

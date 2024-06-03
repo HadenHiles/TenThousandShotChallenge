@@ -19,7 +19,7 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class Player extends StatefulWidget {
-  const Player({Key? key, this.uid}) : super(key: key);
+  const Player({super.key, this.uid});
 
   final String? uid;
 

@@ -5,7 +5,7 @@ import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 class ShotBreakdownDonut extends StatelessWidget {
   final List<ShotCount> shotCounts;
 
-  const ShotBreakdownDonut(this.shotCounts, {Key? key}) : super(key: key);
+  const ShotBreakdownDonut(this.shotCounts, {super.key});
 
   @override
   Widget build(BuildContext context) {
