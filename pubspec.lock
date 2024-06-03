@@ -1168,6 +1168,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.1"
+  rotating_icon_button:
+    dependency: "direct main"
+    description:
+      name: rotating_icon_button
+      sha256: "5098e29c68cfaf23242928f2d26b5d8e54d4f628ee6a6fa21eca26c826dc754c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   rxdart:
     dependency: transitive
     description:

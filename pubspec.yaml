@@ -55,6 +55,7 @@ dependencies:
   flutter: 
     sdk: flutter
   image_picker: ^1.1.2
+  rotating_icon_button: ^1.0.0
 dev_dependencies: 
   flutter_launcher_icons: ^0.13.1
   flutter_lints: ^4.0.0
