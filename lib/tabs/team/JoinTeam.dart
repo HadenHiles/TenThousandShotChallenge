@@ -239,11 +239,11 @@ class _JoinTeamState extends State<JoinTeam> {
                                               }
                                             });
                                         if (teams.isEmpty) {
-                                          await FirebaseFirestore.instance.collection('teams').orderBy('code', descending: false).where('public', isEqualTo: true).startAt([value.toUpperCase()]).endAt(['${value.toUpperCase()}\uf8ff']).get().then((tSnaps) async {
-                                                for (var tDoc in tSnaps.docs) {
-                                                  teams.add(tDoc);
-                                                }
-                                              });
+                                          await FirebaseFirestore.instance.collection('teams').orderBy('code', descending: false).where('code', isEqualTo: value.toUpperCase()).get().then((tSnaps) async {
+                                            for (var tDoc in tSnaps.docs) {
+                                              teams.add(tDoc);
+                                            }
+                                          });
                                         }
 
                                         await Future.delayed(const Duration(milliseconds: 500));
