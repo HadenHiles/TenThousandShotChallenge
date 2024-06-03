@@ -11,7 +11,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
-import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_window.dart';
+import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
@@ -311,7 +311,7 @@ class _AddFriendState extends State<AddFriend> {
                                   onPressed: () async {
                                     final barcodeScanRes = await Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (context) => const BarcodeScannerWithScanWindow(),
+                                        builder: (context) => const BarcodeScannerSimple(),
                                       ),
                                     );
 
