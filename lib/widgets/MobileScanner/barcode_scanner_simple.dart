@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 
 class BarcodeScannerSimple extends StatefulWidget {
   const BarcodeScannerSimple({super.key});
@@ -14,31 +16,39 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   Widget _buildBarcode(Barcode? value) {
     if (value == null) {
       return const Text(
-        'Scan something!',
+        'Scan your friend\'s QR Code!',
         overflow: TextOverflow.fade,
         style: TextStyle(color: Colors.white),
       );
     }
 
     return Text(
-      value.displayValue ?? 'No display value.',
+      value.displayValue ?? 'Invalid QR Code',
       overflow: TextOverflow.fade,
       style: const TextStyle(color: Colors.white),
     );
   }
 
   void _handleBarcode(BarcodeCapture barcodes) {
-    if (mounted) {
-      setState(() {
-        _barcode = barcodes.barcodes.firstOrNull;
-      });
-    }
+    return Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Simple scanner')),
+      appBar: AppBar(
+        leading: Container(),
+        title: NavigationTitle(title: "Scan Friend's QR Code".toUpperCase()),
+        centerTitle: true,
+        backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            color: HomeTheme.darkTheme.colorScheme.onPrimary,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
       backgroundColor: Colors.black,
       body: Stack(
         children: [
