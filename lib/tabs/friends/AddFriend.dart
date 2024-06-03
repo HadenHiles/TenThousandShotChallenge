@@ -311,7 +311,7 @@ class _AddFriendState extends State<AddFriend> {
                                   onPressed: () async {
                                     final barcodeScanRes = await Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (context) => const BarcodeScannerSimple(),
+                                        builder: (context) => const BarcodeScannerSimple(title: "Scan Friend's QR Code"),
                                       ),
                                     );
 

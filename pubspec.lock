@@ -1160,14 +1160,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
-  qrcode_barcode_scanner:
-    dependency: "direct main"
-    description:
-      name: qrcode_barcode_scanner
-      sha256: "62124f2db23e5ac59ab4044f9a00751f1a9a6a118740cb01f3f92e5d51adc14a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   quiver:
     dependency: transitive
     description:

@@ -41,7 +41,6 @@ dependencies:
   provider: ^6.1.2
   pubspec_dependency_sorter: ^1.0.4
   qr_flutter: ^4.1.0
-  qrcode_barcode_scanner: ^3.0.1
   settings_ui: ^2.0.2
   share_plus: ^9.0.0
   shared_preferences: ^2.2.3
