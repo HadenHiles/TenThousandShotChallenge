@@ -25,9 +25,9 @@ if (flutterVersionName == null) {
 
 // Define the properties for android keystore app signing file
 def keystoreProperties = new Properties()
-def keystoreProperteisFile = rootProject.file('key.properties')
-if (keystoreProperteisFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystoreProperteisFile))
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
 android {
