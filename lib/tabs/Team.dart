@@ -21,6 +21,7 @@ import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
@@ -681,7 +682,47 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 ),
                               ),
                         isOwner
-                            ? Container()
+                            ? Container(
+                                width: MediaQuery.of(context).size.width,
+                                margin: const EdgeInsets.all(0),
+                                padding: const EdgeInsets.all(0),
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
+                                      return const EditTeam();
+                                    }));
+                                  },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: darken(Theme.of(context).cardTheme.color!, 0.05),
+                                    backgroundColor: darken(Theme.of(context).cardTheme.color!, 0.05),
+                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                  ),
+                                  child: FittedBox(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Edit Team".toUpperCase(),
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 3, left: 4),
+                                          child: Icon(
+                                            Icons.edit,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              )
                             : Container(
                                 width: MediaQuery.of(context).size.width,
                                 margin: const EdgeInsets.all(0),
