@@ -214,11 +214,9 @@ class _NavigationState extends State<Navigation> {
         body: _tabs[_selectedIndex].body,
         actions: _actions!.isNotEmpty ? _actions : _tabs[_selectedIndex].actions,
       );
-
-      _onItemTapped(widget.selectedIndex!);
     });
 
-    _loadTeam();
+    _onItemTapped(widget.selectedIndex!);
 
     super.initState();
   }
