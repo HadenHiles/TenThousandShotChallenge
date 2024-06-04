@@ -68,7 +68,7 @@ class _EditProfileState extends State<EditProfile> {
       textColor: Theme.of(context).colorScheme.onPrimary,
       fontSize: 16.0,
     );
-    Navigator.of(context).pop();
+    navigatorKey.currentState!.pop();
   }
 
   @override
