@@ -204,8 +204,6 @@ class _NavigationState extends State<Navigation> {
 
     _loadPreferences();
 
-    _loadTeam();
-
     setState(() {
       _title = widget.selectedIndex == 0 ? logo : widget.title;
       _leading = Container();
@@ -219,6 +217,8 @@ class _NavigationState extends State<Navigation> {
 
       _onItemTapped(widget.selectedIndex!);
     });
+
+    _loadTeam();
 
     super.initState();
   }
