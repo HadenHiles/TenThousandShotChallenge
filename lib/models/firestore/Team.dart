@@ -10,9 +10,9 @@ class Team {
   String? nameLowercase;
   DateTime? startDate;
   DateTime? targetDate;
-  final int? goalTotal;
-  final String? ownerId;
-  final bool? ownerParticipating;
+  int? goalTotal;
+  String? ownerId;
+  bool? ownerParticipating;
   bool? public;
   List<String>? players;
   DocumentReference? reference;

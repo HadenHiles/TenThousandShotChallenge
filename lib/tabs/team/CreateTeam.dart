@@ -1,14 +1,20 @@
+import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class CreateTeam extends StatefulWidget {
@@ -20,15 +26,49 @@ class CreateTeam extends StatefulWidget {
 
 class _CreateTeamState extends State<CreateTeam> {
   final user = FirebaseAuth.instance.currentUser;
-
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController nameFieldController = TextEditingController();
+  final f = NumberFormat("###,###,###", "en_US");
+  final TextEditingController teamNameTextFieldController = TextEditingController();
+  final TextEditingController teamShotGoalTextFieldController = TextEditingController(text: "100000");
+  int? _goalTotal = 100000;
+  final TextEditingController startDateController = TextEditingController();
+  DateTime? _startDate = DateTime.now();
+  final TextEditingController targetDateController = TextEditingController();
+  DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
+  bool _public = false;
   Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true, []);
+
+  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
+    DateTime returnDate = currentDate;
+
+    await DatePicker.showDatePicker(
+      context,
+      showTitleActions: true,
+      minTime: minTime,
+      maxTime: maxTime,
+      onChanged: (date) {},
+      onConfirm: (date) async {
+        dateController.text = DateFormat('MMMM d, y').format(date);
+        returnDate = date;
+      },
+      currentTime: currentDate,
+      locale: LocaleType.en,
+    );
+
+    return returnDate;
+  }
 
   void _saveTeam() {
     setState(() {
-      team!.name = nameFieldController.text;
+      team!.name = teamNameTextFieldController.text.toUpperCase().toString();
+      team!.goalTotal = _goalTotal!;
+      team!.startDate = _startDate!;
+      team!.targetDate = _targetDate!;
+      team!.public = _public;
+      team!.ownerId = user!.uid;
+      team!.ownerParticipating = true;
     });
+
     FirebaseFirestore.instance.collection('teams').add(team!.toMap()).then((value) {
       setState(() {
         team!.id = value.id;
@@ -63,9 +103,12 @@ class _CreateTeamState extends State<CreateTeam> {
           }).onError((error, stackTrace) => false);
         });
 
-        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-          return const Navigation(selectedIndex: 2);
-        }));
+        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
+          builder: (context) {
+            return Navigation(title: NavigationTitle(title: teamNameTextFieldController.text), selectedIndex: 2);
+          },
+          maintainState: false,
+        ));
       }).onError((error, stackTrace) {
         Fluttertoast.showToast(
           msg: 'There was an error creating team "${team!.name}" :('.toLowerCase(),
@@ -154,9 +197,7 @@ class _CreateTeamState extends State<CreateTeam> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                          return const Navigation(selectedIndex: 2);
-                        }));
+                        Navigator.of(context).pop();
                       },
                     ),
                   ),
@@ -194,101 +235,206 @@ class _CreateTeamState extends State<CreateTeam> {
                 ),
               ];
             },
-            body: GestureDetector(
-              onTap: () {
-                Feedback.forTap(context);
-
-                FocusScopeNode currentFocus = FocusScope.of(context);
-
-                if (!currentFocus.hasPrimaryFocus) {
-                  currentFocus.unfocus();
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
-                          width: (MediaQuery.of(context).size.width * 0.7) - 10,
-                          child: Form(
-                            key: _formKey,
+            body: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                TextFormField(
-                                  keyboardType: TextInputType.text,
-                                  decoration: InputDecoration(
-                                    hintText: 'Enter Team Name'.toUpperCase(),
-                                    labelText: "Team Name".toUpperCase(),
-                                    alignLabelWithHint: true,
-                                    labelStyle: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                    hintStyle: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 20,
-                                      color: Theme.of(context).cardTheme.color,
-                                    ),
-                                  ),
+                                Text(
+                                  "Team Name:".toLowerCase(),
                                   style: TextStyle(
-                                    fontSize: 24,
-                                    fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 14,
                                   ),
-                                  onChanged: (value) async {
-                                    if (value.isNotEmpty) {
-                                      team!.name = value;
-
-                                      setState(() {
-                                        team = team;
-                                      });
-                                    }
-                                  },
-                                  controller: nameFieldController,
+                                  textAlign: TextAlign.left,
+                                ),
+                                BasicTextField(
+                                  keyboardType: TextInputType.text,
+                                  hintText: 'Enter a team name',
+                                  controller: teamNameTextFieldController,
                                   validator: (value) {
-                                    if (value!.isEmpty) {
-                                      return 'Enter a team name';
+                                    if (value.isEmpty) {
+                                      return 'Please enter a team name';
                                     }
                                     return null;
                                   },
                                 ),
-                                const SizedBox(
-                                  height: 20,
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Team Shooting Goal (number of total team shots)".toLowerCase(),
+                                  style: TextStyle(
+                                    color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                    fontFamily: "NovecentoSans",
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.left,
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Public',
-                                      style: Theme.of(context).textTheme.bodyLarge,
-                                    ),
-                                    Switch(
-                                      value: team!.public!,
-                                      onChanged: (bool value) {
-                                        team!.public = value;
-                                        setState(() {
-                                          team = team;
-                                        });
-                                      },
-                                    ),
-                                  ],
+                                BasicTextField(
+                                  keyboardType: TextInputType.number,
+                                  hintText: '# of shots the team is aiming to take',
+                                  controller: teamShotGoalTextFieldController,
+                                  validator: (value) {
+                                    if (value.isEmpty) {
+                                      return 'Please enter a shooting goal (number of shots)';
+                                    } else if (int.tryParse(value) == null) {
+                                      return 'Please enter a valid number';
+                                    } else {
+                                      setState(() {
+                                        _goalTotal = int.parse(value);
+                                      });
+                                    }
+
+                                    return null;
+                                  },
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+                          Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Starting From:".toLowerCase(),
+                                        style: TextStyle(
+                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        "By Target Completion Date:".toLowerCase(),
+                                        style: TextStyle(
+                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width * 0.4,
+                                        child: AutoSizeTextField(
+                                          controller: startDateController,
+                                          style: const TextStyle(fontSize: 12),
+                                          maxLines: 1,
+                                          maxFontSize: 18,
+                                          decoration: InputDecoration(
+                                            focusColor: Theme.of(context).colorScheme.primary,
+                                            contentPadding: const EdgeInsets.all(15),
+                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                          ),
+                                          readOnly: true,
+                                          onTap: () async {
+                                            await _editDate(
+                                              startDateController,
+                                              team!.startDate!,
+                                              DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
+                                              DateTime.now(),
+                                            ).then((date) {
+                                              setState(() {
+                                                _startDate = date;
+                                              });
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width * 0.1,
+                                        child: Text(
+                                          'To'.toUpperCase(),
+                                          style: TextStyle(
+                                            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                            fontFamily: "NovecentoSans",
+                                            fontSize: 14,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width * 0.4,
+                                        child: AutoSizeTextField(
+                                          controller: targetDateController,
+                                          style: const TextStyle(fontSize: 12),
+                                          maxLines: 1,
+                                          maxFontSize: 18,
+                                          decoration: InputDecoration(
+                                            focusColor: Theme.of(context).colorScheme.primary,
+                                            contentPadding: const EdgeInsets.all(15),
+                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                          ),
+                                          readOnly: true,
+                                          onTap: () async {
+                                            await _editDate(
+                                              targetDateController,
+                                              team!.targetDate!,
+                                              _startDate!,
+                                              DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                                            ).then((date) {
+                                              setState(() {
+                                                _targetDate = date;
+                                              });
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Public',
+                                          style: Theme.of(context).textTheme.bodyLarge,
+                                        ),
+                                        Switch(
+                                          value: _public,
+                                          onChanged: (bool value) {
+                                            setState(() {
+                                              _public = value;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
