@@ -225,9 +225,22 @@ class _ProfileState extends State<Profile> {
                                 child: SizedBox(
                                   height: 60,
                                   width: 60,
-                                  child: UserAvatar(
-                                    user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, userProfile.friendNotifications, null, preferences!.fcmToken),
-                                    backgroundColor: Colors.transparent,
+                                  child: StreamBuilder<DocumentSnapshot>(
+                                    stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data!);
+                                        return UserAvatar(
+                                          user: userProfile,
+                                          backgroundColor: Colors.transparent,
+                                        );
+                                      }
+
+                                      return UserAvatar(
+                                        user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, userProfile.friendNotifications, null, preferences!.fcmToken),
+                                        backgroundColor: Colors.transparent,
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
