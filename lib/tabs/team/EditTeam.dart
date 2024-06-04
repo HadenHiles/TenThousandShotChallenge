@@ -359,7 +359,7 @@ class _EditTeamState extends State<EditTeam> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "${f.format(int.parse(_goalTotal!.toString()))} Shots Starting From:".toLowerCase(),
+                                        "Starting From:".toLowerCase(),
                                         style: TextStyle(
                                           color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                           fontFamily: "NovecentoSans",
@@ -513,7 +513,12 @@ class _EditTeamState extends State<EditTeam> {
                             fontSize: 16.0,
                           );
 
-                          _backToTeamPage();
+                          Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (context) {
+                              return const Navigation(title: NavigationTitle(title: "Team"), selectedIndex: 2);
+                            },
+                            maintainState: false,
+                          ));
                         } else {
                           Fluttertoast.showToast(
                             msg: 'Failed to delete team :('.toUpperCase(),

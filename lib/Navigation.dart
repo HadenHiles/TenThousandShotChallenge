@@ -115,12 +115,15 @@ class _NavigationState extends State<Navigation> {
                   );
 
                   joinTeam(barcodeScanRes).then((success) {
-                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                      return Navigation(
-                        title: NavigationTitle(title: "Team".toUpperCase()),
-                        selectedIndex: 2,
-                      );
-                    }));
+                    navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
+                      builder: (context) {
+                        return Navigation(
+                          title: NavigationTitle(title: "Team".toUpperCase()),
+                          selectedIndex: 2,
+                        );
+                      },
+                      maintainState: false,
+                    ));
                   });
                 }
               });
@@ -294,12 +297,15 @@ class _NavigationState extends State<Navigation> {
                               );
 
                               joinTeam(barcodeScanRes).then((success) {
-                                navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                  return Navigation(
-                                    title: NavigationTitle(title: "Team".toUpperCase()),
-                                    selectedIndex: 2,
-                                  );
-                                }));
+                                navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
+                                  builder: (context) {
+                                    return Navigation(
+                                      title: NavigationTitle(title: "Team".toUpperCase()),
+                                      selectedIndex: 2,
+                                    );
+                                  },
+                                  maintainState: false,
+                                ));
                               });
                             }
                           });

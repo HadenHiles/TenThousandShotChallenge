@@ -70,142 +70,144 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Future<Null> _loadTeam() async {
-    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
-      if (uDoc.exists) {
-        userProfile = UserProfile.fromSnapshot(uDoc);
+    await Future.delayed(const Duration(milliseconds: 400)).then((_) async {
+      await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
+        if (uDoc.exists) {
+          userProfile = UserProfile.fromSnapshot(uDoc);
 
-        if (userProfile!.teamId != null) {
-          await FirebaseFirestore.instance.collection('teams').doc(userProfile!.teamId).get().then((tSnap) async {
-            if (tSnap.exists) {
-              Team t = Team.fromSnapshot(tSnap);
+          if (userProfile!.teamId != null) {
+            await FirebaseFirestore.instance.collection('teams').doc(userProfile!.teamId).get().then((tSnap) async {
+              if (tSnap.exists) {
+                Team t = Team.fromSnapshot(tSnap);
 
-              if (!t.players!.contains(user!.uid)) {
-                // Remove the user's assigned team so they can join a new one
-                uDoc.reference.update({'team_id': null}).then((value) {});
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "You have been removed from team \"${t.name}\" by the team owner.".toUpperCase(),
-                        style: const TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 24,
+                if (!t.players!.contains(user!.uid)) {
+                  // Remove the user's assigned team so they can join a new one
+                  uDoc.reference.update({'team_id': null}).then((value) {});
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(
+                          "You have been removed from team \"${t.name}\" by the team owner.".toUpperCase(),
+                          style: const TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 24,
+                          ),
                         ),
-                      ),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "You are free to join a new team whenever you wish.",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "You are free to join a new team whenever you wish.",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
+                              return const JoinTeam();
+                            })),
+                            child: Text(
+                              "Ok".toUpperCase(),
+                              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                             ),
                           ),
                         ],
-                      ),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
-                            return const JoinTeam();
-                          })),
-                          child: Text(
-                            "Ok".toUpperCase(),
-                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              } else {
-                setState(() {
-                  team = t;
-                  hasTeam = true;
-                  if (t.ownerId == user!.uid) {
-                    isOwner = true;
-                  }
-
-                  _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-                });
-
-                _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-
-                // Load the team total
-                List<ShootingSession> sList = [];
-                int teamTotal = 0;
-                List<Plyr> plyrs = [];
-                numPlayers = team == null ? 1 : team!.players!.length;
-
-                await Future.forEach(team!.players!, (String pId) async {
-                  await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
-                    UserProfile u = UserProfile.fromSnapshot(uDoc);
-                    Plyr p = Plyr(u, 0);
-
-                    await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
-                      int pShots = 0;
-                      if (i.docs.isNotEmpty) {
-                        await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
-                          Iteration i = Iteration.fromSnapshot(iDoc);
-
-                          // If the players iteration doesn't have an updated_at field for some reason then just do a standard query
-                          if (i.udpatedAt != null) {
-                            await FirestoreCache.getDocuments(
-                              query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
-                              cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
-                              firestoreCacheField: 'updated_at',
-                            ).then((seshs) async {
-                              await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                                ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                                sList.add(s);
-                                teamTotal += s.total!;
-                                pShots += s.total!;
-                              }).then((_) {
-                                p.shots = pShots;
-                              });
-                            }).onError((error, stackTrace) => null);
-                          } else {
-                            await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                              await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                                ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                                sList.add(s);
-                                teamTotal += s.total!;
-                                pShots += s.total!;
-                              }).then((_) {
-                                p.shots = pShots;
-                              });
-                            }).onError((error, stackTrace) => null);
-                          }
-                        }).then((_) {
-                          plyrs.add(p);
-                          // _updateShotCalculations();
-                        });
-                      }
-                    });
-                  });
-                }).then((value) {
-                  _updateTeamTotal(sList, teamTotal);
-                  _updateShotCalculations();
-
+                      );
+                    },
+                  );
+                } else {
                   setState(() {
-                    plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
-                    players = plyrs.reversed.toList();
-                    isLoadingPlayers = false;
-                    isLoadingTeam = false;
-                  });
-                }).onError((error, stackTrace) => null);
-              }
-            }
-          });
-        }
-      }
+                    team = t;
+                    hasTeam = true;
+                    if (t.ownerId == user!.uid) {
+                      isOwner = true;
+                    }
 
-      setState(() {
-        isLoadingPlayers = false;
-        isLoadingTeam = false;
+                    _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+                  });
+
+                  _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+
+                  // Load the team total
+                  List<ShootingSession> sList = [];
+                  int teamTotal = 0;
+                  List<Plyr> plyrs = [];
+                  numPlayers = team == null ? 1 : team!.players!.length;
+
+                  await Future.forEach(team!.players!, (String pId) async {
+                    await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
+                      UserProfile u = UserProfile.fromSnapshot(uDoc);
+                      Plyr p = Plyr(u, 0);
+
+                      await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
+                        int pShots = 0;
+                        if (i.docs.isNotEmpty) {
+                          await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
+                            Iteration i = Iteration.fromSnapshot(iDoc);
+
+                            // If the players iteration doesn't have an updated_at field for some reason then just do a standard query
+                            if (i.udpatedAt != null) {
+                              await FirestoreCache.getDocuments(
+                                query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
+                                cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
+                                firestoreCacheField: 'updated_at',
+                              ).then((seshs) async {
+                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
+                                  sList.add(s);
+                                  teamTotal += s.total!;
+                                  pShots += s.total!;
+                                }).then((_) {
+                                  p.shots = pShots;
+                                });
+                              }).onError((error, stackTrace) => null);
+                            } else {
+                              await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
+                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
+                                  sList.add(s);
+                                  teamTotal += s.total!;
+                                  pShots += s.total!;
+                                }).then((_) {
+                                  p.shots = pShots;
+                                });
+                              }).onError((error, stackTrace) => null);
+                            }
+                          }).then((_) {
+                            plyrs.add(p);
+                            // _updateShotCalculations();
+                          });
+                        }
+                      });
+                    });
+                  }).then((value) {
+                    _updateTeamTotal(sList, teamTotal);
+                    _updateShotCalculations();
+
+                    setState(() {
+                      plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
+                      players = plyrs.reversed.toList();
+                      isLoadingPlayers = false;
+                      isLoadingTeam = false;
+                    });
+                  }).onError((error, stackTrace) => null);
+                }
+              }
+            });
+          }
+        }
+
+        setState(() {
+          isLoadingPlayers = false;
+          isLoadingTeam = false;
+        });
       });
     });
   }
