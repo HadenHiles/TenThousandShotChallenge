@@ -315,16 +315,14 @@ class _JoinTeamState extends State<JoinTeam> {
                                         ),
                                       );
 
-                                      if (context.mounted) {
-                                        Navigator.of(context).pushReplacement(MaterialPageRoute(
-                                          builder: (context) {
-                                            return const Navigation(
-                                              selectedIndex: 2,
-                                            );
-                                          },
-                                          maintainState: false,
-                                        ));
-                                      }
+                                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                        builder: (context) {
+                                          return const Navigation(
+                                            selectedIndex: 2,
+                                          );
+                                        },
+                                        maintainState: false,
+                                      ));
                                     }).onError((error, stackTrace) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
