@@ -32,7 +32,11 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   }
 
   void _handleBarcode(BarcodeCapture barcodes) {
-    return Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
+    if (barcodes.barcodes.isNotEmpty) {
+      return Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
+    } else {
+      return Navigator.of(context).pop();
+    }
   }
 
   @override
