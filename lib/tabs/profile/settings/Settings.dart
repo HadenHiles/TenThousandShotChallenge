@@ -124,7 +124,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        Navigator.of(context).pop();
                       },
                     ),
                   ),
@@ -323,7 +323,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       ],
                     ),
                     SettingsSection(
-                      title: Text('General', style: Theme.of(context).textTheme.titleLarge),
+                      title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                       tiles: [
                         SettingsTile.switchTile(
                           title: Text(
@@ -334,7 +334,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             Icons.brightness_2,
                             color: Theme.of(context).colorScheme.onPrimary,
                           ),
-                          initialValue: _darkMode,
+                          initialValue: _friendNotifications,
                           onToggle: (bool value) async {
                             SharedPreferences prefs = await SharedPreferences.getInstance();
 
