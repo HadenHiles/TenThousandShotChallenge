@@ -16,6 +16,7 @@ module.exports = {
   parserOptions: {
     project: ["./tsconfig.json", "./tsconfig.dev.json"],
     sourceType: "module",
+    ecmaVersion: 8,
   },
   ignorePatterns: [
     "/lib/**/*", // Ignore built files.
