@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import * as https from"https";
+import * as https from "https";
 import { google } from "googleapis";
 
 const PROJECT_ID = 'ten-thousand-puck-challenge';
@@ -14,10 +14,10 @@ function getAccessToken() {
     const key = require('./service-account.json');
     const jwtClient = new google.auth.JWT(
       key.client_email,
-      null,
+      undefined,
       key.private_key,
       SCOPES,
-      null
+      undefined
     );
     jwtClient.authorize(function(err: any, tokens: any) {
       if (err) {
