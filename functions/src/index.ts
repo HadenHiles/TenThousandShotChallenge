@@ -1,11 +1,77 @@
 import * as functions from "firebase-functions";
-import * as request from "request-promise-native";
 import * as admin from "firebase-admin";
+
+const https = require('https');
+const { google } = require('googleapis');
+
+const PROJECT_ID = 'ten-thousand-puck-challenge';
+const HOST = 'fcm.googleapis.com';
+const PATH = '/v1/projects/' + PROJECT_ID + '/messages:send';
+const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+const SCOPES = [MESSAGING_SCOPE];
+
+function getAccessToken() {
+  return new Promise(function(resolve, reject) {
+    const key = require('../placeholders/service-account.json');
+    const jwtClient = new google.auth.JWT(
+      key.client_email,
+      null,
+      key.private_key,
+      SCOPES,
+      null
+    );
+    jwtClient.authorize(function(err: any, tokens: { access_token: unknown; }) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(tokens.access_token);
+    });
+  });
+}
+
+/**
+ * Send HTTP request to FCM with given message.
+ *
+ * @param {object} fcmMessage will make up the body of the request.
+ */
+function sendFcmMessage(fcmMessage: any) {
+  getAccessToken().then(function(accessToken) {
+    const options = {
+      hostname: HOST,
+      path: PATH,
+      method: 'POST',
+      // [START use_access_token]
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      }
+      // [END use_access_token]
+    };
+
+    const request = https.request(options, function(resp: { setEncoding: (arg0: string) => void; on: (arg0: string, arg1: (data: any) => void) => void; }) {
+      resp.setEncoding('utf8');
+      resp.on('data', function(data) {
+        console.log('Message sent to Firebase for delivery, response:');
+        console.log(data);
+      });
+    });
+
+    request.on('error', function(err: any) {
+      console.log('Unable to send message to Firebase');
+      console.log(err);
+    });
+
+    request.write(JSON.stringify(fcmMessage));
+    request.end();
+  });
+}
+
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
-
-admin.initializeApp();
 
 export const inviteSent = functions.firestore.document("/invites/{userId}/invites/{teammateId}").onCreate(async (change, context) => {
     let user;
@@ -18,17 +84,14 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
         let data = {
-            "notification": {
-                "body": "Someone has sent you a teammate invite.",
-                "title": "Teammate challenge!",
+            "message": {
+                "token": fcmToken,
+                "notification": {
+                    "body": "Someone has sent you a teammate invite.",
+                    "title": "Teammate challenge!",
+                    "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                }
             },
-            "priority": "high",
-            "data": {
-                "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                "id": "1",
-                "status": "done",
-            },
-            "to": fcmToken,
         };
 
         if (fcmToken != null) {
@@ -37,19 +100,11 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = teammate != undefined ? teammate.display_name : "Someone";
-                data.notification.body = `${teammateName} has sent you an invite.`;
+                data.message.notification.body = `${teammateName} has sent you an invite.`;
 
                 functions.logger.log("Sending notification with data: " + JSON.stringify(data));
 
-                request({
-                    url: "https://fcm.googleapis.com/fcm/send",
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `key=${functions.config().messagingservice.key}`,
-                    },
-                    body: JSON.stringify(data),
-                });
+                sendFcmMessage(data);
             }).catch((err) => {
                 functions.logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -73,17 +128,14 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
         let data = {
-            "notification": {
-                "body": "Someone has accepted your teammate invite.",
-                "title": "Teammate challenge accepted!",
+            "message": {
+                "token": fcmToken,
+                "notification": {
+                    "body": "Someone has accepted your teammate invite.",
+                    "title": "Teammate challenge accepted!",
+                    "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                }
             },
-            "priority": "high",
-            "data": {
-                "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                "id": "1",
-                "status": "done",
-            },
-            "to": fcmToken,
         };
 
         if (fcmToken != null) {
@@ -92,19 +144,11 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = teammate != undefined ? teammate.display_name : "Someone";
-                data.notification.body = `${teammateName} has accepted your invite.`;
+                data.message.notification.body = `${teammateName} has accepted your invite.`;
 
                 functions.logger.log("Sending notification with data: " + JSON.stringify(data));
 
-                request({
-                    url: "https://fcm.googleapis.com/fcm/send",
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `key=${functions.config().messagingservice.key}`,
-                    },
-                    body: JSON.stringify(data),
-                });
+                sendFcmMessage(data);
             }).catch((err) => {
                 functions.logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -116,23 +160,6 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
         return null;
     });
 });
-
-// export const userSignUp = functions.auth.user().onCreate(async (user) => {
-//     var uDoc = admin.firestore().collection('users').doc(user.uid);
-//     await uDoc.get().then((u) => {
-//         if (!u.exists) {
-//         // Update/add the user's display name to firestore
-//         uDoc.set({
-//             'display_name_lowercase': user.displayName?.toLowerCase(),
-//             'display_name': user.displayName,
-//             'email': user.email,
-//             'photo_url': user.photoURL,
-//             'public': true,
-//             'fcm_token': null,
-//         });
-//         }
-//     });
-// });
 
 // Update the iteration timestamp for caching purposes any time a new session is created
 // Send teammates(friends) a notification to inspire some friendly competition
@@ -154,28 +181,22 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 
                 if (session != null) {
                     data = {
-                        "notification": {
-                            "body": `${user.display_name} just finished shooting!`,
-                            "title": `${user.display_name} just took ${session.total} shots!`,
-                        },
-                        "priority": "high",
-                        "data": {
-                            "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                            "id": "1",
-                            "status": "done",
+                        "message": {
+                            "data": {
+                                "body": `${user.display_name} just finished shooting!`,
+                                "title": `${user.display_name} just took ${session.total} shots!`,
+                                "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                            }
                         },
                     };
                 } else {
                     data = {
-                        "notification": {
-                            "body": `${user.display_name} just finished shooting`,
+                        "message": {
+                            "data": {
+                                "body": `${user.display_name} just finished shooting`,
                             "title": `Look out! ${user.display_name} is a shooting machine!`,
-                        },
-                        "priority": "high",
-                        "data": {
-                            "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                            "id": "1",
-                            "status": "done",
+                                "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                            }
                         },
                     };
                 }
@@ -196,19 +217,11 @@ export const sessionCreated = functions.firestore.document("/iterations/{userId}
 
                                 if (friendNotifications && fcmToken != null) {
                                     data.notification.body = getFriendNotificationMessage(user!.display_name, teammate.display_name);
-                                    data.to = fcmToken;
+                                    data.message.token = fcmToken;
 
                                     functions.logger.debug("Sending notification with data: " + JSON.stringify(data));
 
-                                    request({
-                                        url: "https://fcm.googleapis.com/fcm/send",
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                            "Authorization": `key=${functions.config().messagingservice.key}`,
-                                        },
-                                        body: JSON.stringify(data),
-                                    });
+                                    sendFcmMessage(data);
                                 }
                             });
                         });
