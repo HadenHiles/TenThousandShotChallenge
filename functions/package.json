@@ -18,6 +18,7 @@
     "@types/request-promise-native": "^1.0.17",
     "firebase-admin": "^9.2.0",
     "firebase-functions": "^3.11.0",
+    "googleapis": "^140.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "request-promise-native": "^1.0.9"
