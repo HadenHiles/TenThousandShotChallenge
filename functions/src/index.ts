@@ -11,7 +11,7 @@ const SCOPES = [MESSAGING_SCOPE];
 
 function getAccessToken() {
   return new Promise(function(resolve, reject) {
-    const key = require('./service-account.json');
+    const key = require('../service-account.json');
     const jwtClient = new google.auth.JWT(
       key.client_email,
       undefined,
