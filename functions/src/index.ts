@@ -1,8 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-
-const https = require('https');
-const { google } = require('googleapis');
+import * as https from"https";
+import { google } from "googleapis";
 
 const PROJECT_ID = 'ten-thousand-puck-challenge';
 const HOST = 'fcm.googleapis.com';
@@ -12,7 +11,7 @@ const SCOPES = [MESSAGING_SCOPE];
 
 function getAccessToken() {
   return new Promise(function(resolve, reject) {
-    const key = require('../placeholders/service-account.json');
+    const key = require('./service-account.json');
     const jwtClient = new google.auth.JWT(
       key.client_email,
       null,
@@ -20,7 +19,7 @@ function getAccessToken() {
       SCOPES,
       null
     );
-    jwtClient.authorize(function(err: any, tokens: { access_token: unknown; }) {
+    jwtClient.authorize(function(err: any, tokens: any) {
       if (err) {
         reject(err);
         return;
@@ -48,9 +47,9 @@ function sendFcmMessage(fcmMessage: any) {
       // [END use_access_token]
     };
 
-    const request = https.request(options, function(resp: { setEncoding: (arg0: string) => void; on: (arg0: string, arg1: (data: any) => void) => void; }) {
+    const request = https.request(options, function(resp: any) {
       resp.setEncoding('utf8');
-      resp.on('data', function(data) {
+      resp.on('data', function(data : any) {
         console.log('Message sent to Firebase for delivery, response:');
         console.log(data);
       });
