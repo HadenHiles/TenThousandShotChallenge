@@ -88,7 +88,6 @@ export const inviteSent = functions.firestore.document("/invites/{userId}/invite
                 "notification": {
                     "body": "Someone has sent you a teammate invite.",
                     "title": "Teammate challenge!",
-                    "click_action": "FLUTTER_NOTIFICATION_CLICK"
                 }
             },
         };
@@ -132,7 +131,6 @@ export const inviteAccepted = functions.firestore.document("/teammates/{userId}/
                 "notification": {
                     "body": "Someone has accepted your teammate invite.",
                     "title": "Teammate challenge accepted!",
-                    "click_action": "FLUTTER_NOTIFICATION_CLICK"
                 }
             },
         };
