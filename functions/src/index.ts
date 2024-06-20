@@ -50,14 +50,14 @@ function sendFcmMessage(fcmMessage: any) {
     const request = https.request(options, function(resp: any) {
       resp.setEncoding('utf8');
       resp.on('data', function(data : any) {
-        console.log('Message sent to Firebase for delivery, response:');
-        console.log(data);
+        functions.logger.log('Message sent to Firebase for delivery, response:');
+        functions.logger.log(data);
       });
     });
 
     request.on('error', function(err: any) {
-      console.log('Unable to send message to Firebase');
-      console.log(err);
+      functions.logger.log('Unable to send message to Firebase');
+      functions.logger.error(err);
     });
 
     request.write(JSON.stringify(fcmMessage));
