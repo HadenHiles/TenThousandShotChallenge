@@ -182,7 +182,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               }).onError((error, stackTrace) => null);
                             }
                           }).then((_) {
-                            plyrs.add(p);
+                            if (!plyrs.contains(p)) {
+                              plyrs.add(p);
+                            }
                             // _updateShotCalculations();
                           });
                         }
