@@ -325,6 +325,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                         builder: (context) {
                                           return const Navigation(
                                             selectedIndex: 2,
+                                            title: NavigationTitle(title: "Team"),
                                           );
                                         },
                                         maintainState: false,
