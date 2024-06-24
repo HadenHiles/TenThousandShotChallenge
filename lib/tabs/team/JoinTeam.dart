@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
+import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class JoinTeam extends StatefulWidget {
@@ -126,7 +127,12 @@ class _JoinTeamState extends State<JoinTeam> {
                                     });
                                     searchFieldController.text = "";
 
-                                    Navigator.of(context).pop();
+                                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
+                                      return const Navigation(
+                                        selectedIndex: 2,
+                                        title: NavigationTitle(title: "Team"),
+                                      );
+                                    }));
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
