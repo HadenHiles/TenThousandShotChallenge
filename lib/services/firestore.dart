@@ -361,7 +361,9 @@ Future<bool> joinTeam(String teamId) async {
   // Get the teammate
   return await FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((t) async {
     Team team = Team.fromSnapshot(t);
-    team.players!.add(auth.currentUser!.uid);
+    if (!team.players!.contains(auth.currentUser!.uid)) {
+      team.players!.add(auth.currentUser!.uid);
+    }
 
     // Add the current user to the team players list
     return await t.reference.update({'players': team.players}).then((value) async {
