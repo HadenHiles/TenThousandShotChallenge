@@ -159,6 +159,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
                                 cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
                                 firestoreCacheField: 'updated_at',
+                                isUpdateCacheDate: true,
                               ).then((seshs) async {
                                 await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
                                   ShootingSession s = ShootingSession.fromSnapshot(sesh);
