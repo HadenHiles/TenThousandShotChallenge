@@ -369,15 +369,15 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                 playedColor: Theme.of(context).primaryColor,
                                                 handleColor: Theme.of(context).primaryColor,
                                               ),
-                                              bottomActions: [
-                                                const SizedBox(width: 14.0),
+                                              bottomActions: const [
+                                                SizedBox(width: 14.0),
                                                 CurrentPosition(),
-                                                const SizedBox(width: 8.0),
+                                                SizedBox(width: 8.0),
                                                 ProgressBar(
                                                   isExpanded: true,
                                                 ),
                                                 RemainingDuration(),
-                                                const PlaybackSpeedButton(),
+                                                PlaybackSpeedButton(),
                                               ],
                                               actionsPadding: const EdgeInsets.all(2),
                                               liveUIColor: Theme.of(context).primaryColor,
