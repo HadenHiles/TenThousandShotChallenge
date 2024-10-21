@@ -820,6 +820,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   ),
                                 ),
                               ),
+                        const SizedBox(
+                          height: 56,
+                        ),
                       ],
                     ),
         ],
