@@ -2,7 +2,7 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:auto_size_text_field/auto_size_text_field.dart';
-// import 'package:firestore_cache/firestore_cache.dart';
+import 'package:firestore_cache/firestore_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -153,35 +153,35 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
                             Iteration i = Iteration.fromSnapshot(iDoc);
 
-                            //TODO: Figure out why the cache isn't invalidating properly on ios
                             // If the players iteration doesn't have an updated_at field for some reason then just do a standard query
-                            // if (i.udpatedAt != null) {
-                            //   await FirestoreCache.getDocuments(
-                            //     query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
-                            //     cacheDocRef: i.reference as DocumentReference<Map<String, dynamic>>,
-                            //     firestoreCacheField: 'updated_at',
-                            //     isUpdateCacheDate: true,
-                            //   ).then((seshs) async {
-                            //     await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                            //       ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                            //       sList.add(s);
-                            //       teamTotal += s.total!;
-                            //       pShots += s.total!;
-                            //     }).then((_) {
-                            //       p.shots = pShots;
-                            //     });
-                            //   }).onError((error, stackTrace) => null);
-                            // } else {}
-                            await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                              await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                                ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                                sList.add(s);
-                                teamTotal += s.total!;
-                                pShots += s.total!;
-                              }).then((_) {
-                                p.shots = pShots;
-                              });
-                            }).onError((error, stackTrace) => null);
+                            if (i.udpatedAt != null) {
+                              await FirestoreCache.getDocuments(
+                                query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
+                                cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
+                                firestoreCacheField: 'updated_at',
+                                isUpdateCacheDate: true,
+                              ).then((seshs) async {
+                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
+                                  sList.add(s);
+                                  teamTotal += s.total!;
+                                  pShots += s.total!;
+                                }).then((_) {
+                                  p.shots = pShots;
+                                });
+                              }).onError((error, stackTrace) => null);
+                            } else {
+                              await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
+                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
+                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
+                                  sList.add(s);
+                                  teamTotal += s.total!;
+                                  pShots += s.total!;
+                                }).then((_) {
+                                  p.shots = pShots;
+                                });
+                              }).onError((error, stackTrace) => null);
+                            }
                           }).then((_) {
                             if (!plyrs.contains(p)) {
                               plyrs.add(p);
