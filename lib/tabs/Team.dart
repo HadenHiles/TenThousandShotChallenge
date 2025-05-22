@@ -9,27 +9,116 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
+import 'package:qr_flutter/qr_flutter.dart'; // For QRCodeDialog
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart'; // For the generic dialog function
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
-import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart'; // Assuming wristShotColor is here
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
-import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
-import '../main.dart';
+import 'package:rxdart/rxdart.dart'; // Import RxDart
+import '../main.dart'; // For preferences and navigatorKey
 
 const TEAM_HEADER_HEIGHT = 65.0;
+
+// QRCodeDialog Class (Included directly in this file for simplicity)
+class QRCodeDialog extends StatelessWidget {
+  final String title;
+  final String data;
+  final String? message;
+
+  const QRCodeDialog({
+    super.key,
+    required this.title,
+    required this.data,
+    this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontSize: 20,
+          color: Theme.of(context).primaryColor,
+        ),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (message != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 15.0),
+              child: Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          SizedBox(
+            width: 200,
+            height: 200,
+            child: QrImageView(
+              data: data,
+              version: QrVersions.auto,
+              size: 200.0,
+              backgroundColor: Colors.white, // Ensure QR is visible in dark mode
+              eyeStyle: QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              dataModuleStyle: QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: Text(
+            "Close".toUpperCase(),
+            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onSurface),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// displayTeamQRCodeDialog function (Included directly in this file for simplicity)
+Future<bool> displayTeamQRCodeDialog(BuildContext context, String? teamId, String? teamName) async {
+  if (teamId != null && teamId.isNotEmpty && teamName != null && teamName.isNotEmpty) {
+    await showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => QRCodeDialog(
+        title: "Team QR Code",
+        data: teamId,
+        message: "Have new players scan this code to join '$teamName'.",
+      ),
+    );
+    return true;
+  }
+  Fluttertoast.showToast(msg: "Team information is incomplete for QR sharing.");
+  return false;
+}
 
 class TeamPage extends StatefulWidget {
   const TeamPage({super.key});
@@ -46,1163 +135,668 @@ class Plyr {
 }
 
 class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin {
-  // Static variables
-  final user = FirebaseAuth.instance.currentUser;
-  DateTime? _targetDate;
+  final user = FirebaseAuth.instance.currentUser!;
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
-  bool hasTeam = false;
-  bool isOwner = false;
-  int numPlayers = 1;
-  List<Plyr>? players = [];
-  bool isLoadingPlayers = true;
-  List<ShootingSession>? sessions = [];
-  int teamTotalShots = 0;
-  String? shotsPerDayText = "Not Available".toLowerCase();
-  String? shotsPerWeekText = "Not Available".toLowerCase();
-  Team? team;
-  bool isLoadingTeam = true;
-  UserProfile? userProfile;
+
+  final NumberFormat numberFormat = NumberFormat("###,###,###", "en_US");
 
   @override
   void initState() {
     super.initState();
-    _loadTeam();
   }
 
-  Future<Null> _loadTeam() async {
-    await Future.delayed(const Duration(milliseconds: 400)).then((_) async {
-      await FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) async {
-        if (uDoc.exists) {
-          userProfile = UserProfile.fromSnapshot(uDoc);
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _getUserProfileStream() {
+    return FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots();
+  }
 
-          if (userProfile!.teamId != null) {
-            await FirebaseFirestore.instance.collection('teams').doc(userProfile!.teamId).get().then((tSnap) async {
-              if (tSnap.exists) {
-                Team t = Team.fromSnapshot(tSnap);
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _getTeamStream(String teamId) {
+    return FirebaseFirestore.instance.collection('teams').doc(teamId).snapshots();
+  }
 
-                if (!t.players!.contains(user!.uid)) {
-                  // Remove the user's assigned team so they can join a new one
-                  uDoc.reference.update({'team_id': null}).then((value) {});
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(
-                          "You have been removed from team \"${t.name}\" by the team owner.".toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 24,
-                          ),
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "You are free to join a new team whenever you wish.",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context) {
-                              return const JoinTeam();
-                            })),
-                            child: Text(
-                              "Ok".toUpperCase(),
-                              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  setState(() {
-                    team = t;
-                    hasTeam = true;
-                    if (t.ownerId == user!.uid) {
-                      isOwner = true;
-                    }
+  // Stream for a single player's data (profile + total shots)
+  Stream<Plyr> _getSinglePlayerDataStream(String playerUid, DateTime teamStartDate, DateTime teamTargetDate) {
+    final userProfileStream = FirebaseFirestore.instance.collection('users').doc(playerUid).snapshots().map((snap) {
+      if (snap.exists) {
+        return UserProfile.fromSnapshot(snap);
+      }
+      // Corrected UserProfile placeholder
+      return UserProfile("Loading...", "Loading...", null, null, null, null, null);
+    });
 
-                    _targetDate = t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-                  });
-
-                  _targetDateController.text = DateFormat('MMMM d, y').format(t.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-
-                  // Load the team total
-                  List<ShootingSession> sList = [];
-                  int teamTotal = 0;
-                  List<Plyr> plyrs = [];
-                  numPlayers = team == null ? 1 : team!.players!.length;
-
-                  await Future.forEach(team!.players!, (String pId) async {
-                    await FirebaseFirestore.instance.collection('users').doc(pId).get().then((uDoc) async {
-                      UserProfile u = UserProfile.fromSnapshot(uDoc);
-                      Plyr p = Plyr(u, 0);
-
-                      await FirebaseFirestore.instance.collection('iterations').doc(u.reference!.id).collection('iterations').get().then((i) async {
-                        int pShots = 0;
-                        if (i.docs.isNotEmpty) {
-                          await Future.forEach(i.docs, (DocumentSnapshot iDoc) async {
-                            Iteration i = Iteration.fromSnapshot(iDoc);
-
-                            // If the players iteration doesn't have an updated_at field for some reason then just do a standard query
-                            if (i.udpatedAt != null) {
-                              await FirestoreCache.getDocuments(
-                                query: i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true),
-                                cacheDocRef: FirebaseFirestore.instance.collection("iterations/${u.reference!.id}/iterations").doc(i.reference!.id),
-                                firestoreCacheField: 'updated_at',
-                                isUpdateCacheDate: true,
-                              ).then((seshs) async {
-                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                                  sList.add(s);
-                                  teamTotal += s.total!;
-                                  pShots += s.total!;
-                                }).then((_) {
-                                  p.shots = pShots;
-                                });
-                              }).onError((error, stackTrace) => null);
-                            } else {
-                              await i.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: team!.startDate).where('date', isLessThanOrEqualTo: team!.targetDate).orderBy('date', descending: true).get().then((seshs) async {
-                                await Future.forEach(seshs.docs, (DocumentSnapshot sesh) {
-                                  ShootingSession s = ShootingSession.fromSnapshot(sesh);
-                                  sList.add(s);
-                                  teamTotal += s.total!;
-                                  pShots += s.total!;
-                                }).then((_) {
-                                  p.shots = pShots;
-                                });
-                              }).onError((error, stackTrace) => null);
-                            }
-                          }).then((_) {
-                            if (!plyrs.contains(p)) {
-                              plyrs.add(p);
-                            }
-                            // _updateShotCalculations();
-                          });
-                        }
-                      });
-                    });
-                  }).then((value) {
-                    _updateTeamTotal(sList, teamTotal);
-                    _updateShotCalculations();
-
-                    setState(() {
-                      plyrs.sort((a, b) => a.shots!.compareTo(b.shots!));
-                      players = plyrs.reversed.toList();
-                      isLoadingPlayers = false;
-                      isLoadingTeam = false;
-                    });
-                  }).onError((error, stackTrace) => null);
-                }
-              }
-            });
+    // Stream of total shots for this player
+    final playerTotalShotsStream = FirebaseFirestore.instance
+        .collection('iterations') // Root iterations collection
+        .doc(playerUid) // Document ID is the user's UID
+        .collection('iterations') // Subcollection of iterations for this user
+        .snapshots() // Stream<QuerySnapshot> of the user's iterations
+        .switchMap((iterationsSnapshot) {
+          // When iterations change, get new session sums
+          if (iterationsSnapshot.docs.isEmpty) {
+            return Stream.value(0); // No iterations, so 0 shots
           }
-        }
 
-        setState(() {
-          isLoadingPlayers = false;
-          isLoadingTeam = false;
+          List<Stream<int>> iterationShotSumStreams = iterationsSnapshot.docs.map((iterationDoc) {
+            Iteration iteration = Iteration.fromSnapshot(iterationDoc);
+            // IMPORTANT: 'updated_at' on the iterationDoc is crucial for FirestoreCache
+
+            // FirestoreCache.getDocuments returns a Future<QuerySnapshot>
+            // We need to convert this Future to a Stream to use RxDart's .map
+            // Or, if FirestoreCache.snapshots is available and preferred for real-time updates on sessions:
+            // return FirestoreCache.snapshots(
+            //   query: iteration.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: teamStartDate).where('date', isLessThanOrEqualTo: teamTargetDate),
+            //   cacheDocRef: iteration.reference!, // Cache is per iteration document
+            //   firestoreCacheField: 'updated_at',
+            // ).map((sessionsSnapshot) { // .map here is on the Stream<QuerySnapshot>
+            //   int shotsInThisIteration = 0;
+            //   for (var doc in sessionsSnapshot.docs) {
+            //     shotsInThisIteration += (ShootingSession.fromSnapshot(doc).total ?? 0);
+            //   }
+            //   return shotsInThisIteration;
+            // }) // ... rest of stream operators
+
+            // If you must use FirestoreCache.getDocuments (fetches once then uses cache logic):
+            return Stream.fromFuture(
+              FirestoreCache.getDocuments(
+                query: iteration.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: teamStartDate).where('date', isLessThanOrEqualTo: teamTargetDate),
+                // The cacheDocRef needs to be a DocumentReference<Map<String, dynamic>>
+                // If iteration.reference is already correctly typed, no need for withConverter here unless specifically required by your setup.
+                // However, if it's a DocumentReference<Object?> or similar, you might need:
+                cacheDocRef: iteration.reference!.withConverter<Map<String, dynamic>>(fromFirestore: (snapshot, _) => snapshot.data()!, toFirestore: (model, _) => model),
+                firestoreCacheField: 'updated_at',
+                // cacheRefreshStrategy: const CacheRefreshStrategy.periodic(Duration(minutes: 3)), // If available and needed
+              ),
+            )
+                .map((sessionsSnapshot) {
+                  // .map here is on the Stream<QuerySnapshot> from Stream.fromFuture
+                  int shotsInThisIteration = 0;
+                  for (var doc in sessionsSnapshot.docs) {
+                    shotsInThisIteration += (ShootingSession.fromSnapshot(doc).total ?? 0);
+                  }
+                  return shotsInThisIteration;
+                })
+                .startWith(0)
+                .handleError((e) {
+                  // print("Error fetching sessions for iteration ${iteration.reference!.id}: $e");
+                  return 0; // Return 0 shots for this iteration on error
+                });
+          }).toList();
+
+          if (iterationShotSumStreams.isEmpty) {
+            return Stream.value(0);
+          }
+
+          // Combine the sums from all iterations for this player
+          return CombineLatestStream.list<int>(iterationShotSumStreams).map((listOfShotSums) => listOfShotSums.fold(0, (prev, sum) => prev + sum)).startWith(0); // Emit 0 initially until sums are calculated
+        })
+        .startWith(0)
+        .handleError((e) {
+          // print("Error in playerTotalShotsStream for $playerUid: $e");
+          return 0; // Return 0 shots for player on error
         });
-      });
+
+    return CombineLatestStream.combine2(
+      userProfileStream,
+      playerTotalShotsStream,
+      (UserProfile profile, int totalShots) => Plyr(profile, totalShots),
+    ).handleError((error) {
+      // print("Error combining profile and shots for $playerUid: $error");
+      // Fallback Plyr object
+      // Corrected UserProfile placeholder
+      return Plyr(UserProfile("Loading...", "Loading...", null, null, null, null, null), 0);
     });
   }
 
-  _updateTeamTotal(List<ShootingSession> sList, int teamTotal) {
-    setState(() {
-      sessions = sList;
-      teamTotalShots = teamTotal;
+  Stream<List<Plyr>> _getTeamPlayersDataStream(List<String> playerUids, DateTime teamStartDate, DateTime teamTargetDate) {
+    if (playerUids.isEmpty) {
+      return Stream.value([]);
+    }
+
+    List<Stream<Plyr>> playerStreams = playerUids.map((uid) {
+      return _getSinglePlayerDataStream(uid, teamStartDate, teamTargetDate);
+    }).toList();
+
+    return CombineLatestStream.list<Plyr>(playerStreams).map((listOfPlyrs) {
+      var validPlyrs = listOfPlyrs.where((p) => p.profile?.displayName != "Loading..." && p.profile?.displayName != "Error").toList();
+      validPlyrs.sort((a, b) => (b.shots ?? 0).compareTo(a.shots ?? 0));
+      return validPlyrs;
+    }).handleError((error, stackTrace) {
+      // print("Error in _getTeamPlayersDataStream: $error \n$stackTrace");
+      return [];
     });
   }
 
-  _updateShotCalculations() {
-    int? total = teamTotalShots;
-    int shotsRemaining = team!.goalTotal! - total;
-    int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-    double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+  Map<String, String> _calculateShotTexts(int teamTotalShots, Team teamData, int numPlayers) {
+    int currentTeamTotalShots = teamTotalShots;
+    int goalTotal = teamData.goalTotal!;
+    DateTime targetDate = teamData.targetDate!;
+
+    int shotsRemaining = goalTotal - currentTeamTotalShots;
+    final now = DateTime.now();
+    final normalizedTargetDate = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    final normalizedToday = DateTime(now.year, now.month, now.day);
+
+    int daysRemaining = normalizedTargetDate.difference(normalizedToday).inDays;
+    double weeksRemaining = daysRemaining / 7;
+
+    if (numPlayers <= 0) numPlayers = 1;
 
     int shotsPerDay = 0;
-    if (daysRemaining <= 1) {
-      shotsPerDay = shotsRemaining;
+    if (daysRemaining <= 0) {
+      shotsPerDay = shotsRemaining > 0 ? shotsRemaining : 0;
     } else {
-      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+      shotsPerDay = shotsRemaining <= 0 ? 0 : (shotsRemaining / daysRemaining).ceil();
     }
+    if (shotsPerDay < 0) shotsPerDay = 0;
 
     int shotsPerWeek = 0;
-    if (weeksRemaining <= 1) {
-      shotsPerWeek = shotsRemaining;
+    if (weeksRemaining <= 0) {
+      shotsPerWeek = shotsRemaining > 0 ? shotsRemaining : 0;
     } else {
-      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+      shotsPerWeek = shotsRemaining <= 0 ? 0 : (shotsRemaining.toDouble() / weeksRemaining).ceil().toInt();
     }
+    if (shotsPerWeek < 0) shotsPerWeek = 0;
 
     int shotsPerPlayerDay = (shotsPerDay / numPlayers).round();
     int shotsPerPlayerWeek = (shotsPerWeek / numPlayers).round();
 
-    shotsPerDayText = shotsRemaining < 1
-        ? "Done!".toLowerCase()
-        : shotsPerDay <= 999
-            ? "$shotsPerPlayerDay / Day / Player".toLowerCase()
-            : "${numberFormat.format(shotsPerPlayerDay)} / Day / Player".toLowerCase();
-    shotsPerWeekText = shotsRemaining < 1
-        ? "Done!".toLowerCase()
-        : shotsPerWeek <= 999
-            ? "$shotsPerPlayerWeek / Week / Player".toLowerCase()
-            : "${numberFormat.format(shotsPerPlayerWeek)} / Week / Player".toLowerCase();
+    String finalShotsPerDayText;
+    String finalShotsPerWeekText;
 
-    if (_targetDate!.compareTo(DateTime.now()) < 0) {
-      daysRemaining = DateTime.now().difference(team!.targetDate!).inDays * -1;
-
-      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-      shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+    if (normalizedTargetDate.isBefore(normalizedToday)) {
+      // Target date is in the past
+      int daysPast = normalizedToday.difference(normalizedTargetDate).inDays;
+      finalShotsPerDayText = "${daysPast.abs()} Days Past Goal".toLowerCase();
+      finalShotsPerWeekText = shotsRemaining <= 0 ? "Goal Met!".toLowerCase() : (shotsRemaining <= 999 ? "$shotsRemaining remaining".toLowerCase() : "${numberFormat.format(shotsRemaining)} remaining".toLowerCase());
+    } else {
+      // Future goal date or today
+      finalShotsPerDayText = shotsRemaining < 1
+          ? "Done!".toLowerCase()
+          : shotsPerPlayerDay <= 999
+              ? "$shotsPerPlayerDay / Day / Player".toLowerCase()
+              : "${numberFormat.format(shotsPerPlayerDay)} / Day / Player".toLowerCase();
+      finalShotsPerWeekText = shotsRemaining < 1
+          ? "Done!".toLowerCase()
+          : shotsPerPlayerWeek <= 999
+              ? "$shotsPerPlayerWeek / Week / Player".toLowerCase()
+              : "${numberFormat.format(shotsPerPlayerWeek)} / Week / Player".toLowerCase();
     }
 
-    setState(() {
-      shotsPerDayText = shotsPerDayText;
-      shotsPerWeekText = shotsPerWeekText;
-    });
+    return {
+      'shotsPerDayText': finalShotsPerDayText,
+      'shotsPerWeekText': finalShotsPerWeekText,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    var f = NumberFormat("###,###,###", "en_US");
-    _targetDateController.text = DateFormat('MMMM d, y').format(team?.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-    double totalShotsWidth = 0;
-    double totalShotsPercentage = 0;
+    final bool isDarkMode = preferences?.darkMode ?? false;
 
-    if (team != null) {
-      totalShotsPercentage = (teamTotalShots / team!.goalTotal!) > 1 ? 1 : (teamTotalShots / team!.goalTotal!);
-      totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
-    }
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _getUserProfileStream(),
+      builder: (context, userProfileSnapshot) {
+        if (userProfileSnapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+        }
+        if (!userProfileSnapshot.hasData || !userProfileSnapshot.data!.exists) {
+          return const Center(child: Text("Error loading user profile. Please restart the app."));
+        }
 
-    return SingleChildScrollView(
-      physics: const ScrollPhysics(),
-      child: Column(
-        mainAxisAlignment: hasTeam && (isLoadingTeam || isLoadingPlayers) ? MainAxisAlignment.center : MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          hasTeam && (isLoadingTeam || isLoadingPlayers)
-              ? Container(
-                  margin: const EdgeInsets.only(top: 100),
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                )
-              : !hasTeam
-                  ? SizedBox(
-                      width: MediaQuery.of(context).size.width - 30,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(top: 40),
-                            child: Text(
-                              "Tap + to create a team".toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 20,
-                                color: Theme.of(context).colorScheme.onPrimary,
+        UserProfile currentUserProfile = UserProfile.fromSnapshot(userProfileSnapshot.data!);
+        final String? teamId = currentUserProfile.teamId;
+
+        if (teamId == null) {
+          return _buildNoTeamUI();
+        }
+
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: _getTeamStream(teamId),
+          builder: (context, teamSnapshot) {
+            if (teamSnapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+            }
+            if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
+              return _buildTeamRemovedOrNotFoundUI(null, currentUserProfile.reference);
+            }
+
+            Team team = Team.fromSnapshot(teamSnapshot.data!);
+            bool isCurrentUserOwner = team.ownerId == user.uid;
+            _targetDateController.text = DateFormat('MMMM d, y').format(team.targetDate ?? DateTime.now().add(const Duration(days: 100)));
+
+            if (!(team.players?.contains(user.uid) ?? false)) {
+              return _buildTeamRemovedOrNotFoundUI(team.name, currentUserProfile.reference);
+            }
+
+            return StreamBuilder<List<Plyr>>(
+              stream: _getTeamPlayersDataStream(team.players ?? [], team.startDate!, team.targetDate!),
+              builder: (context, playersSnapshot) {
+                if (playersSnapshot.connectionState == ConnectionState.waiting && !(playersSnapshot.hasData && playersSnapshot.data!.isNotEmpty)) {
+                  return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+                }
+                if (playersSnapshot.hasError) {
+                  return Center(child: Text("Error loading players: ${playersSnapshot.error}."));
+                }
+
+                List<Plyr> currentPlayers = playersSnapshot.data ?? [];
+                int currentTeamTotalShots = currentPlayers.fold(0, (sum, p) => sum + (p.shots ?? 0));
+                int numActivePlayers = currentPlayers.isNotEmpty ? currentPlayers.length : 1;
+
+                final shotTexts = _calculateShotTexts(currentTeamTotalShots, team, numActivePlayers);
+                String displayShotsPerDayText = shotTexts['shotsPerDayText']!;
+                String displayShotsPerWeekText = shotTexts['shotsPerWeekText']!;
+
+                double totalShotsWidth = 0;
+                double totalShotsPercentage = 0;
+                if ((team.goalTotal ?? 0) > 0) {
+                  totalShotsPercentage = (currentTeamTotalShots / team.goalTotal!.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / team.goalTotal!.toDouble());
+                }
+                totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
+                if (totalShotsWidth < 0) totalShotsWidth = 0;
+
+                return SingleChildScrollView(
+                  physics: const ScrollPhysics(),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.only(top: 5, bottom: 0),
+                        margin: const EdgeInsets.only(bottom: 10, top: 15),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text("Goal".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
+                            SizedBox(
+                              width: 150,
+                              child: AutoSizeTextField(
+                                controller: _targetDateController,
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 1,
+                                maxFontSize: 14,
+                                decoration: InputDecoration(
+                                  labelText: "${numberFormat.format(team.goalTotal ?? 0)} Shots By:".toLowerCase(),
+                                  labelStyle: TextStyle(color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  contentPadding: const EdgeInsets.all(2),
+                                ),
+                                readOnly: true,
                               ),
                             ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 15),
-                            child: Center(
-                              child: Ink(
-                                decoration: ShapeDecoration(
-                                  color: Theme.of(context).cardTheme.color,
-                                  shape: const CircleBorder(),
-                                ),
-                                child: IconButton(
-                                  color: Theme.of(context).cardTheme.color,
-                                  onPressed: () {
-                                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                      return const CreateTeam();
-                                    }));
-                                  },
-                                  iconSize: 40,
-                                  icon: Icon(
-                                    Icons.add,
-                                    size: 40,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                SizedBox(
+                                  width: 110,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _showShotsPerDay = !_showShotsPerDay),
+                                    child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText, maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          const Divider(
-                            height: 50,
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 40),
-                            child: Text(
-                              "Or join an existing team".toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 20,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 15),
-                            child: Center(
-                              child: Ink(
-                                child: MaterialButton(
-                                  color: Theme.of(context).cardTheme.color,
-                                  child: Text(
-                                    "Join Team".toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 20,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                      return const JoinTeam();
-                                    }));
-                                  },
+                                InkWell(
+                                  onTap: () => setState(() => _showShotsPerDay = !_showShotsPerDay),
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.swap_vert, size: 18)),
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        _targetDate == null
-                            ? Container(
-                                margin: const EdgeInsets.only(top: 10),
-                              )
-                            : Container(
-                                padding: const EdgeInsets.only(top: 5, bottom: 0),
-                                margin: const EdgeInsets.only(
-                                  bottom: 10,
-                                  top: 15,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Goal".toUpperCase(),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 26,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                    Stack(
-                                      children: [
-                                        SizedBox(
-                                          width: 150,
-                                          child: AutoSizeTextField(
-                                            controller: _targetDateController,
-                                            style: const TextStyle(fontSize: 12),
-                                            maxLines: 1,
-                                            maxFontSize: 14,
-                                            decoration: InputDecoration(
-                                              labelText: "${f.format(int.parse(team!.goalTotal.toString()))} Shots By:".toLowerCase(),
-                                              labelStyle: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 22,
-                                              ),
-                                              focusColor: Theme.of(context).colorScheme.primary,
-                                              border: null,
-                                              disabledBorder: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              contentPadding: const EdgeInsets.all(2),
-                                              fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                            ),
-                                            readOnly: true,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        SizedBox(
-                                          width: 110,
-                                          child: teamTotalShots == 0 && isLoadingTeam
-                                              ? Center(
-                                                  child: CircularProgressIndicator(
-                                                    color: Theme.of(context).primaryColor,
-                                                  ),
-                                                )
-                                              : GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      _showShotsPerDay = !_showShotsPerDay;
-                                                    });
-                                                  },
-                                                  child: AutoSizeText(
-                                                    _showShotsPerDay ? shotsPerDayText! : shotsPerWeekText!,
-                                                    maxFontSize: 20,
-                                                    maxLines: 1,
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                      fontFamily: "NovecentoSans",
-                                                      fontSize: 20,
-                                                    ),
-                                                  ),
-                                                ),
-                                        ),
-                                        InkWell(
-                                          enableFeedback: true,
-                                          focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                          onTap: () {
-                                            setState(() {
-                                              _showShotsPerDay = !_showShotsPerDay;
-                                            });
-                                          },
-                                          borderRadius: BorderRadius.circular(30),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(10),
-                                            child: Icon(
-                                              Icons.swap_vert,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Progress".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 22,
-                                fontFamily: 'NovecentoSans',
-                              ),
+                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
+                      const SizedBox(height: 5),
+                      Column(children: [
+                        Container(
+                          width: (MediaQuery.of(context).size.width),
+                          margin: const EdgeInsets.symmetric(horizontal: 30),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).cardTheme.color),
+                          clipBehavior: Clip.antiAlias,
+                          child: Row(children: [
+                            Tooltip(
+                              message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
+                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: const BoxDecoration(color: wristShotColor)),
                             ),
-                          ],
+                          ]),
                         ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Column(
-                          children: [
+                        Container(
+                          width: (MediaQuery.of(context).size.width - 30),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                          clipBehavior: Clip.antiAlias,
+                          child: Row(children: [
                             Container(
-                              width: (MediaQuery.of(context).size.width),
-                              margin: const EdgeInsets.symmetric(horizontal: 30),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: Theme.of(context).cardTheme.color,
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Tooltip(
-                                    message: "$teamTotalShots Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: teamTotalShots > 0 ? totalShotsPercentage * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(
-                                        color: wristShotColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              height: 40,
+                              width: totalShotsWidth < 35
+                                  ? 50
+                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
+                                      ? totalShotsWidth - 175
+                                      : totalShotsWidth,
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: AutoSizeText(numberFormat.format(currentTeamTotalShots), textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                             ),
-                            Container(
-                              width: (MediaQuery.of(context).size.width - 30),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Container(
-                                    height: 40,
-                                    width: totalShotsWidth < 35
-                                        ? 50
-                                        : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
-                                            ? totalShotsWidth - 175
-                                            : totalShotsWidth,
-                                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                                    child: AutoSizeText(
-                                      numberFormat.format(teamTotalShots),
-                                      textAlign: TextAlign.right,
-                                      maxFontSize: 18,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 18,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                                        child: Text(
-                                          " / ${numberFormat.format(team!.goalTotal)}",
-                                          textAlign: TextAlign.right,
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 18,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                            Text(" / ${numberFormat.format(team.goalTotal ?? 0)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                          ]),
+                        ),
+                      ]),
+                      const SizedBox(height: 5),
+                      currentPlayers.isEmpty
+                          ? _buildNoPlayersOnTeamUI(team)
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(0),
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: currentPlayers.length,
+                              itemBuilder: (_, int index) {
+                                final Plyr p = currentPlayers[index];
+                                return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner);
+                              },
                             ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        players!.isEmpty
-                            ? SizedBox(
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 40),
-                                      child: Text(
-                                        "No Players on the Team (yet!)".toUpperCase(),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontFamily: 'NovecentoSans',
-                                          fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 15),
-                                      child: Center(
-                                        child: Ink(
-                                          decoration: ShapeDecoration(
-                                            color: Theme.of(context).cardTheme.color,
-                                            shape: const CircleBorder(),
-                                          ),
-                                          child: IconButton(
-                                            color: Theme.of(context).cardTheme.color,
-                                            onPressed: () async {
-                                              await showTeamQRCode().then((hasTeam) async {
-                                                if (!hasTeam) {
-                                                  final barcodeScanRes = await Navigator.of(context).push(
-                                                    MaterialPageRoute(
-                                                      builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
-                                                    ),
-                                                  );
+                      if (isCurrentUserOwner) _buildEditTeamButton() else _buildLeaveTeamButton(team),
+                      const SizedBox(height: 56),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
-                                                  joinTeam(barcodeScanRes).then((success) {
-                                                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
-                                                      return Navigation(
-                                                        title: NavigationTitle(title: team!.name!.toUpperCase()),
-                                                        selectedIndex: 2,
-                                                      );
-                                                    }));
-                                                  });
-                                                }
-                                              });
-                                            },
-                                            iconSize: 40,
-                                            icon: Icon(
-                                              Icons.share,
-                                              size: 40,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : SizedBox(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.all(0),
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: players!.length + 1,
-                                  itemBuilder: (_, int index) {
-                                    if (index < players!.length) {
-                                      final Plyr p = players![index];
-                                      return _buildPlayerItem(p, index % 2 == 0 ? true : false, index + 1);
-                                    }
-
-                                    return players!.isNotEmpty
-                                        ? Container()
-                                        : const Center(
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.max,
-                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: [
-                                                SizedBox(
-                                                  height: 25,
-                                                  width: 25,
-                                                  child: CircularProgressIndicator(),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                  },
-                                ),
-                              ),
-                        isOwner
-                            ? Container(
-                                width: MediaQuery.of(context).size.width,
-                                margin: const EdgeInsets.all(0),
-                                padding: const EdgeInsets.all(0),
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
-                                      return const EditTeam();
-                                    }));
-                                  },
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: darken(Theme.of(context).cardTheme.color!, 0.05),
-                                    backgroundColor: darken(Theme.of(context).cardTheme.color!, 0.05),
-                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                                  ),
-                                  child: FittedBox(
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          "Edit Team".toUpperCase(),
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 3, left: 4),
-                                          child: Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            size: 24,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                width: MediaQuery.of(context).size.width,
-                                margin: const EdgeInsets.all(0),
-                                padding: const EdgeInsets.all(0),
-                                child: TextButton(
-                                  onPressed: () {
-                                    dialog(
-                                      context,
-                                      ConfirmDialog(
-                                        "Leave team \"${team!.name}\"?".toLowerCase(),
-                                        Text(
-                                          "Are you sure you want to leave this team?",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        "Cancel",
-                                        () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        "Leave",
-                                        () async {
-                                          await removePlayerFromTeam(team!.id!, user!.uid).then((r) async {
-                                            if (r) {
-                                              await FirebaseFirestore.instance.collection("users").doc(user!.uid).update({"team_id": null}).then((_) {
-                                                Fluttertoast.showToast(
-                                                  msg: "You left team \"${team!.name}\"!".toLowerCase(),
-                                                  toastLength: Toast.LENGTH_SHORT,
-                                                  gravity: ToastGravity.BOTTOM,
-                                                  timeInSecForIosWeb: 1,
-                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                  textColor: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 16.0,
-                                                );
-
-                                                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                                                  builder: (context) {
-                                                    return Navigation(
-                                                      title: NavigationTitle(title: "Team".toUpperCase()),
-                                                      selectedIndex: 2,
-                                                    );
-                                                  },
-                                                  maintainState: false,
-                                                ));
-                                              });
-                                            } else {
-                                              Fluttertoast.showToast(
-                                                msg: "Failed to leave team :(".toLowerCase(),
-                                                toastLength: Toast.LENGTH_SHORT,
-                                                gravity: ToastGravity.BOTTOM,
-                                                timeInSecForIosWeb: 1,
-                                                backgroundColor: Colors.redAccent,
-                                                textColor: Theme.of(context).colorScheme.onPrimary,
-                                                fontSize: 16.0,
-                                              );
-
-                                              Navigator.of(context).pop();
-                                            }
-                                          });
-                                        },
-                                      ),
-                                    );
-                                  },
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Theme.of(context).cardTheme.color,
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                                  ),
-                                  child: FittedBox(
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          "Leave Team".toUpperCase(),
-                                          style: TextStyle(
-                                            color: Theme.of(context).primaryColor,
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 3, left: 4),
-                                          child: Icon(
-                                            Icons.exit_to_app_rounded,
-                                            color: Theme.of(context).primaryColor,
-                                            size: 24,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        const SizedBox(
-                          height: 56,
-                        ),
-                      ],
-                    ),
+  Widget _buildNoTeamUI() {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width - 30,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text("Tap + to create a team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 15.0),
+            child: Ink(
+                decoration: ShapeDecoration(color: Theme.of(context).cardTheme.color, shape: const CircleBorder()),
+                child: IconButton(
+                    iconSize: 40,
+                    icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
+                    onPressed: () {
+                      if (navigatorKey.currentState != null) {
+                        navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const CreateTeam()));
+                      }
+                    })),
+          ),
+          const Divider(height: 30),
+          Text("Or join an existing team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+          Padding(
+            padding: const EdgeInsets.only(top: 15.0),
+            child: MaterialButton(
+                color: Theme.of(context).cardTheme.color,
+                child: Text("Join Team".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+                onPressed: () {
+                  if (navigatorKey.currentState != null) {
+                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const JoinTeam()));
+                  }
+                }),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerItem(Plyr plyr, bool bg, int place) {
+  Widget _buildTeamRemovedOrNotFoundUI(String? teamName, DocumentReference? userProfileRef) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            teamName != null ? "You have been removed from team \"$teamName\" or the team no longer exists.".toUpperCase() : "The team you were part of no longer exists or your access was removed.".toUpperCase(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 22),
+          ),
+          const SizedBox(height: 20),
+          Text("You are free to join or create a new team.", textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16)),
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () async {
+              if (userProfileRef != null) {
+                await userProfileRef.update({'team_id': null}).catchError((e) {
+                  // print("Error clearing team_id: $e");
+                });
+              }
+            },
+            child: Text("Ok".toUpperCase()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoPlayersOnTeamUI(Team teamData) {
+    return Column(children: [
+      Container(margin: const EdgeInsets.only(top: 40), child: Text("No Players on the Team (yet!)".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary))),
+      Container(
+          margin: const EdgeInsets.only(top: 15),
+          child: Center(
+              child: Ink(
+                  decoration: ShapeDecoration(color: Theme.of(context).cardTheme.color, shape: const CircleBorder()),
+                  child: IconButton(
+                      iconSize: 40,
+                      icon: Icon(Icons.share, size: 40, color: Theme.of(context).colorScheme.onPrimary),
+                      onPressed: () async {
+                        bool teamQrWasDisplayed = await displayTeamQRCodeDialog(context, teamData.id, teamData.name);
+
+                        if (!teamQrWasDisplayed) {
+                          if (!mounted) return;
+
+                          // This part is a fallback if the team's own QR couldn't be shown.
+                          // In this specific UI (_buildNoPlayersOnTeamUI), teamData should be valid.
+                          // However, keeping the fallback for robustness or if this pattern is used elsewhere.
+                          // Fluttertoast.showToast(msg: "Could not display team QR. Try scanning to join a new team.");
+
+                          final barcodeScanRes = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                            ),
+                          );
+
+                          if (barcodeScanRes != null && barcodeScanRes.toString().isNotEmpty) {
+                            bool success = await joinTeam(barcodeScanRes.toString());
+
+                            if (success) {
+                              Fluttertoast.showToast(msg: "Successfully joined new team!");
+                              // UI should update via streams
+                            } else {
+                              Fluttertoast.showToast(msg: "Failed to join team using scanned code.");
+                            }
+                          }
+                        }
+                      })))),
+    ]);
+  }
+
+  Widget _buildPlayerItem(Plyr plyr, bool bg, int place, Team currentTeam, bool isCurrentUserOwner) {
+    final String playerUid = plyr.profile?.reference?.id ?? "";
+
     return GestureDetector(
       onTap: () {
         Feedback.forTap(context);
-
-        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-          return Player(uid: plyr.profile!.reference!.id);
-        }));
+        if (playerUid.isNotEmpty && navigatorKey.currentState != null) {
+          navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) => Player(uid: playerUid)));
+        }
       },
-      child: (team!.ownerId == user!.uid && user!.uid != plyr.profile!.reference!.id)
+      child: (isCurrentUserOwner && user.uid != playerUid && playerUid.isNotEmpty)
           ? Dismissible(
-              key: UniqueKey(),
+              key: ValueKey(playerUid),
               onDismissed: (direction) async {
-                Fluttertoast.showToast(
-                  msg: '${plyr.profile!.displayName} removed from the team',
-                  toastLength: Toast.LENGTH_SHORT,
-                  gravity: ToastGravity.BOTTOM,
-                  timeInSecForIosWeb: 1,
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  textColor: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 16.0,
-                );
-
-                setState(() {
-                  isLoadingPlayers = true;
-                });
-
-                await removePlayerFromTeam(team!.id!, plyr.profile!.reference!.id).then((deleted) {
-                  if (!deleted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Theme.of(context).cardTheme.color,
-                        content: Text(
-                          "Sorry this player can't be removed from your team",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        duration: const Duration(milliseconds: 1500),
-                      ),
-                    );
+                await removePlayerFromTeam(currentTeam.id!, playerUid).then((deleted) {
+                  if (deleted) {
+                    Fluttertoast.showToast(msg: '${plyr.profile?.displayName ?? "Player"} removed');
+                  } else {
+                    Fluttertoast.showToast(msg: 'Failed to remove ${plyr.profile?.displayName ?? "player"}');
                   }
-
-                  setState(() {
-                    players!.remove(plyr);
-                  });
-
-                  _loadTeam().then(
-                    (_) => setState(() {
-                      setState(() {
-                        isLoadingPlayers = false;
-                      });
-                    }),
-                  );
                 });
               },
               confirmDismiss: (DismissDirection direction) async {
-                return await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(
-                        "Remove Player?".toUpperCase(),
-                        style: const TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 24,
-                        ),
-                      ),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Are you sure you want to remove this player from your team?",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          ),
+                return await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text("Remove Player?".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 24)),
+                        content: Text("Are you sure you want to remove ${plyr.profile?.displayName ?? "this player"} from your team?", style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        actions: <Widget>[
+                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text("Cancel".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary))),
+                          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text("Delete".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor))),
                         ],
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text(
-                            "Cancel".toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'NovecentoSans',
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text(
-                            "Delete".toUpperCase(),
-                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                    ) ??
+                    false;
               },
               background: Container(
-                color: Theme.of(context).primaryColor,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(left: 15),
-                      child: Text(
-                        "Delete".toUpperCase(),
-                        style: const TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(right: 15),
-                      child: const Icon(
-                        Icons.delete,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                child: Row(
-                  children: [
-                    _outputPlace(place),
-                    Container(
-                      margin: const EdgeInsets.only(left: 0, right: 15),
-                      width: 60,
-                      height: 60,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(60),
-                      ),
-                      child: SizedBox(
-                        height: 60,
-                        child: UserAvatar(
-                          user: plyr.profile,
-                          backgroundColor: Colors.transparent,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            plyr.profile!.displayName != null
-                                ? SizedBox(
-                                    width: MediaQuery.of(context).size.width - 250,
-                                    child: AutoSizeText(
-                                      plyr.profile!.displayName!,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).textTheme.bodyLarge!.color,
-                                      ),
-                                    ),
-                                  )
-                                : Container(),
-                          ],
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                              width: 135,
-                              child: AutoSizeText(
-                                "${plyr.shots} Shots",
-                                maxLines: 1,
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontFamily: 'NovecentoSans',
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                  color: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(horizontal: 15), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
+              child: _buildPlayerListItemContent(plyr, bg, place),
             )
-          : Container(
-              decoration: BoxDecoration(
-                color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              child: Row(
-                children: [
-                  _outputPlace(place),
-                  Container(
-                    margin: const EdgeInsets.only(left: 0, right: 15),
-                    width: 60,
-                    height: 60,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(60),
-                    ),
-                    child: SizedBox(
-                      height: 60,
-                      child: UserAvatar(
-                        user: plyr.profile,
-                        backgroundColor: Colors.transparent,
-                      ),
+          : _buildPlayerListItemContent(plyr, bg, place),
+    );
+  }
+
+  Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place) {
+    return Container(
+      decoration: BoxDecoration(color: bg ? Theme.of(context).cardTheme.color : Colors.transparent),
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        children: [
+          _outputPlace(place),
+          Container(
+            margin: const EdgeInsets.only(left: 0, right: 15),
+            width: 60,
+            height: 60,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(60)),
+            child: UserAvatar(user: plyr.profile, backgroundColor: Colors.transparent),
+          ),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: AutoSizeText(
+                      plyr.profile?.displayName ?? "N/A",
+                      maxLines: 1,
+                      minFontSize: 14,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge!.color),
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          plyr.profile!.displayName != null
-                              ? SizedBox(
-                                  width: MediaQuery.of(context).size.width - 250,
-                                  child: AutoSizeText(
-                                    plyr.profile!.displayName!,
-                                    maxLines: 1,
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).textTheme.bodyLarge!.color,
-                                    ),
-                                  ),
-                                )
-                              : Container(),
-                        ],
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          SizedBox(
-                            width: 135,
-                            child: AutoSizeText(
-                              "${plyr.shots} Shots",
-                              maxLines: 1,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontFamily: 'NovecentoSans',
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                ),
+                SizedBox(
+                  width: 120,
+                  child: AutoSizeText(
+                    "${numberFormat.format(plyr.shots ?? 0)} Shots",
+                    maxLines: 1,
+                    minFontSize: 12,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(fontSize: 18, fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditTeamButton() {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
+      child: TextButton(
+        onPressed: () {
+          if (navigatorKey.currentState != null) {
+            navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const EditTeam()));
+          }
+        },
+        style: TextButton.styleFrom(foregroundColor: darken(Theme.of(context).cardTheme.color!, 0.05), backgroundColor: darken(Theme.of(context).cardTheme.color!, 0.05), shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        child: FittedBox(
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.center, children: [Text("Edit Team".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: Theme.of(context).colorScheme.onPrimary, size: 24))])),
+      ),
+    );
+  }
+
+  Widget _buildLeaveTeamButton(Team currentTeam) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
+      child: TextButton(
+        onPressed: () {
+          dialog(
+              context,
+              ConfirmDialog("Leave team \"${currentTeam.name}\"?".toLowerCase(), Text("Are you sure you want to leave this team?", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)), "Cancel", () => Navigator.of(context).pop(), "Leave", () async {
+                Navigator.of(context).pop();
+                await removePlayerFromTeam(currentTeam.id!, user.uid).then((r) {
+                  if (r) {
+                    Fluttertoast.showToast(msg: "You left team \"${currentTeam.name}\"!".toLowerCase());
+                  } else {
+                    Fluttertoast.showToast(msg: "Failed to leave team :(".toLowerCase());
+                  }
+                });
+              }));
+        },
+        style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        child: FittedBox(
+            child:
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Leave Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))])),
+      ),
     );
   }
 
   Widget _outputPlace(int place) {
-    if ([1, 2, 3].contains(place)) {
-      switch (place) {
-        case 1:
-          return Container(
-            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
-            width: 20,
-            height: 20,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                clipBehavior: Clip.antiAlias,
-                child: SvgPicture.asset(
-                  "assets/images/1st.svg",
-                  semanticsLabel: '1st',
-                ),
-              ),
-            ),
-          );
-        case 2:
-          return Container(
-            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
-            width: 20,
-            height: 20,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                clipBehavior: Clip.antiAlias,
-                child: SvgPicture.asset(
-                  "assets/images/2nd.svg",
-                  semanticsLabel: '2nd',
-                ),
-              ),
-            ),
-          );
-        case 3:
-          return Container(
-            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
-            width: 20,
-            height: 20,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                clipBehavior: Clip.antiAlias,
-                child: SvgPicture.asset(
-                  "assets/images/3rd.svg",
-                  semanticsLabel: '3rd',
-                ),
-              ),
-            ),
-          );
-        default:
-          return Container(
-            margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
-            width: 20,
-            height: 20,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                clipBehavior: Clip.antiAlias,
-                child: SvgPicture.asset(
-                  "assets/images/1st.svg",
-                  semanticsLabel: '1st',
-                ),
-              ),
-            ),
-          );
-      }
-    } else {
+    final bool isDarkMode = preferences?.darkMode ?? false;
+    if (![1, 2, 3].contains(place)) {
       return Container(
         margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
         width: 20,
         height: 20,
+        alignment: Alignment.center,
         child: Text(
-          place.toString().toUpperCase(),
+          place.toString(),
           style: TextStyle(
-            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+            color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
             fontFamily: "NovecentoSans",
             fontSize: 14,
           ),
         ),
       );
     }
+    String assetName;
+    String semanticLabel;
+    switch (place) {
+      case 1:
+        assetName = "assets/images/1st.svg";
+        semanticLabel = '1st';
+        break;
+      case 2:
+        assetName = "assets/images/2nd.svg";
+        semanticLabel = '2nd';
+        break;
+      case 3:
+        assetName = "assets/images/3rd.svg";
+        semanticLabel = '3rd';
+        break;
+      default:
+        return Container();
+    }
+    return Container(
+      margin: const EdgeInsets.only(left: 10, right: 0, top: 20, bottom: 20),
+      width: 20,
+      height: 20,
+      child: SvgPicture.asset(assetName, semanticsLabel: semanticLabel),
+    );
   }
 }
