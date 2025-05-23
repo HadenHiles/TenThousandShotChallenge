@@ -76,3 +76,4 @@ build/
 assets/cfg/youtube_settings.json
 assets/cfg/youtube_settings.json
 functions/service-account.json
+android/app/release/app-release.aab
