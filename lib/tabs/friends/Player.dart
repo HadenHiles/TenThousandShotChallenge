@@ -28,21 +28,19 @@ class Player extends StatefulWidget {
 }
 
 class _PlayerState extends State<Player> {
-  // Static variables
   final user = FirebaseAuth.instance.currentUser;
 
   UserProfile? _userPlayer;
   bool _loadingPlayer = false;
   ScrollController? sessionsController;
-  DocumentSnapshot? _lastVisible;
-  bool? _isLoading;
   bool? _isFriend = false;
-  final List<DocumentSnapshot> _sessions = [];
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
 
   @override
   void initState() {
+    super.initState();
+
     setState(() {
       _loadingPlayer = true;
     });
@@ -55,20 +53,13 @@ class _PlayerState extends State<Player> {
       });
     });
 
-    sessionsController = ScrollController()..addListener(_scrollListener);
-
-    super.initState();
+    sessionsController = ScrollController();
 
     _loadIsFriend();
-
-    _isLoading = true;
-
-    _loadHistory();
-
     _getAttempts();
   }
 
-  Future<Null> _loadIsFriend() async {
+  Future<void> _loadIsFriend() async {
     await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').doc(widget.uid).get().then((snapshot) {
       setState(() {
         _isFriend = snapshot.exists;
@@ -76,7 +67,7 @@ class _PlayerState extends State<Player> {
     });
   }
 
-  Future<Null> _getAttempts() async {
+  Future<void> _getAttempts() async {
     await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
@@ -94,61 +85,12 @@ class _PlayerState extends State<Player> {
       });
 
       setState(() {
-        _selectedIterationId = iterations[iterations.length - 1].value;
+        if (iterations.isNotEmpty) {
+          _selectedIterationId = iterations[iterations.length - 1].value;
+        }
         _attemptDropdownItems = iterations;
       });
     });
-  }
-
-  Future<Null> _loadHistory() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (_lastVisible == null) {
-      await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
-        List<DocumentSnapshot> sessions = [];
-        snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(5).get().then((sSnap) {
-          for (var s in sSnap.docs) {
-            sessions.add(s);
-          }
-
-          if (sessions.isNotEmpty) {
-            _lastVisible = sessions[sessions.length - 1];
-
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-                _sessions.addAll(sessions);
-              });
-            }
-          } else {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        });
-      });
-    } else {
-      await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
-        List<DocumentSnapshot> sessions = [];
-        snapshot.reference.collection('sessions').orderBy('date', descending: true).startAfter([_lastVisible!['date']]).limit(5).get().then((sSnap) {
-              for (var s in sSnap.docs) {
-                sessions.add(s);
-              }
-
-              if (sessions.isNotEmpty) {
-                _lastVisible = sessions[sessions.length - 1];
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                    _sessions.addAll(sessions);
-                  });
-                }
-              } else {
-                setState(() => _isLoading = false);
-              }
-            });
-      });
-    }
   }
 
   @override
@@ -607,11 +549,7 @@ class _PlayerState extends State<Player> {
                             DropdownButton<dynamic>(
                               onChanged: (value) {
                                 setState(() {
-                                  _isLoading = true;
-                                  _sessions.clear();
-                                  _lastVisible = null;
                                   _selectedIterationId = value;
-                                  _loadHistory();
                                 });
                               },
                               underline: Container(),
@@ -769,54 +707,37 @@ class _PlayerState extends State<Player> {
                           height: 15,
                         ),
                         Expanded(
-                          child: RefreshIndicator(
-                            color: Theme.of(context).primaryColor,
-                            child: ListView.builder(
-                              controller: sessionsController,
-                              padding: EdgeInsets.only(
-                                top: 0,
-                                right: 0,
-                                bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                                left: 0,
-                              ),
-                              itemCount: _sessions.length + 1,
-                              itemBuilder: (_, int index) {
-                                if (index < _sessions.length) {
-                                  final DocumentSnapshot document = _sessions[index];
-                                  return _buildSessionItem(ShootingSession.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                }
-                                return Container(
-                                  margin: const EdgeInsets.only(top: 9, bottom: 35),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      _isLoading!
-                                          ? SizedBox(
-                                              height: 25,
-                                              width: 25,
-                                              child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                                            )
-                                          : _sessions.isEmpty
-                                              ? Text(
-                                                  "${_userPlayer!.displayName!.substring(0, _userPlayer!.displayName!.lastIndexOf(' '))} doesn't have any sessions yet".toLowerCase(),
-                                                  style: TextStyle(
-                                                    fontFamily: 'NovecentoSans',
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 16,
-                                                  ),
-                                                )
-                                              : Container()
-                                    ],
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              final sessions = snapshot.data!.docs;
+                              if (sessions.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    "${_userPlayer?.displayName?.split(' ').first ?? 'Player'} doesn't have any sessions yet".toLowerCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 );
-                              },
-                            ),
-                            onRefresh: () async {
-                              _sessions.clear();
-                              _lastVisible = null;
-                              await _loadHistory();
+                              }
+                              return RefreshIndicator(
+                                color: Theme.of(context).primaryColor,
+                                onRefresh: () async {}, // Optionally implement refresh logic
+                                child: ListView.builder(
+                                  controller: sessionsController,
+                                  itemCount: sessions.length,
+                                  itemBuilder: (_, int index) {
+                                    final doc = sessions[index];
+                                    return _buildSessionItem(ShootingSession.fromSnapshot(doc), index % 2 == 0);
+                                  },
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -831,17 +752,8 @@ class _PlayerState extends State<Player> {
 
   @override
   void dispose() {
-    sessionsController!.removeListener(_scrollListener);
+    sessionsController!.dispose();
     super.dispose();
-  }
-
-  void _scrollListener() {
-    if (!_isLoading!) {
-      if (sessionsController!.position.pixels == sessionsController!.position.maxScrollExtent) {
-        setState(() => _isLoading = true);
-        _loadHistory();
-      }
-    }
   }
 
   Widget _buildSessionItem(ShootingSession s, bool showBackground) {
