@@ -56,6 +56,15 @@ class _HistoryState extends State<History> {
     }
   }
 
+  // Helper to get if the selected iteration is completed
+  bool _isCurrentIterationCompleted(AsyncSnapshot<DocumentSnapshot> iterationSnapshot) {
+    if (iterationSnapshot.hasData && iterationSnapshot.data!.exists) {
+      final iteration = Iteration.fromSnapshot(iterationSnapshot.data!);
+      return iteration.complete ?? false;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamProvider<NetworkStatus>(
@@ -287,44 +296,54 @@ class _HistoryState extends State<History> {
                 Expanded(
                   child: _selectedIterationId == null
                       ? Container()
-                      : StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            }
-                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  "You don't have any sessions yet".toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 16,
+                      : StreamBuilder<DocumentSnapshot>(
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                          builder: (context, iterationSnapshot) {
+                            final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
+                            return StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+                                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      "You don't have any sessions yet".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final sessions = snapshot.data!.docs;
+                                return RefreshIndicator(
+                                  color: Theme.of(context).primaryColor,
+                                  onRefresh: () async {
+                                    // No-op: StreamBuilder handles updates
+                                  },
+                                  child: ListView.builder(
+                                    controller: sessionsController,
+                                    padding: EdgeInsets.only(
+                                      top: 0,
+                                      right: 0,
+                                      bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                                      left: 0,
+                                    ),
+                                    itemCount: sessions.length,
+                                    itemBuilder: (_, int index) {
+                                      final document = sessions[index];
+                                      return _buildSessionItem(
+                                        ShootingSession.fromSnapshot(document),
+                                        index,
+                                        iterationCompleted, // Pass completed status
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
-                            }
-                            final sessions = snapshot.data!.docs;
-                            return RefreshIndicator(
-                              color: Theme.of(context).primaryColor,
-                              onRefresh: () async {
-                                // No-op: StreamBuilder handles updates
+                                );
                               },
-                              child: ListView.builder(
-                                controller: sessionsController,
-                                padding: EdgeInsets.only(
-                                  top: 0,
-                                  right: 0,
-                                  bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                                  left: 0,
-                                ),
-                                itemCount: sessions.length,
-                                itemBuilder: (_, int index) {
-                                  final document = sessions[index];
-                                  return _buildSessionItem(ShootingSession.fromSnapshot(document), index);
-                                },
-                              ),
                             );
                           },
                         ),
@@ -434,9 +453,9 @@ class _HistoryState extends State<History> {
     );
   }
 
-  Widget _buildSessionItem(ShootingSession s, int i) {
+  Widget _buildSessionItem(ShootingSession s, int i, bool iterationCompleted) {
     return AbsorbPointer(
-      absorbing: false, // You may want to update this logic for your needs
+      absorbing: iterationCompleted,
       child: Dismissible(
         key: UniqueKey(),
         onDismissed: (direction) async {

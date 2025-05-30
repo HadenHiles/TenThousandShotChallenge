@@ -35,7 +35,6 @@ class _ProfileState extends State<Profile> {
   String? _selectedIterationId;
   DateTime? firstSessionDate = DateTime.now();
   DateTime? latestSessionDate = DateTime.now();
-  String? _latestIterationId;
 
   @override
   void initState() {
@@ -49,9 +48,17 @@ class _ProfileState extends State<Profile> {
     if (snapshot.docs.isNotEmpty) {
       setState(() {
         _selectedIterationId = snapshot.docs.last.id;
-        _latestIterationId = snapshot.docs.last.id;
       });
     }
+  }
+
+  // Helper to get if the selected iteration is completed
+  bool _isCurrentIterationCompleted(AsyncSnapshot<DocumentSnapshot> iterationSnapshot) {
+    if (iterationSnapshot.hasData && iterationSnapshot.data!.exists) {
+      final iteration = Iteration.fromSnapshot(iterationSnapshot.data!);
+      return iteration.complete ?? false;
+    }
+    return false;
   }
 
   @override
@@ -802,15 +809,6 @@ class _ProfileState extends State<Profile> {
                 return Container();
               }
 
-              // Store latestIterationId in state for use in _buildSessionItem
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _latestIterationId = latestIterationId;
-                  });
-                }
-              });
-
               return DropdownButton<String>(
                 value: _selectedIterationId,
                 items: iterations,
@@ -826,32 +824,42 @@ class _ProfileState extends State<Profile> {
 
           // Recent Sessions StreamBuilder
           if (_selectedIterationId != null)
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return SizedBox(
-                    height: 25,
-                    width: 25,
-                    child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                  );
-                }
-                List<DocumentSnapshot> sessions = snapshot.data!.docs;
-                if (sessions.isEmpty) {
-                  return Text(
-                    "You don't have any sessions yet".toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 16,
-                    ),
-                  );
-                }
-                return Column(
-                  children: List.generate(
-                    sessions.length,
-                    (i) => _buildSessionItem(ShootingSession.fromSnapshot(sessions[i]), i),
-                  ),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+              builder: (context, iterationSnapshot) {
+                final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return SizedBox(
+                        height: 25,
+                        width: 25,
+                        child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                      );
+                    }
+                    List<DocumentSnapshot> sessions = snapshot.data!.docs;
+                    if (sessions.isEmpty) {
+                      return Text(
+                        "You don't have any sessions yet".toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 16,
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: List.generate(
+                        sessions.length,
+                        (i) => _buildSessionItem(
+                          ShootingSession.fromSnapshot(sessions[i]),
+                          i,
+                          iterationCompleted, // Pass completed status
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -888,9 +896,9 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildSessionItem(ShootingSession s, int i) {
+  Widget _buildSessionItem(ShootingSession s, int i, bool iterationCompleted) {
     return AbsorbPointer(
-      absorbing: false,
+      absorbing: iterationCompleted,
       child: Dismissible(
         key: UniqueKey(),
         onDismissed: (direction) async {
@@ -1090,169 +1098,170 @@ class _ProfileState extends State<Profile> {
                         ),
                         // Resume session code removed
                         // Only show delete menu
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: PopupMenuButton(
-                            key: UniqueKey(),
-                            color: Theme.of(context).colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
-                            icon: Icon(
-                              Icons.more_horiz_rounded,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              size: 24,
-                            ),
-                            itemBuilder: (_) => <PopupMenuItem<String>>[
-                              PopupMenuItem<String>(
-                                value: 'delete',
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "Delete".toUpperCase(),
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.delete,
-                                      color: Colors.red.shade600,
-                                    ),
-                                  ],
-                                ),
+                        if (!iterationCompleted)
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: PopupMenuButton(
+                              key: UniqueKey(),
+                              color: Theme.of(context).colorScheme.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+                              icon: Icon(
+                                Icons.more_horiz_rounded,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 24,
                               ),
-                            ],
-                            onSelected: (value) async {
-                              if (value == 'delete') {
-                                return await showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text(
-                                        "Delete Session?".toUpperCase(),
-                                        style: const TextStyle(
+                              itemBuilder: (_) => <PopupMenuItem<String>>[
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Delete".toUpperCase(),
+                                        style: TextStyle(
                                           fontFamily: 'NovecentoSans',
-                                          fontSize: 24,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "Are you sure you want to delete this shooting session forever?",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                      Icon(
+                                        Icons.delete,
+                                        color: Colors.red.shade600,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              onSelected: (value) async {
+                                if (value == 'delete') {
+                                  return await showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                          "Delete Session?".toUpperCase(),
+                                          style: const TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Are you sure you want to delete this shooting session forever?",
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            Container(
+                                              height: 120,
+                                              margin: const EdgeInsets.only(top: 15),
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    "You will lose:",
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                  Text(
+                                                    s.total.toString() + " Shots".toUpperCase(),
+                                                    style: TextStyle(
+                                                      fontFamily: 'NovecentoSans',
+                                                      fontSize: 20,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                  Text(
+                                                    "Taken on:",
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                  Text(
+                                                    printDate(s.date!),
+                                                    style: TextStyle(
+                                                      fontFamily: 'NovecentoSans',
+                                                      fontSize: 20,
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        backgroundColor: Theme.of(context).colorScheme.primary,
+                                        actions: <Widget>[
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: Text(
+                                              "Cancel".toUpperCase(),
+                                              style: TextStyle(
+                                                fontFamily: 'NovecentoSans',
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
                                             ),
                                           ),
-                                          Container(
-                                            height: 120,
-                                            margin: const EdgeInsets.only(top: 15),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  "You will lose:",
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                                Text(
-                                                  s.total.toString() + " Shots".toUpperCase(),
-                                                  style: TextStyle(
-                                                    fontFamily: 'NovecentoSans',
-                                                    fontSize: 20,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                                Text(
-                                                  "Taken on:",
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                                Text(
-                                                  printDate(s.date!),
-                                                  style: TextStyle(
-                                                    fontFamily: 'NovecentoSans',
-                                                    fontSize: 20,
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                              ],
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.of(context).pop();
+                                              Fluttertoast.showToast(
+                                                msg: '${s.total} shots deleted',
+                                                toastLength: Toast.LENGTH_SHORT,
+                                                gravity: ToastGravity.BOTTOM,
+                                                timeInSecForIosWeb: 1,
+                                                backgroundColor: Theme.of(context).cardTheme.color,
+                                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                                fontSize: 16.0,
+                                              );
+
+                                              await deleteSession(s).then((deleted) {
+                                                if (!deleted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                                      content: Text(
+                                                        "Sorry this session can't be deleted",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                        ),
+                                                      ),
+                                                      duration: const Duration(milliseconds: 1500),
+                                                    ),
+                                                  );
+                                                }
+                                              });
+                                            },
+                                            child: Text(
+                                              "Delete".toUpperCase(),
+                                              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context).pop(),
-                                          child: Text(
-                                            "Cancel".toUpperCase(),
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            Navigator.of(context).pop();
-                                            Fluttertoast.showToast(
-                                              msg: '${s.total} shots deleted',
-                                              toastLength: Toast.LENGTH_SHORT,
-                                              gravity: ToastGravity.BOTTOM,
-                                              timeInSecForIosWeb: 1,
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              textColor: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 16.0,
-                                            );
-
-                                            await deleteSession(s).then((deleted) {
-                                              if (!deleted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    content: Text(
-                                                      "Sorry this session can't be deleted",
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    ),
-                                                    duration: const Duration(milliseconds: 1500),
-                                                  ),
-                                                );
-                                              }
-                                            });
-                                          },
-                                          child: Text(
-                                            "Delete".toUpperCase(),
-                                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              }
-                            },
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],
