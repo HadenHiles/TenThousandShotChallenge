@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
-import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -17,7 +14,6 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -33,97 +29,29 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  // Static variables
   final user = FirebaseAuth.instance.currentUser;
-
   final GlobalKey _avatarMenuKey = GlobalKey();
 
-  UserProfile userProfile = UserProfile('', '', FirebaseAuth.instance.currentUser!.photoURL, true, true, null, '');
-  bool _isLoading = true;
-  List<DocumentSnapshot> _sessions = [];
-  List<DropdownMenuItem> _attemptDropdownItems = [];
   String? _selectedIterationId;
-
   DateTime? firstSessionDate = DateTime.now();
   DateTime? latestSessionDate = DateTime.now();
+  String? _latestIterationId;
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
-      userProfile = UserProfile.fromSnapshot(uDoc);
-    });
-
     super.initState();
-
-    _loadFirstLastSession();
-    _loadRecentSessions();
-    _getAttempts();
+    _setInitialIterationId();
   }
 
-  Future<Null> _loadFirstLastSession() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iterationSnap) async {
-      if (iterationSnap.docs.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationSnap.docs.first.id).collection('sessions').orderBy('date', descending: false).get().then((sessionsSnap) {
-          if (sessionsSnap.docs.isNotEmpty) {
-            ShootingSession first = ShootingSession.fromSnapshot(sessionsSnap.docs.first);
-            ShootingSession latest = ShootingSession.fromSnapshot(sessionsSnap.docs.last);
-
-            setState(() {
-              firstSessionDate = first.date;
-              latestSessionDate = latest.date;
-            });
-          }
-        });
-      }
-    });
-  }
-
-  Future<Null> _getAttempts() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
-      List<DropdownMenuItem> iterations = [];
-      snapshot.docs.asMap().forEach((i, iDoc) {
-        iterations.add(DropdownMenuItem<String>(
-          value: iDoc.reference.id,
-          child: Text(
-            "challenge ${(i + 1).toString().toLowerCase()}",
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onPrimary,
-              fontSize: 26,
-              fontFamily: 'NovecentoSans',
-            ),
-          ),
-        ));
-      });
-
+  Future<void> _setInitialIterationId() async {
+    if (user == null) return;
+    final snapshot = await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).get();
+    if (snapshot.docs.isNotEmpty) {
       setState(() {
-        _selectedIterationId = iterations[iterations.length - 1].value;
-        _attemptDropdownItems = iterations;
+        _selectedIterationId = snapshot.docs.last.id;
+        _latestIterationId = snapshot.docs.last.id;
       });
-    });
-  }
-
-  Future<Null> _loadRecentSessions() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).get().then((snapshot) {
-      List<DocumentSnapshot> sessions = [];
-      snapshot.reference.collection('sessions').orderBy('date', descending: true).limit(3).get().then((sSnap) {
-        for (var s in sSnap.docs) {
-          sessions.add(s);
-        }
-
-        if (sessions.isNotEmpty) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-              _sessions = sessions;
-            });
-          }
-        } else {
-          setState(() => _isLoading = false);
-        }
-      });
-    });
+    }
   }
 
   @override
@@ -237,7 +165,7 @@ class _ProfileState extends State<Profile> {
                                       }
 
                                       return UserAvatar(
-                                        user: UserProfile(user!.displayName, user!.email, userProfile.photoUrl, true, userProfile.friendNotifications, null, preferences!.fcmToken),
+                                        user: UserProfile(user!.displayName, user!.email, user!.photoURL, true, true, null, ''),
                                         backgroundColor: Colors.transparent,
                                       );
                                     },
@@ -258,7 +186,6 @@ class _ProfileState extends State<Profile> {
                       SizedBox(
                         width: (MediaQuery.of(context).size.width - 100) * 0.6,
                         child: StreamBuilder<DocumentSnapshot>(
-                          // ignore: deprecated_member_use
                           stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) {
@@ -393,9 +320,9 @@ class _ProfileState extends State<Profile> {
             ],
           ),
           StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+            stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.hasData) {
+              if (snapshot.hasData && snapshot.data!.exists) {
                 Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                 if (i.endDate != null) {
@@ -456,7 +383,6 @@ class _ProfileState extends State<Profile> {
                                   size: 14,
                                   color: Theme.of(context).colorScheme.onPrimary,
                                 ),
-                                // Top Left
                                 Positioned(
                                   left: -6,
                                   top: -6,
@@ -466,7 +392,6 @@ class _ProfileState extends State<Profile> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
-                                // Bottom Left
                                 Positioned(
                                   left: -5,
                                   bottom: -5,
@@ -476,7 +401,6 @@ class _ProfileState extends State<Profile> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
-                                // Top right
                                 Positioned(
                                   right: -4,
                                   top: -6,
@@ -486,7 +410,6 @@ class _ProfileState extends State<Profile> {
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
-                                // Bottom right
                                 Positioned(
                                   right: -4,
                                   bottom: -8,
@@ -598,7 +521,6 @@ class _ProfileState extends State<Profile> {
                                         size: 14,
                                         color: Theme.of(context).colorScheme.onPrimary,
                                       ),
-                                      // Top Left
                                       Positioned(
                                         left: -6,
                                         top: -6,
@@ -608,7 +530,6 @@ class _ProfileState extends State<Profile> {
                                           color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
-                                      // Bottom Left
                                       Positioned(
                                         left: -5,
                                         bottom: -5,
@@ -618,7 +539,6 @@ class _ProfileState extends State<Profile> {
                                           color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
-                                      // Top right
                                       Positioned(
                                         right: -4,
                                         top: -6,
@@ -628,7 +548,6 @@ class _ProfileState extends State<Profile> {
                                           color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       ),
-                                      // Bottom right
                                       Positioned(
                                         right: -4,
                                         bottom: -8,
@@ -848,100 +767,130 @@ class _ProfileState extends State<Profile> {
               ],
             ),
           ),
-          _buildSessionList(_sessions),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(darken(Theme.of(context).colorScheme.primaryContainer, 0.05)),
-                  padding: WidgetStateProperty.all(const EdgeInsets.only(top: 10, right: 12, bottom: 12, left: 12)),
-                ),
-                onPressed: () {
-                  navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                    return const History();
-                  }));
+          // Replace attempts dropdown with a StreamBuilder
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const CircularProgressIndicator();
+              }
+              List<DropdownMenuItem<String>> iterations = [];
+              String? latestIterationId;
+              snapshot.data!.docs.asMap().forEach((i, iDoc) {
+                iterations.add(DropdownMenuItem<String>(
+                  value: iDoc.reference.id,
+                  child: Text(
+                    "challenge ${(i + 1).toString().toLowerCase()}",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 26,
+                      fontFamily: 'NovecentoSans',
+                    ),
+                  ),
+                ));
+                // Always update latestIterationId to the last one
+                latestIterationId = iDoc.reference.id;
+              });
+
+              // Set default selected iteration if not set
+              if (_selectedIterationId == null && iterations.isNotEmpty) {
+                _selectedIterationId = latestIterationId;
+              }
+
+              // Only show the dropdown if there is more than one challenge
+              if (iterations.length <= 1) {
+                return Container();
+              }
+
+              // Store latestIterationId in state for use in _buildSessionItem
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _latestIterationId = latestIterationId;
+                  });
+                }
+              });
+
+              return DropdownButton<String>(
+                value: _selectedIterationId,
+                items: iterations,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedIterationId = value;
+                  });
                 },
-                child: Row(
-                  children: [
-                    Text(
-                      "History".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 24,
-                        fontFamily: 'NovecentoSans',
-                      ),
+                dropdownColor: Theme.of(context).colorScheme.primary,
+              );
+            },
+          ),
+
+          // Recent Sessions StreamBuilder
+          if (_selectedIterationId != null)
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return SizedBox(
+                    height: 25,
+                    width: 25,
+                    child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                  );
+                }
+                List<DocumentSnapshot> sessions = snapshot.data!.docs;
+                if (sessions.isEmpty) {
+                  return Text(
+                    "You don't have any sessions yet".toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 16,
                     ),
-                    Container(
-                      margin: const EdgeInsets.only(top: 4, left: 5),
-                      child: Icon(
-                        Icons.history_rounded,
-                        size: 28,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ],
+                  );
+                }
+                return Column(
+                  children: List.generate(
+                    sessions.length,
+                    (i) => _buildSessionItem(ShootingSession.fromSnapshot(sessions[i]), i),
+                  ),
+                );
+              },
+            ),
+
+          // Add History button below the Recent Sessions section
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+              icon: const Icon(Icons.history),
+              label: Text(
+                "View History".toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 18,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const History()),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Widget _buildSessionList(List<DocumentSnapshot> sessions) {
-    List<Widget> items = [];
-    if (_sessions.isNotEmpty) {
-      int i = 0;
-      for (DocumentSnapshot s in sessions) {
-        items.add(_buildSessionItem(ShootingSession.fromSnapshot(s), i++));
-      }
-
-      return Column(children: items);
-    }
-
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 25, bottom: 35),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _isLoading
-                  ? SizedBox(
-                      height: 25,
-                      width: 25,
-                      child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                    )
-                  : _sessions.isEmpty
-                      ? Text(
-                          "You don't have any sessions yet".toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 16,
-                          ),
-                        )
-                      : Container()
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSessionItem(ShootingSession s, int i) {
     return AbsorbPointer(
-      absorbing: _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value,
+      absorbing: false,
       child: Dismissible(
         key: UniqueKey(),
         onDismissed: (direction) async {
@@ -970,9 +919,6 @@ class _ProfileState extends State<Profile> {
                 ),
               );
             }
-
-            _sessions.clear();
-            _loadRecentSessions();
           });
         },
         confirmDismiss: (DismissDirection direction) async {
@@ -1142,227 +1088,171 @@ class _ProfileState extends State<Profile> {
                             fontFamily: 'NovecentoSans',
                           ),
                         ),
-                        _selectedIterationId != _attemptDropdownItems[_attemptDropdownItems.length - 1].value
-                            ? Container()
-                            : SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: PopupMenuButton(
-                                  key: UniqueKey(),
-                                  color: Theme.of(context).colorScheme.primary,
-                                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
-                                  icon: Icon(
-                                    Icons.more_horiz_rounded,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    size: 24,
-                                  ),
-                                  itemBuilder: (_) => <PopupMenuItem<String>>[
-                                    i >= 0
-                                        ? PopupMenuItem<String>(child: Container())
-                                        : PopupMenuItem<String>(
-                                            value: 'resume',
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Resume session code removed
+                        // Only show delete menu
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: PopupMenuButton(
+                            key: UniqueKey(),
+                            color: Theme.of(context).colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+                            icon: Icon(
+                              Icons.more_horiz_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 24,
+                            ),
+                            itemBuilder: (_) => <PopupMenuItem<String>>[
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Delete".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.red.shade600,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onSelected: (value) async {
+                              if (value == 'delete') {
+                                return await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                        "Delete Session?".toUpperCase(),
+                                        style: const TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 24,
+                                        ),
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Are you sure you want to delete this shooting session forever?",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 120,
+                                            margin: const EdgeInsets.only(top: 15),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "Resume".toUpperCase(),
+                                                  "You will lose:",
                                                   style: TextStyle(
-                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 14,
                                                     color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
                                                 ),
-                                                const Icon(
-                                                  Icons.play_arrow,
-                                                  color: wristShotColor,
+                                                const SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  s.total.toString() + " Shots".toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 20,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                                const SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  "Taken on:",
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                                const SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  printDate(s.date!),
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 20,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                    PopupMenuItem<String>(
-                                      value: 'delete',
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Delete".toUpperCase(),
+                                        ],
+                                      ),
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: Text(
+                                            "Cancel".toUpperCase(),
                                             style: TextStyle(
                                               fontFamily: 'NovecentoSans',
                                               color: Theme.of(context).colorScheme.onPrimary,
                                             ),
                                           ),
-                                          Icon(
-                                            Icons.delete,
-                                            color: Colors.red.shade600,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                  onSelected: (value) async {
-                                    if (value == 'resume') {
-                                      if (!sessionService.isRunning) {
-                                        Feedback.forTap(context);
-                                        sessionService.start();
-                                        widget.sessionPanelController!.open();
-                                        widget.updateSessionShotsCB!();
-                                      } else {
-                                        dialog(
-                                          context,
-                                          ConfirmDialog(
-                                            "Override current session?",
-                                            Text(
-                                              "Starting a new session will override your existing one.\n\nWould you like to continue?",
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            "Cancel",
-                                            () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            "Continue",
-                                            () {
-                                              Feedback.forTap(context);
-                                              sessionService.reset();
-                                              Navigator.of(context).pop();
-                                              sessionService.start();
-                                              widget.sessionPanelController!.show();
-                                            },
-                                          ),
-                                        );
-                                      }
-                                    } else if (value == 'delete') {
-                                      return await showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text(
-                                              "Delete Session?".toUpperCase(),
-                                              style: const TextStyle(
-                                                fontFamily: 'NovecentoSans',
-                                                fontSize: 24,
-                                              ),
-                                            ),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  "Are you sure you want to delete this shooting session forever?",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                                Container(
-                                                  height: 120,
-                                                  margin: const EdgeInsets.only(top: 15),
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        "You will lose:",
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 5,
-                                                      ),
-                                                      Text(
-                                                        s.total.toString() + " Shots".toUpperCase(),
-                                                        style: TextStyle(
-                                                          fontFamily: 'NovecentoSans',
-                                                          fontSize: 20,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 5,
-                                                      ),
-                                                      Text(
-                                                        "Taken on:",
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 5,
-                                                      ),
-                                                      Text(
-                                                        printDate(s.date!),
-                                                        style: TextStyle(
-                                                          fontFamily: 'NovecentoSans',
-                                                          fontSize: 20,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            backgroundColor: Theme.of(context).colorScheme.primary,
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () => Navigator.of(context).pop(),
-                                                child: Text(
-                                                  "Cancel".toUpperCase(),
-                                                  style: TextStyle(
-                                                    fontFamily: 'NovecentoSans',
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                  ),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () async {
-                                                  Navigator.of(context).pop();
-                                                  Fluttertoast.showToast(
-                                                    msg: '${s.total} shots deleted',
-                                                    toastLength: Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.BOTTOM,
-                                                    timeInSecForIosWeb: 1,
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+                                            Fluttertoast.showToast(
+                                              msg: '${s.total} shots deleted',
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+
+                                            await deleteSession(s).then((deleted) {
+                                              if (!deleted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
                                                     backgroundColor: Theme.of(context).cardTheme.color,
-                                                    textColor: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 16.0,
-                                                  );
-
-                                                  await deleteSession(s).then((deleted) {
-                                                    if (!deleted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          content: Text(
-                                                            "Sorry this session can't be deleted",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
-                                                          ),
-                                                          duration: const Duration(milliseconds: 1500),
-                                                        ),
-                                                      );
-                                                    }
-
-                                                    _sessions.clear();
-                                                    _loadRecentSessions();
-                                                  });
-                                                },
-                                                child: Text(
-                                                  "Delete".toUpperCase(),
-                                                  style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    }
+                                                    content: Text(
+                                                      "Sorry this session can't be deleted",
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                    duration: const Duration(milliseconds: 1500),
+                                                  ),
+                                                );
+                                              }
+                                            });
+                                          },
+                                          child: Text(
+                                            "Delete".toUpperCase(),
+                                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                          ),
+                                        ),
+                                      ],
+                                    );
                                   },
-                                ),
-                              ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ],
