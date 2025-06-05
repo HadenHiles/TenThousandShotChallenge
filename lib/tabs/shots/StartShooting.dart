@@ -18,6 +18,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:fl_chart/fl_chart.dart'; // <-- Add this for chart
 
 class StartShooting extends StatefulWidget {
   const StartShooting({super.key, required this.sessionPanelController, this.shots});
@@ -30,7 +31,9 @@ class StartShooting extends StatefulWidget {
 }
 
 class _StartShootingState extends State<StartShooting> {
-  // Stateful variables
+  // Feature flag for accuracy (set to false to hide accuracy features)
+  final bool showAccuracyFeature = true;
+
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
   bool _puckCountUpdating = false;
@@ -40,7 +43,6 @@ class _StartShootingState extends State<StartShooting> {
   void initState() {
     _shots = widget.shots ?? [];
     _currentShotCount = preferences!.puckCount!;
-
     super.initState();
   }
 
@@ -58,6 +60,18 @@ class _StartShootingState extends State<StartShooting> {
 
   @override
   Widget build(BuildContext context) {
+    // --- Accuracy chart data ---
+    List<FlSpot> accuracySpots = [];
+    if (showAccuracyFeature) {
+      for (int i = 0; i < _shots.length; i++) {
+        final s = _shots[_shots.length - 1 - i]; // oldest first
+        if (s.targetsHit != null && s.count != null && s.count! > 0) {
+          double accuracy = s.targetsHit! / s.count!;
+          accuracySpots.add(FlSpot(i.toDouble(), accuracy * 100));
+        }
+      }
+    }
+
     return Expanded(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -294,13 +308,85 @@ class _StartShootingState extends State<StartShooting> {
                 const SizedBox(
                   height: 15,
                 ),
+                // --- Accuracy Chart ---
+                if (showAccuracyFeature)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: SizedBox(
+                      height: 120,
+                      width: MediaQuery.of(context).size.width - 40,
+                      child: accuracySpots.isEmpty
+                          ? Center(
+                              child: Text(
+                                "Add shots to see your accuracy chart.",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                          : LineChart(
+                              LineChartData(
+                                minY: 0,
+                                maxY: 100,
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                ),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: accuracySpots,
+                                    isCurved: true,
+                                    barWidth: 3,
+                                    color: Colors.green,
+                                    dotData: FlDotData(show: false),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ),
                 SizedBox(
                   width: MediaQuery.of(context).size.width - 200,
                   child: TextButton(
                     onPressed: () async {
                       Feedback.forLongPress(context);
 
-                      Shots shots = Shots(DateTime.now(), _selectedShotType, _currentShotCount);
+                      int? targetsHit;
+                      if (showAccuracyFeature) {
+                        targetsHit = await prompt(
+                          context,
+                          title: Text('How many targets did you hit out of $_currentShotCount?'),
+                          initialValue: '0',
+                          textOK: Icon(Icons.check, color: Colors.green.shade700),
+                          textCancel: Icon(Icons.close, color: Colors.grey),
+                          minLines: 1,
+                          maxLines: 1,
+                          autoFocus: true,
+                          obscureText: false,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            int? val = int.tryParse(value ?? '');
+                            if (val == null || val < 0 || val > _currentShotCount) {
+                              return 'Enter a number between 0 and $_currentShotCount';
+                            }
+                            return null;
+                          },
+                        ).then((value) => value != null ? int.tryParse(value) : null);
+
+                        if (targetsHit == null) return;
+                      }
+
+                      Shots shots = Shots(
+                        DateTime.now(),
+                        _selectedShotType,
+                        _currentShotCount,
+                        targetsHit: showAccuracyFeature ? targetsHit : null,
+                      );
                       setState(() {
                         _shots.insert(0, shots);
                       });
@@ -777,17 +863,16 @@ class _StartShootingState extends State<StartShooting> {
               ),
             ],
           ),
-          // trailing: IconButton(
-          //   onPressed: () {
-          //     setState(() {
-          //       _shots.removeAt(i);
-          //     });
-          //   },
-          //   icon: Icon(
-          //     Icons.delete,
-          //     color: i % 2 == 0 ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).cardTheme.color,
-          //   ),
-          // ),
+          subtitle: showAccuracyFeature && s.targetsHit != null
+              ? Text(
+                  "Accuracy: ${((s.targetsHit! / (s.count ?? 1)) * 100).toStringAsFixed(1)}%",
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                    fontSize: 14,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                )
+              : null,
         ),
       );
 

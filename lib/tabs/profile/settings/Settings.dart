@@ -36,11 +36,14 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
 
+  // Simulated subscription level (replace with RevenueCat or your backend)
+  String _subscriptionLevel = "Free"; // Can be "Free", "Premium", or "Pro"
+
   @override
   void initState() {
     super.initState();
-
     _loadSettings();
+    _loadSubscriptionLevel();
   }
 
   //Loading counter value on start
@@ -57,6 +60,17 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         _publicProfile = u.public ?? false;
         _friendNotifications = u.friendNotifications ?? true;
       });
+    });
+  }
+
+  // Simulate loading subscription level (replace with RevenueCat logic)
+  Future<void> _loadSubscriptionLevel() async {
+    // TODO: Replace this with your actual subscription check
+    // For demonstration, we'll just keep it as "Free"
+    setState(() {
+      _subscriptionLevel = "Free";
+      // _subscriptionLevel = "Premium";
+      // _subscriptionLevel = "Pro";
     });
   }
 
@@ -156,6 +170,71 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
                   ),
                   sections: [
+                    // Subscription Section
+                    SettingsSection(
+                      title: Text(
+                        'Subscription',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      tiles: [
+                        SettingsTile(
+                          title: Text(
+                            'Subscription Level',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          description: Text(
+                            _subscriptionLevel,
+                            style: TextStyle(
+                              color: _subscriptionLevel == "Free"
+                                  ? Colors.grey
+                                  : _subscriptionLevel == "Premium"
+                                      ? Colors.blue
+                                      : Colors.amber,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          leading: Icon(
+                            Icons.workspace_premium,
+                            color: _subscriptionLevel == "Free"
+                                ? Colors.grey
+                                : _subscriptionLevel == "Premium"
+                                    ? Colors.blue
+                                    : Colors.amber,
+                          ),
+                          onPressed: (BuildContext context) {
+                            // Show a dialog or navigate to a subscription management screen
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Manage Subscription'),
+                                content: Text(
+                                  _subscriptionLevel == "Free" ? "Upgrade to Premium or Pro to unlock advanced features like shot accuracy tracking and more!" : "You are currently on the $_subscriptionLevel plan.",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Close'),
+                                  ),
+                                  if (_subscriptionLevel == "Free")
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        // TODO: Integrate RevenueCat paywall here
+                                        Navigator.of(context).pop();
+                                        Fluttertoast.showToast(
+                                          msg: 'Subscription flow coming soon!',
+                                          toastLength: Toast.LENGTH_SHORT,
+                                        );
+                                      },
+                                      child: const Text('Upgrade'),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                     SettingsSection(
                       title: Text(
                         'General',
