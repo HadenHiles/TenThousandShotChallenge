@@ -239,6 +239,10 @@ class _StartShootingState extends State<StartShooting> {
           totalShots += s.count!;
         }
       }
+      // After building spots for each type
+      if (spots.isNotEmpty && spots.first.x != 0) {
+        spots.insert(0, FlSpot(0, spots.first.y));
+      }
       accuracySpotsByType[type] = spots;
       shotCountsByType[type] = shotCounts;
       avgAccuracyByType[type] = totalShots > 0 ? (totalHits / totalShots) * 100 : 0;
@@ -291,7 +295,7 @@ class _StartShootingState extends State<StartShooting> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _chartCollapsed ? "Show Accuracy Chart" : "Shot Accuracy (All Types)",
+                    _chartCollapsed ? "Show Accuracy Chart" : "Shot Accuracy",
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
                       fontSize: 18,
