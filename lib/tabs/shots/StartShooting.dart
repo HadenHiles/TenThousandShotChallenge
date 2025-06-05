@@ -211,13 +211,17 @@ class _StartShootingState extends State<StartShooting> {
     // --- Accuracy chart data for selected shot type ---
     List<Shots> filteredShots = _shots.where((s) => s.type == _selectedShotType).toList();
     List<FlSpot> accuracySpots = [];
+    List<int> shotCounts = [];
     int totalHits = 0;
     int totalShots = 0;
+    int cumulativeShots = 0;
     for (int i = 0; i < filteredShots.length; i++) {
       final s = filteredShots[filteredShots.length - 1 - i]; // oldest first
       if (s.targetsHit != null && s.count != null && s.count! > 0) {
         double accuracy = s.targetsHit! / s.count!;
-        accuracySpots.add(FlSpot(i.toDouble(), (accuracy * 100).roundToDouble()));
+        cumulativeShots += s.count!;
+        accuracySpots.add(FlSpot(cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
+        shotCounts.add(cumulativeShots);
         totalHits += s.targetsHit!;
         totalShots += s.count!;
       }
@@ -311,11 +315,15 @@ class _StartShootingState extends State<StartShooting> {
                             LineChartData(
                               minY: 0,
                               maxY: 100,
+                              minX: accuracySpots.first.x,
+                              maxX: accuracySpots.last.x,
                               gridData: FlGridData(
                                 show: true,
                                 drawVerticalLine: true,
                                 horizontalInterval: 20,
-                                verticalInterval: max(1.0, accuracySpots.length / 5),
+                                verticalInterval: accuracySpots.length > 1
+                                    ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity)
+                                    : 1,
                                 getDrawingHorizontalLine: (value) => FlLine(
                                   color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
                                   strokeWidth: 1,
@@ -327,6 +335,19 @@ class _StartShootingState extends State<StartShooting> {
                               ),
                               titlesData: FlTitlesData(
                                 leftTitles: AxisTitles(
+                                  axisNameWidget: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Text(
+                                      'Accuracy (%)',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ),
+                                  axisNameSize: 28,
                                   sideTitles: SideTitles(
                                     showTitles: true,
                                     reservedSize: 32,
@@ -345,21 +366,41 @@ class _StartShootingState extends State<StartShooting> {
                                   ),
                                 ),
                                 bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 24,
-                                    getTitlesWidget: (value, meta) => Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        (accuracySpots.length - value.toInt()).toString(),
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 12,
-                                          fontFamily: 'NovecentoSans',
-                                        ),
+                                  axisNameWidget: Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      'Shots Taken',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'NovecentoSans',
                                       ),
                                     ),
-                                    interval: max(1.0, accuracySpots.length / 5),
+                                  ),
+                                  axisNameSize: 28,
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 32,
+                                    getTitlesWidget: (value, meta) {
+                                      if (shotCounts.contains(value.toInt())) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            value.toInt().toString(),
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 12,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                    interval: accuracySpots.length > 1
+                                        ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity)
+                                        : 1,
                                   ),
                                 ),
                                 rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -384,8 +425,8 @@ class _StartShootingState extends State<StartShooting> {
                                 if (accuracySpots.isNotEmpty)
                                   LineChartBarData(
                                     spots: [
-                                      FlSpot(0, avgAccuracy.roundToDouble()),
-                                      FlSpot(accuracySpots.length - 1.0, avgAccuracy.roundToDouble()),
+                                      FlSpot(accuracySpots.first.x, avgAccuracy.roundToDouble()),
+                                      FlSpot(accuracySpots.last.x, avgAccuracy.roundToDouble()),
                                     ],
                                     isCurved: false,
                                     barWidth: 2,
