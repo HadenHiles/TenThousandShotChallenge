@@ -276,7 +276,7 @@ class _FriendsState extends State<Friends> {
                                 ),
                               )
                             : ListView.builder(
-                                padding: EdgeInsets.only(top: 0, left: 0, right: 0, bottom: kToolbarHeight),
+                                padding: const EdgeInsets.only(top: 0, left: 0, right: 0, bottom: kToolbarHeight),
                                 itemCount: _invites.length + 1,
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
