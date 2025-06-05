@@ -909,6 +909,38 @@ class _StartShootingState extends State<StartShooting> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     children: _buildShotsList(context, _shots),
                   ),
+                  // Add this: Finish Session button at the bottom
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.flag, color: Colors.white),
+                        label: const Text(
+                          "Finish Session",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          // You can add your finish session logic here
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
