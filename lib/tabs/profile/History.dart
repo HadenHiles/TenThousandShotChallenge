@@ -240,7 +240,7 @@ class _HistoryState extends State<History> {
                                 }
 
                                 if (i.targetDate != null) {
-                                  String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
+                                  String targetDate = DateFormat('M/d/y').format(i.targetDate!);
                                   int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
                                   if (daysBeforeAfterTarget > 0) {
@@ -419,13 +419,13 @@ class _HistoryState extends State<History> {
               const SizedBox(width: 8),
               AutoSizeText(
                 iterationDescription.toLowerCase(),
-                maxFontSize: 18,
-                maxLines: 1,
+                maxFontSize: 16,
+                maxLines: 2,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
                   fontFamily: "NovecentoSans",
-                  fontSize: 18,
+                  fontSize: 16,
                 ),
               ),
             ],
@@ -438,7 +438,7 @@ class _HistoryState extends State<History> {
               AutoSizeText(
                 goalDescription.toLowerCase(),
                 maxFontSize: 18,
-                maxLines: 1,
+                maxLines: 2,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
