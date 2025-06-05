@@ -477,6 +477,59 @@ class _StartShootingState extends State<StartShooting> {
                                       })
                                       .whereType<LineChartBarData>()
                                       .toList(),
+                              lineTouchData: LineTouchData(
+                                enabled: true,
+                                handleBuiltInTouches: true, // <-- This makes tooltip stay on tap
+                                touchTooltipData: LineTouchTooltipData(
+                                  getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                                  tooltipRoundedRadius: 10,
+                                  fitInsideHorizontally: true,
+                                  fitInsideVertically: true,
+                                  getTooltipItems: (touchedSpots) {
+                                    List<LineTooltipItem> items = [];
+                                    for (final touched in touchedSpots) {
+                                      final type = shotTypes[touched.barIndex];
+                                      final color = shotTypeColors[type]!;
+                                      final spots = accuracySpotsByType[type]!;
+                                      final index = spots.indexWhere((spot) => spot.x == touched.x && spot.y == touched.y);
+                                      if (index == -1) continue;
+
+                                      // Find the corresponding shot for this spot
+                                      final filtered = _shots.where((s) => s.type == type).toList();
+                                      int cumulative = 0;
+                                      int? targetsHit;
+                                      int? count;
+                                      for (int i = 0; i < filtered.length; i++) {
+                                        final s = filtered[filtered.length - 1 - i];
+                                        if (s.targetsHit != null && s.count != null && s.count! > 0) {
+                                          cumulative += s.count!;
+                                          if (cumulative.toDouble() == touched.x) {
+                                            targetsHit = s.targetsHit;
+                                            count = s.count;
+                                            break;
+                                          }
+                                        }
+                                      }
+
+                                      items.add(
+                                        LineTooltipItem(
+                                          "${type[0].toUpperCase()}${type.substring(1)}\n"
+                                          "Targets Hit: ${targetsHit ?? '-'}\n"
+                                          "Shots: ${count ?? '-'}\n"
+                                          "Accuracy: ${touched.y.toStringAsFixed(1)}%",
+                                          TextStyle(
+                                            color: color,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return items;
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                           // Chart legend
