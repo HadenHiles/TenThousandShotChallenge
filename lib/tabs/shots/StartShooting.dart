@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 
 class StartShooting extends StatefulWidget {
   const StartShooting({super.key, required this.sessionPanelController, this.shots});
@@ -934,8 +935,14 @@ class _StartShootingState extends State<StartShooting> {
                           ),
                         ),
                         onPressed: () {
-                          // You can add your finish session logic here
-                          Navigator.of(context).pop();
+                          // Replace the current route with the Shots start screen
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (context) {
+                              return const Navigation(
+                                selectedIndex: 0,
+                              );
+                            }),
+                          );
                         },
                       ),
                     ),
