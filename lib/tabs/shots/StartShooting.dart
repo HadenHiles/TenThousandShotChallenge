@@ -33,6 +33,7 @@ class _StartShootingState extends State<StartShooting> {
   List<Shots> _shots = [];
   bool _showAccuracyPrompt = true;
   int? _lastTargetsHit;
+  bool _chartCollapsed = false;
 
   @override
   void initState() {
@@ -55,23 +56,110 @@ class _StartShootingState extends State<StartShooting> {
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
     int value = _lastTargetsHit ?? (shotCount * 0.5).round();
+    // Helper to round to nearest even number
+    int roundEven(num n) => (n / 2).round() * 2;
+    List<int> presets = [
+      roundEven(shotCount * 0.15),
+      roundEven(shotCount * 0.25),
+      roundEven(shotCount * 0.35),
+      roundEven(shotCount * 0.45),
+      roundEven(shotCount * 0.55),
+      roundEven(shotCount * 0.65),
+      roundEven(shotCount * 0.75),
+      roundEven(shotCount * 0.85),
+    ];
     return showDialog<int>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            List<int> presets = [(shotCount * 0.05).round(), (shotCount * 0.10).round(), (shotCount * 0.20).round(), (shotCount * 0.35).round(), (shotCount * 0.50).round(), (shotCount * 0.75).round(), (shotCount * 0.90).round(), shotCount];
             return AlertDialog(
-              title: Text('How many targets did you hit out of $shotCount?'),
+              title: const Text('How many targets did you hit?'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Centered selected value above the slider, compact, with box and tap-to-edit
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 0, top: 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            final controller = TextEditingController(text: value.toString());
+                            int? manualValue = await showDialog<int>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('Enter targets hit'),
+                                  content: TextField(
+                                    controller: controller,
+                                    autofocus: true,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      hintText: "0 - $shotCount",
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        int? entered = int.tryParse(controller.text);
+                                        if (entered != null && entered >= 0 && entered <= shotCount) {
+                                          Navigator.of(context).pop(entered);
+                                        }
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            if (manualValue != null) {
+                              setState(() => value = manualValue);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey.shade400,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              "$value",
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          " / $shotCount",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Slider(
                     value: value.toDouble(),
                     min: 0,
                     max: shotCount.toDouble(),
                     divisions: shotCount,
                     label: "$value",
+                    activeColor: Theme.of(context).primaryColor,
+                    thumbColor: Theme.of(context).primaryColor,
                     onChanged: (v) => setState(() => value = v.round()),
                   ),
                   Wrap(
@@ -80,9 +168,11 @@ class _StartShootingState extends State<StartShooting> {
                     children: presets
                         .map((preset) => ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: value == preset ? Colors.green : null,
+                                backgroundColor: value == preset ? Colors.grey.shade300 : Colors.grey.shade100,
+                                foregroundColor: Colors.black87,
                                 minimumSize: const Size(48, 32),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                elevation: value == preset ? 2 : 0,
                               ),
                               onPressed: () => setState(() => value = preset),
                               child: Text("$preset"),
@@ -94,11 +184,19 @@ class _StartShootingState extends State<StartShooting> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[700],
+                  ),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  label: const Text('Save', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () => Navigator.of(context).pop(value),
-                  child: const Text('OK'),
                 ),
               ],
             );
@@ -110,12 +208,13 @@ class _StartShootingState extends State<StartShooting> {
 
   @override
   Widget build(BuildContext context) {
-    // --- Accuracy chart data ---
+    // --- Accuracy chart data for selected shot type ---
+    List<Shots> filteredShots = _shots.where((s) => s.type == _selectedShotType).toList();
     List<FlSpot> accuracySpots = [];
     int totalHits = 0;
     int totalShots = 0;
-    for (int i = 0; i < _shots.length; i++) {
-      final s = _shots[_shots.length - 1 - i]; // oldest first
+    for (int i = 0; i < filteredShots.length; i++) {
+      final s = filteredShots[filteredShots.length - 1 - i]; // oldest first
       if (s.targetsHit != null && s.count != null && s.count! > 0) {
         double accuracy = s.targetsHit! / s.count!;
         accuracySpots.add(FlSpot(i.toDouble(), (accuracy * 100).roundToDouble()));
@@ -155,209 +254,225 @@ class _StartShootingState extends State<StartShooting> {
                 },
               ),
             ),
+          // Collapse/expand chart button
+          if (showAccuracyFeature)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _chartCollapsed ? "Show Accuracy Chart" : "${_selectedShotType[0].toUpperCase()}${_selectedShotType.substring(1)} Shot Accuracy",
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _chartCollapsed ? Icons.expand_more : Icons.expand_less,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    tooltip: _chartCollapsed ? "Expand Chart" : "Collapse Chart",
+                    onPressed: () {
+                      setState(() {
+                        _chartCollapsed = !_chartCollapsed;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          if (showAccuracyFeature && !_chartCollapsed)
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: accuracySpots.isEmpty
+                    ? Center(
+                        child: Text(
+                          "Add shots to see your accuracy chart.",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : Stack(
+                        children: [
+                          LineChart(
+                            LineChartData(
+                              minY: 0,
+                              maxY: 100,
+                              gridData: FlGridData(
+                                show: true,
+                                drawVerticalLine: true,
+                                horizontalInterval: 20,
+                                verticalInterval: max(1.0, accuracySpots.length / 5),
+                                getDrawingHorizontalLine: (value) => FlLine(
+                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                  strokeWidth: 1,
+                                ),
+                                getDrawingVerticalLine: (value) => FlLine(
+                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                  strokeWidth: 1,
+                                ),
+                              ),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 32,
+                                    getTitlesWidget: (value, meta) => Padding(
+                                      padding: const EdgeInsets.only(right: 4),
+                                      child: Text(
+                                        value.toInt().toString(),
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 12,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                      ),
+                                    ),
+                                    interval: 20,
+                                  ),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 24,
+                                    getTitlesWidget: (value, meta) => Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        (accuracySpots.length - value.toInt()).toString(),
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 12,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                      ),
+                                    ),
+                                    interval: max(1.0, accuracySpots.length / 5),
+                                  ),
+                                ),
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              borderData: FlBorderData(
+                                show: true,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                                ),
+                              ),
+                              lineBarsData: [
+                                // Accuracy line
+                                LineChartBarData(
+                                  spots: accuracySpots,
+                                  isCurved: true,
+                                  barWidth: 3,
+                                  color: Colors.green,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                // Average accuracy line
+                                if (accuracySpots.isNotEmpty)
+                                  LineChartBarData(
+                                    spots: [
+                                      FlSpot(0, avgAccuracy.roundToDouble()),
+                                      FlSpot(accuracySpots.length - 1.0, avgAccuracy.roundToDouble()),
+                                    ],
+                                    isCurved: false,
+                                    barWidth: 2,
+                                    color: Colors.blue,
+                                    dashArray: [8, 4],
+                                    dotData: const FlDotData(show: false),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          // Chart legend
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(width: 18, height: 4, color: Colors.green),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "Session Accuracy",
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 12,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 18,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "Average Accuracy",
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 12,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Average accuracy label
+                          if (accuracySpots.isNotEmpty)
+                            Positioned(
+                              left: 8,
+                              top: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Avg: ${avgAccuracy.round()}%",
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+            ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (showAccuracyFeature)
-                    Column(
-                      children: [
-                        const SizedBox(height: 8),
-                        Text(
-                          "Shot Accuracy Over Time",
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: accuracySpots.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      "Add shots to see your accuracy chart.",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  )
-                                : Stack(
-                                    children: [
-                                      LineChart(
-                                        LineChartData(
-                                          minY: 0,
-                                          maxY: 100,
-                                          gridData: FlGridData(
-                                            show: true,
-                                            drawVerticalLine: true,
-                                            horizontalInterval: 20,
-                                            verticalInterval: max(1.0, accuracySpots.length / 5),
-                                            getDrawingHorizontalLine: (value) => FlLine(
-                                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                              strokeWidth: 1,
-                                            ),
-                                            getDrawingVerticalLine: (value) => FlLine(
-                                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                              strokeWidth: 1,
-                                            ),
-                                          ),
-                                          titlesData: FlTitlesData(
-                                            leftTitles: AxisTitles(
-                                              sideTitles: SideTitles(
-                                                showTitles: true,
-                                                reservedSize: 32,
-                                                getTitlesWidget: (value, meta) => Padding(
-                                                  padding: const EdgeInsets.only(right: 4),
-                                                  child: Text(
-                                                    value.toInt().toString(),
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                      fontSize: 12,
-                                                      fontFamily: 'NovecentoSans',
-                                                    ),
-                                                  ),
-                                                ),
-                                                interval: 20,
-                                              ),
-                                            ),
-                                            bottomTitles: AxisTitles(
-                                              sideTitles: SideTitles(
-                                                showTitles: true,
-                                                reservedSize: 24,
-                                                getTitlesWidget: (value, meta) => Padding(
-                                                  padding: const EdgeInsets.only(top: 4),
-                                                  child: Text(
-                                                    (accuracySpots.length - value.toInt()).toString(),
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                      fontSize: 12,
-                                                      fontFamily: 'NovecentoSans',
-                                                    ),
-                                                  ),
-                                                ),
-                                                interval: max(1.0, accuracySpots.length / 5),
-                                              ),
-                                            ),
-                                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                          ),
-                                          borderData: FlBorderData(
-                                            show: true,
-                                            border: Border.all(
-                                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                                            ),
-                                          ),
-                                          lineBarsData: [
-                                            // Accuracy line
-                                            LineChartBarData(
-                                              spots: accuracySpots,
-                                              isCurved: true,
-                                              barWidth: 3,
-                                              color: Colors.green,
-                                              dotData: const FlDotData(show: true),
-                                            ),
-                                            // Average accuracy line
-                                            if (accuracySpots.isNotEmpty)
-                                              LineChartBarData(
-                                                spots: [
-                                                  FlSpot(0, avgAccuracy.roundToDouble()),
-                                                  FlSpot(accuracySpots.length - 1.0, avgAccuracy.roundToDouble()),
-                                                ],
-                                                isCurved: false,
-                                                barWidth: 2,
-                                                color: Colors.blue,
-                                                dashArray: [8, 4],
-                                                dotData: const FlDotData(show: false),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Chart legend
-                                      Positioned(
-                                        right: 0,
-                                        top: 0,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(width: 18, height: 4, color: Colors.green),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "Session Accuracy",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 12,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 18,
-                                                  height: 4,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.blue,
-                                                    borderRadius: BorderRadius.circular(2),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "Average Accuracy",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 12,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Average accuracy label
-                                      if (accuracySpots.isNotEmpty)
-                                        Positioned(
-                                          left: 8,
-                                          top: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              "Avg: ${avgAccuracy.round()}%",
-                                              style: const TextStyle(
-                                                color: Colors.blue,
-                                                fontWeight: FontWeight.bold,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
                   const SizedBox(height: 15),
                   Text(
                     "Shot Type".toUpperCase(),
