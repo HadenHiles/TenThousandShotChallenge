@@ -321,9 +321,7 @@ class _StartShootingState extends State<StartShooting> {
                                 show: true,
                                 drawVerticalLine: true,
                                 horizontalInterval: 20,
-                                verticalInterval: accuracySpots.length > 1
-                                    ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity)
-                                    : 1,
+                                verticalInterval: accuracySpots.length > 1 ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity) : 1,
                                 getDrawingHorizontalLine: (value) => FlLine(
                                   color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
                                   strokeWidth: 1,
@@ -398,9 +396,7 @@ class _StartShootingState extends State<StartShooting> {
                                       }
                                       return const SizedBox.shrink();
                                     },
-                                    interval: accuracySpots.length > 1
-                                        ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity)
-                                        : 1,
+                                    interval: accuracySpots.length > 1 ? ((accuracySpots.last.x - accuracySpots.first.x) / min(5, accuracySpots.length - 1)).clamp(1, double.infinity) : 1,
                                   ),
                                 ),
                                 rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
