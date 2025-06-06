@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:numberpicker/numberpicker.dart';
@@ -7,13 +8,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
+import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
   const StartShooting({super.key, required this.sessionPanelController, this.shots});
@@ -912,42 +917,327 @@ class _StartShootingState extends State<StartShooting> {
                   ),
                   // Add this: Finish Session button at the bottom
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.flag, color: Colors.white),
-                        label: const Text(
-                          "Finish Session",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontFamily: 'NovecentoSans',
-                            fontWeight: FontWeight.bold,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 60,
+                        width: MediaQuery.of(context).size.width,
+                        child: StreamProvider<NetworkStatus>(
+                          create: (context) {
+                            return NetworkStatusService().networkStatusController.stream;
+                          },
+                          initialData: NetworkStatus.Online,
+                          child: NetworkAwareWidget(
+                            onlineChild: _shots.isEmpty
+                                ? TextButton(
+                                    onPressed: () {
+                                      Feedback.forLongPress(context);
+
+                                      // Reset session and close panel
+                                      sessionService.reset();
+                                      widget.sessionPanelController.close();
+                                      reset();
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).cardTheme.color,
+                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                      disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                                      shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Cancel".toUpperCase(),
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 3, left: 4),
+                                          child: Icon(
+                                            Icons.delete_forever,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : TextButton(
+                                    onPressed: () async {
+                                      Feedback.forLongPress(context);
+
+                                      int totalShots = 0;
+                                      for (var s in _shots) {
+                                        totalShots += s.count!;
+                                      }
+
+                                      await saveShootingSession(_shots).then((success) async {
+                                        sessionService.reset();
+                                        widget.sessionPanelController.close();
+                                        reset();
+
+                                        await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                                          if (snapshot.docs.isNotEmpty) {
+                                            Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
+
+                                            if ((i.total! + totalShots) < 10000) {
+                                              Fluttertoast.showToast(
+                                                msg: 'Shooting session saved!',
+                                                toastLength: Toast.LENGTH_SHORT,
+                                                gravity: ToastGravity.BOTTOM,
+                                                timeInSecForIosWeb: 1,
+                                                backgroundColor: Theme.of(context).cardTheme.color,
+                                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                                fontSize: 16.0,
+                                              );
+                                            } else {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) {
+                                                  return Dialog(
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                                    child: SingleChildScrollView(
+                                                      clipBehavior: Clip.none,
+                                                      child: Stack(
+                                                        clipBehavior: Clip.none,
+                                                        alignment: Alignment.topCenter,
+                                                        children: [
+                                                          SizedBox(
+                                                            height: 550,
+                                                            child: Padding(
+                                                              padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                              child: Column(
+                                                                children: [
+                                                                  Text(
+                                                                    "Challenge Complete!".toUpperCase(),
+                                                                    textAlign: TextAlign.center,
+                                                                    style: TextStyle(
+                                                                      color: Theme.of(context).primaryColor,
+                                                                      fontFamily: "NovecentoSans",
+                                                                      fontSize: 32,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(height: 5),
+                                                                  Text(
+                                                                    "Nice job, ya beauty!\n10,000 shots isn't easy.",
+                                                                    textAlign: TextAlign.center,
+                                                                    style: TextStyle(
+                                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                                      fontFamily: "NovecentoSans",
+                                                                      fontSize: 22,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(height: 5),
+                                                                  Opacity(
+                                                                    opacity: 0.8,
+                                                                    child: Text(
+                                                                      "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                                      textAlign: TextAlign.center,
+                                                                      style: TextStyle(
+                                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                                        fontFamily: "NovecentoSans",
+                                                                        fontSize: 16,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(height: 15),
+                                                                  GestureDetector(
+                                                                    onTap: () async {
+                                                                      String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                                      await canLaunchUrlString(link).then((can) {
+                                                                        launchUrlString(link).catchError((err) {
+                                                                          print(err);
+                                                                          return false;
+                                                                        });
+                                                                      });
+                                                                    },
+                                                                    child: Card(
+                                                                      color: Theme.of(context).cardTheme.color,
+                                                                      elevation: 4,
+                                                                      child: SizedBox(
+                                                                        width: 125,
+                                                                        height: 180,
+                                                                        child: Column(
+                                                                          mainAxisAlignment: MainAxisAlignment.start,
+                                                                          children: [
+                                                                            const Image(
+                                                                              image: NetworkImage(
+                                                                                "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
+                                                                              ),
+                                                                              width: 150,
+                                                                            ),
+                                                                            Expanded(
+                                                                              child: Column(
+                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                children: [
+                                                                                  Container(
+                                                                                    padding: const EdgeInsets.all(5),
+                                                                                    child: Text(
+                                                                                      "Sniper Snapback".toUpperCase(),
+                                                                                      maxLines: 2,
+                                                                                      textAlign: TextAlign.center,
+                                                                                      style: TextStyle(
+                                                                                        fontFamily: "NovecentoSans",
+                                                                                        fontSize: 18,
+                                                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(height: 5),
+                                                                  Container(
+                                                                    decoration: BoxDecoration(
+                                                                      color: Theme.of(context).colorScheme.primaryContainer,
+                                                                    ),
+                                                                    padding: const EdgeInsets.all(5),
+                                                                    child: SelectableText(
+                                                                      "TENKSNIPER",
+                                                                      style: TextStyle(
+                                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                                        fontFamily: "NovecentoSans",
+                                                                        fontSize: 24,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(height: 5),
+                                                                  TextButton(
+                                                                    onPressed: () async {
+                                                                      Navigator.of(context).pop();
+                                                                      String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                                      await canLaunchUrlString(link).then((can) {
+                                                                        launchUrlString(link).catchError((err) {
+                                                                          print(err);
+                                                                          return false;
+                                                                        });
+                                                                      });
+                                                                    },
+                                                                    style: ButtonStyle(
+                                                                      backgroundColor: WidgetStateProperty.all(
+                                                                        Theme.of(context).primaryColor,
+                                                                      ),
+                                                                      padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                                    ),
+                                                                    child: Text(
+                                                                      "Get yours".toUpperCase(),
+                                                                      style: const TextStyle(
+                                                                        fontFamily: "NovecentoSans",
+                                                                        fontSize: 30,
+                                                                        color: Colors.white,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const Positioned(
+                                                            top: -40,
+                                                            child: SizedBox(
+                                                              width: 100,
+                                                              height: 100,
+                                                              child: Image(
+                                                                image: AssetImage("assets/images/GoalLight.gif"),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            }
+                                          }
+                                        });
+                                      }).onError((error, stackTrace) {
+                                        print(error);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            content: Text(
+                                              'There was an error saving your shooting session :(',
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            duration: const Duration(milliseconds: 1500),
+                                          ),
+                                        );
+                                      });
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).primaryColor,
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      disabledForegroundColor: Colors.white,
+                                      shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Finish".toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 24,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 3, left: 4),
+                                          child: const Icon(
+                                            Icons.save_alt_rounded,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                            offlineChild: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "You need wifi to save, bud.".toLowerCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    width: 16,
+                                    height: 16,
+                                    margin: const EdgeInsets.only(top: 5),
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          // Replace the current route with the Shots start screen
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) {
-                              return const Navigation(
-                                selectedIndex: 0,
-                              );
-                            }),
-                          );
-                        },
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
