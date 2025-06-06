@@ -15,7 +15,7 @@ class Shots {
         'date': date,
         'type': type,
         'count': count,
-        'targetsHit': targetsHit,
+        'targets_hit': targetsHit,
       };
 
   Shots.fromMap(Map<String, dynamic> map, {this.reference})
@@ -26,7 +26,7 @@ class Shots {
         date = map['date']?.toDate(),
         type = map['type'],
         count = map['count'],
-        targetsHit = map['targetsHit'];
+        targetsHit = map['targets_hit'];
 
   Shots.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
 }
