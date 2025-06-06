@@ -247,9 +247,6 @@ class _StartShootingState extends State<StartShooting> {
           totalShots += s.count!;
         }
       }
-      if (spots.isNotEmpty && spots.first.x != 0) {
-        spots.insert(0, FlSpot(0, spots.first.y));
-      }
       accuracySpotsByType[type] = spots;
       shotCountsByType[type] = shotCounts;
       avgAccuracyByType[type] = totalShots > 0 ? (totalHits / totalShots) * 100 : 0;
@@ -660,18 +657,20 @@ class _StartShootingState extends State<StartShooting> {
                                                 lineTouchData: LineTouchData(
                                                   enabled: true,
                                                   handleBuiltInTouches: true,
+                                                  touchSpotThreshold: 22, // <-- Increase touch area for all dots
                                                   touchTooltipData: LineTouchTooltipData(
                                                     getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
                                                     tooltipRoundedRadius: 10,
                                                     fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
-                                                    fitInsideVertically: true,
-                                                    tooltipMargin: 16, // Add some margin so tooltips aren't clipped
+                                                    fitInsideVertically: false,
+                                                    tooltipMargin: 24, // Add more margin so tooltips aren't clipped
                                                     getTooltipItems: (touchedSpots) {
                                                       List<LineTooltipItem> items = [];
                                                       for (final touched in touchedSpots) {
                                                         final color = shotTypeColors[_selectedShotType]!;
                                                         final spots = accuracySpotsByType[_selectedShotType]!;
-                                                        final index = spots.indexWhere((spot) => spot.x == touched.x && spot.y == touched.y);
+                                                        // Use a small epsilon for floating point comparison
+                                                        final index = spots.indexWhere((spot) => (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
                                                         if (index == -1) continue;
 
                                                         // Find the corresponding shot for this spot
