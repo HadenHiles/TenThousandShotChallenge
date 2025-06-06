@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class TargetAccuracyVisualizer extends StatelessWidget {
   final int hits;
@@ -31,15 +30,25 @@ class TargetAccuracyVisualizer extends StatelessWidget {
     final double radius = size * 0.38;
     for (int i = 0; i < hitDots; i++) {
       final double angle = (2 * pi / dotCount) * i - pi / 2;
-      final double dx = center + radius * cos(angle) - 8;
-      final double dy = center + radius * sin(angle) - 8;
+      final double dx = center + radius * cos(angle) - 5;
+      final double dy = center + radius * sin(angle) - 5;
       dots.add(Positioned(
         left: dx,
         top: dy,
-        child: Icon(
-          FontAwesomeIcons.hockeyPuck,
-          size: 16,
-          color: shotColor,
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: shotColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: shotColor.withOpacity(0.25),
+                blurRadius: 2,
+                spreadRadius: 0.5,
+              ),
+            ],
+          ),
         ),
       ));
     }
@@ -51,15 +60,18 @@ class TargetAccuracyVisualizer extends StatelessWidget {
     for (int i = 0; i < missDots; i++) {
       final double angle = random.nextDouble() * 2 * pi;
       final double r = missRadiusMin + random.nextDouble() * (missRadiusMax - missRadiusMin);
-      final double dx = center + r * cos(angle) - 8;
-      final double dy = center + r * sin(angle) - 8;
+      final double dx = center + r * cos(angle) - 5;
+      final double dy = center + r * sin(angle) - 5;
       dots.add(Positioned(
         left: dx,
         top: dy,
-        child: Icon(
-          FontAwesomeIcons.hockeyPuck,
-          size: 16,
-          color: Colors.grey.withOpacity(0.28),
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.28),
+            shape: BoxShape.circle,
+          ),
         ),
       ));
     }
