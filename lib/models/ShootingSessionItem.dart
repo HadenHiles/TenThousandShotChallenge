@@ -11,6 +11,26 @@ class ShootingSessionItem extends ShootingSession {
     totalBackhand,
     date,
     duration,
+    wristTargetsHit,
+    snapTargetsHit,
+    slapTargetsHit,
+    backhandTargetsHit,
+    shots,
+    reference,
     this.deletable,
-  }) : super(total, totalWrist, totalSnap, totalSlap, totalBackhand, date, duration);
+  }) : super(
+          total,
+          totalWrist,
+          totalSnap,
+          totalSlap,
+          totalBackhand,
+          date,
+          duration,
+          wristTargetsHit: wristTargetsHit,
+          snapTargetsHit: snapTargetsHit,
+          slapTargetsHit: slapTargetsHit,
+          backhandTargetsHit: backhandTargetsHit,
+          shots: shots,
+          reference: reference,
+        );
 }
