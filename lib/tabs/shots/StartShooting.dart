@@ -918,50 +918,72 @@ class _StartShootingState extends State<StartShooting> {
           onLongPress: () async {
             Feedback.forLongPress(context);
 
-            await showDialog<int>(
+            int value = _currentShotCount;
+            final controller = TextEditingController(text: value.toString());
+            int? manualValue = await showDialog<int>(
               context: context,
               builder: (context) {
-                int value = _currentShotCount;
-                return StatefulBuilder(
-                  builder: (context, setState) {
-                    return AlertDialog(
-                      title: const Text('Shots'),
-                      content: NumberPicker(
-                        value: value,
-                        minValue: 1,
-                        maxValue: 500,
-                        onChanged: (v) => setState(() => value = v),
+                return AlertDialog(
+                  title: const Text('Enter # of shots'),
+                  content: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: ButtonStyle(
-                            foregroundColor: WidgetStateProperty.all(Colors.black38),
-                          ),
-                          child: const Text('Cancel'),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: "1 - 500",
+                          hintStyle: TextStyle(color: Colors.black38),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(value);
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
-                            foregroundColor: WidgetStateProperty.all(Colors.white),
-                          ),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ),
+                  actionsAlignment: MainAxisAlignment.center,
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black38,
+                        backgroundColor: Colors.transparent,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        int? entered = int.tryParse(controller.text);
+                        if (entered != null && entered > 0 && entered <= 500) {
+                          Navigator.of(context).pop(entered);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('OK'),
+                    ),
+                  ],
                 );
               },
-            ).then((value) {
-              if (value != null && value > 0 && value <= 500) {
-                setState(() {
-                  _currentShotCount = value;
-                });
-              }
-            });
+            );
+            if (manualValue != null && manualValue > 0 && manualValue <= 500) {
+              setState(() {
+                _currentShotCount = manualValue;
+                _lastTargetsHit = (_currentShotCount * 0.5).round();
+              });
+            }
           },
           child: NumberPicker(
             value: _currentShotCount,
@@ -977,7 +999,6 @@ class _StartShootingState extends State<StartShooting> {
             onChanged: (value) {
               setState(() {
                 _currentShotCount = value;
-                // Reset targets hit to 50% of new total, rounded
                 _lastTargetsHit = (_currentShotCount * 0.5).round();
               });
             },
