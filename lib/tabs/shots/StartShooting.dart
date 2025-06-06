@@ -629,6 +629,7 @@ class _StartShootingState extends State<StartShooting> {
                               _selectedShotType = 'wrist';
                             });
                           },
+                          borderRadius: BorderRadius.circular(_selectedShotType == 'wrist' ? 12 : 6),
                         ),
                         ShotTypeButton(
                           type: 'snap',
@@ -639,6 +640,7 @@ class _StartShootingState extends State<StartShooting> {
                               _selectedShotType = 'snap';
                             });
                           },
+                          borderRadius: BorderRadius.circular(_selectedShotType == 'snap' ? 12 : 6),
                         ),
                         ShotTypeButton(
                           type: 'slap',
@@ -649,6 +651,7 @@ class _StartShootingState extends State<StartShooting> {
                               _selectedShotType = 'slap';
                             });
                           },
+                          borderRadius: BorderRadius.circular(_selectedShotType == 'slap' ? 12 : 6),
                         ),
                         ShotTypeButton(
                           type: 'backhand',
@@ -659,6 +662,7 @@ class _StartShootingState extends State<StartShooting> {
                               _selectedShotType = 'backhand';
                             });
                           },
+                          borderRadius: BorderRadius.circular(_selectedShotType == 'backhand' ? 12 : 6),
                         ),
                       ],
                     ),
