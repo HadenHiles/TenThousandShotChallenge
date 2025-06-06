@@ -66,7 +66,7 @@ class _StartShootingState extends State<StartShooting> {
   }
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
-    int value = _lastTargetsHit ?? (shotCount * 0.5).round();
+    int value = (_lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
     // Helper to round to nearest even number
     int roundEven(num n) => (n / 2).round() * 2;
     // Build presets, ensuring no duplicates; if duplicate, allow one as odd
@@ -103,61 +103,22 @@ class _StartShootingState extends State<StartShooting> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        GestureDetector(
-                          onTap: () async {
-                            final controller = TextEditingController(text: value.toString());
-                            int? manualValue = await showDialog<int>(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text('Enter targets hit'),
-                                  content: TextField(
-                                    controller: controller,
-                                    autofocus: true,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: "0 - $shotCount",
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        int? entered = int.tryParse(controller.text);
-                                        if (entered != null && entered >= 0 && entered <= shotCount) {
-                                          Navigator.of(context).pop(entered);
-                                        }
-                                      },
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                            if (manualValue != null) {
-                              setState(() => value = manualValue);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey.shade400,
-                                width: 1,
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey.shade400,
+                              width: 1,
                             ),
-                            child: Text(
-                              "$value",
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
+                          ),
+                          child: Text(
+                            "$value",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
                             ),
                           ),
                         ),
@@ -176,15 +137,9 @@ class _StartShootingState extends State<StartShooting> {
                     min: 0,
                     max: shotCount.toDouble(),
                     divisions: shotCount > 0 ? shotCount : 1,
-                    label: "$value",
                     activeColor: Theme.of(context).primaryColor,
                     thumbColor: Theme.of(context).primaryColor,
                     onChanged: (v) => setState(() => value = v.round().clamp(0, shotCount)),
-                    // --- White indicator label over red primary ---
-                    labelStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                   Wrap(
                     spacing: 8,
@@ -528,7 +483,7 @@ class _StartShootingState extends State<StartShooting> {
                                                     Container(
                                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.black54,
+                                                        color: Colors.black38,
                                                         borderRadius: BorderRadius.circular(4),
                                                       ),
                                                       child: Text(
@@ -980,12 +935,19 @@ class _StartShootingState extends State<StartShooting> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
+                          style: ButtonStyle(
+                            foregroundColor: WidgetStateProperty.all(Colors.black38),
+                          ),
                           child: const Text('Cancel'),
                         ),
                         ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).pop(value);
                           },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                            foregroundColor: WidgetStateProperty.all(Colors.white),
+                          ),
                           child: const Text('OK'),
                         ),
                       ],
@@ -1015,6 +977,8 @@ class _StartShootingState extends State<StartShooting> {
             onChanged: (value) {
               setState(() {
                 _currentShotCount = value;
+                // Reset targets hit to 50% of new total, rounded
+                _lastTargetsHit = (_currentShotCount * 0.5).round();
               });
             },
             decoration: BoxDecoration(
