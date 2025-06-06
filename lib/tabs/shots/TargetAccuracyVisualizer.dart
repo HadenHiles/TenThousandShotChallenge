@@ -19,32 +19,51 @@ class TargetAccuracyVisualizer extends StatelessWidget {
   Widget build(BuildContext context) {
     // Calculate accuracy
     final double accuracy = total > 0 ? hits / total : 0.0;
-    // For fun, max 12 dots (for clarity)
+    // Use up to 12 dots for clarity
     final int dotCount = total < 12 ? total : 12;
     final int hitDots = (accuracy * dotCount).round();
     final int missDots = dotCount - hitDots;
 
-    // Place hit dots evenly around the target
-    List<Widget> dots = [];
+    // Dot size (smaller than before)
+    final double dotSize = size * 0.08; // e.g. ~7px for size=90
+
+    // Center and radii
     final double center = size / 2;
-    final double radius = size * 0.38;
+    final double innerRadius = size * 0.38; // max for hits
+    final double minMissRadius = size * 0.48;
+    final double maxMissRadius = size * 0.62;
+
+    final random = Random(hits + total);
+
+    // Use theme red for hit dots
+    final Color hitDotColor = Theme.of(context).colorScheme.error;
+
+    // Place hit dots: scatter them around the ring that represents the accuracy percentage
+    // For example, 80% accuracy = dots around 80% of the radius (plus some variance)
+    List<Widget> dots = [];
     for (int i = 0; i < hitDots; i++) {
-      final double angle = (2 * pi / dotCount) * i - pi / 2;
-      final double dx = center + radius * cos(angle) - 5;
-      final double dy = center + radius * sin(angle) - 5;
+      final double angle = random.nextDouble() * 2 * pi;
+      // The "target" radius for the hit dots is proportional to accuracy
+      // 0% accuracy = near outer ring, 100% = near center
+      final double baseRadius = innerRadius * (1 - accuracy);
+      // Add a little random variance (5-10% of innerRadius)
+      final double variance = innerRadius * (0.05 + random.nextDouble() * 0.05);
+      final double r = baseRadius + (random.nextBool() ? variance : -variance);
+      final double dx = center + r * cos(angle) - dotSize / 2;
+      final double dy = center + r * sin(angle) - dotSize / 2;
       dots.add(Positioned(
         left: dx,
         top: dy,
         child: Container(
-          width: 10,
-          height: 10,
+          width: dotSize,
+          height: dotSize,
           decoration: BoxDecoration(
-            color: shotColor,
+            color: hitDotColor,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: shotColor.withOpacity(0.25),
-                blurRadius: 2,
+                color: hitDotColor.withOpacity(0.18),
+                blurRadius: 1.5,
                 spreadRadius: 0.5,
               ),
             ],
@@ -53,23 +72,20 @@ class TargetAccuracyVisualizer extends StatelessWidget {
       ));
     }
 
-    // Place miss dots randomly outside the target
-    final double missRadiusMin = size * 0.48;
-    final double missRadiusMax = size * 0.62;
-    final random = Random(hits + total); // deterministic for same input
+    // Place miss dots: always outside the target, never cut off
     for (int i = 0; i < missDots; i++) {
       final double angle = random.nextDouble() * 2 * pi;
-      final double r = missRadiusMin + random.nextDouble() * (missRadiusMax - missRadiusMin);
-      final double dx = center + r * cos(angle) - 5;
-      final double dy = center + r * sin(angle) - 5;
+      final double r = minMissRadius + random.nextDouble() * (maxMissRadius - minMissRadius - dotSize / 2);
+      final double dx = (center + r * cos(angle) - dotSize / 2).clamp(0, size - dotSize);
+      final double dy = (center + r * sin(angle) - dotSize / 2).clamp(0, size - dotSize);
       dots.add(Positioned(
         left: dx,
         top: dy,
         child: Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.28),
+          width: dotSize,
+          height: dotSize,
+          decoration: const BoxDecoration(
+            color: Color.fromRGBO(120, 120, 120, 0.22),
             shape: BoxShape.circle,
           ),
         ),
@@ -82,7 +98,7 @@ class TargetAccuracyVisualizer extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer ring
+          // Target rings (bottom layer)
           Container(
             width: size,
             height: size,
@@ -91,7 +107,6 @@ class TargetAccuracyVisualizer extends StatelessWidget {
               color: shotColor.withOpacity(0.18),
             ),
           ),
-          // Middle ring
           Container(
             width: size * 0.7,
             height: size * 0.7,
@@ -100,7 +115,6 @@ class TargetAccuracyVisualizer extends StatelessWidget {
               color: shotColor.withOpacity(0.32),
             ),
           ),
-          // Inner ring
           Container(
             width: size * 0.45,
             height: size * 0.45,
@@ -109,27 +123,30 @@ class TargetAccuracyVisualizer extends StatelessWidget {
               color: shotColor.withOpacity(0.55),
             ),
           ),
-          // Center
-          Container(
-            width: size * 0.22,
-            height: size * 0.22,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: shotColor,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              "${(accuracy * 100).round()}%",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'NovecentoSans',
-                fontSize: 14,
+          // Dots (hits and misses) - middle layer
+          ...dots,
+          // Center percentage (top layer, not cut off, not inside a circle)
+          Positioned.fill(
+            child: Center(
+              child: Text(
+                "${(accuracy * 100).round()}%",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 13,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          // Dots (hits and misses)
-          ...dots,
           // Label below
           Positioned(
             bottom: 0,
