@@ -17,6 +17,8 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart'
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -35,6 +37,17 @@ class _ProfileState extends State<Profile> {
   String? _selectedIterationId;
   DateTime? firstSessionDate = DateTime.now();
   DateTime? latestSessionDate = DateTime.now();
+
+  // State for selected shot type in accuracy section
+  String _selectedAccuracyShotType = 'wrist';
+
+  // Helper to get shot type colors (reuse from session charts)
+  final Map<String, Color> shotTypeColors = {
+    'wrist': Colors.cyan,
+    'snap': Colors.blue,
+    'backhand': Colors.indigo,
+    'slap': Colors.teal,
+  };
 
   @override
   void initState() {
@@ -59,6 +72,327 @@ class _ProfileState extends State<Profile> {
       return iteration.complete ?? false;
     }
     return false;
+  }
+
+  // 1. Radial area chart for overall average accuracy per shot type
+  Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
+    if (iterationId == null) return Container();
+
+    // Gather accuracy data for each shot type in this iteration
+    final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+    Map<String, double> avgAccuracy = {};
+    for (final type in shotTypes) {
+      avgAccuracy[type] = 0;
+    }
+
+    // You may want to cache this data for performance
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+        }
+        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
+        Map<String, int> totalHits = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+        Map<String, int> totalShots = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+
+        for (final session in sessions) {
+          for (final shot in session.shots ?? []) {
+            if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + shot.targetsHit! as int;
+              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + shot.count! as int;
+            }
+          }
+        }
+        for (final type in shotTypes) {
+          avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+        }
+
+        // Radial area chart using fl_chart's RadarChart
+        return SizedBox(
+          height: 220,
+          child: RadarChart(
+            RadarChartData(
+              radarBackgroundColor: Colors.transparent,
+              tickCount: 5,
+              ticksTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                fontFamily: 'NovecentoSans',
+                fontSize: 12,
+              ),
+              getTitle: (index, angle) => RadarChartTitle(
+                text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+              ),
+              dataSets: [
+                RadarDataSet(
+                  fillColor: Theme.of(context).primaryColor.withOpacity(0.25),
+                  borderColor: Theme.of(context).primaryColor,
+                  entryRadius: 4,
+                  borderWidth: 3,
+                  dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                ),
+              ],
+              radarShape: RadarShape.polygon,
+              radarBorderData: const BorderSide(color: Colors.grey, width: 1),
+              tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
+              // tickBorderRadius: 2, // <-- REMOVE
+              // maxEntryValue: 100,  // <-- REMOVE
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 2. TargetAccuracyVisualizers for each shot type, tappable
+  Widget _buildShotTypeAccuracyVisualizers(BuildContext context, String? iterationId) {
+    if (iterationId == null) return Container();
+
+    final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
+        }
+        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
+        Map<String, int> totalHits = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+        Map<String, int> totalShots = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+
+        for (final session in sessions) {
+          for (final shot in session.shots ?? []) {
+            if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + shot.targetsHit! as int;
+              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + shot.count! as int;
+            }
+          }
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: shotTypes.map((type) {
+            final color = shotTypeColors[type]!;
+            final isActive = _selectedAccuracyShotType == type;
+            return GestureDetector(
+              onTap: () {
+                // Use setState from parent Profile widget
+                (context as Element).markNeedsBuild();
+                _selectedAccuracyShotType = type;
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Column(
+                  children: [
+                    TargetAccuracyVisualizer(
+                      hits: totalHits[type]!,
+                      total: totalShots[type]!,
+                      shotColor: color,
+                      size: isActive ? 80 : 60,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      type[0].toUpperCase() + type.substring(1),
+                      style: TextStyle(
+                        color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  // 3. Line chart for accuracy over time for selected shot type
+  Widget _buildAccuracyLineChart(BuildContext context, String? iterationId) {
+    if (iterationId == null) return Container();
+
+    final shotType = _selectedAccuracyShotType;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
+        }
+        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
+        List<FlSpot> spots = [];
+        List<double> allAccuracies = [];
+        int cumulativeShots = 0;
+        for (final session in sessions) {
+          for (final shot in session.shots ?? []) {
+            if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+              cumulativeShots += shot.count! as int;
+              double accuracy = shot.targetsHit! / shot.count!;
+              spots.add(FlSpot(cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
+              allAccuracies.add(accuracy * 100);
+            }
+          }
+        }
+
+        // Calculate trend line (simple linear regression)
+        List<FlSpot> trendLine = [];
+        if (spots.length > 1) {
+          double n = spots.length.toDouble();
+          double sumX = spots.fold(0, (sum, s) => sum + s.x);
+          double sumY = spots.fold(0, (sum, s) => sum + s.y);
+          double sumXY = spots.fold(0, (sum, s) => sum + s.x * s.y);
+          double sumX2 = spots.fold(0, (sum, s) => sum + s.x * s.x);
+          double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX + 0.0001);
+          double intercept = (sumY - slope * sumX) / n;
+          trendLine = [
+            FlSpot(spots.first.x, slope * spots.first.x + intercept),
+            FlSpot(spots.last.x, slope * spots.last.x + intercept),
+          ];
+        }
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  maxY: 100,
+                  minX: spots.isNotEmpty ? spots.first.x : 0,
+                  maxX: spots.isNotEmpty ? spots.last.x : 1,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: 20,
+                    verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                      strokeWidth: 1,
+                    ),
+                    getDrawingVerticalLine: (value) => FlLine(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Accuracy (%)',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                      ),
+                      axisNameSize: 28,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) => Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            value as String,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 12,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                        ),
+                        interval: 20,
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Shots Taken',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                      ),
+                      axisNameSize: 28,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) {
+                          bool show = spots.any((spot) => spot.x == value);
+                          if (show) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                value as String,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 12,
+                                  fontFamily: 'NovecentoSans',
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                    ),
+                  ),
+                  lineBarsData: [
+                    if (spots.isNotEmpty)
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        barWidth: 4,
+                        color: shotTypeColors[shotType],
+                        dotData: const FlDotData(show: true),
+                      ),
+                    // Trend line (grey area)
+                    if (trendLine.isNotEmpty)
+                      LineChartBarData(
+                        spots: trendLine,
+                        isCurved: false,
+                        barWidth: 3,
+                        color: Colors.grey.shade400,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.grey.shade400.withOpacity(0.18),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "${shotType[0].toUpperCase()}${shotType.substring(1)} Accuracy Over Time",
+              style: TextStyle(
+                color: shotTypeColors[shotType],
+                fontFamily: 'NovecentoSans',
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -889,6 +1223,38 @@ class _ProfileState extends State<Profile> {
                   MaterialPageRoute(builder: (context) => const History()),
                 );
               },
+            ),
+          ),
+          // --- My Accuracy Section ---
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "My Accuracy".toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 1. Radial area graph for overall average accuracy per shot type
+                _buildRadialAccuracyChart(context, _selectedIterationId),
+
+                const SizedBox(height: 24),
+
+                // 2. TargetAccuracyVisualizers for each shot type, tappable
+                _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+
+                const SizedBox(height: 24),
+
+                // 3. Line chart for accuracy over time for selected shot type
+                _buildAccuracyLineChart(context, _selectedIterationId),
+              ],
             ),
           ),
         ],
