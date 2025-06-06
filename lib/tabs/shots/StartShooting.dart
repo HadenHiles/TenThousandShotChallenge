@@ -922,7 +922,7 @@ class _StartShootingState extends State<StartShooting> {
                     children: [
                       SizedBox(
                         height: 60,
-                        width: MediaQuery.of(context).size.width,
+                        width: MediaQuery.of(context).size.width - 20,
                         child: StreamProvider<NetworkStatus>(
                           create: (context) {
                             return NetworkStatusService().networkStatusController.stream;
@@ -933,35 +933,31 @@ class _StartShootingState extends State<StartShooting> {
                                 ? TextButton(
                                     onPressed: () {
                                       Feedback.forLongPress(context);
-
                                       // Reset session and close panel
                                       sessionService.reset();
                                       widget.sessionPanelController.close();
                                       reset();
                                     },
                                     style: TextButton.styleFrom(
-                                      foregroundColor: Theme.of(context).cardTheme.color,
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                      disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                                      shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                      backgroundColor: Colors.grey.shade200,
+                                      foregroundColor: Colors.grey.shade800,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
+                                        const Icon(Icons.delete_forever, color: Colors.grey),
+                                        const SizedBox(width: 8),
                                         Text(
                                           "Cancel".toUpperCase(),
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
                                             fontFamily: 'NovecentoSans',
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 3, left: 4),
-                                          child: Icon(
-                                            Icons.delete_forever,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            size: 24,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
@@ -1178,28 +1174,25 @@ class _StartShootingState extends State<StartShooting> {
                                       });
                                     },
                                     style: TextButton.styleFrom(
-                                      foregroundColor: Theme.of(context).primaryColor,
                                       backgroundColor: Theme.of(context).primaryColor,
-                                      disabledForegroundColor: Colors.white,
-                                      shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
+                                        const Icon(Icons.save_alt_rounded, color: Colors.white),
+                                        const SizedBox(width: 8),
                                         Text(
                                           "Finish".toUpperCase(),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontFamily: 'NovecentoSans',
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: const EdgeInsets.only(top: 3, left: 4),
-                                          child: const Icon(
-                                            Icons.save_alt_rounded,
-                                            color: Colors.white,
-                                            size: 24,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
