@@ -10,11 +10,28 @@ class ShootingSession {
   final int? totalBackhand;
   final DateTime? date;
   final Duration? duration;
-  final int? targetsHit;
+  final int? wristTargetsHit;
+  final int? snapTargetsHit;
+  final int? slapTargetsHit;
+  final int? backhandTargetsHit;
   List<Shots>? shots;
   DocumentReference? reference;
 
-  ShootingSession(this.total, this.totalWrist, this.totalSnap, this.totalSlap, this.totalBackhand, this.date, this.duration, this.targetsHit);
+  ShootingSession(
+    this.total,
+    this.totalWrist,
+    this.totalSnap,
+    this.totalSlap,
+    this.totalBackhand,
+    this.date,
+    this.duration, {
+    this.wristTargetsHit,
+    this.snapTargetsHit,
+    this.slapTargetsHit,
+    this.backhandTargetsHit,
+    this.shots,
+    this.reference,
+  });
 
   ShootingSession.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['total'] != null),
@@ -24,7 +41,10 @@ class ShootingSession {
         assert(map['total_backhand'] != null),
         assert(map['date'] != null),
         assert(map['duration'] != null),
-        assert(map['targets_hit'] != null),
+        assert(map['wrist_targets_hit'] != null),
+        assert(map['snap_targets_hit'] != null),
+        assert(map['slap_targets_hit'] != null),
+        assert(map['backhand_targets_hit'] != null),
         id = reference!.id,
         total = map['total'],
         totalWrist = map['total_wrist'],
@@ -33,7 +53,10 @@ class ShootingSession {
         totalBackhand = map['total_backhand'],
         date = map['date']?.toDate(),
         duration = Duration(seconds: map['duration']),
-        targetsHit = map['targets_hit'];
+        wristTargetsHit = map['wrist_targets_hit'],
+        snapTargetsHit = map['snap_targets_hit'],
+        slapTargetsHit = map['slap_targets_hit'],
+        backhandTargetsHit = map['backhand_targets_hit'];
 
   Map<String, dynamic> toMap() {
     List<Map<String, dynamic>> mappedShots = [];
@@ -51,7 +74,10 @@ class ShootingSession {
       'total_backhand': totalBackhand,
       'date': date,
       'duration': duration!.inSeconds,
-      'targets_hit': targetsHit,
+      'wrist_targets_hit': wristTargetsHit,
+      'snap_targets_hit': snapTargetsHit,
+      'slap_targets_hit': slapTargetsHit,
+      'backhand_targets_hit': backhandTargetsHit,
     };
   }
 

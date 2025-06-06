@@ -12,41 +12,74 @@ import 'package:tenthousandshotchallenge/services/firebaseMessageService.dart';
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 Future<bool?> saveShootingSession(List<Shots> shots) async {
-  // Get the total number of shots for the session
+  // Get the total number of shots and targets hit for the session
   int total = 0;
   int wrist = 0;
   int snap = 0;
   int slap = 0;
   int backhand = 0;
+  int wristTargetsHit = 0;
+  int snapTargetsHit = 0;
+  int slapTargetsHit = 0;
+  int backhandTargetsHit = 0;
+
   for (var s in shots) {
-    total += s.count!;
+    total += s.count ?? 0;
 
     switch (s.type) {
       case "wrist":
-        wrist += s.count!;
+        wrist += s.count ?? 0;
+        wristTargetsHit += s.targetsHit ?? 0;
         break;
       case "snap":
-        snap += s.count!;
+        snap += s.count ?? 0;
+        snapTargetsHit += s.targetsHit ?? 0;
         break;
       case "slap":
-        slap += s.count!;
+        slap += s.count ?? 0;
+        slapTargetsHit += s.targetsHit ?? 0;
         break;
       case "backhand":
-        backhand += s.count!;
+        backhand += s.count ?? 0;
+        backhandTargetsHit += s.targetsHit ?? 0;
         break;
       default:
     }
   }
 
-  ShootingSession shootingSession = ShootingSession(total, wrist, snap, slap, backhand, DateTime.now(), sessionService.currentDuration);
+  // Update: Add targetsHit fields to the ShootingSession object
+  ShootingSession shootingSession = ShootingSession(
+    total,
+    wrist,
+    snap,
+    slap,
+    backhand,
+    DateTime.now(),
+    sessionService.currentDuration,
+    wristTargetsHit: wristTargetsHit,
+    snapTargetsHit: snapTargetsHit,
+    slapTargetsHit: slapTargetsHit,
+    backhandTargetsHit: backhandTargetsHit,
+  );
   shootingSession.shots = shots;
 
-  Iteration iteration = Iteration(DateTime.now(), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), null, const Duration(), 0, 0, 0, 0, 0, false, DateTime.now());
+  Iteration iteration = Iteration(
+    DateTime.now(),
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+    null,
+    const Duration(),
+    0,
+    0,
+    0,
+    0,
+    0,
+    false,
+    DateTime.now(),
+  );
 
   return await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
       iteration = Iteration.fromSnapshot(snapshot.docs[0]);
-
       saveSessionData(shootingSession, snapshot.docs[0].reference, shots).then((value) => true).onError((error, stackTrace) => false);
     } else {
       await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap()).then((i) async {
