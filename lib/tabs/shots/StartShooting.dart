@@ -14,6 +14,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -45,6 +46,7 @@ class _StartShootingState extends State<StartShooting> {
   void initState() {
     _shots = widget.shots ?? [];
     _currentShotCount = preferences!.puckCount!;
+    _chartCollapsed = true; // <-- Default to collapsed when starting a new session
     super.initState();
   }
 
@@ -325,102 +327,98 @@ class _StartShootingState extends State<StartShooting> {
               ),
             ),
           if (showAccuracyFeature && !_chartCollapsed)
-            AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: accuracySpotsByType.values.every((spots) => spots.isEmpty)
-                    ? Center(
-                        child: Text(
-                          "Add shots to see your accuracy chart.",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 14,
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: shotTypes.map((type) {
+                      final color = shotTypeColors[type]!;
+                      final isActive = _selectedShotType == type;
+                      // Calculate total hits and shots for this type
+                      final shotsOfType = _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
+                      final totalHits = shotsOfType.fold<int>(0, (sum, s) => sum + (s.targetsHit ?? 0));
+                      final totalShots = shotsOfType.fold<int>(0, (sum, s) => sum + (s.count ?? 0));
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        width: isActive ? 90 : 70,
+                        height: isActive ? 110 : 85,
+                        child: Opacity(
+                          opacity: isActive ? 1.0 : 0.45,
+                          child: TargetAccuracyVisualizer(
+                            hits: totalHits,
+                            total: totalShots,
+                            shotColor: color,
+                            size: isActive ? 90 : 70,
                           ),
                         ),
-                      )
-                    : Stack(
-                        children: [
-                          LineChart(
-                            LineChartData(
-                              minY: 0,
-                              maxY: 100,
-                              minX: minX ?? 0,
-                              maxX: maxX ?? 1,
-                              gridData: FlGridData(
-                                show: true,
-                                drawVerticalLine: true,
-                                horizontalInterval: 20,
-                                verticalInterval: (maxX != null && minX != null && maxX > minX) ? ((maxX - minX) / 5).clamp(1, double.infinity) : 1,
-                                getDrawingHorizontalLine: (value) => FlLine(
-                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                  strokeWidth: 1,
-                                ),
-                                getDrawingVerticalLine: (value) => FlLine(
-                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                  strokeWidth: 1,
-                                ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: accuracySpotsByType.values.every((spots) => spots.isEmpty)
+                        ? Center(
+                            child: Text(
+                              "Add shots to see your accuracy chart.",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 14,
                               ),
-                              titlesData: FlTitlesData(
-                                leftTitles: AxisTitles(
-                                  axisNameWidget: Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      'Accuracy (%)',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
+                            ),
+                          )
+                        : Stack(
+                            children: [
+                              LineChart(
+                                LineChartData(
+                                  minY: 0,
+                                  maxY: 100,
+                                  minX: minX ?? 0,
+                                  maxX: maxX ?? 1,
+                                  gridData: FlGridData(
+                                    show: true,
+                                    drawVerticalLine: true,
+                                    horizontalInterval: 20,
+                                    verticalInterval: (maxX != null && minX != null && maxX > minX) ? ((maxX - minX) / 5).clamp(1, double.infinity) : 1,
+                                    getDrawingHorizontalLine: (value) => FlLine(
+                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                      strokeWidth: 1,
+                                    ),
+                                    getDrawingVerticalLine: (value) => FlLine(
+                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                      strokeWidth: 1,
                                     ),
                                   ),
-                                  axisNameSize: 28,
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 32,
-                                    getTitlesWidget: (value, meta) => Padding(
-                                      padding: const EdgeInsets.only(right: 4),
-                                      child: Text(
-                                        value.toInt().toString(),
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 12,
-                                          fontFamily: 'NovecentoSans',
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      axisNameWidget: Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: Text(
+                                          'Accuracy (%)',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    interval: 20,
-                                  ),
-                                ),
-                                bottomTitles: AxisTitles(
-                                  axisNameWidget: Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      'Shots Taken',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                  ),
-                                  axisNameSize: 28,
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 32,
-                                    getTitlesWidget: (value, meta) {
-                                      // Show only for actual shot counts in the data for any type
-                                      bool show = accuracySpotsByType.values.any((spots) => spots.any((spot) => spot.x == value));
-                                      if (show) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 4),
+                                      axisNameSize: 28,
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 32,
+                                        getTitlesWidget: (value, meta) => Padding(
+                                          padding: const EdgeInsets.only(right: 4),
                                           child: Text(
                                             value.toInt().toString(),
                                             style: TextStyle(
@@ -429,171 +427,208 @@ class _StartShootingState extends State<StartShooting> {
                                               fontFamily: 'NovecentoSans',
                                             ),
                                           ),
-                                        );
-                                      }
-                                      return const SizedBox.shrink();
-                                    },
-                                    interval: (maxX != null && minX != null && maxX > minX) ? ((maxX - minX) / 5).clamp(1, double.infinity) : 1,
-                                  ),
-                                ),
-                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              borderData: FlBorderData(
-                                show: true,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                                ),
-                              ),
-                              lineBarsData: shotTypes
-                                      .map((type) {
-                                        final spots = accuracySpotsByType[type]!;
-                                        final color = shotTypeColors[type]!;
-                                        final isActive = type == _selectedShotType;
-                                        if (spots.isEmpty) return null;
-                                        return LineChartBarData(
-                                          spots: spots,
-                                          isCurved: true,
-                                          barWidth: isActive ? 4 : 2,
-                                          color: color,
-                                          dotData: FlDotData(show: isActive),
-                                          dashArray: isActive ? null : [8, 4],
-                                        );
-                                      })
-                                      .whereType<LineChartBarData>()
-                                      .toList() +
-                                  // Add average accuracy lines for each type (optional, can comment out if not wanted)
-                                  shotTypes
-                                      .map((type) {
-                                        final spots = accuracySpotsByType[type]!;
-                                        final color = shotTypeColors[type]!;
-                                        final avg = avgAccuracyByType[type]!;
-                                        if (spots.isEmpty) return null;
-                                        return LineChartBarData(
-                                          spots: [
-                                            FlSpot(spots.first.x, avg.roundToDouble()),
-                                            FlSpot(spots.last.x, avg.roundToDouble()),
-                                          ],
-                                          isCurved: false,
-                                          barWidth: 1,
-                                          color: color.withOpacity(0.5),
-                                          dashArray: [4, 4],
-                                          dotData: const FlDotData(show: false),
-                                        );
-                                      })
-                                      .whereType<LineChartBarData>()
-                                      .toList(),
-                              lineTouchData: LineTouchData(
-                                enabled: true,
-                                handleBuiltInTouches: true, // <-- This makes tooltip stay on tap
-                                touchTooltipData: LineTouchTooltipData(
-                                  getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                                  tooltipRoundedRadius: 10,
-                                  fitInsideHorizontally: true,
-                                  fitInsideVertically: true,
-                                  getTooltipItems: (touchedSpots) {
-                                    List<LineTooltipItem> items = [];
-                                    for (final touched in touchedSpots) {
-                                      final type = shotTypes[touched.barIndex];
-                                      final color = shotTypeColors[type]!;
-                                      final spots = accuracySpotsByType[type]!;
-                                      final index = spots.indexWhere((spot) => spot.x == touched.x && spot.y == touched.y);
-                                      if (index == -1) continue;
-
-                                      // Find the corresponding shot for this spot
-                                      final filtered = _shots.where((s) => s.type == type).toList();
-                                      int cumulative = 0;
-                                      int? targetsHit;
-                                      int? count;
-                                      for (int i = 0; i < filtered.length; i++) {
-                                        final s = filtered[filtered.length - 1 - i];
-                                        if (s.targetsHit != null && s.count != null && s.count! > 0) {
-                                          cumulative += s.count!;
-                                          if (cumulative.toDouble() == touched.x) {
-                                            targetsHit = s.targetsHit;
-                                            count = s.count;
-                                            break;
-                                          }
-                                        }
-                                      }
-
-                                      items.add(
-                                        LineTooltipItem(
-                                          "${type[0].toUpperCase()}${type.substring(1)}\n"
-                                          "Targets Hit: ${targetsHit ?? '-'}\n"
-                                          "Shots: ${count ?? '-'}\n"
-                                          "Accuracy: ${touched.y.toStringAsFixed(1)}%",
-                                          TextStyle(
-                                            color: color,
+                                        ),
+                                        interval: 20,
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      axisNameWidget: Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          'Shots Taken',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'NovecentoSans',
-                                            fontSize: 14,
                                           ),
                                         ),
-                                      );
-                                    }
-                                    return items;
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Chart legend
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: shotTypes.map((type) {
-                                return Row(
-                                  children: [
-                                    Container(
-                                      width: 18,
-                                      height: 4,
-                                      decoration: BoxDecoration(
-                                        color: shotTypeColors[type],
-                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                      axisNameSize: 28,
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 32,
+                                        getTitlesWidget: (value, meta) {
+                                          // Show only for actual shot counts in the data for any type
+                                          bool show = accuracySpotsByType.values.any((spots) => spots.any((spot) => spot.x == value));
+                                          if (show) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(top: 4),
+                                              child: Text(
+                                                value.toInt().toString(),
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                  fontSize: 12,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
+                                        interval: (maxX != null && minX != null && maxX > minX) ? ((maxX - minX) / 5).clamp(1, double.infinity) : 1,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${type[0].toUpperCase()}${type.substring(1)}",
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 12,
-                                        fontFamily: 'NovecentoSans',
-                                        fontWeight: type == _selectedShotType ? FontWeight.bold : FontWeight.normal,
-                                      ),
+                                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: true,
+                                    border: Border.all(
+                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
                                     ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          // Average accuracy label for active type
-                          if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                            Positioned(
-                              left: 8,
-                              top: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: shotTypeColors[_selectedShotType]!.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  "Avg: ${avgAccuracyByType[_selectedShotType]!.round()}%",
-                                  style: TextStyle(
-                                    color: shotTypeColors[_selectedShotType],
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                  lineBarsData: shotTypes
+                                          .map((type) {
+                                            final spots = accuracySpotsByType[type]!;
+                                            final color = shotTypeColors[type]!;
+                                            final isActive = type == _selectedShotType;
+                                            if (spots.isEmpty) return null;
+                                            return LineChartBarData(
+                                              spots: spots,
+                                              isCurved: true,
+                                              barWidth: isActive ? 4 : 2,
+                                              color: color,
+                                              dotData: FlDotData(show: isActive),
+                                              dashArray: isActive ? null : [8, 4],
+                                            );
+                                          })
+                                          .whereType<LineChartBarData>()
+                                          .toList() +
+                                      // Add average accuracy lines for each type (optional, can comment out if not wanted)
+                                      shotTypes
+                                          .map((type) {
+                                            final spots = accuracySpotsByType[type]!;
+                                            final color = shotTypeColors[type]!;
+                                            final avg = avgAccuracyByType[type]!;
+                                            if (spots.isEmpty) return null;
+                                            return LineChartBarData(
+                                              spots: [
+                                                FlSpot(spots.first.x, avg.roundToDouble()),
+                                                FlSpot(spots.last.x, avg.roundToDouble()),
+                                              ],
+                                              isCurved: false,
+                                              barWidth: 1,
+                                              color: color.withOpacity(0.5),
+                                              dashArray: [4, 4],
+                                              dotData: const FlDotData(show: false),
+                                            );
+                                          })
+                                          .whereType<LineChartBarData>()
+                                          .toList(),
+                                  lineTouchData: LineTouchData(
+                                    enabled: true,
+                                    handleBuiltInTouches: true, // <-- This makes tooltip stay on tap
+                                    touchTooltipData: LineTouchTooltipData(
+                                      getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                                      tooltipRoundedRadius: 10,
+                                      fitInsideHorizontally: true,
+                                      fitInsideVertically: true,
+                                      getTooltipItems: (touchedSpots) {
+                                        List<LineTooltipItem> items = [];
+                                        for (final touched in touchedSpots) {
+                                          final type = shotTypes[touched.barIndex];
+                                          final color = shotTypeColors[type]!;
+                                          final spots = accuracySpotsByType[type]!;
+                                          final index = spots.indexWhere((spot) => spot.x == touched.x && spot.y == touched.y);
+                                          if (index == -1) continue;
+
+                                          // Find the corresponding shot for this spot
+                                          final filtered = _shots.where((s) => s.type == type).toList();
+                                          int cumulative = 0;
+                                          int? targetsHit;
+                                          int? count;
+                                          for (int i = 0; i < filtered.length; i++) {
+                                            final s = filtered[filtered.length - 1 - i];
+                                            if (s.targetsHit != null && s.count != null && s.count! > 0) {
+                                              cumulative += s.count!;
+                                              if (cumulative.toDouble() == touched.x) {
+                                                targetsHit = s.targetsHit;
+                                                count = s.count;
+                                                break;
+                                              }
+                                            }
+                                          }
+
+                                          items.add(
+                                            LineTooltipItem(
+                                              "${type[0].toUpperCase()}${type.substring(1)}\n"
+                                              "Targets Hit: ${targetsHit ?? '-'}\n"
+                                              "Shots: ${count ?? '-'}\n"
+                                              "Accuracy: ${touched.y.toStringAsFixed(1)}%",
+                                              TextStyle(
+                                                color: color,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: 'NovecentoSans',
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return items;
+                                      },
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-              ),
+                              // Chart legend
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: shotTypes.map((type) {
+                                    return Row(
+                                      children: [
+                                        Container(
+                                          width: 18,
+                                          height: 4,
+                                          decoration: BoxDecoration(
+                                            color: shotTypeColors[type],
+                                            borderRadius: BorderRadius.circular(2),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "${type[0].toUpperCase()}${type.substring(1)}",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 12,
+                                            fontFamily: 'NovecentoSans',
+                                            fontWeight: type == _selectedShotType ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              // Average accuracy label for active type
+                              if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                Positioned(
+                                  left: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: shotTypeColors[_selectedShotType]!.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "Avg: ${avgAccuracyByType[_selectedShotType]!.round()}%",
+                                      style: TextStyle(
+                                        color: shotTypeColors[_selectedShotType],
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                  ),
+                ),
+              ],
             ),
           Expanded(
             child: SingleChildScrollView(
