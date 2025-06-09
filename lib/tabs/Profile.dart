@@ -112,16 +112,6 @@ class _ProfileState extends State<Profile> {
               return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
             }
             final sessions = asyncSnapshot.data!;
-            print('Loaded sessions for chart: \\${sessions.length}');
-            for (final s in sessions) {
-              print('Session date: \\${s.date}, shots: \\${s.shots?.length}');
-              if (s.shots != null) {
-                for (final shot in s.shots!) {
-                  print('  Shot type: \\${shot.type}, count: \\${shot.count}, targetsHit: \\${shot.targetsHit}');
-                }
-              }
-            }
-
             if (sessions.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -162,7 +152,7 @@ class _ProfileState extends State<Profile> {
               dateRangeWidget = Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+                  "Accuracy data: \\${dateFormat.format(first)} - \\${dateFormat.format(last)}",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
                     fontSize: 13,
@@ -172,7 +162,7 @@ class _ProfileState extends State<Profile> {
               );
             }
 
-            // Custom painter overlay for % labels above each plot point
+            // --- Radial Chart: always 100% outer ring, circular, faded lines ---
             Widget radarWithLabels = Stack(
               alignment: Alignment.center,
               children: [
@@ -182,9 +172,9 @@ class _ProfileState extends State<Profile> {
                   child: RadarChart(
                     RadarChartData(
                       radarBackgroundColor: Colors.transparent,
-                      tickCount: 5,
+                      tickCount: 4,
                       ticksTextStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.3),
                         fontFamily: 'NovecentoSans',
                         fontSize: 12,
                       ),
@@ -193,18 +183,17 @@ class _ProfileState extends State<Profile> {
                       ),
                       dataSets: [
                         RadarDataSet(
-                          fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
-                          borderColor: Theme.of(context).primaryColor,
+                          fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
+                          borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
                           entryRadius: 6,
-                          borderWidth: 3,
+                          borderWidth: 2,
                           dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
                         ),
                       ],
-                      radarShape: RadarShape.polygon,
-                      radarBorderData: const BorderSide(color: Colors.grey, width: 1),
-                      tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
-                      // Outer ring always 100%
-                      // No maxEntryValue param, so values are relative to 100
+                      radarShape: RadarShape.circle,
+                      gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
+                      radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
+                      tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
                     ),
                   ),
                 ),
@@ -288,7 +277,6 @@ class _ProfileState extends State<Profile> {
               return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
             }
             final sessions = asyncSnapshot.data!;
-            print('Loaded sessions for visualizers: \\${sessions.length}');
 
             if (sessions.isEmpty) {
               return Padding(
@@ -382,6 +370,7 @@ class _ProfileState extends State<Profile> {
               sessions.add(session);
             } catch (_) {}
           }
+          // Only sessions with at least one valid shot of this type
           return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
@@ -392,7 +381,6 @@ class _ProfileState extends State<Profile> {
               return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
             }
             final sessions = asyncSnapshot.data!;
-            print('Loaded sessions for scatter chart: \\${sessions.length}');
 
             if (sessions.isEmpty) {
               return Padding(
@@ -404,14 +392,19 @@ class _ProfileState extends State<Profile> {
               );
             }
 
+            // --- Combine all shots of this type in each session into one dot ---
             List<FlSpot> spots = [];
             List<double> allAccuracies = [];
             List<DateTime> accuracyDates = [];
             int sessionIndex = 0;
             for (final session in sessions) {
-              for (final shot in session.shots!) {
-                if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-                  double accuracy = (shot.targetsHit! / shot.count!) * 100.0;
+              // Combine all shots of this type in this session
+              final relevantShots = session.shots!.where((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0).toList();
+              if (relevantShots.isNotEmpty) {
+                int totalHits = relevantShots.fold(0, (sum, s) => sum + (s.targetsHit ?? 0));
+                int totalShots = relevantShots.fold(0, (sum, s) => sum + (s.count ?? 0));
+                if (totalShots > 0) {
+                  double accuracy = (totalHits / totalShots) * 100.0;
                   spots.add(FlSpot(sessionIndex.toDouble(), accuracy));
                   allAccuracies.add(accuracy);
                   accuracyDates.add(session.date!);
@@ -453,20 +446,18 @@ class _ProfileState extends State<Profile> {
             }
 
             // --- Chart layout tweaks ---
-            // Tighten dot spacing, add right-side padding, make chart height square
-            double dotSpacing = 18; // tighter spacing
-            double rightPadding = 36; // enough for last dot/tooltip
+            double dotSpacing = 18;
+            double rightPadding = 36;
             double minChartWidth = 320;
             double chartWidth = minChartWidth;
             if (spots.isNotEmpty) {
               chartWidth = (spots.length - 1) * dotSpacing + rightPadding;
               if (chartWidth < minChartWidth) chartWidth = minChartWidth;
             }
-            double chartHeight = chartWidth; // square
+            double chartHeight = chartWidth;
             double maxChartHeight = 400;
             if (chartHeight > maxChartHeight) chartHeight = maxChartHeight;
 
-            // Only show first and last session dates as x-axis labels
             Map<double, String> xLabels = {};
             if (accuracyDates.isNotEmpty && spots.isNotEmpty) {
               xLabels[spots.first.x] = DateFormat('MMM d').format(accuracyDates.first);
@@ -482,7 +473,7 @@ class _ProfileState extends State<Profile> {
                     width: chartWidth,
                     height: chartHeight,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 12, right: 24, top: 8, bottom: 0), // reduce bottom padding
+                      padding: const EdgeInsets.only(left: 12, right: 24, top: 8, bottom: 0),
                       child: LineChart(
                         LineChartData(
                           minY: 0,
@@ -499,7 +490,7 @@ class _ProfileState extends State<Profile> {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 24, // reduce space below chart
+                                reservedSize: 24,
                                 getTitlesWidget: (value, meta) {
                                   if (xLabels.containsKey(value)) {
                                     return Padding(
@@ -570,7 +561,7 @@ class _ProfileState extends State<Profile> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 4), // reduce space below chart
+                const SizedBox(height: 4),
                 Text(
                   '${shotType[0].toUpperCase()}${shotType.substring(1)} Shot Accuracy',
                   style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16, fontWeight: FontWeight.bold),
@@ -1417,15 +1408,16 @@ class _ProfileState extends State<Profile> {
             ),
             // --- My Accuracy Section ---
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              padding: const EdgeInsets.only(top: 16.0, bottom: 50),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     _buildRadialAccuracyChart(context, _selectedIterationId),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 15),
                     _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 15),
                     _buildAccuracyScatterChart(context, _selectedIterationId),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
