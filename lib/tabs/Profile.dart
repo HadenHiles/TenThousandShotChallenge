@@ -90,151 +90,166 @@ class _ProfileState extends State<Profile> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs
-            .map((doc) {
-              try {
-                final data = doc.data() as Map<String, dynamic>;
-                List<Shots> shots = [];
-                if (data['shots'] != null && data['shots'] is List) {
-                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
-                }
-                final session = ShootingSession.fromSnapshot(doc);
-                session.shots = shots;
-                return session;
-              } catch (e) {
-                return null;
-              }
-            })
-            .where((s) => s != null && s.shots != null && s.shots!.isNotEmpty)
-            .cast<ShootingSession>()
-            .toList();
-
-        if (sessions.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "No accuracy data tracked for this challenge.",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
-        }
-
-        Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
-        Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
-
-        for (final session in sessions) {
-          for (final shot in session.shots!) {
-            if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
-              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
-              if (session.date != null) accuracyDates.add(session.date!);
-            }
+        final sessionDocs = snapshot.data!.docs;
+        Future<List<ShootingSession>> loadSessionsWithShots() async {
+          List<ShootingSession> sessions = [];
+          for (final doc in sessionDocs) {
+            try {
+              final session = ShootingSession.fromSnapshot(doc);
+              final shotsSnap = await doc.reference.collection('shots').get();
+              final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
+              session.shots = shots;
+              sessions.add(session);
+            } catch (_) {}
           }
-        }
-        for (final type in shotTypes) {
-          avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
-        // Show date range for available accuracy data
-        Widget dateRangeWidget = Container();
-        if (accuracyDates.isNotEmpty) {
-          accuracyDates.sort();
-          final first = accuracyDates.first;
-          final last = accuracyDates.last;
-          final dateFormat = DateFormat('MMM d, yyyy');
-          dateRangeWidget = Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
-        }
+        return FutureBuilder<List<ShootingSession>>(
+          future: loadSessionsWithShots(),
+          builder: (context, asyncSnapshot) {
+            if (!asyncSnapshot.hasData) {
+              return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+            }
+            final sessions = asyncSnapshot.data!;
+            print('Loaded sessions for chart: \\${sessions.length}');
+            for (final s in sessions) {
+              print('Session date: \\${s.date}, shots: \\${s.shots?.length}');
+              if (s.shots != null) {
+                for (final shot in s.shots!) {
+                  print('  Shot type: \\${shot.type}, count: \\${shot.count}, targetsHit: \\${shot.targetsHit}');
+                }
+              }
+            }
 
-        // Custom painter overlay for % labels above each plot point
-        Widget radarWithLabels = Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              height: 220,
-              width: 220,
-              child: RadarChart(
-                RadarChartData(
-                  radarBackgroundColor: Colors.transparent,
-                  tickCount: 5,
-                  ticksTextStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+            if (sessions.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  "No accuracy data tracked for this challenge.",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 13,
                     fontFamily: 'NovecentoSans',
-                    fontSize: 12,
                   ),
-                  getTitle: (index, angle) => RadarChartTitle(
-                    text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
-                  ),
-                  dataSets: [
-                    RadarDataSet(
-                      fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
-                      borderColor: Theme.of(context).primaryColor,
-                      entryRadius: 6,
-                      borderWidth: 3,
-                      dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
-                    ),
-                  ],
-                  radarShape: RadarShape.polygon,
-                  radarBorderData: const BorderSide(color: Colors.grey, width: 1),
-                  tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
-                  // Outer ring always 100%
-                  // No maxEntryValue param, so values are relative to 100
                 ),
-              ),
-            ),
-            // Overlay % labels above each plot point
-            Positioned.fill(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
-                  final radius = constraints.maxWidth / 2 * 0.85;
-                  List<Widget> labels = [];
-                  for (int i = 0; i < shotTypes.length; i++) {
-                    final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
-                    final value = avgAccuracy[shotTypes[i]]!;
-                    final pointRadius = radius * (value / 100.0);
-                    final dx = center.dx + pointRadius * math.cos(angle);
-                    final dy = center.dy + pointRadius * math.sin(angle) - 18;
-                    labels.add(Positioned(
-                      left: dx - 18,
-                      top: dy,
-                      child: Text(
-                        "${value.round()}%",
-                        style: TextStyle(
-                          color: shotTypeColors[shotTypes[i]],
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 15,
-                          shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
-                        ),
-                      ),
-                    ));
-                  }
-                  return Stack(children: labels);
-                },
-              ),
-            ),
-          ],
-        );
+              );
+            }
 
-        return Column(
-          children: [
-            dateRangeWidget,
-            radarWithLabels,
-          ],
+            Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+            Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
+
+            for (final session in sessions) {
+              for (final shot in session.shots!) {
+                if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+                  totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+                  totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+                  if (session.date != null) accuracyDates.add(session.date!);
+                }
+              }
+            }
+            for (final type in shotTypes) {
+              avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+            }
+
+            // Show date range for available accuracy data
+            Widget dateRangeWidget = Container();
+            if (accuracyDates.isNotEmpty) {
+              accuracyDates.sort();
+              final first = accuracyDates.first;
+              final last = accuracyDates.last;
+              final dateFormat = DateFormat('MMM d, yyyy');
+              dateRangeWidget = Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 13,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+              );
+            }
+
+            // Custom painter overlay for % labels above each plot point
+            Widget radarWithLabels = Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 220,
+                  width: 220,
+                  child: RadarChart(
+                    RadarChartData(
+                      radarBackgroundColor: Colors.transparent,
+                      tickCount: 5,
+                      ticksTextStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 12,
+                      ),
+                      getTitle: (index, angle) => RadarChartTitle(
+                        text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                      ),
+                      dataSets: [
+                        RadarDataSet(
+                          fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
+                          borderColor: Theme.of(context).primaryColor,
+                          entryRadius: 6,
+                          borderWidth: 3,
+                          dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                        ),
+                      ],
+                      radarShape: RadarShape.polygon,
+                      radarBorderData: const BorderSide(color: Colors.grey, width: 1),
+                      tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
+                      // Outer ring always 100%
+                      // No maxEntryValue param, so values are relative to 100
+                    ),
+                  ),
+                ),
+                // Overlay % labels above each plot point
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
+                      final radius = constraints.maxWidth / 2 * 0.85;
+                      List<Widget> labels = [];
+                      for (int i = 0; i < shotTypes.length; i++) {
+                        final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
+                        final value = avgAccuracy[shotTypes[i]]!;
+                        final pointRadius = radius * (value / 100.0);
+                        final dx = center.dx + pointRadius * math.cos(angle);
+                        final dy = center.dy + pointRadius * math.sin(angle) - 18;
+                        labels.add(Positioned(
+                          left: dx - 18,
+                          top: dy,
+                          child: Text(
+                            "${value.round()}%",
+                            style: TextStyle(
+                              color: shotTypeColors[shotTypes[i]],
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 15,
+                              shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
+                            ),
+                          ),
+                        ));
+                      }
+                      return Stack(children: labels);
+                    },
+                  ),
+                ),
+              ],
+            );
+
+            return Column(
+              children: [
+                dateRangeWidget,
+                radarWithLabels,
+              ],
+            );
+          },
         );
       },
     );
@@ -251,87 +266,94 @@ class _ProfileState extends State<Profile> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs
-            .map((doc) {
-              try {
-                final data = doc.data() as Map<String, dynamic>;
-                List<Shots> shots = [];
-                if (data['shots'] != null && data['shots'] is List) {
-                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
-                }
-                final session = ShootingSession.fromSnapshot(doc);
-                session.shots = shots;
-                return session;
-              } catch (e) {
-                return null;
-              }
-            })
-            .where((s) => s != null && s.shots != null && s.shots!.isNotEmpty)
-            .cast<ShootingSession>()
-            .toList();
-
-        if (sessions.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "No accuracy data tracked for this challenge.",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
-        }
-
-        Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
-        Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
-
-        for (final session in sessions) {
-          for (final shot in session.shots!) {
-            if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
-              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
-            }
+        final sessionDocs = snapshot.data!.docs;
+        Future<List<ShootingSession>> loadSessionsWithShots() async {
+          List<ShootingSession> sessions = [];
+          for (final doc in sessionDocs) {
+            try {
+              final session = ShootingSession.fromSnapshot(doc);
+              final shotsSnap = await doc.reference.collection('shots').get();
+              final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
+              session.shots = shots;
+              sessions.add(session);
+            } catch (_) {}
           }
+          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: shotTypes.map((type) {
-            final color = shotTypeColors[type]!;
-            final isActive = _selectedAccuracyShotType == type;
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedAccuracyShotType = type;
-                });
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Column(
-                  children: [
-                    TargetAccuracyVisualizer(
-                      hits: totalHits[type]!,
-                      total: totalShots[type]!,
-                      shotColor: color,
-                      size: isActive ? 80 : 60,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      type[0].toUpperCase() + type.substring(1),
-                      style: TextStyle(
-                        color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+        return FutureBuilder<List<ShootingSession>>(
+          future: loadSessionsWithShots(),
+          builder: (context, asyncSnapshot) {
+            if (!asyncSnapshot.hasData) {
+              return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
+            }
+            final sessions = asyncSnapshot.data!;
+            print('Loaded sessions for visualizers: \\${sessions.length}');
+
+            if (sessions.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  "No accuracy data tracked for this challenge.",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 13,
+                    fontFamily: 'NovecentoSans',
+                  ),
                 ),
-              ),
+              );
+            }
+
+            Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+            Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
+
+            for (final session in sessions) {
+              for (final shot in session.shots!) {
+                if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+                  totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+                  totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+                }
+              }
+            }
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: shotTypes.map((type) {
+                final color = shotTypeColors[type]!;
+                final isActive = _selectedAccuracyShotType == type;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedAccuracyShotType = type;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Column(
+                      children: [
+                        TargetAccuracyVisualizer(
+                          hits: totalHits[type]!,
+                          total: totalShots[type]!,
+                          shotColor: color,
+                          size: isActive ? 80 : 60,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          type[0].toUpperCase() + type.substring(1),
+                          style: TextStyle(
+                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -348,247 +370,254 @@ class _ProfileState extends State<Profile> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs
-            .map((doc) {
-              try {
-                final data = doc.data() as Map<String, dynamic>;
-                List<Shots> shots = [];
-                if (data['shots'] != null && data['shots'] is List) {
-                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
-                }
-                final session = ShootingSession.fromSnapshot(doc);
-                session.shots = shots;
-                return session;
-              } catch (e) {
-                return null;
-              }
-            })
-            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0))
-            .cast<ShootingSession>()
-            .toList();
-
-        if (sessions.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "No accuracy data tracked for this shot type.",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
-        }
-
-        List<FlSpot> spots = [];
-        List<double> allAccuracies = [];
-        List<DateTime> accuracyDates = [];
-        int sessionIndex = 0;
-        for (final session in sessions) {
-          for (final shot in session.shots!) {
-            if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
-              spots.add(FlSpot(sessionIndex.toDouble(), (accuracy * 100).roundToDouble()));
-              allAccuracies.add(accuracy * 100);
-              if (session.date != null) accuracyDates.add(session.date!);
-              sessionIndex++;
-            }
+        final sessionDocs = snapshot.data!.docs;
+        Future<List<ShootingSession>> loadSessionsWithShots() async {
+          List<ShootingSession> sessions = [];
+          for (final doc in sessionDocs) {
+            try {
+              final session = ShootingSession.fromSnapshot(doc);
+              final shotsSnap = await doc.reference.collection('shots').get();
+              final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
+              session.shots = shots;
+              sessions.add(session);
+            } catch (_) {}
           }
+          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
-        // Calculate trend line (simple linear regression)
-        List<FlSpot> trendLine = [];
-        if (spots.length > 1) {
-          double n = spots.length.toDouble();
-          double sumX = spots.fold(0, (sum, s) => sum + s.x);
-          double sumY = spots.fold(0, (sum, s) => sum + s.y);
-          double sumXY = spots.fold(0, (sum, s) => sum + s.x * s.y);
-          double sumX2 = spots.fold(0, (sum, s) => sum + s.x * s.x);
-          double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX + 0.0001);
-          double intercept = (sumY - slope * sumX) / n;
-          trendLine = [
-            FlSpot(spots.first.x, slope * spots.first.x + intercept),
-            FlSpot(spots.last.x, slope * spots.last.x + intercept),
-          ];
-        }
+        return FutureBuilder<List<ShootingSession>>(
+          future: loadSessionsWithShots(),
+          builder: (context, asyncSnapshot) {
+            if (!asyncSnapshot.hasData) {
+              return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
+            }
+            final sessions = asyncSnapshot.data!;
+            print('Loaded sessions for scatter chart: \\${sessions.length}');
 
-        // Show date range for available accuracy data
-        Widget dateRangeWidget = Container();
-        if (accuracyDates.isNotEmpty) {
-          accuracyDates.sort();
-          final first = accuracyDates.first;
-          final last = accuracyDates.last;
-          final dateFormat = DateFormat('MMM d, yyyy');
-          dateRangeWidget = Padding(
-            padding: const EdgeInsets.only(bottom: 5),
-            child: Text(
-              "Accuracy data: [1m${dateFormat.format(first)} - ${dateFormat.format(last)}\u001b[0m",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
-        }
+            if (sessions.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  "No accuracy data tracked for this shot type.",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 13,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+              );
+            }
 
-        // Make the chart horizontally scrollable
-        double chartWidth = 400;
-        if (spots.isNotEmpty && spots.length > 10) {
-          chartWidth = spots.length * 36;
-        }
+            List<FlSpot> spots = [];
+            List<double> allAccuracies = [];
+            List<DateTime> accuracyDates = [];
+            int sessionIndex = 0;
+            for (final session in sessions) {
+              for (final shot in session.shots!) {
+                if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+                  double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
+                  spots.add(FlSpot(sessionIndex.toDouble(), (accuracy * 100).roundToDouble()));
+                  allAccuracies.add(accuracy * 100);
+                  if (session.date != null) accuracyDates.add(session.date!);
+                  sessionIndex++;
+                }
+              }
+            }
 
-        // Only show first and last session dates as x-axis labels
-        Map<double, String> xLabels = {};
-        if (accuracyDates.isNotEmpty) {
-          xLabels[spots.first.x] = DateFormat('MMM d').format(accuracyDates.first);
-          xLabels[spots.last.x] = DateFormat('MMM d').format(accuracyDates.last);
-        }
+            // Calculate trend line (simple linear regression)
+            List<FlSpot> trendLine = [];
+            if (spots.length > 1) {
+              double n = spots.length.toDouble();
+              double sumX = spots.fold(0, (sum, s) => sum + s.x);
+              double sumY = spots.fold(0, (sum, s) => sum + s.y);
+              double sumXY = spots.fold(0, (sum, s) => sum + s.x * s.y);
+              double sumX2 = spots.fold(0, (sum, s) => sum + s.x * s.x);
+              double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX + 0.0001);
+              double intercept = (sumY - slope * sumX) / n;
+              trendLine = [
+                FlSpot(spots.first.x, slope * spots.first.x + intercept),
+                FlSpot(spots.last.x, slope * spots.last.x + intercept),
+              ];
+            }
 
-        return Column(
-          children: [
-            dateRangeWidget,
-            SizedBox(
-              height: 220,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: chartWidth,
-                  child: LineChart(
-                    LineChartData(
-                      minY: 0,
-                      maxY: 100,
-                      minX: spots.isNotEmpty ? spots.first.x : 0,
-                      maxX: spots.isNotEmpty ? spots.last.x : 1,
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: true,
-                        horizontalInterval: 20,
-                        verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
-                        getDrawingHorizontalLine: (value) => FlLine(
-                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                          strokeWidth: 1,
-                        ),
-                        getDrawingVerticalLine: (value) => FlLine(
-                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                          strokeWidth: 1,
-                        ),
-                      ),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          axisNameWidget: Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              'Accuracy (%)',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'NovecentoSans',
-                              ),
+            // Show date range for available accuracy data
+            Widget dateRangeWidget = Container();
+            if (accuracyDates.isNotEmpty) {
+              accuracyDates.sort();
+              final first = accuracyDates.first;
+              final last = accuracyDates.last;
+              final dateFormat = DateFormat('MMM d, yyyy');
+              dateRangeWidget = Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(
+                  "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 13,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+              );
+            }
+
+            // Make the chart horizontally scrollable
+            double chartWidth = 400;
+            if (spots.isNotEmpty && spots.length > 10) {
+              chartWidth = spots.length * 36;
+            }
+
+            // Only show first and last session dates as x-axis labels
+            Map<double, String> xLabels = {};
+            if (accuracyDates.isNotEmpty) {
+              xLabels[spots.first.x] = DateFormat('MMM d').format(accuracyDates.first);
+              xLabels[spots.last.x] = DateFormat('MMM d').format(accuracyDates.last);
+            }
+
+            return Column(
+              children: [
+                dateRangeWidget,
+                SizedBox(
+                  height: 220,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: chartWidth,
+                      child: LineChart(
+                        LineChartData(
+                          minY: 0,
+                          maxY: 100,
+                          minX: spots.isNotEmpty ? spots.first.x : 0,
+                          maxX: spots.isNotEmpty ? spots.last.x : 1,
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: true,
+                            horizontalInterval: 20,
+                            verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                            getDrawingHorizontalLine: (value) => FlLine(
+                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                              strokeWidth: 1,
+                            ),
+                            getDrawingVerticalLine: (value) => FlLine(
+                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                              strokeWidth: 1,
                             ),
                           ),
-                          axisNameSize: 28,
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 32,
-                            getTitlesWidget: (value, meta) => Padding(
-                              padding: const EdgeInsets.only(right: 4),
-                              child: Text(
-                                value.toString(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 12,
-                                  fontFamily: 'NovecentoSans',
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              axisNameWidget: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  'Accuracy (%)',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
                                 ),
                               ),
-                            ),
-                            interval: 20,
-                          ),
-                        ),
-                        bottomTitles: AxisTitles(
-                          axisNameWidget: Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Shooting Sessions',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                          axisNameSize: 28,
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            getTitlesWidget: (value, meta) {
-                              if (xLabels.containsKey(value)) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                              axisNameSize: 28,
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 32,
+                                getTitlesWidget: (value, meta) => Padding(
+                                  padding: const EdgeInsets.only(right: 4),
                                   child: Text(
-                                    xLabels[value]!,
+                                    value.toString(),
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 12,
                                       fontFamily: 'NovecentoSans',
                                     ),
                                   ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                            interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                                ),
+                                interval: 20,
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              axisNameWidget: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Shooting Sessions',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                              axisNameSize: 28,
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                getTitlesWidget: (value, meta) {
+                                  if (xLabels.containsKey(value)) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        xLabels[value]!,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 12,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                                interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                              ),
+                            ),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           ),
-                        ),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      ),
-                      borderData: FlBorderData(
-                        show: true,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                        ),
-                      ),
-                      lineBarsData: [
-                        if (spots.isNotEmpty)
-                          LineChartBarData(
-                            spots: spots,
-                            isCurved: false,
-                            barWidth: 0,
-                            color: shotTypeColors[shotType],
-                            dotData: const FlDotData(show: true),
-                          ),
-                        if (trendLine.isNotEmpty)
-                          LineChartBarData(
-                            spots: trendLine,
-                            isCurved: false,
-                            barWidth: 3,
-                            color: Colors.grey.shade400,
-                            dotData: const FlDotData(show: false),
-                            belowBarData: BarAreaData(
-                              show: false,
+                          borderData: FlBorderData(
+                            show: true,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
                             ),
                           ),
-                      ],
+                          lineBarsData: [
+                            if (spots.isNotEmpty)
+                              LineChartBarData(
+                                spots: spots,
+                                isCurved: false,
+                                barWidth: 0,
+                                color: shotTypeColors[shotType],
+                                dotData: const FlDotData(show: true),
+                              ),
+                            if (trendLine.isNotEmpty)
+                              LineChartBarData(
+                                spots: trendLine,
+                                isCurved: false,
+                                barWidth: 3,
+                                color: Colors.grey.shade400,
+                                dotData: const FlDotData(show: false),
+                                belowBarData: BarAreaData(
+                                  show: false,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "${shotType[0].toUpperCase()}${shotType.substring(1)} Accuracy Over Time",
-              style: TextStyle(
-                color: shotTypeColors[shotType],
-                fontFamily: 'NovecentoSans',
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
+                const SizedBox(height: 8),
+                Text(
+                  "${shotType[0].toUpperCase()}${shotType.substring(1)} Accuracy Over Time",
+                  style: TextStyle(
+                    color: shotTypeColors[shotType],
+                    fontFamily: 'NovecentoSans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
