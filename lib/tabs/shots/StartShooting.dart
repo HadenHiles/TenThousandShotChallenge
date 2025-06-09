@@ -1041,7 +1041,7 @@ class _StartShootingState extends State<StartShooting> {
                 DateTime.now(),
                 _selectedShotType,
                 _currentShotCount,
-                targetsHit: showAccuracyFeature ? targetsHit : null,
+                showAccuracyFeature ? targetsHit : null,
               );
               setState(() {
                 _shots.insert(0, shots);
