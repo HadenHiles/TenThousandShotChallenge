@@ -922,7 +922,7 @@ class _ProfileState extends State<Profile> {
                     }
 
                     return SizedBox(
-                      width: MediaQuery.of(context).size.width,
+                      width: MediaQuery.of(context).size.width - 20,
                       height: 60,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
@@ -991,7 +991,7 @@ class _ProfileState extends State<Profile> {
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                   fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
@@ -1014,7 +1014,7 @@ class _ProfileState extends State<Profile> {
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
                                   fontFamily: "NovecentoSans",
-                                  fontSize: 18,
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
