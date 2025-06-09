@@ -824,29 +824,53 @@ class _ProfileState extends State<Profile> {
                   ],
                 ),
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                  margin: const EdgeInsets.only(right: 15),
                   child: Row(
                     children: [
                       StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                        stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            return SizedBox(
-                              width: (MediaQuery.of(context).size.width - 100) * 0.3,
-                              child: AutoSizeText(
-                                "challenge ".toLowerCase() + (snapshot.data!.docs.length).toString().toLowerCase(),
-                                maxFontSize: 34,
-                                maxLines: 1,
+                          if (!snapshot.hasData) {
+                            return const CircularProgressIndicator();
+                          }
+                          List<DropdownMenuItem<String>> iterations = [];
+                          String? latestIterationId;
+                          snapshot.data!.docs.asMap().forEach((i, iDoc) {
+                            iterations.add(DropdownMenuItem<String>(
+                              value: iDoc.reference.id,
+                              child: Text(
+                                "challenge ${(i + 1).toString().toLowerCase()}",
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 34,
+                                  fontSize: 20,
                                   fontFamily: 'NovecentoSans',
                                 ),
                               ),
-                            );
+                            ));
+                            // Always update latestIterationId to the last one
+                            latestIterationId = iDoc.reference.id;
+                          });
+
+                          // Set default selected iteration if not set
+                          if (_selectedIterationId == null && iterations.isNotEmpty) {
+                            _selectedIterationId = latestIterationId;
                           }
 
-                          return Container();
+                          // Only show the dropdown if there is more than one challenge
+                          if (iterations.length <= 1) {
+                            return Container();
+                          }
+
+                          return DropdownButton<String>(
+                            value: _selectedIterationId,
+                            items: iterations,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedIterationId = value;
+                              });
+                            },
+                            dropdownColor: Theme.of(context).colorScheme.primary,
+                          );
                         },
                       ),
                     ],
@@ -1312,54 +1336,6 @@ class _ProfileState extends State<Profile> {
                     ),
                   ],
                 ),
-              ),
-            // Replace attempts dropdown with a StreamBuilder (only show if sessions expanded)
-            if (_showSessions)
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
-                  }
-                  List<DropdownMenuItem<String>> iterations = [];
-                  String? latestIterationId;
-                  snapshot.data!.docs.asMap().forEach((i, iDoc) {
-                    iterations.add(DropdownMenuItem<String>(
-                      value: iDoc.reference.id,
-                      child: Text(
-                        "challenge ${(i + 1).toString().toLowerCase()}",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 26,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                    ));
-                    // Always update latestIterationId to the last one
-                    latestIterationId = iDoc.reference.id;
-                  });
-
-                  // Set default selected iteration if not set
-                  if (_selectedIterationId == null && iterations.isNotEmpty) {
-                    _selectedIterationId = latestIterationId;
-                  }
-
-                  // Only show the dropdown if there is more than one challenge
-                  if (iterations.length <= 1) {
-                    return Container();
-                  }
-
-                  return DropdownButton<String>(
-                    value: _selectedIterationId,
-                    items: iterations,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedIterationId = value;
-                      });
-                    },
-                    dropdownColor: Theme.of(context).colorScheme.primary,
-                  );
-                },
               ),
 
             // Recent Sessions StreamBuilder (only show if sessions expanded)
