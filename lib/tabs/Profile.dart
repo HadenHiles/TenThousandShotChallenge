@@ -93,7 +93,6 @@ class _ProfileState extends State<Profile> {
         final sessions = snapshot.data!.docs
             .map((doc) {
               try {
-                // Read shots from the nested property in the session document
                 final data = doc.data() as Map<String, dynamic>;
                 List<Shots> shots = [];
                 if (data['shots'] != null && data['shots'] is List) {
@@ -157,128 +156,83 @@ class _ProfileState extends State<Profile> {
               ),
             ),
           );
-        } else {
-          dateRangeWidget = Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "No accuracy data tracked for this challenge.",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
         }
 
-        // --- Custom overlay for % labels above each plot point ---
-        // We'll use a Stack to overlay the labels above the RadarChart
-        return Column(
+        // Custom painter overlay for % labels above each plot point
+        Widget radarWithLabels = Stack(
+          alignment: Alignment.center,
           children: [
-            dateRangeWidget,
             SizedBox(
-              height: 240,
+              height: 220,
+              width: 220,
+              child: RadarChart(
+                RadarChartData(
+                  radarBackgroundColor: Colors.transparent,
+                  tickCount: 5,
+                  ticksTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 12,
+                  ),
+                  getTitle: (index, angle) => RadarChartTitle(
+                    text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                  ),
+                  dataSets: [
+                    RadarDataSet(
+                      fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
+                      borderColor: Theme.of(context).primaryColor,
+                      entryRadius: 6,
+                      borderWidth: 3,
+                      dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                    ),
+                  ],
+                  radarShape: RadarShape.polygon,
+                  radarBorderData: const BorderSide(color: Colors.grey, width: 1),
+                  tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
+                  // Outer ring always 100%
+                  // No maxEntryValue param, so values are relative to 100
+                ),
+              ),
+            ),
+            // Overlay % labels above each plot point
+            Positioned.fill(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final size = constraints.biggest;
-                  final center = Offset(size.width / 2, size.height / 2);
-                  final radius = size.height * 0.38; // leave space for labels
-                  final angleStep = 2 * math.pi / shotTypes.length;
-                  // Calculate points for each shot type
-                  List<Offset> points = [];
+                  final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
+                  final radius = constraints.maxWidth / 2 * 0.85;
+                  List<Widget> labels = [];
                   for (int i = 0; i < shotTypes.length; i++) {
-                    double percent = (avgAccuracy[shotTypes[i]]!.clamp(0, 100)) / 100.0;
-                    double angle = -math.pi / 2 + i * angleStep;
-                    double r = radius * percent;
-                    points.add(center + Offset(r * math.cos(angle), r * math.sin(angle)));
-                  }
-                  // Calculate label positions (slightly above each point)
-                  List<Widget> labelWidgets = [];
-                  for (int i = 0; i < shotTypes.length; i++) {
-                    double percent = avgAccuracy[shotTypes[i]]!;
-                    double angle = -math.pi / 2 + i * angleStep;
-                    double r = radius * (avgAccuracy[shotTypes[i]]!.clamp(0, 100) / 100.0) + 18;
-                    Offset labelPos = center + Offset(r * math.cos(angle), r * math.sin(angle));
-                    labelWidgets.add(Positioned(
-                      left: labelPos.dx - 18,
-                      top: labelPos.dy - 14,
+                    final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
+                    final value = avgAccuracy[shotTypes[i]]!;
+                    final pointRadius = radius * (value / 100.0);
+                    final dx = center.dx + pointRadius * math.cos(angle);
+                    final dy = center.dy + pointRadius * math.sin(angle) - 18;
+                    labels.add(Positioned(
+                      left: dx - 18,
+                      top: dy,
                       child: Text(
-                        "${percent.round()}%",
+                        "${value.round()}%",
                         style: TextStyle(
                           color: shotTypeColors[shotTypes[i]],
                           fontWeight: FontWeight.bold,
                           fontFamily: 'NovecentoSans',
                           fontSize: 15,
+                          shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
                         ),
                       ),
                     ));
                   }
-                  return Stack(
-                    children: [
-                      RadarChart(
-                        RadarChartData(
-                          radarBackgroundColor: Colors.transparent,
-                          tickCount: 5,
-                          ticksTextStyle: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 12,
-                          ),
-                          getTitle: (index, angle) => RadarChartTitle(
-                            text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
-                            // Remove textStyle param if not supported by your fl_chart version
-                          ),
-                          dataSets: [
-                            // Outer ring (100%)
-                            RadarDataSet(
-                              fillColor: Colors.transparent,
-                              borderColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.15),
-                              borderWidth: 2,
-                              entryRadius: 0,
-                              dataEntries: List.generate(shotTypes.length, (_) => RadarEntry(value: 100)),
-                            ),
-                            // Actual accuracy
-                            RadarDataSet(
-                              fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
-                              borderColor: Theme.of(context).primaryColor,
-                              entryRadius: 7,
-                              borderWidth: 3,
-                              dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
-                              // Remove entryColor if not supported
-                            ),
-                          ],
-                          radarShape: RadarShape.polygon,
-                          radarBorderData: const BorderSide(color: Colors.grey, width: 1),
-                          tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
-                        ),
-                      ),
-                      // Colored dots for each point
-                      ...List.generate(shotTypes.length, (i) {
-                        double percent = (avgAccuracy[shotTypes[i]]!.clamp(0, 100)) / 100.0;
-                        double angle = -math.pi / 2 + i * angleStep;
-                        double r = radius * percent;
-                        Offset dotPos = center + Offset(r * math.cos(angle), r * math.sin(angle));
-                        return Positioned(
-                          left: dotPos.dx - 7,
-                          top: dotPos.dy - 7,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: shotTypeColors[shotTypes[i]],
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                        );
-                      }),
-                      // % labels above each point
-                      ...labelWidgets,
-                    ],
-                  );
+                  return Stack(children: labels);
                 },
               ),
             ),
+          ],
+        );
+
+        return Column(
+          children: [
+            dateRangeWidget,
+            radarWithLabels,
           ],
         );
       },
@@ -464,7 +418,7 @@ class _ProfileState extends State<Profile> {
           final last = accuracyDates.last;
           final dateFormat = DateFormat('MMM d, yyyy');
           dateRangeWidget = Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: 5),
             child: Text(
               "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
               style: TextStyle(
@@ -474,24 +428,12 @@ class _ProfileState extends State<Profile> {
               ),
             ),
           );
-        } else {
-          dateRangeWidget = Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "No accuracy data tracked for this shot type.",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                fontSize: 13,
-                fontFamily: 'NovecentoSans',
-              ),
-            ),
-          );
         }
 
-        // --- Make the chart horizontally scrollable if needed ---
+        // Make the chart horizontally scrollable
         double chartWidth = 400;
-        if (spots.length > 8) {
-          chartWidth = 60.0 * spots.length;
+        if (spots.isNotEmpty && spots.last.x > 10) {
+          chartWidth = spots.last.x * 18;
         }
 
         return Column(
@@ -559,7 +501,7 @@ class _ProfileState extends State<Profile> {
                           axisNameWidget: Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              'Shots Taken',
+                              'Shooting Sessions',
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 fontSize: 14,
@@ -578,7 +520,7 @@ class _ProfileState extends State<Profile> {
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
-                                    value.toString(),
+                                    value.toInt().toString(),
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 12,
@@ -610,7 +552,6 @@ class _ProfileState extends State<Profile> {
                             color: shotTypeColors[shotType],
                             dotData: const FlDotData(show: true),
                           ),
-                        // Trend line (grey area)
                         if (trendLine.isNotEmpty)
                           LineChartBarData(
                             spots: trendLine,
@@ -774,11 +715,6 @@ class _ProfileState extends State<Profile> {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: (MediaQuery.of(context).size.width - 100) * 0.6,
-                          child: StreamBuilder<DocumentSnapshot>(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
@@ -1889,8 +1825,8 @@ class _ProfileState extends State<Profile> {
                             ),
                           ),
                       ],
-                    },
-                  ),
+                    ),
+                  ],
                 ),
               ),
               Column(
