@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -170,36 +171,112 @@ class _ProfileState extends State<Profile> {
           );
         }
 
+        // --- Custom overlay for % labels above each plot point ---
+        // We'll use a Stack to overlay the labels above the RadarChart
         return Column(
           children: [
             dateRangeWidget,
             SizedBox(
-              height: 220,
-              child: RadarChart(
-                RadarChartData(
-                  radarBackgroundColor: Colors.transparent,
-                  tickCount: 5,
-                  ticksTextStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 12,
-                  ),
-                  getTitle: (index, angle) => RadarChartTitle(
-                    text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
-                  ),
-                  dataSets: [
-                    RadarDataSet(
-                      fillColor: Theme.of(context).primaryColor.withOpacity(0.25),
-                      borderColor: Theme.of(context).primaryColor,
-                      entryRadius: 4,
-                      borderWidth: 3,
-                      dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
-                    ),
-                  ],
-                  radarShape: RadarShape.polygon,
-                  radarBorderData: const BorderSide(color: Colors.grey, width: 1),
-                  tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
-                ),
+              height: 240,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = constraints.biggest;
+                  final center = Offset(size.width / 2, size.height / 2);
+                  final radius = size.height * 0.38; // leave space for labels
+                  final angleStep = 2 * math.pi / shotTypes.length;
+                  // Calculate points for each shot type
+                  List<Offset> points = [];
+                  for (int i = 0; i < shotTypes.length; i++) {
+                    double percent = (avgAccuracy[shotTypes[i]]!.clamp(0, 100)) / 100.0;
+                    double angle = -math.pi / 2 + i * angleStep;
+                    double r = radius * percent;
+                    points.add(center + Offset(r * math.cos(angle), r * math.sin(angle)));
+                  }
+                  // Calculate label positions (slightly above each point)
+                  List<Widget> labelWidgets = [];
+                  for (int i = 0; i < shotTypes.length; i++) {
+                    double percent = avgAccuracy[shotTypes[i]]!;
+                    double angle = -math.pi / 2 + i * angleStep;
+                    double r = radius * (avgAccuracy[shotTypes[i]]!.clamp(0, 100) / 100.0) + 18;
+                    Offset labelPos = center + Offset(r * math.cos(angle), r * math.sin(angle));
+                    labelWidgets.add(Positioned(
+                      left: labelPos.dx - 18,
+                      top: labelPos.dy - 14,
+                      child: Text(
+                        "${percent.round()}%",
+                        style: TextStyle(
+                          color: shotTypeColors[shotTypes[i]],
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 15,
+                        ),
+                      ),
+                    ));
+                  }
+                  return Stack(
+                    children: [
+                      RadarChart(
+                        RadarChartData(
+                          radarBackgroundColor: Colors.transparent,
+                          tickCount: 5,
+                          ticksTextStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 12,
+                          ),
+                          getTitle: (index, angle) => RadarChartTitle(
+                            text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                            // Remove textStyle param if not supported by your fl_chart version
+                          ),
+                          dataSets: [
+                            // Outer ring (100%)
+                            RadarDataSet(
+                              fillColor: Colors.transparent,
+                              borderColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.15),
+                              borderWidth: 2,
+                              entryRadius: 0,
+                              dataEntries: List.generate(shotTypes.length, (_) => RadarEntry(value: 100)),
+                            ),
+                            // Actual accuracy
+                            RadarDataSet(
+                              fillColor: Theme.of(context).primaryColor.withOpacity(0.18),
+                              borderColor: Theme.of(context).primaryColor,
+                              entryRadius: 7,
+                              borderWidth: 3,
+                              dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                              // Remove entryColor if not supported
+                            ),
+                          ],
+                          radarShape: RadarShape.polygon,
+                          radarBorderData: const BorderSide(color: Colors.grey, width: 1),
+                          tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
+                        ),
+                      ),
+                      // Colored dots for each point
+                      ...List.generate(shotTypes.length, (i) {
+                        double percent = (avgAccuracy[shotTypes[i]]!.clamp(0, 100)) / 100.0;
+                        double angle = -math.pi / 2 + i * angleStep;
+                        double r = radius * percent;
+                        Offset dotPos = center + Offset(r * math.cos(angle), r * math.sin(angle));
+                        return Positioned(
+                          left: dotPos.dx - 7,
+                          top: dotPos.dy - 7,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: shotTypeColors[shotTypes[i]],
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        );
+                      }),
+                      // % labels above each point
+                      ...labelWidgets,
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -411,85 +488,61 @@ class _ProfileState extends State<Profile> {
           );
         }
 
+        // --- Make the chart horizontally scrollable if needed ---
+        double chartWidth = 400;
+        if (spots.length > 8) {
+          chartWidth = 60.0 * spots.length;
+        }
+
         return Column(
           children: [
             dateRangeWidget,
             SizedBox(
               height: 220,
-              child: LineChart(
-                LineChartData(
-                  minY: 0,
-                  maxY: 100,
-                  minX: spots.isNotEmpty ? spots.first.x : 0,
-                  maxX: spots.isNotEmpty ? spots.last.x : 1,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    horizontalInterval: 20,
-                    verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                      strokeWidth: 1,
-                    ),
-                    getDrawingVerticalLine: (value) => FlLine(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      axisNameWidget: Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Accuracy (%)',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'NovecentoSans',
-                          ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: chartWidth,
+                  child: LineChart(
+                    LineChartData(
+                      minY: 0,
+                      maxY: 100,
+                      minX: spots.isNotEmpty ? spots.first.x : 0,
+                      maxX: spots.isNotEmpty ? spots.last.x : 1,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: 20,
+                        verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                          strokeWidth: 1,
+                        ),
+                        getDrawingVerticalLine: (value) => FlLine(
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                          strokeWidth: 1,
                         ),
                       ),
-                      axisNameSize: 28,
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        getTitlesWidget: (value, meta) => Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(
-                            value.toString(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 12,
-                              fontFamily: 'NovecentoSans',
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          axisNameWidget: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Accuracy (%)',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'NovecentoSans',
+                              ),
                             ),
                           ),
-                        ),
-                        interval: 20,
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      axisNameWidget: Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Shots Taken',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'NovecentoSans',
-                          ),
-                        ),
-                      ),
-                      axisNameSize: 28,
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        getTitlesWidget: (value, meta) {
-                          bool show = spots.any((spot) => spot.x == value);
-                          if (show) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4),
+                          axisNameSize: 28,
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) => Padding(
+                              padding: const EdgeInsets.only(right: 4),
                               child: Text(
                                 value.toString(),
                                 style: TextStyle(
@@ -498,45 +551,81 @@ class _ProfileState extends State<Profile> {
                                   fontFamily: 'NovecentoSans',
                                 ),
                               ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                        interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                            ),
+                            interval: 20,
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          axisNameWidget: Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Shots Taken',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                          axisNameSize: 28,
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) {
+                              bool show = spots.any((spot) => spot.x == value);
+                              if (show) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    value.toString(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 12,
+                                      fontFamily: 'NovecentoSans',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                            interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       ),
-                    ),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                    ),
-                  ),
-                  lineBarsData: [
-                    if (spots.isNotEmpty)
-                      LineChartBarData(
-                        spots: spots,
-                        isCurved: true,
-                        barWidth: 4,
-                        color: shotTypeColors[shotType],
-                        dotData: const FlDotData(show: true),
-                      ),
-                    // Trend line (grey area)
-                    if (trendLine.isNotEmpty)
-                      LineChartBarData(
-                        spots: trendLine,
-                        isCurved: false,
-                        barWidth: 3,
-                        color: Colors.grey.shade400,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          color: Colors.grey.shade400.withOpacity(0.18),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
                         ),
                       ),
-                  ],
+                      lineBarsData: [
+                        if (spots.isNotEmpty)
+                          LineChartBarData(
+                            spots: spots,
+                            isCurved: true,
+                            barWidth: 4,
+                            color: shotTypeColors[shotType],
+                            dotData: const FlDotData(show: true),
+                          ),
+                        // Trend line (grey area)
+                        if (trendLine.isNotEmpty)
+                          LineChartBarData(
+                            spots: trendLine,
+                            isCurved: false,
+                            barWidth: 3,
+                            color: Colors.grey.shade400,
+                            dotData: const FlDotData(show: false),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: Colors.grey.shade400.withOpacity(0.18),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -685,6 +774,11 @@ class _ProfileState extends State<Profile> {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: (MediaQuery.of(context).size.width - 100) * 0.6,
+                          child: StreamBuilder<DocumentSnapshot>(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
@@ -1795,8 +1889,8 @@ class _ProfileState extends State<Profile> {
                             ),
                           ),
                       ],
-                    ),
-                  ],
+                    },
+                  ),
                 ),
               ),
               Column(
