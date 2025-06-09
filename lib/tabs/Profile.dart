@@ -396,14 +396,10 @@ class _ProfileState extends State<Profile> {
 
             if (sessions.isEmpty) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
                 child: Text(
-                  "No accuracy data tracked for this shot type.",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 13,
-                    fontFamily: 'NovecentoSans',
-                  ),
+                  'No accuracy data for this shot type yet.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                 ),
               );
             }
@@ -415,10 +411,10 @@ class _ProfileState extends State<Profile> {
             for (final session in sessions) {
               for (final shot in session.shots!) {
                 if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-                  double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
-                  spots.add(FlSpot(sessionIndex.toDouble(), (accuracy * 100).roundToDouble()));
-                  allAccuracies.add(accuracy * 100);
-                  if (session.date != null) accuracyDates.add(session.date!);
+                  double accuracy = (shot.targetsHit! / shot.count!) * 100.0;
+                  spots.add(FlSpot(sessionIndex.toDouble(), accuracy));
+                  allAccuracies.add(accuracy);
+                  accuracyDates.add(session.date!);
                   sessionIndex++;
                 }
               }
@@ -448,27 +444,31 @@ class _ProfileState extends State<Profile> {
               final last = accuracyDates.last;
               final dateFormat = DateFormat('MMM d, yyyy');
               dateRangeWidget = Padding(
-                padding: const EdgeInsets.only(bottom: 5),
+                padding: const EdgeInsets.only(bottom: 4.0),
                 child: Text(
-                  "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 13,
-                    fontFamily: 'NovecentoSans',
-                  ),
+                  '${dateFormat.format(first)} - ${dateFormat.format(last)}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 13),
                 ),
               );
             }
 
-            // Make the chart horizontally scrollable
-            double chartWidth = 400;
-            if (spots.isNotEmpty && spots.length > 10) {
-              chartWidth = spots.length * 36;
+            // --- Chart layout tweaks ---
+            // Tighten dot spacing, add right-side padding, make chart height square
+            double dotSpacing = 18; // tighter spacing
+            double rightPadding = 36; // enough for last dot/tooltip
+            double minChartWidth = 320;
+            double chartWidth = minChartWidth;
+            if (spots.isNotEmpty) {
+              chartWidth = (spots.length - 1) * dotSpacing + rightPadding;
+              if (chartWidth < minChartWidth) chartWidth = minChartWidth;
             }
+            double chartHeight = chartWidth; // square
+            double maxChartHeight = 400;
+            if (chartHeight > maxChartHeight) chartHeight = maxChartHeight;
 
             // Only show first and last session dates as x-axis labels
             Map<double, String> xLabels = {};
-            if (accuracyDates.isNotEmpty) {
+            if (accuracyDates.isNotEmpty && spots.isNotEmpty) {
               xLabels[spots.first.x] = DateFormat('MMM d').format(accuracyDates.first);
               xLabels[spots.last.x] = DateFormat('MMM d').format(accuracyDates.last);
             }
@@ -476,144 +476,104 @@ class _ProfileState extends State<Profile> {
             return Column(
               children: [
                 dateRangeWidget,
-                SizedBox(
-                  height: 220,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: chartWidth,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth,
+                    height: chartHeight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 24, top: 8, bottom: 0), // reduce bottom padding
                       child: LineChart(
                         LineChartData(
                           minY: 0,
                           maxY: 100,
-                          minX: spots.isNotEmpty ? spots.first.x : 0,
+                          minX: 0,
                           maxX: spots.isNotEmpty ? spots.last.x : 1,
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: true,
-                            horizontalInterval: 20,
-                            verticalInterval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                              strokeWidth: 1,
-                            ),
-                            getDrawingVerticalLine: (value) => FlLine(
-                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                              strokeWidth: 1,
-                            ),
-                          ),
+                          gridData: FlGridData(show: true, horizontalInterval: 20, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 1)),
                           titlesData: FlTitlesData(
                             leftTitles: AxisTitles(
-                              axisNameWidget: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Text(
-                                  'Accuracy (%)',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                              ),
-                              axisNameSize: 28,
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 32,
-                                getTitlesWidget: (value, meta) => Padding(
-                                  padding: const EdgeInsets.only(right: 4),
-                                  child: Text(
-                                    value.toString(),
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 12,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                ),
-                                interval: 20,
-                              ),
+                              sideTitles: SideTitles(showTitles: true, reservedSize: 32, interval: 20, getTitlesWidget: (v, meta) => Text('${v.toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12))),
                             ),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                             bottomTitles: AxisTitles(
-                              axisNameWidget: Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  'Shooting Sessions',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                              ),
-                              axisNameSize: 28,
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 40,
+                                reservedSize: 24, // reduce space below chart
                                 getTitlesWidget: (value, meta) {
                                   if (xLabels.containsKey(value)) {
                                     return Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        xLabels[value]!,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 12,
-                                          fontFamily: 'NovecentoSans',
-                                        ),
-                                      ),
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(xLabels[value]!, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12)),
                                     );
                                   }
                                   return const SizedBox.shrink();
                                 },
-                                interval: spots.isNotEmpty && spots.last.x > spots.first.x ? ((spots.last.x - spots.first.x) / 5).clamp(1, double.infinity) : 1,
                               ),
                             ),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           ),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                            ),
-                          ),
+                          borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2))),
                           lineBarsData: [
-                            if (spots.isNotEmpty)
-                              LineChartBarData(
-                                spots: spots,
-                                isCurved: false,
-                                barWidth: 0,
-                                color: shotTypeColors[shotType],
-                                dotData: const FlDotData(show: true),
+                            LineChartBarData(
+                              spots: spots,
+                              isCurved: false,
+                              color: shotTypeColors[shotType] ?? Colors.cyan,
+                              barWidth: 0,
+                              isStrokeCapRound: true,
+                              dotData: FlDotData(
+                                show: true,
+                                getDotPainter: (spot, percent, bar, index) {
+                                  return FlDotCirclePainter(
+                                    radius: 5,
+                                    color: shotTypeColors[shotType] ?? Colors.cyan,
+                                    strokeWidth: 2,
+                                    strokeColor: Colors.white,
+                                  );
+                                },
                               ),
+                              belowBarData: BarAreaData(show: false),
+                            ),
                             if (trendLine.isNotEmpty)
                               LineChartBarData(
                                 spots: trendLine,
                                 isCurved: false,
-                                barWidth: 3,
-                                color: Colors.grey.shade400,
+                                color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                barWidth: 2,
+                                isStrokeCapRound: true,
                                 dotData: const FlDotData(show: false),
-                                belowBarData: BarAreaData(
-                                  show: false,
-                                ),
+                                belowBarData: BarAreaData(show: false),
                               ),
                           ],
+                          lineTouchData: LineTouchData(
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (LineBarSpot spot) => Colors.white,
+                              fitInsideHorizontally: false,
+                              fitInsideVertically: false,
+                              tooltipMargin: 16,
+                              tooltipRoundedRadius: 8,
+                              tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              getTooltipItems: (touchedSpots) {
+                                return touchedSpots.map((touchedSpot) {
+                                  final idx = touchedSpot.spotIndex;
+                                  final date = idx < accuracyDates.length ? DateFormat('MMM d, yyyy').format(accuracyDates[idx]) : '';
+                                  return LineTooltipItem(
+                                    '${allAccuracies[idx].toStringAsFixed(1)}%\n$date',
+                                    const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                  );
+                                }).toList();
+                              },
+                            ),
+                            handleBuiltInTouches: true,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4), // reduce space below chart
                 Text(
-                  "${shotType[0].toUpperCase()}${shotType.substring(1)} Accuracy Over Time",
-                  style: TextStyle(
-                    color: shotTypeColors[shotType],
-                    fontFamily: 'NovecentoSans',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  '${shotType[0].toUpperCase()}${shotType.substring(1)} Shot Accuracy',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             );
