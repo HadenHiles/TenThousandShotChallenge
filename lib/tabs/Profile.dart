@@ -1173,12 +1173,69 @@ class _ProfileState extends State<Profile> {
                 return Container();
               },
             ),
-            // Collapsible Recent Sessions section header
+            // --- My Accuracy Section (moved above Recent Sessions) ---
             GestureDetector(
               onTap: () {
                 setState(() {
-                  _showSessions = true;
-                  _showAccuracy = false;
+                  // Toggle: If already open, close. If closed, open and close the other.
+                  if (_showAccuracy) {
+                    _showAccuracy = false;
+                  } else {
+                    _showAccuracy = true;
+                    _showSessions = false;
+                  }
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                margin: const EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "My Accuracy".toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Icon(
+                      _showAccuracy ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_showAccuracy)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 50),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildRadialAccuracyChart(context, _selectedIterationId),
+                      const SizedBox(height: 15),
+                      _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                      const SizedBox(height: 15),
+                      _buildAccuracyScatterChart(context, _selectedIterationId),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Collapsible Recent Sessions section header (now below My Accuracy)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  // Toggle: If already open, close. If closed, open and close the other.
+                  if (_showSessions) {
+                    _showSessions = false;
+                  } else {
+                    _showSessions = true;
+                    _showAccuracy = false;
+                  }
                 });
               },
               child: Container(
@@ -1405,54 +1462,6 @@ class _ProfileState extends State<Profile> {
                       MaterialPageRoute(builder: (context) => const History()),
                     );
                   },
-                ),
-              ),
-
-            // Collapsible Accuracy section header
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _showSessions = false;
-                  _showAccuracy = true;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                margin: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "My Accuracy".toUpperCase(),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    Icon(
-                      _showAccuracy ? Icons.expand_less : Icons.expand_more,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // --- My Accuracy Section (only show if expanded) ---
-            if (_showAccuracy)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0, bottom: 50),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildRadialAccuracyChart(context, _selectedIterationId),
-                      const SizedBox(height: 15),
-                      _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                      const SizedBox(height: 15),
-                      _buildAccuracyScatterChart(context, _selectedIterationId),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
                 ),
               ),
           ],
