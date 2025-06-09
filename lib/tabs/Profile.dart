@@ -241,8 +241,17 @@ class _ProfileState extends State<Profile> {
                         final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
                         final value = avgAccuracy[shotTypes[i]]!;
                         final pointRadius = radius * (value / 100.0);
-                        final dx = center.dx + pointRadius * math.cos(angle) - 2;
-                        final dy = center.dy + pointRadius * math.sin(angle) - 22;
+                        double dx = center.dx + pointRadius * math.cos(angle);
+                        double dy = center.dy + pointRadius * math.sin(angle) - 18;
+
+                        if (shotTypes[i] == "backhand") {
+                          dx = center.dx + pointRadius * math.cos(angle) + 18;
+                          dy = center.dy + pointRadius * math.sin(angle) - 22;
+                        } else if (shotTypes[i] == "slap") {
+                          dx = center.dx + pointRadius * math.cos(angle) - 6;
+                          dy = center.dy + pointRadius * math.sin(angle) - 22;
+                        }
+
                         labels.add(Positioned(
                           left: dx - 22,
                           top: dy,
