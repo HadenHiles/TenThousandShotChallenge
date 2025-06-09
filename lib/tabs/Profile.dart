@@ -1208,8 +1208,9 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
             ),
-            if (_showAccuracy)
-              Padding(
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Padding(
                 padding: const EdgeInsets.only(top: 16.0, bottom: 50),
                 child: SingleChildScrollView(
                   child: Column(
@@ -1224,6 +1225,10 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
               ),
+              crossFadeState: _showAccuracy ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 350),
+              sizeCurve: Curves.easeInOut,
+            ),
 
             // Collapsible Recent Sessions section header (now below My Accuracy)
             GestureDetector(
@@ -1259,211 +1264,220 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
             ),
-            // Only show session shot type legend if expanded
-            if (_showSessions)
-              Container(
-                decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
-                padding: const EdgeInsets.only(top: 5, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                      "Wrist".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 18,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 25,
-                      margin: const EdgeInsets.only(top: 2),
-                      decoration: const BoxDecoration(color: wristShotColor),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Opacity(
-                            opacity: 0.75,
-                            child: Text(
-                              "W",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "Snap".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 18,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 25,
-                      margin: const EdgeInsets.only(top: 2),
-                      decoration: const BoxDecoration(color: snapShotColor),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Opacity(
-                            opacity: 0.75,
-                            child: Text(
-                              "SN",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "Backhand".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 18,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 25,
-                      margin: const EdgeInsets.only(top: 2),
-                      decoration: const BoxDecoration(color: backhandShotColor),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Opacity(
-                            opacity: 0.75,
-                            child: Text(
-                              "B",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "Slap".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 18,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                    ),
-                    Container(
-                      width: 30,
-                      height: 25,
-                      margin: const EdgeInsets.only(top: 2),
-                      decoration: const BoxDecoration(color: slapShotColor),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Opacity(
-                            opacity: 0.75,
-                            child: Text(
-                              "SL",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Recent Sessions StreamBuilder (only show if sessions expanded)
-            if (_showSessions && _selectedIterationId != null)
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
-                builder: (context, snapshot) {
-                  final iterationCompleted = _isCurrentIterationCompleted(snapshot);
-                  return StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return SizedBox(
-                          height: 25,
-                          width: 25,
-                          child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
-                        );
-                      }
-                      List<DocumentSnapshot> sessions = snapshot.data!.docs;
-                      if (sessions.isEmpty) {
-                        return Text(
-                          "You don't have any sessions yet".toUpperCase(),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Column(
+                children: [
+                  // Only show session shot type legend if expanded
+                  Container(
+                    decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
+                    padding: const EdgeInsets.only(top: 5, bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text(
+                          "Wrist".toUpperCase(),
                           style: TextStyle(
-                            fontFamily: 'NovecentoSans',
                             color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 16,
-                          ),
-                        );
-                      }
-                      return Column(
-                        children: List.generate(
-                          sessions.length,
-                          (i) => _buildSessionItem(
-                            ShootingSession.fromSnapshot(sessions[i]),
-                            i,
-                            iterationCompleted, // Pass completed status
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-            // Add History button below the Recent Sessions section (only show if sessions expanded)
-            if (_showSessions)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                        Container(
+                          width: 30,
+                          height: 25,
+                          margin: const EdgeInsets.only(top: 2),
+                          decoration: const BoxDecoration(color: wristShotColor),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Opacity(
+                                opacity: 0.75,
+                                child: Text(
+                                  "W",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          "Snap".toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                        Container(
+                          width: 30,
+                          height: 25,
+                          margin: const EdgeInsets.only(top: 2),
+                          decoration: const BoxDecoration(color: snapShotColor),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Opacity(
+                                opacity: 0.75,
+                                child: Text(
+                                  "SN",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          "Backhand".toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                        Container(
+                          width: 30,
+                          height: 25,
+                          margin: const EdgeInsets.only(top: 2),
+                          decoration: const BoxDecoration(color: backhandShotColor),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Opacity(
+                                opacity: 0.75,
+                                child: Text(
+                                  "B",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          "Slap".toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 18,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                        Container(
+                          width: 30,
+                          height: 25,
+                          margin: const EdgeInsets.only(top: 2),
+                          decoration: const BoxDecoration(color: slapShotColor),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Opacity(
+                                opacity: 0.75,
+                                child: Text(
+                                  "SL",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'NovecentoSans',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  icon: const Icon(Icons.history),
-                  label: Text(
-                    "View History".toUpperCase(),
-                    style: const TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 18,
+                  // Recent Sessions StreamBuilder (only show if sessions expanded)
+                  if (_selectedIterationId != null)
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                      builder: (context, snapshot) {
+                        final iterationCompleted = _isCurrentIterationCompleted(snapshot);
+                        return StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return SizedBox(
+                                height: 25,
+                                width: 25,
+                                child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                              );
+                            }
+                            List<DocumentSnapshot> sessions = snapshot.data!.docs;
+                            if (sessions.isEmpty) {
+                              return Text(
+                                "You don't have any sessions yet".toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16,
+                                ),
+                              );
+                            }
+                            return Column(
+                              children: List.generate(
+                                sessions.length,
+                                (i) => _buildSessionItem(
+                                  ShootingSession.fromSnapshot(sessions[i]),
+                                  i,
+                                  iterationCompleted, // Pass completed status
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  // Add History button below the Recent Sessions section (only show if sessions expanded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.history),
+                      label: Text(
+                        "View History".toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 18,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const History()),
+                        );
+                      },
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const History()),
-                    );
-                  },
-                ),
+                ],
               ),
+              crossFadeState: _showSessions ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 350),
+              sizeCurve: Curves.easeInOut,
+            ),
+            // Add bottom space to prevent content from being cut off
+            const SizedBox(height: 80),
           ],
         ),
       ),
