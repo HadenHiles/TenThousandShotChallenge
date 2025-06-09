@@ -101,11 +101,12 @@ class _ProfileState extends State<Profile> {
                 final session = ShootingSession.fromSnapshot(doc);
                 session.shots = shots;
                 return session;
-              } catch (_) {
+              } catch (e) {
                 return null;
               }
             })
-            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
+            .where((s) => s != null && s.shots != null && s.shots!.isNotEmpty)
+            .cast<ShootingSession>()
             .toList();
 
         if (sessions.isEmpty) {
@@ -126,7 +127,7 @@ class _ProfileState extends State<Profile> {
         Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session!.shots!) {
+          for (final shot in session.shots!) {
             if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
               totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
@@ -261,11 +262,12 @@ class _ProfileState extends State<Profile> {
                 final session = ShootingSession.fromSnapshot(doc);
                 session.shots = shots;
                 return session;
-              } catch (_) {
+              } catch (e) {
                 return null;
               }
             })
-            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
+            .where((s) => s != null && s.shots != null && s.shots!.isNotEmpty)
+            .cast<ShootingSession>()
             .toList();
 
         if (sessions.isEmpty) {
@@ -286,7 +288,7 @@ class _ProfileState extends State<Profile> {
         Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session!.shots!) {
+          for (final shot in session.shots!) {
             if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
               totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
@@ -357,11 +359,12 @@ class _ProfileState extends State<Profile> {
                 final session = ShootingSession.fromSnapshot(doc);
                 session.shots = shots;
                 return session;
-              } catch (_) {
+              } catch (e) {
                 return null;
               }
             })
             .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0))
+            .cast<ShootingSession>()
             .toList();
 
         if (sessions.isEmpty) {
@@ -383,7 +386,7 @@ class _ProfileState extends State<Profile> {
         List<DateTime> accuracyDates = [];
         int sessionIndex = 0;
         for (final session in sessions) {
-          for (final shot in session!.shots!) {
+          for (final shot in session.shots!) {
             if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
               spots.add(FlSpot(sessionIndex.toDouble(), (accuracy * 100).roundToDouble()));
