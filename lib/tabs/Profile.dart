@@ -96,19 +96,31 @@ class _ProfileState extends State<Profile> {
                 return null;
               }
             })
-            .where((s) => s != null)
+            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
             .toList();
+
+        if (sessions.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "No accuracy data tracked for this challenge.",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        }
 
         Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
         Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session!.shots ?? []) {
-            // Only aggregate if both targetsHit and count are present and valid
-            if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+          for (final shot in session!.shots!) {
+            if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
               totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
-              // Track the date for this accuracy data
               if (session.date != null) accuracyDates.add(session.date!);
             }
           }
@@ -206,14 +218,29 @@ class _ProfileState extends State<Profile> {
                 return null;
               }
             })
-            .where((s) => s != null)
+            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
             .toList();
+
+        if (sessions.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "No accuracy data tracked for this challenge.",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        }
+
         Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
         Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session!.shots ?? []) {
-            if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+          for (final shot in session!.shots!) {
+            if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
               totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
             }
@@ -280,14 +307,29 @@ class _ProfileState extends State<Profile> {
                 return null;
               }
             })
-            .where((s) => s != null)
+            .where((s) => s != null && s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0))
             .toList();
+
+        if (sessions.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "No accuracy data tracked for this shot type.",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        }
+
         List<FlSpot> spots = [];
         List<double> allAccuracies = [];
         int cumulativeShots = 0;
         List<DateTime> accuracyDates = [];
         for (final session in sessions) {
-          for (final shot in session!.shots ?? []) {
+          for (final shot in session!.shots!) {
             if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
               cumulativeShots += (shot.count as num).toInt();
               double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
