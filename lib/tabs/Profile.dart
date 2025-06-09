@@ -78,29 +78,38 @@ class _ProfileState extends State<Profile> {
   Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
     if (iterationId == null) return Container();
 
-    // Gather accuracy data for each shot type in this iteration
     final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
-    Map<String, double> avgAccuracy = {};
-    for (final type in shotTypes) {
-      avgAccuracy[type] = 0;
-    }
+    Map<String, double> avgAccuracy = {for (var t in shotTypes) t: 0};
+    List<DateTime> accuracyDates = [];
 
-    // You may want to cache this data for performance
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
-        Map<String, int> totalHits = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
-        Map<String, int> totalShots = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+        final sessions = snapshot.data!.docs
+            .map((doc) {
+              try {
+                return ShootingSession.fromSnapshot(doc);
+              } catch (_) {
+                return null;
+              }
+            })
+            .where((s) => s != null)
+            .toList();
+
+        Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+        Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session.shots ?? []) {
+          for (final shot in session!.shots ?? []) {
+            // Only aggregate if both targetsHit and count are present and valid
             if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + shot.targetsHit! as int;
-              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + shot.count! as int;
+              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+              // Track the date for this accuracy data
+              if (session.date != null) accuracyDates.add(session.date!);
             }
           }
         }
@@ -108,37 +117,71 @@ class _ProfileState extends State<Profile> {
           avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
         }
 
-        // Radial area chart using fl_chart's RadarChart
-        return SizedBox(
-          height: 220,
-          child: RadarChart(
-            RadarChartData(
-              radarBackgroundColor: Colors.transparent,
-              tickCount: 5,
-              ticksTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+        // Show date range for available accuracy data
+        Widget dateRangeWidget = Container();
+        if (accuracyDates.isNotEmpty) {
+          accuracyDates.sort();
+          final first = accuracyDates.first;
+          final last = accuracyDates.last;
+          final dateFormat = DateFormat('MMM d, yyyy');
+          dateRangeWidget = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
                 fontFamily: 'NovecentoSans',
-                fontSize: 12,
               ),
-              getTitle: (index, angle) => RadarChartTitle(
-                text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
-              ),
-              dataSets: [
-                RadarDataSet(
-                  fillColor: Theme.of(context).primaryColor.withOpacity(0.25),
-                  borderColor: Theme.of(context).primaryColor,
-                  entryRadius: 4,
-                  borderWidth: 3,
-                  dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
-                ),
-              ],
-              radarShape: RadarShape.polygon,
-              radarBorderData: const BorderSide(color: Colors.grey, width: 1),
-              tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
-              // tickBorderRadius: 2, // <-- REMOVE
-              // maxEntryValue: 100,  // <-- REMOVE
             ),
-          ),
+          );
+        } else {
+          dateRangeWidget = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "No accuracy data tracked for this challenge.",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            dateRangeWidget,
+            SizedBox(
+              height: 220,
+              child: RadarChart(
+                RadarChartData(
+                  radarBackgroundColor: Colors.transparent,
+                  tickCount: 5,
+                  ticksTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 12,
+                  ),
+                  getTitle: (index, angle) => RadarChartTitle(
+                    text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                  ),
+                  dataSets: [
+                    RadarDataSet(
+                      fillColor: Theme.of(context).primaryColor.withOpacity(0.25),
+                      borderColor: Theme.of(context).primaryColor,
+                      entryRadius: 4,
+                      borderWidth: 3,
+                      dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                    ),
+                  ],
+                  radarShape: RadarShape.polygon,
+                  radarBorderData: const BorderSide(color: Colors.grey, width: 1),
+                  tickBorderData: const BorderSide(color: Colors.grey, width: 0.5),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -155,15 +198,24 @@ class _ProfileState extends State<Profile> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
-        Map<String, int> totalHits = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
-        Map<String, int> totalShots = {'wrist': 0, 'snap': 0, 'slap': 0, 'backhand': 0};
+        final sessions = snapshot.data!.docs
+            .map((doc) {
+              try {
+                return ShootingSession.fromSnapshot(doc);
+              } catch (_) {
+                return null;
+              }
+            })
+            .where((s) => s != null)
+            .toList();
+        Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+        Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
         for (final session in sessions) {
-          for (final shot in session.shots ?? []) {
+          for (final shot in session!.shots ?? []) {
             if (shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + shot.targetsHit! as int;
-              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + shot.count! as int;
+              totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+              totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
             }
           }
         }
@@ -175,9 +227,9 @@ class _ProfileState extends State<Profile> {
             final isActive = _selectedAccuracyShotType == type;
             return GestureDetector(
               onTap: () {
-                // Use setState from parent Profile widget
-                (context as Element).markNeedsBuild();
-                _selectedAccuracyShotType = type;
+                setState(() {
+                  _selectedAccuracyShotType = type;
+                });
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -220,17 +272,28 @@ class _ProfileState extends State<Profile> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
         }
-        final sessions = snapshot.data!.docs.map((doc) => ShootingSession.fromSnapshot(doc)).toList();
+        final sessions = snapshot.data!.docs
+            .map((doc) {
+              try {
+                return ShootingSession.fromSnapshot(doc);
+              } catch (_) {
+                return null;
+              }
+            })
+            .where((s) => s != null)
+            .toList();
         List<FlSpot> spots = [];
         List<double> allAccuracies = [];
         int cumulativeShots = 0;
+        List<DateTime> accuracyDates = [];
         for (final session in sessions) {
-          for (final shot in session.shots ?? []) {
+          for (final shot in session!.shots ?? []) {
             if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              cumulativeShots += shot.count! as int;
-              double accuracy = shot.targetsHit! / shot.count!;
+              cumulativeShots += (shot.count as num).toInt();
+              double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
               spots.add(FlSpot(cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
               allAccuracies.add(accuracy * 100);
+              if (session.date != null) accuracyDates.add(session.date!);
             }
           }
         }
@@ -251,8 +314,41 @@ class _ProfileState extends State<Profile> {
           ];
         }
 
+        // Show date range for available accuracy data
+        Widget dateRangeWidget = Container();
+        if (accuracyDates.isNotEmpty) {
+          accuracyDates.sort();
+          final first = accuracyDates.first;
+          final last = accuracyDates.last;
+          final dateFormat = DateFormat('MMM d, yyyy');
+          dateRangeWidget = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        } else {
+          dateRangeWidget = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "No accuracy data tracked for this shot type.",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          );
+        }
+
         return Column(
           children: [
+            dateRangeWidget,
             SizedBox(
               height: 220,
               child: LineChart(
