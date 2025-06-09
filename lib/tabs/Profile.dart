@@ -80,7 +80,8 @@ class _ProfileState extends State<Profile> {
   Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
     if (iterationId == null) return Container();
 
-    final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+    // Swap 'snap' and 'backhand' in shotTypes for the radar chart
+    final shotTypes = ['wrist', 'backhand', 'slap', 'snap'];
     Map<String, double> avgAccuracy = {for (var t in shotTypes) t: 0};
     List<DateTime> accuracyDates = [];
 
@@ -116,10 +117,10 @@ class _ProfileState extends State<Profile> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  "No accuracy data tracked for this challenge.",
+                  "no accuracy data tracked for this challenge",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 13,
+                    fontSize: 15,
                     fontFamily: 'NovecentoSans',
                   ),
                 ),
@@ -149,16 +150,33 @@ class _ProfileState extends State<Profile> {
               final first = accuracyDates.first;
               final last = accuracyDates.last;
               final dateFormat = DateFormat('MMM d, yyyy');
-              dateRangeWidget = Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  "Accuracy data: \\${dateFormat.format(first)} - \\${dateFormat.format(last)}",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 13,
-                    fontFamily: 'NovecentoSans',
+              dateRangeWidget = Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0),
+                    child: Text(
+                      "Accuracy data".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      "${dateFormat.format(first)} - ${dateFormat.format(last)}",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w100,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                  ),
+                ],
               );
             }
 
@@ -172,22 +190,37 @@ class _ProfileState extends State<Profile> {
                   child: RadarChart(
                     RadarChartData(
                       radarBackgroundColor: Colors.transparent,
-                      tickCount: 4,
+                      tickCount: 5,
                       ticksTextStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
                         fontFamily: 'NovecentoSans',
                         fontSize: 12,
                       ),
                       getTitle: (index, angle) => RadarChartTitle(
+                        positionPercentageOffset: (shotTypes[index] == "backhand" || shotTypes[index] == "snap") ? 0.3 : 0.1,
                         text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
                       ),
                       dataSets: [
+                        RadarDataSet(
+                          fillColor: Colors.transparent,
+                          borderColor: Colors.transparent,
+                          entryRadius: 0,
+                          borderWidth: 0,
+                          dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
+                        ),
                         RadarDataSet(
                           fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
                           borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
                           entryRadius: 6,
                           borderWidth: 2,
                           dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                        ),
+                        RadarDataSet(
+                          fillColor: Colors.transparent,
+                          borderColor: Colors.transparent,
+                          entryRadius: 0,
+                          borderWidth: 0,
+                          dataEntries: shotTypes.map((type) => const RadarEntry(value: 100)).toList(),
                         ),
                       ],
                       radarShape: RadarShape.circle,
@@ -208,10 +241,10 @@ class _ProfileState extends State<Profile> {
                         final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
                         final value = avgAccuracy[shotTypes[i]]!;
                         final pointRadius = radius * (value / 100.0);
-                        final dx = center.dx + pointRadius * math.cos(angle);
-                        final dy = center.dy + pointRadius * math.sin(angle) - 18;
+                        final dx = center.dx + pointRadius * math.cos(angle) - 2;
+                        final dy = center.dy + pointRadius * math.sin(angle) - 22;
                         labels.add(Positioned(
-                          left: dx - 18,
+                          left: dx - 22,
                           top: dy,
                           child: Text(
                             "${value.round()}%",
@@ -219,7 +252,7 @@ class _ProfileState extends State<Profile> {
                               color: shotTypeColors[shotTypes[i]],
                               fontWeight: FontWeight.bold,
                               fontFamily: 'NovecentoSans',
-                              fontSize: 15,
+                              fontSize: 16,
                               shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
                             ),
                           ),
@@ -279,17 +312,7 @@ class _ProfileState extends State<Profile> {
             final sessions = asyncSnapshot.data!;
 
             if (sessions.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  "No accuracy data tracked for this challenge.",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 13,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-              );
+              return const SizedBox();
             }
 
             Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
@@ -383,13 +406,7 @@ class _ProfileState extends State<Profile> {
             final sessions = asyncSnapshot.data!;
 
             if (sessions.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Text(
-                  'No accuracy data for this shot type yet.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-                ),
-              );
+              return const SizedBox();
             }
 
             // --- Combine all shots of this type in each session into one dot ---
@@ -429,22 +446,6 @@ class _ProfileState extends State<Profile> {
               ];
             }
 
-            // Show date range for available accuracy data
-            Widget dateRangeWidget = Container();
-            if (accuracyDates.isNotEmpty) {
-              accuracyDates.sort();
-              final first = accuracyDates.first;
-              final last = accuracyDates.last;
-              final dateFormat = DateFormat('MMM d, yyyy');
-              dateRangeWidget = Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
-                child: Text(
-                  '${dateFormat.format(first)} - ${dateFormat.format(last)}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 13),
-                ),
-              );
-            }
-
             // --- Chart layout tweaks ---
             double dotSpacing = 18;
             double rightPadding = 36;
@@ -466,7 +467,11 @@ class _ProfileState extends State<Profile> {
 
             return Column(
               children: [
-                dateRangeWidget,
+                Text(
+                  '${shotType[0].toUpperCase()}${shotType.substring(1)} Shot Accuracy',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
@@ -560,11 +565,6 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${shotType[0].toUpperCase()}${shotType.substring(1)} Shot Accuracy',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             );
