@@ -94,10 +94,15 @@ Future<bool?> saveShootingSession(List<Shots> shots) async {
 }
 
 Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots) async {
+  // Ensure the shots are set on the session object
+  shootingSession.shots = shots;
+
+  // Save the session with the embedded shots array
   return await ref.collection('sessions').add(shootingSession.toMap()).then((s) async {
     // Get a new write batch
     var batch = FirebaseFirestore.instance.batch();
 
+    // Still save each shot as a subcollection for backward compatibility
     for (var shot in shots) {
       var sRef = s.collection('shots').doc();
       batch.set(sRef, shot.toMap());

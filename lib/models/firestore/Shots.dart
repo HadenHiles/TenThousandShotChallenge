@@ -5,10 +5,10 @@ class Shots {
   DateTime? date;
   String? type;
   int? count;
-  int? targetsHit; // <-- Add this
+  int? targetsHit;
   DocumentReference? reference;
 
-  Shots(this.date, this.type, this.count, {this.targetsHit});
+  Shots(this.date, this.type, this.count, this.targetsHit);
 
   Map<String, dynamic> toMap() => {
         'id': id,
