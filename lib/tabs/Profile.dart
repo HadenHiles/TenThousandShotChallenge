@@ -51,6 +51,10 @@ class _ProfileState extends State<Profile> {
     'slap': Colors.teal,
   };
 
+  // Add state for collapsible sections
+  bool _showSessions = true;
+  bool _showAccuracy = false;
+
   @override
   void initState() {
     super.initState();
@@ -1145,213 +1149,225 @@ class _ProfileState extends State<Profile> {
                 return Container();
               },
             ),
-            Container(
-              decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
-              padding: const EdgeInsets.only(top: 5, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    "Recent Sessions".toUpperCase(),
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Wrist".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: const BoxDecoration(color: wristShotColor),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "W",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Snap".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: const BoxDecoration(color: snapShotColor),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "SN",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Backhand".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: const BoxDecoration(color: backhandShotColor),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "B",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        "Slap".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 18,
-                          fontFamily: 'NovecentoSans',
-                        ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 25,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: const BoxDecoration(color: slapShotColor),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Opacity(
-                              opacity: 0.75,
-                              child: Text(
-                                "SL",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'NovecentoSans',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            // Collapsible Recent Sessions section header
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showSessions = true;
+                  _showAccuracy = false;
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Recent Sessions".toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Icon(
+                      _showSessions ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ],
+                ),
               ),
             ),
-            // Replace attempts dropdown with a StreamBuilder
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
-                }
-                List<DropdownMenuItem<String>> iterations = [];
-                String? latestIterationId;
-                snapshot.data!.docs.asMap().forEach((i, iDoc) {
-                  iterations.add(DropdownMenuItem<String>(
-                    value: iDoc.reference.id,
-                    child: Text(
-                      "challenge ${(i + 1).toString().toLowerCase()}",
+            // Only show session shot type legend if expanded
+            if (_showSessions)
+              Container(
+                decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
+                padding: const EdgeInsets.only(top: 5, bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      "Wrist".toUpperCase(),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 26,
+                        fontSize: 18,
                         fontFamily: 'NovecentoSans',
                       ),
                     ),
-                  ));
-                  // Always update latestIterationId to the last one
-                  latestIterationId = iDoc.reference.id;
-                });
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: wristShotColor),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "W",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      "Snap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: snapShotColor),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SN",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      "Backhand".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: backhandShotColor),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "B",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      "Slap".toUpperCase(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 18,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 25,
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: const BoxDecoration(color: slapShotColor),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0.75,
+                            child: Text(
+                              "SL",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Replace attempts dropdown with a StreamBuilder (only show if sessions expanded)
+            if (_showSessions)
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+                  List<DropdownMenuItem<String>> iterations = [];
+                  String? latestIterationId;
+                  snapshot.data!.docs.asMap().forEach((i, iDoc) {
+                    iterations.add(DropdownMenuItem<String>(
+                      value: iDoc.reference.id,
+                      child: Text(
+                        "challenge ${(i + 1).toString().toLowerCase()}",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 26,
+                          fontFamily: 'NovecentoSans',
+                        ),
+                      ),
+                    ));
+                    // Always update latestIterationId to the last one
+                    latestIterationId = iDoc.reference.id;
+                  });
 
-                // Set default selected iteration if not set
-                if (_selectedIterationId == null && iterations.isNotEmpty) {
-                  _selectedIterationId = latestIterationId;
-                }
+                  // Set default selected iteration if not set
+                  if (_selectedIterationId == null && iterations.isNotEmpty) {
+                    _selectedIterationId = latestIterationId;
+                  }
 
-                // Only show the dropdown if there is more than one challenge
-                if (iterations.length <= 1) {
-                  return Container();
-                }
+                  // Only show the dropdown if there is more than one challenge
+                  if (iterations.length <= 1) {
+                    return Container();
+                  }
 
-                return DropdownButton<String>(
-                  value: _selectedIterationId,
-                  items: iterations,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedIterationId = value;
-                    });
-                  },
-                  dropdownColor: Theme.of(context).colorScheme.primary,
-                );
-              },
-            ),
+                  return DropdownButton<String>(
+                    value: _selectedIterationId,
+                    items: iterations,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedIterationId = value;
+                      });
+                    },
+                    dropdownColor: Theme.of(context).colorScheme.primary,
+                  );
+                },
+              ),
 
-            // Recent Sessions StreamBuilder
-            if (_selectedIterationId != null)
+            // Recent Sessions StreamBuilder (only show if sessions expanded)
+            if (_showSessions && _selectedIterationId != null)
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
-                builder: (context, iterationSnapshot) {
-                  final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
+                builder: (context, snapshot) {
+                  final iterationCompleted = _isCurrentIterationCompleted(snapshot);
                   return StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(3).snapshots(),
                     builder: (context, snapshot) {
@@ -1387,50 +1403,82 @@ class _ProfileState extends State<Profile> {
                   );
                 },
               ),
-
-            // Add History button below the Recent Sessions section
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            // Add History button below the Recent Sessions section (only show if sessions expanded)
+            if (_showSessions)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                icon: const Icon(Icons.history),
-                label: Text(
-                  "View History".toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 18,
+                  icon: const Icon(Icons.history),
+                  label: Text(
+                    "View History".toUpperCase(),
+                    style: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 18,
+                    ),
                   ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const History()),
+                    );
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const History()),
-                  );
-                },
               ),
-            ),
-            // --- My Accuracy Section ---
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 50),
-              child: SingleChildScrollView(
-                child: Column(
+
+            // Collapsible Accuracy section header
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showSessions = false;
+                  _showAccuracy = true;
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                margin: const EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildRadialAccuracyChart(context, _selectedIterationId),
-                    const SizedBox(height: 15),
-                    _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                    const SizedBox(height: 15),
-                    _buildAccuracyScatterChart(context, _selectedIterationId),
-                    const SizedBox(height: 30),
+                    Text(
+                      "My Accuracy".toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Icon(
+                      _showAccuracy ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ],
                 ),
               ),
             ),
+            // --- My Accuracy Section (only show if expanded) ---
+            if (_showAccuracy)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 50),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildRadialAccuracyChart(context, _selectedIterationId),
+                      const SizedBox(height: 15),
+                      _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                      const SizedBox(height: 15),
+                      _buildAccuracyScatterChart(context, _selectedIterationId),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
