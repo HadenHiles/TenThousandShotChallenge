@@ -19,6 +19,7 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -91,7 +92,15 @@ class _ProfileState extends State<Profile> {
         final sessions = snapshot.data!.docs
             .map((doc) {
               try {
-                return ShootingSession.fromSnapshot(doc);
+                // Read shots from the nested property in the session document
+                final data = doc.data() as Map<String, dynamic>;
+                List<Shots> shots = [];
+                if (data['shots'] != null && data['shots'] is List) {
+                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
+                }
+                final session = ShootingSession.fromSnapshot(doc);
+                session.shots = shots;
+                return session;
               } catch (_) {
                 return null;
               }
@@ -213,7 +222,14 @@ class _ProfileState extends State<Profile> {
         final sessions = snapshot.data!.docs
             .map((doc) {
               try {
-                return ShootingSession.fromSnapshot(doc);
+                final data = doc.data() as Map<String, dynamic>;
+                List<Shots> shots = [];
+                if (data['shots'] != null && data['shots'] is List) {
+                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
+                }
+                final session = ShootingSession.fromSnapshot(doc);
+                session.shots = shots;
+                return session;
               } catch (_) {
                 return null;
               }
@@ -302,7 +318,14 @@ class _ProfileState extends State<Profile> {
         final sessions = snapshot.data!.docs
             .map((doc) {
               try {
-                return ShootingSession.fromSnapshot(doc);
+                final data = doc.data() as Map<String, dynamic>;
+                List<Shots> shots = [];
+                if (data['shots'] != null && data['shots'] is List) {
+                  shots = (data['shots'] as List).where((s) => s != null).map((s) => Shots.fromMap(Map<String, dynamic>.from(s))).toList();
+                }
+                final session = ShootingSession.fromSnapshot(doc);
+                session.shots = shots;
+                return session;
               } catch (_) {
                 return null;
               }

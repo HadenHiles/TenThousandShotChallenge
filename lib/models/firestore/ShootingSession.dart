@@ -55,11 +55,11 @@ class ShootingSession {
         backhandTargetsHit = map['backhand_targets_hit'];
 
   Map<String, dynamic> toMap() {
-    List<Map<String, dynamic>> mappedShots = [];
+    // List<Map<String, dynamic>> mappedShots = [];
 
-    shots?.forEach((m) {
-      mappedShots.add(m.toMap());
-    });
+    // shots?.forEach((m) {
+    //   mappedShots.add(m.toMap());
+    // });
 
     return {
       'id': id,
@@ -74,6 +74,7 @@ class ShootingSession {
       'snap_targets_hit': snapTargetsHit,
       'slap_targets_hit': slapTargetsHit,
       'backhand_targets_hit': backhandTargetsHit,
+      // 'shots': mappedShots,
     };
   }
 
