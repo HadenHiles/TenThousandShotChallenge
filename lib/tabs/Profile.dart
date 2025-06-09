@@ -335,8 +335,8 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // 3. Line chart for accuracy over time for selected shot type
-  Widget _buildAccuracyLineChart(BuildContext context, String? iterationId) {
+  // 3. Scatter chart for accuracy over time for selected shot type
+  Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId) {
     if (iterationId == null) return Container();
 
     final shotType = _selectedAccuracyShotType;
@@ -380,16 +380,16 @@ class _ProfileState extends State<Profile> {
 
         List<FlSpot> spots = [];
         List<double> allAccuracies = [];
-        int cumulativeShots = 0;
         List<DateTime> accuracyDates = [];
+        int sessionIndex = 0;
         for (final session in sessions) {
           for (final shot in session!.shots!) {
             if (shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-              cumulativeShots += (shot.count as num).toInt();
               double accuracy = (shot.targetsHit as num).toDouble() / (shot.count as num).toDouble();
-              spots.add(FlSpot(cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
+              spots.add(FlSpot(sessionIndex.toDouble(), (accuracy * 100).roundToDouble()));
               allAccuracies.add(accuracy * 100);
               if (session.date != null) accuracyDates.add(session.date!);
+              sessionIndex++;
             }
           }
         }
@@ -420,7 +420,7 @@ class _ProfileState extends State<Profile> {
           dateRangeWidget = Padding(
             padding: const EdgeInsets.only(bottom: 5),
             child: Text(
-              "Accuracy data: ${dateFormat.format(first)} - ${dateFormat.format(last)}",
+              "Accuracy data: [1m${dateFormat.format(first)} - ${dateFormat.format(last)}\u001b[0m",
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
                 fontSize: 13,
@@ -432,8 +432,15 @@ class _ProfileState extends State<Profile> {
 
         // Make the chart horizontally scrollable
         double chartWidth = 400;
-        if (spots.isNotEmpty && spots.last.x > 10) {
-          chartWidth = spots.last.x * 18;
+        if (spots.isNotEmpty && spots.length > 10) {
+          chartWidth = spots.length * 36;
+        }
+
+        // Only show first and last session dates as x-axis labels
+        Map<double, String> xLabels = {};
+        if (accuracyDates.isNotEmpty) {
+          xLabels[spots.first.x] = DateFormat('MMM d').format(accuracyDates.first);
+          xLabels[spots.last.x] = DateFormat('MMM d').format(accuracyDates.last);
         }
 
         return Column(
@@ -513,14 +520,13 @@ class _ProfileState extends State<Profile> {
                           axisNameSize: 28,
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 32,
+                            reservedSize: 40,
                             getTitlesWidget: (value, meta) {
-                              bool show = spots.any((spot) => spot.x == value);
-                              if (show) {
+                              if (xLabels.containsKey(value)) {
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
-                                    value.toInt().toString(),
+                                    xLabels[value]!,
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onPrimary,
                                       fontSize: 12,
@@ -547,8 +553,8 @@ class _ProfileState extends State<Profile> {
                         if (spots.isNotEmpty)
                           LineChartBarData(
                             spots: spots,
-                            isCurved: true,
-                            barWidth: 4,
+                            isCurved: false,
+                            barWidth: 0,
                             color: shotTypeColors[shotType],
                             dotData: const FlDotData(show: true),
                           ),
@@ -560,8 +566,7 @@ class _ProfileState extends State<Profile> {
                             color: Colors.grey.shade400,
                             dotData: const FlDotData(show: false),
                             belowBarData: BarAreaData(
-                              show: true,
-                              color: Colors.grey.shade400.withOpacity(0.18),
+                              show: false,
                             ),
                           ),
                       ],
@@ -1423,31 +1428,12 @@ class _ProfileState extends State<Profile> {
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      "My Accuracy".toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 1. Radial area graph for overall average accuracy per shot type
                     _buildRadialAccuracyChart(context, _selectedIterationId),
-
-                    const SizedBox(height: 24),
-
-                    // 2. TargetAccuracyVisualizers for each shot type, tappable
+                    const SizedBox(height: 16),
                     _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-
-                    const SizedBox(height: 24),
-
-                    // 3. Line chart for accuracy over time for selected shot type
-                    _buildAccuracyLineChart(context, _selectedIterationId),
+                    const SizedBox(height: 16),
+                    _buildAccuracyScatterChart(context, _selectedIterationId),
                   ],
                 ),
               ),
