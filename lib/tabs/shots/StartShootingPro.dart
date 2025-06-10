@@ -21,7 +21,7 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:noise_meter/noise_meter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class StartShootingPro extends StatefulWidget {
@@ -56,10 +56,9 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   bool awaitingUserApproval = false;
 
   // --- Microphone/recorder fields for pro feature ---
-  FlutterSoundRecorder? _recorder;
+  NoiseMeter? _noiseMeter;
+  StreamSubscription<NoiseReading>? _noiseSubscription;
   Timer? _autoShotTimer;
-  int _pendingAutoShots = 0;
-  String _pendingAutoType = 'wrist';
 
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
@@ -76,6 +75,34 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   // Add this field to track the last targets hit
   int? lastTargetsHit;
 
+  // --- Persistent calibration thresholds ---
+  Map<String, double> _calibrationThresholds = {
+    'wrist': 0.0,
+    'snap': 0.0,
+    'slap': 0.0,
+    'backhand': 0.0,
+  };
+
+  Future<void> _loadCalibrationThresholds() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (final type in _calibrationThresholds.keys) {
+      _calibrationThresholds[type] = prefs.getDouble('calib_threshold_$type') ?? 0.0;
+    }
+  }
+
+  Future<void> _saveCalibrationThreshold(String type, double threshold) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('calib_threshold_$type', threshold);
+    _calibrationThresholds[type] = threshold;
+  }
+
+  // --- Amplitude analysis for shot detection ---
+  List<double> _recentAmplitudes = [];
+  DateTime? _lastShotTime;
+
+  // --- Calibration logic ---
+  List<double> _calibrationAmplitudes = [];
+
   @override
   void initState() {
     _shots = widget.shots ?? [];
@@ -83,7 +110,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
     _chartCollapsed = true; // Default to collapsed when starting a new session
     // TODO: Replace with actual pro check
     isProUser = false; // For now, always true for demo
-    _recorder = FlutterSoundRecorder();
+    _noiseMeter = NoiseMeter();
 
     _showNotificationTray = true;
     _notificationTrayAnimatingOut = false;
@@ -94,15 +121,16 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
 
     _autoShotTrackingEnabled = false;
 
+    _loadCalibrationThresholds(); // Load calibration thresholds on startup
+
     super.initState();
   }
 
   @override
   void dispose() {
-    _recorder?.closeRecorder();
+    _noiseSubscription?.cancel();
     _autoShotTimer?.cancel();
     _shots = [];
-    _currentShotCount = preferences!.puckCount!;
     _notifAnimController.dispose();
     super.dispose();
   }
@@ -1858,91 +1886,59 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
     return list;
   }
 
-  Future<void> _startRecordingCalibration() async {
+  void onError(Object error) {
+    debugPrint('NoiseMeter error: $error');
+  }
+
+  // --- Calibration using noise_meter ---
+  Future<void> _startCalibrationRecording() async {
     await Permission.microphone.request();
-    await _recorder!.openRecorder();
-    await _recorder!.startRecorder(
-      codec: Codec.pcm16,
-      toStream: null, // Not used for calibration in this placeholder
-    );
+    _calibrationAmplitudes.clear();
+    _noiseSubscription?.cancel();
+    _noiseSubscription = _noiseMeter!.noise.listen((reading) {
+      setState(() {
+        _calibrationAmplitudes.add(reading.meanDecibel);
+      });
+    });
   }
 
-  Future<void> _stopRecordingCalibration() async {
-    await _recorder!.stopRecorder();
+  Future<void> _stopCalibrationRecording(String shotType) async {
+    await _noiseSubscription?.cancel();
+    if (_calibrationAmplitudes.isNotEmpty) {
+      // Use 80th percentile as threshold
+      List<double> sorted = List.from(_calibrationAmplitudes)..sort();
+      double threshold = sorted[(sorted.length * 0.8).floor()];
+      await _saveCalibrationThreshold(shotType, threshold);
+    }
+    _calibrationAmplitudes.clear();
   }
 
+  // --- Auto shot counting using noise_meter ---
   Future<void> _startAutoShotCounting() async {
     await Permission.microphone.request();
-    await _recorder!.openRecorder();
-    await _recorder!.startRecorder(
-      codec: Codec.pcm16,
-      toStream: null, // Not used directly; see note below
-      // In a real implementation, use the onProgress callback or listen to the audio stream for amplitude analysis
-    );
-    // TODO: Implement amplitude analysis using onProgress or a separate stream
-  }
-
-  Future<void> _stopAutoShotCounting() async {
-    await _recorder!.stopRecorder();
-    _autoShotTimer?.cancel();
-  }
-
-  void _resetAutoShotTimer() {
-    _autoShotTimer?.cancel();
-    _autoShotTimer = Timer(const Duration(seconds: 10), () {
-      if (_pendingAutoShots > 0) {
-        setState(() {
-          awaitingUserApproval = true;
-        });
-        _showAutoShotApprovalDialog();
+    _recentAmplitudes.clear();
+    _lastShotTime = null;
+    _noiseSubscription?.cancel();
+    _noiseSubscription = _noiseMeter!.noise.listen((reading) {
+      double amplitude = reading.meanDecibel;
+      _recentAmplitudes.add(amplitude);
+      if (_recentAmplitudes.length > 10) _recentAmplitudes.removeAt(0);
+      double threshold = _calibrationThresholds[_selectedShotType] ?? 0.0;
+      if (amplitude > threshold) {
+        final now = DateTime.now();
+        if (_lastShotTime == null || now.difference(_lastShotTime!).inMilliseconds > 500) {
+          setState(() {
+            autoShotCount++;
+            _lastShotTime = now;
+          });
+        }
       }
     });
   }
 
-  Future<void> _showAutoShotApprovalDialog() async {
-    int? result = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        int count = _pendingAutoShots;
-        String type = _pendingAutoType;
-        return AlertDialog(
-          title: const Text('Approve Detected Shots'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Detected $count shots.'),
-              DropdownButton<String>(
-                value: type,
-                items: ['wrist', 'snap', 'slap', 'backhand'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                onChanged: (val) => setState(() => _pendingAutoType = val!),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(count),
-              child: const Text('Approve'),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null && result > 0) {
-      setState(() {
-        _shots.insert(0, Shots(DateTime.now(), _pendingAutoType, result, null));
-        _pendingAutoShots = 0;
-        awaitingUserApproval = false;
-      });
-    } else {
-      setState(() {
-        _pendingAutoShots = 0;
-        awaitingUserApproval = false;
-      });
-    }
+  Future<void> _stopAutoShotCounting() async {
+    await _noiseSubscription?.cancel();
+    _autoShotTimer?.cancel();
   }
 
   // Add this function to handle calibration completion

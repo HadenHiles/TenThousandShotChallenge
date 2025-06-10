@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  audio_streamer:
+    dependency: transitive
+    description:
+      name: audio_streamer
+      sha256: "790bca4b4befd6353075371a3e7eb1874dd131b01ebf5df57a0679991bcfe91b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.0"
   auto_size_text:
     dependency: "direct main"
     description:
@@ -961,6 +969,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
+  noise_meter:
+    dependency: "direct main"
+    description:
+      name: noise_meter
+      sha256: "1eab67e5023c24c43757fa2b6b1b8bc43277e9cc6a7b0fb1c6f6537cc0e3116c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
   numberpicker:
     dependency: "direct main"
     description:
