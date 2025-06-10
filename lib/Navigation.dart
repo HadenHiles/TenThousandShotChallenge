@@ -18,7 +18,7 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/StartShootingPro.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -463,7 +463,7 @@ class _NavigationState extends State<Navigation> {
                     );
                   },
                 ),
-                StartShooting(sessionPanelController: sessionPanelController),
+                StartShootingPro(sessionPanelController: sessionPanelController),
               ],
             ),
           ),
