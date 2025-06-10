@@ -38,7 +38,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   final bool showAccuracyFeature = true;
 
   // --- Pro Feature: Shot Sound Learning ---
-  bool isProUser = false; // TODO: Replace with actual pro check
+  bool isProUser = false;
   bool isCalibrating = false;
   String? calibratingShotType;
   int calibrationStep = 0;
@@ -65,16 +65,16 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   int _currentShotCount = preferences!.puckCount!;
   bool _puckCountUpdating = false;
   List<Shots> _shots = [];
-  bool _showAccuracyPrompt = true;
-  int? _lastTargetsHit;
   bool _chartCollapsed = true;
 
   // --- Notification tray fields ---
   bool _showNotificationTray = true;
   bool _notificationTrayAnimatingOut = false;
   late AnimationController _notifAnimController;
-  bool _autoShotCalibrated = false; // Track if user has calibrated
   bool _autoShotTrackingEnabled = false; // Toggle for auto shot tracking
+
+  // Add this field to track the last targets hit
+  int? lastTargetsHit;
 
   @override
   void initState() {
@@ -82,7 +82,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
     _currentShotCount = preferences!.puckCount!;
     _chartCollapsed = true; // Default to collapsed when starting a new session
     // TODO: Replace with actual pro check
-    isProUser = true; // For now, always true for demo
+    isProUser = false; // For now, always true for demo
     _recorder = FlutterSoundRecorder();
 
     _showNotificationTray = true;
@@ -92,7 +92,6 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
       duration: const Duration(milliseconds: 400),
     );
 
-    _autoShotCalibrated = false;
     _autoShotTrackingEnabled = false;
 
     super.initState();
@@ -114,7 +113,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   }
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
-    int value = (_lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
+    int value = (lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
     // Helper to round to nearest even number
     int roundEven(num n) => (n / 2).round() * 2;
     // Build presets, ensuring no duplicates; if duplicate, allow one as odd
@@ -235,125 +234,77 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
 
   // --- Notification Tray Widget ---
   Widget _buildNotificationTray(BuildContext context) {
-    List<Widget> notices = [];
-    if (_showAccuracyPrompt && showAccuracyFeature) {
-      notices.add(
-        Card(
-          color: Colors.green.shade900.withOpacity(0.82),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          elevation: 8,
-          child: ListTile(
-            leading: const Icon(Icons.track_changes, color: Colors.white),
-            title: const Text(
-              "Want to track your shot accuracy?",
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'NovecentoSans',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () {
-                _animateNotificationTrayOut();
-                setState(() => _showAccuracyPrompt = false);
-              },
-            ),
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ProfileSettings(),
-              ));
-            },
-          ),
-        ),
-      );
-    }
-    // Show Pro notification only if not calibrated and user is pro and not calibrating
-    if (isProUser && !_autoShotCalibrated && !isCalibrating) {
-      notices.add(
-        Card(
-          color: Colors.deepOrange.shade800.withOpacity(0.82),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          elevation: 8,
-          child: ListTile(
-            leading: const Icon(Icons.mic, color: Colors.white),
-            title: const Text(
-              "Try Pro: Auto Shot Counting",
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'NovecentoSans',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: const Text(
-              "Let the app count your shots using your device's microphone!",
-              style: TextStyle(color: Colors.white),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () {
-                _animateNotificationTrayOut();
-              },
-            ),
-            onTap: () {
-              setState(() {
-                isCalibrating = true;
-                calibratingShotType = 'wrist';
-                calibrationStep = 0;
-                shotAudioSamples = {
-                  'wrist': [],
-                  'snap': [],
-                  'slap': [],
-                  'backhand': [],
-                };
-                _showNotificationTray = false;
-              });
-            },
-          ),
-        ),
-      );
-    }
-    // If calibrated and pro, show toggle for auto shot tracking
-    if (isProUser && _autoShotCalibrated && !isCalibrating) {
-      notices.add(
-        Card(
-          color: Colors.deepOrange.shade800.withOpacity(0.82),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          elevation: 8,
-          child: SwitchListTile(
-            value: _autoShotTrackingEnabled,
-            onChanged: (val) {
-              setState(() {
-                _autoShotTrackingEnabled = val;
-              });
-            },
-            activeColor: Colors.white,
-            activeTrackColor: Colors.deepOrange.shade400,
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: Colors.grey.shade600,
-            title: const Text(
-              "Auto Shot Tracking",
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'NovecentoSans',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Text(
-              _autoShotTrackingEnabled ? "Auto shot tracking is enabled." : "Enable to let the app count your shots automatically.",
-              style: const TextStyle(color: Colors.white),
-            ),
-            secondary: const Icon(Icons.mic, color: Colors.white),
-          ),
-        ),
-      );
-    }
-    if (notices.isEmpty) return const SizedBox.shrink();
+    // Only show upgrade notification if not a pro user
+    if (!_showNotificationTray || _notificationTrayAnimatingOut || isProUser) return const SizedBox.shrink();
+
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: notices,
+      child: Card(
+        color: Colors.deepOrange.shade800.withOpacity(0.92),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        elevation: 10,
+        child: Stack(
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 16, right: 48, top: 16, bottom: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.star, color: Colors.amber, size: 32),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Upgrade to Pro for Auto Shot Counting & Accuracy Tracking!",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'NovecentoSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "Unlock automatic shot counting and detailed accuracy stats. Tap to learn more and upgrade your training!",
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    // TODO: Navigate to upgrade/pro info page
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const ProfileSettings(),
+                    ));
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8, right: 8),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  tooltip: 'Close',
+                  onPressed: () {
+                    _animateNotificationTrayOut();
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -500,37 +451,19 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
 
   // --- Notification Overlay ---
   Widget _buildNotificationOverlay(BuildContext context) {
-    // Only show if tray is visible or animating out
+    // Always show notification tray at the top, overlaying everything, no icon when closed
     if (!_showNotificationTray && !_notificationTrayAnimatingOut) {
-      // Show notification icon in top right
-      return Positioned(
-        top: 24,
-        right: 18,
-        child: GestureDetector(
-          onTap: _showNotificationTrayAgain,
-          child: AnimatedScale(
-            scale: 1.0,
-            duration: const Duration(milliseconds: 300),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: const Icon(Icons.notifications, color: Colors.white, size: 28),
-            ),
-          ),
-        ),
-      );
+      // Do not show anything (no icon)
+      return const SizedBox.shrink();
     }
 
-    // Animate tray out to the icon
+    // Animate tray out to transparent, but always at the top
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutCubic,
-      top: _notificationTrayAnimatingOut ? 24 : 0,
-      left: _notificationTrayAnimatingOut ? MediaQuery.of(context).size.width - 70 : 0,
-      right: _notificationTrayAnimatingOut ? 18 : 0,
+      top: 0,
+      left: 0,
+      right: 0,
       child: AnimatedOpacity(
         opacity: _notificationTrayAnimatingOut ? 0.0 : 1.0,
         duration: const Duration(milliseconds: 350),
@@ -589,299 +522,331 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
     }
 
     return Expanded(
-      child: Stack(
+      child: Column(
         children: [
-          // Main content
-          Column(
-            children: [
-              // Shot type selector (show above main content when chart is collapsed)
-              if (_chartCollapsed)
-                Padding(
-                  padding: const EdgeInsets.only(top: 15),
-                  child: _buildShotSelector(context),
-                ),
-              // Main content and accuracy chart dropdown
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  child: Column(
-                    children: [
-                      if (showAccuracyFeature)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, bottom: 0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _chartCollapsed ? "Show Accuracy Chart" : "Shot Accuracy",
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  _chartCollapsed ? Icons.expand_more : Icons.expand_less,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                tooltip: _chartCollapsed ? "Expand Chart" : "Collapse Chart",
-                                onPressed: () {
-                                  setState(() {
-                                    _chartCollapsed = !_chartCollapsed;
-                                  });
-                                },
-                              ),
-                            ],
+          // Notification tray bumps content down, appears at the top of the session window
+          _buildNotificationOverlay(context),
+          // Shot type selector (show above main content when chart is collapsed)
+          if (_chartCollapsed)
+            Padding(
+              padding: const EdgeInsets.only(top: 15),
+              child: _buildShotSelector(context),
+            ),
+          // Main content and accuracy chart dropdown
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Column(
+                children: [
+                  if (showAccuracyFeature)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _chartCollapsed ? "Show Accuracy Chart" : "Shot Accuracy",
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                           ),
-                        ),
-                      // Main shot tracking content
-                      if (!(isProUser && isCalibrating)) _buildMainContent(context),
-                    ],
-                  ),
-                ),
-              ),
-              // Chart overlay and pinned selector when expanded
-              if (showAccuracyFeature && !_chartCollapsed)
-                Container(
-                  color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.98),
-                  child: Column(
-                    children: [
-                      // Pinned shot type selector at the top of the expanded chart
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12, bottom: 0),
-                        child: _buildShotSelector(context),
+                          IconButton(
+                            icon: Icon(
+                              _chartCollapsed ? Icons.expand_more : Icons.expand_less,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            tooltip: _chartCollapsed ? "Expand Chart" : "Collapse Chart",
+                            onPressed: () {
+                              setState(() {
+                                _chartCollapsed = !_chartCollapsed;
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                      // Chart card and visualizers
-                      SizedBox(
-                        height: 400, // Set a fixed height for the chart area
-                        child: Card(
-                          margin: EdgeInsets.zero,
-                          elevation: 8,
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Shot Accuracy",
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.expand_less,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                      tooltip: "Collapse Chart",
-                                      onPressed: () {
-                                        setState(() {
-                                          _chartCollapsed = true;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 12, bottom: 12),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: shotTypes.map((type) {
-                                    final color = shotTypeColors[type]!;
-                                    final isActive = _selectedShotType == type;
-                                    final shotsOfType = _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
-                                    final totalHits = shotsOfType.fold<int>(0, (sum, s) => sum + (s.targetsHit ?? 0));
-                                    final totalShots = shotsOfType.fold<int>(0, (sum, s) => sum + (s.count ?? 0));
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedShotType = type;
-                                        });
-                                      },
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            type[0].toUpperCase() + type.substring(1),
-                                            style: TextStyle(
-                                              color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          AnimatedContainer(
-                                            duration: const Duration(milliseconds: 250),
-                                            curve: Curves.easeOutCubic,
-                                            width: isActive ? 90 : 70,
-                                            height: isActive ? 110 : 85,
-                                            child: Opacity(
-                                              opacity: isActive ? 1.0 : 0.45,
-                                              child: TargetAccuracyVisualizer(
-                                                hits: totalHits,
-                                                total: totalShots,
-                                                shotColor: color,
-                                                size: isActive ? 90 : 70,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                              AspectRatio(
-                                aspectRatio: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardTheme.color,
-                                    borderRadius: BorderRadius.circular(16),
+                    ),
+                  // Main shot tracking content
+                  if (!(isProUser && isCalibrating)) _buildMainContent(context),
+                ],
+              ),
+            ),
+          ),
+          // Chart overlay and pinned selector when expanded
+          if (showAccuracyFeature && !_chartCollapsed)
+            Container(
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.98),
+              child: Column(
+                children: [
+                  // Pinned shot type selector at the top of the expanded chart
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 0),
+                    child: _buildShotSelector(context),
+                  ),
+                  // Chart card and visualizers
+                  SizedBox(
+                    height: 400, // Set a fixed height for the chart area
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      elevation: 8,
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Shot Accuracy",
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
-                                  child: accuracySpotsByType[_selectedShotType]!.isEmpty
-                                      ? Center(
-                                          child: Text(
-                                            "Add shots to see your accuracy chart.",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 14,
-                                            ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.expand_less,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  tooltip: "Collapse Chart",
+                                  onPressed: () {
+                                    setState(() {
+                                      _chartCollapsed = true;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12, bottom: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: shotTypes.map((type) {
+                                final color = shotTypeColors[type]!;
+                                final isActive = _selectedShotType == type;
+                                final shotsOfType = _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
+                                final totalHits = shotsOfType.fold<int>(0, (sum, s) => sum + (s.targetsHit ?? 0));
+                                final totalShots = shotsOfType.fold<int>(0, (sum, s) => sum + (s.count ?? 0));
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedShotType = type;
+                                    });
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        type[0].toUpperCase() + type.substring(1),
+                                        style: TextStyle(
+                                          color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 250),
+                                        curve: Curves.easeOutCubic,
+                                        width: isActive ? 90 : 70,
+                                        height: isActive ? 110 : 85,
+                                        child: Opacity(
+                                          opacity: isActive ? 1.0 : 0.45,
+                                          child: TargetAccuracyVisualizer(
+                                            hits: totalHits,
+                                            total: totalShots,
+                                            shotColor: color,
+                                            size: isActive ? 90 : 70,
                                           ),
-                                        )
-                                      : LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final chartWidth = constraints.maxWidth;
-                                            final chartHeight = constraints.maxHeight;
-                                            final spots = accuracySpotsByType[_selectedShotType]!;
-                                            final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: accuracySpotsByType[_selectedShotType]!.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        "Add shots to see your accuracy chart.",
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    )
+                                  : LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final chartWidth = constraints.maxWidth;
+                                        final chartHeight = constraints.maxHeight;
+                                        final spots = accuracySpotsByType[_selectedShotType]!;
+                                        final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
 
-                                            // Find min/max for scaling
-                                            final minX = spots.isNotEmpty ? spots.first.x : 0;
-                                            final maxX = spots.isNotEmpty ? spots.last.x : 1;
-                                            const minY = 0.0;
-                                            const maxY = 100.0;
+                                        // Find min/max for scaling
+                                        final minX = spots.isNotEmpty ? spots.first.x : 0;
+                                        final maxX = spots.isNotEmpty ? spots.last.x : 1;
+                                        const minY = 0.0;
+                                        const maxY = 100.0;
 
-                                            List<Widget> labels = [];
-                                            for (int i = 0; i < spots.length; i++) {
-                                              final spot = spots[i];
-                                              // Find targetsHit/count for this spot
-                                              int cumulative = 0;
-                                              int? targetsHit;
-                                              int? count;
-                                              for (int j = 0; j < filtered.length; j++) {
-                                                final s = filtered[j];
-                                                cumulative += s.count!;
-                                                if (cumulative.toDouble() == spot.x) {
-                                                  targetsHit = s.targetsHit;
-                                                  count = s.count;
-                                                  break;
-                                                }
-                                              }
-
-                                              // Calculate position
-                                              final x = ((spot.x - minX) / (maxX - minX)) * chartWidth;
-                                              final y = chartHeight - ((spot.y - minY) / (maxY - minY)) * chartHeight;
-
-                                              labels.add(
-                                                Positioned(
-                                                  left: x - 20,
-                                                  top: y - 20,
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                        decoration: BoxDecoration(
-                                                          color: shotTypeColors[_selectedShotType]!.withOpacity(0.9),
-                                                          borderRadius: BorderRadius.circular(4),
-                                                        ),
-                                                        child: Text(
-                                                          "${targetsHit ?? '-'}",
-                                                          style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontWeight: FontWeight.bold,
-                                                            fontFamily: 'NovecentoSans',
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black38,
-                                                          borderRadius: BorderRadius.circular(4),
-                                                        ),
-                                                        child: Text(
-                                                          "${count ?? '-'}",
-                                                          style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontWeight: FontWeight.bold,
-                                                            fontFamily: 'NovecentoSans',
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
+                                        List<Widget> labels = [];
+                                        for (int i = 0; i < spots.length; i++) {
+                                          final spot = spots[i];
+                                          // Find targetsHit/count for this spot
+                                          int cumulative = 0;
+                                          int? targetsHit;
+                                          int? count;
+                                          for (int j = 0; j < filtered.length; j++) {
+                                            final s = filtered[j];
+                                            cumulative += s.count!;
+                                            if (cumulative.toDouble() == spot.x) {
+                                              targetsHit = s.targetsHit;
+                                              count = s.count;
+                                              break;
                                             }
+                                          }
 
-                                            return Stack(
-                                              children: [
-                                                // Base line chart
-                                                LineChart(
-                                                  LineChartData(
-                                                    minY: 0,
-                                                    maxY: 100,
-                                                    minX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.first.x : 0,
-                                                    maxX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.last.x : 1,
-                                                    gridData: FlGridData(
-                                                      show: true,
-                                                      drawVerticalLine: true,
-                                                      horizontalInterval: 20,
-                                                      verticalInterval:
-                                                          (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
-                                                      getDrawingHorizontalLine: (value) => FlLine(
-                                                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                                        strokeWidth: 1,
-                                                      ),
-                                                      getDrawingVerticalLine: (value) => FlLine(
-                                                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-                                                        strokeWidth: 1,
+                                          // Calculate position
+                                          final x = ((spot.x - minX) / (maxX - minX)) * chartWidth;
+                                          final y = chartHeight - ((spot.y - minY) / (maxY - minY)) * chartHeight;
+
+                                          labels.add(
+                                            Positioned(
+                                              left: x - 20,
+                                              top: y - 20,
+                                              child: Column(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: shotTypeColors[_selectedShotType]!.withOpacity(0.9),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      "${targetsHit ?? '-'}",
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily: 'NovecentoSans',
+                                                        fontSize: 12,
                                                       ),
                                                     ),
-                                                    titlesData: FlTitlesData(
-                                                      leftTitles: AxisTitles(
-                                                        axisNameWidget: Padding(
-                                                          padding: const EdgeInsets.only(bottom: 8),
-                                                          child: Text(
-                                                            'Accuracy (%)',
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontSize: 14,
-                                                              fontWeight: FontWeight.bold,
-                                                              fontFamily: 'NovecentoSans',
-                                                            ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black38,
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      "${count ?? '-'}",
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily: 'NovecentoSans',
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        }
+
+                                        return Stack(
+                                          children: [
+                                            // Base line chart
+                                            LineChart(
+                                              LineChartData(
+                                                minY: 0,
+                                                maxY: 100,
+                                                minX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.first.x : 0,
+                                                maxX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.last.x : 1,
+                                                gridData: FlGridData(
+                                                  show: true,
+                                                  drawVerticalLine: true,
+                                                  horizontalInterval: 20,
+                                                  verticalInterval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
+                                                  getDrawingHorizontalLine: (value) => FlLine(
+                                                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                                    strokeWidth: 1,
+                                                  ),
+                                                  getDrawingVerticalLine: (value) => FlLine(
+                                                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                                    strokeWidth: 1,
+                                                  ),
+                                                ),
+                                                titlesData: FlTitlesData(
+                                                  leftTitles: AxisTitles(
+                                                    axisNameWidget: Padding(
+                                                      padding: const EdgeInsets.only(bottom: 8),
+                                                      child: Text(
+                                                        'Accuracy (%)',
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontFamily: 'NovecentoSans',
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    axisNameSize: 28,
+                                                    sideTitles: SideTitles(
+                                                      showTitles: true,
+                                                      reservedSize: 32,
+                                                      getTitlesWidget: (value, meta) => Padding(
+                                                        padding: const EdgeInsets.only(right: 4),
+                                                        child: Text(
+                                                          value.toInt().toString(),
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                            fontSize: 12,
+                                                            fontFamily: 'NovecentoSans',
                                                           ),
                                                         ),
-                                                        axisNameSize: 28,
-                                                        sideTitles: SideTitles(
-                                                          showTitles: true,
-                                                          reservedSize: 32,
-                                                          getTitlesWidget: (value, meta) => Padding(
-                                                            padding: const EdgeInsets.only(right: 4),
+                                                      ),
+                                                      interval: 20,
+                                                    ),
+                                                  ),
+                                                  bottomTitles: AxisTitles(
+                                                    axisNameWidget: Padding(
+                                                      padding: const EdgeInsets.only(top: 8),
+                                                      child: Text(
+                                                        'Shots Taken',
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontFamily: 'NovecentoSans',
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    axisNameSize: 28,
+                                                    sideTitles: SideTitles(
+                                                      showTitles: true,
+                                                      reservedSize: 32,
+                                                      getTitlesWidget: (value, meta) {
+                                                        bool show = accuracySpotsByType[_selectedShotType]!.any((spot) => spot.x == value);
+                                                        if (show) {
+                                                          return Padding(
+                                                            padding: const EdgeInsets.only(top: 4),
                                                             child: Text(
                                                               value.toInt().toString(),
                                                               style: TextStyle(
@@ -890,213 +855,175 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
                                                                 fontFamily: 'NovecentoSans',
                                                               ),
                                                             ),
-                                                          ),
-                                                          interval: 20,
-                                                        ),
-                                                      ),
-                                                      bottomTitles: AxisTitles(
-                                                        axisNameWidget: Padding(
-                                                          padding: const EdgeInsets.only(top: 8),
-                                                          child: Text(
-                                                            'Shots Taken',
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontSize: 14,
-                                                              fontWeight: FontWeight.bold,
-                                                              fontFamily: 'NovecentoSans',
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        axisNameSize: 28,
-                                                        sideTitles: SideTitles(
-                                                          showTitles: true,
-                                                          reservedSize: 32,
-                                                          getTitlesWidget: (value, meta) {
-                                                            bool show = accuracySpotsByType[_selectedShotType]!.any((spot) => spot.x == value);
-                                                            if (show) {
-                                                              return Padding(
-                                                                padding: const EdgeInsets.only(top: 4),
-                                                                child: Text(
-                                                                  value.toInt().toString(),
-                                                                  style: TextStyle(
-                                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                                    fontSize: 12,
-                                                                    fontFamily: 'NovecentoSans',
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            }
-                                                            return const SizedBox.shrink();
-                                                          },
-                                                          interval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
-                                                        ),
-                                                      ),
-                                                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                                          );
+                                                        }
+                                                        return const SizedBox.shrink();
+                                                      },
+                                                      interval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
                                                     ),
-                                                    borderData: FlBorderData(
-                                                      show: true,
-                                                      border: Border.all(
-                                                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                                                      ),
+                                                  ),
+                                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                                ),
+                                                borderData: FlBorderData(
+                                                  show: true,
+                                                  border: Border.all(
+                                                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                                                  ),
+                                                ),
+                                                lineBarsData: [
+                                                  if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                                    LineChartBarData(
+                                                      spots: accuracySpotsByType[_selectedShotType]!,
+                                                      isCurved: true,
+                                                      barWidth: 4,
+                                                      color: shotTypeColors[_selectedShotType],
+                                                      dotData: const FlDotData(show: true),
                                                     ),
-                                                    lineBarsData: [
-                                                      if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                                                        LineChartBarData(
-                                                          spots: accuracySpotsByType[_selectedShotType]!,
-                                                          isCurved: true,
-                                                          barWidth: 4,
-                                                          color: shotTypeColors[_selectedShotType],
-                                                          dotData: const FlDotData(show: true),
-                                                        ),
-                                                      // Optional: average line for selected type
-                                                      if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                                                        LineChartBarData(
-                                                          spots: [
-                                                            FlSpot(accuracySpotsByType[_selectedShotType]!.first.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
-                                                            FlSpot(accuracySpotsByType[_selectedShotType]!.last.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
-                                                          ],
-                                                          isCurved: false,
-                                                          barWidth: 1,
-                                                          color: shotTypeColors[_selectedShotType]!.withOpacity(0.5),
-                                                          dashArray: [4, 4],
-                                                          dotData: const FlDotData(show: false),
-                                                        ),
-                                                    ],
-                                                    lineTouchData: LineTouchData(
-                                                      enabled: true,
-                                                      handleBuiltInTouches: true,
-                                                      touchSpotThreshold: 22, // <-- Increase touch area for all dots
-                                                      touchTooltipData: LineTouchTooltipData(
-                                                        getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                                                        tooltipRoundedRadius: 10,
-                                                        fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
-                                                        fitInsideVertically: false,
-                                                        tooltipMargin: 24, // Add more margin so tooltips aren't clipped
-                                                        getTooltipItems: (touchedSpots) {
-                                                          final color = shotTypeColors[_selectedShotType]!;
-                                                          final spots = accuracySpotsByType[_selectedShotType]!;
-                                                          return touchedSpots.map((touched) {
-                                                            // Use a small epsilon for floating point comparison
-                                                            final index = spots.indexWhere((spot) => (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
-                                                            if (index == -1) return null; // <-- Return null instead of continue
+                                                  // Optional: average line for selected type
+                                                  if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                                    LineChartBarData(
+                                                      spots: [
+                                                        FlSpot(accuracySpotsByType[_selectedShotType]!.first.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
+                                                        FlSpot(accuracySpotsByType[_selectedShotType]!.last.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
+                                                      ],
+                                                      isCurved: false,
+                                                      barWidth: 1,
+                                                      color: shotTypeColors[_selectedShotType]!.withOpacity(0.5),
+                                                      dashArray: [4, 4],
+                                                      dotData: const FlDotData(show: false),
+                                                    ),
+                                                ],
+                                                lineTouchData: LineTouchData(
+                                                  enabled: true,
+                                                  handleBuiltInTouches: true,
+                                                  touchSpotThreshold: 22, // <-- Increase touch area for all dots
+                                                  touchTooltipData: LineTouchTooltipData(
+                                                    getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                                                    tooltipRoundedRadius: 10,
+                                                    fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
+                                                    fitInsideVertically: false,
+                                                    tooltipMargin: 24, // Add more margin so tooltips aren't clipped
+                                                    getTooltipItems: (touchedSpots) {
+                                                      final color = shotTypeColors[_selectedShotType]!;
+                                                      final spots = accuracySpotsByType[_selectedShotType]!;
+                                                      return touchedSpots.map((touched) {
+                                                        // Use a small epsilon for floating point comparison
+                                                        final index = spots.indexWhere((spot) => (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
+                                                        if (index == -1) return null; // <-- Return null instead of continue
 
-                                                            // Find the corresponding shot for this spot
-                                                            final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
-                                                            int cumulative = 0;
-                                                            int? targetsHit;
-                                                            int? count;
-                                                            for (int i = 0; i < filtered.length; i++) {
-                                                              final s = filtered[filtered.length - 1 - i];
-                                                              if (s.targetsHit != null && s.count != null && s.count! > 0) {
-                                                                cumulative += s.count!;
-                                                                if (cumulative.toDouble() == touched.x) {
-                                                                  targetsHit = s.targetsHit;
-                                                                  count = s.count;
-                                                                  break;
-                                                                }
-                                                              }
+                                                        // Find the corresponding shot for this spot
+                                                        final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
+                                                        int cumulative = 0;
+                                                        int? targetsHit;
+                                                        int? count;
+                                                        for (int i = 0; i < filtered.length; i++) {
+                                                          final s = filtered[filtered.length - 1 - i];
+                                                          if (s.targetsHit != null && s.count != null && s.count! > 0) {
+                                                            cumulative += s.count!;
+                                                            if (cumulative.toDouble() == touched.x) {
+                                                              targetsHit = s.targetsHit;
+                                                              count = s.count;
+                                                              break;
                                                             }
-
-                                                            return LineTooltipItem(
-                                                              "${_selectedShotType[0].toUpperCase()}${_selectedShotType.substring(1)}\n"
-                                                              "Targets Hit: ${targetsHit ?? '-'}\n"
-                                                              "Shots: ${count ?? '-'}\n"
-                                                              "Accuracy: ${touched.y.toStringAsFixed(1)}%",
-                                                              TextStyle(
-                                                                color: color,
-                                                                fontWeight: FontWeight.bold,
-                                                                fontFamily: 'NovecentoSans',
-                                                                fontSize: 14,
-                                                              ),
-                                                            );
-                                                          }).toList();
-                                                        },
-                                                      ),
-                                                      touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                                                        if (touchResponse != null && touchResponse.lineBarSpots != null && touchResponse.lineBarSpots!.isNotEmpty) {
-                                                          final spot = touchResponse.lineBarSpots!.first;
-                                                          final spots = accuracySpotsByType[_selectedShotType]!;
-                                                          final index = spots.indexWhere((s) => (s.x - spot.x).abs() < 0.01 && (s.y - spot.y).abs() < 0.01);
-                                                          if (index != -1) {
-                                                            setState(() {
-                                                              // _selectedPlotIndex = index;
-                                                            });
                                                           }
                                                         }
-                                                      },
+
+                                                        return LineTooltipItem(
+                                                          "${_selectedShotType[0].toUpperCase()}${_selectedShotType.substring(1)}\n"
+                                                          "Targets Hit: ${targetsHit ?? '-'}\n"
+                                                          "Shots: ${count ?? '-'}\n"
+                                                          "Accuracy: ${touched.y.toStringAsFixed(1)}%",
+                                                          TextStyle(
+                                                            color: color,
+                                                            fontWeight: FontWeight.bold,
+                                                            fontFamily: 'NovecentoSans',
+                                                            fontSize: 14,
+                                                          ),
+                                                        );
+                                                      }).toList();
+                                                    },
+                                                  ),
+                                                  touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+                                                    if (touchResponse != null && touchResponse.lineBarSpots != null && touchResponse.lineBarSpots!.isNotEmpty) {
+                                                      final spot = touchResponse.lineBarSpots!.first;
+                                                      final spots = accuracySpotsByType[_selectedShotType]!;
+                                                      final index = spots.indexWhere((s) => (s.x - spot.x).abs() < 0.01 && (s.y - spot.y).abs() < 0.01);
+                                                      if (index != -1) {
+                                                        setState(() {
+                                                          // _selectedPlotIndex = index;
+                                                        });
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            // Average accuracy label for active type
+                                            if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                              Positioned(
+                                                left: 8,
+                                                top: 8,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: shotTypeColors[_selectedShotType]!.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    "Avg: ${avgAccuracyByType[_selectedShotType]!.round()}%",
+                                                    style: TextStyle(
+                                                      color: shotTypeColors[_selectedShotType],
+                                                      fontWeight: FontWeight.bold,
+                                                      fontFamily: 'NovecentoSans',
                                                     ),
                                                   ),
                                                 ),
-                                                // Average accuracy label for active type
-                                                if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                                                  Positioned(
-                                                    left: 8,
-                                                    top: 8,
-                                                    child: Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                      decoration: BoxDecoration(
-                                                        color: shotTypeColors[_selectedShotType]!.withOpacity(0.1),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                      child: Text(
-                                                        "Avg: ${avgAccuracyByType[_selectedShotType]!.round()}%",
-                                                        style: TextStyle(
-                                                          color: shotTypeColors[_selectedShotType],
-                                                          fontWeight: FontWeight.bold,
-                                                          fontFamily: 'NovecentoSans',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ...labels,
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 24, top: 8),
-                                child: SizedBox(
-                                  width: 180,
-                                  child: ElevatedButton.icon(
-                                    icon: const Icon(Icons.close),
-                                    label: const Text("Close"),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      textStyle: const TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                              ),
+                                            ...labels,
+                                          ],
+                                        );
+                                      },
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _chartCollapsed = true;
-                                      });
-                                    },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 24, top: 8),
+                            child: SizedBox(
+                              width: 180,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.close),
+                                label: const Text("Close"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  textStyle: const TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
+                                onPressed: () {
+                                  setState(() {
+                                    _chartCollapsed = true;
+                                  });
+                                },
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      // Pro Feature: Calibration UI (only when calibrating)
-                      if (isProUser && isCalibrating) _buildProCalibrationWidget(context),
-                    ],
+                    ),
                   ),
-                ),
-              // Overlay notifications and icon
-              _buildNotificationOverlay(context),
-            ],
-          ),
+                  // Pro Feature: Calibration UI (only when calibrating)
+                  if (isProUser && isCalibrating) _buildProCalibrationWidget(context),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -1322,7 +1249,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
             if (manualValue != null && manualValue > 0 && manualValue <= 500) {
               setState(() {
                 _currentShotCount = manualValue;
-                _lastTargetsHit = (_currentShotCount * 0.5).round();
+                lastTargetsHit = (_currentShotCount * 0.5).round();
               });
             }
           },
@@ -1340,7 +1267,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
             onChanged: (value) {
               setState(() {
                 _currentShotCount = value;
-                _lastTargetsHit = (_currentShotCount * 0.5).round();
+                lastTargetsHit = (_currentShotCount * 0.5).round();
               });
             },
             decoration: BoxDecoration(
@@ -1374,7 +1301,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
                 targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // <-- Use session puck count
                 if (targetsHit == null) return;
                 setState(() {
-                  _lastTargetsHit = targetsHit;
+                  lastTargetsHit = targetsHit;
                 });
               }
 
@@ -1441,6 +1368,76 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
           children: _buildShotsList(context, _shots),
         ),
         // Add this: Finish Session button at the bottom
+        const SizedBox(height: 20),
+
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 0),
+          child: Row(
+            children: [
+              Checkbox(
+                value: _autoShotTrackingEnabled,
+                activeColor: Colors.white,
+                checkColor: Colors.deepOrange.shade800,
+                onChanged: (val) {
+                  setState(() {
+                    _autoShotTrackingEnabled = val ?? false;
+                  });
+                },
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  "Automatically Count Shots",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontFamily: 'NovecentoSans',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.tune, color: Colors.white, size: 20),
+              label: const Text(
+                "Calibrate",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'NovecentoSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepOrange.shade400,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              onPressed: () {
+                setState(() {
+                  isCalibrating = true;
+                  calibratingShotType = 'wrist';
+                  calibrationStep = 0;
+                  shotAudioSamples = {
+                    'wrist': [],
+                    'snap': [],
+                    'slap': [],
+                    'backhand': [],
+                  };
+                  _showNotificationTray = false;
+                });
+              },
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1952,8 +1949,7 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
   void _onCalibrationComplete() {
     setState(() {
       isCalibrating = false;
-      _autoShotCalibrated = true;
-      _autoShotTrackingEnabled = true; // Auto-enable auto shot counting
+      _autoShotTrackingEnabled = true; // Toggle for auto shot tracking
       _showNotificationTray = true; // Optionally show notification tray again
     });
   }
