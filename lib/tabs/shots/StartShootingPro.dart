@@ -1947,4 +1947,14 @@ class _StartShootingProState extends State<StartShootingPro> with SingleTickerPr
       });
     }
   }
+
+  // Add this function to handle calibration completion
+  void _onCalibrationComplete() {
+    setState(() {
+      isCalibrating = false;
+      _autoShotCalibrated = true;
+      _autoShotTrackingEnabled = true; // Auto-enable auto shot counting
+      _showNotificationTray = true; // Optionally show notification tray again
+    });
+  }
 }
