@@ -162,7 +162,7 @@ class _ProfileState extends State<Profile> {
                       "Accuracy data".toUpperCase(),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                        fontSize: 30,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'NovecentoSans',
                       ),
@@ -558,16 +558,24 @@ class _ProfileState extends State<Profile> {
                               getTooltipColor: (LineBarSpot spot) => Colors.white,
                               fitInsideHorizontally: false,
                               fitInsideVertically: false,
-                              tooltipMargin: 16,
+                              tooltipMargin: 8,
                               tooltipRoundedRadius: 8,
                               tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((touchedSpot) {
-                                  final idx = touchedSpot.spotIndex;
-                                  final date = idx < accuracyDates.length ? DateFormat('MMM d, yyyy').format(accuracyDates[idx]) : '';
+                                  // Find the correct index for this spot
+                                  int idx = spots.indexWhere((s) => s.x == touchedSpot.x && s.y == touchedSpot.y);
+                                  final date = (idx >= 0 && idx < accuracyDates.length) ? DateFormat('MMM d, yyyy').format(accuracyDates[idx]) : '';
                                   return LineTooltipItem(
-                                    '${allAccuracies[idx].toStringAsFixed(1)}%\n$date',
-                                    const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                    (idx >= 0 && idx < allAccuracies.length) ? '${allAccuracies[idx].toStringAsFixed(1)}%' : '',
+                                    TextStyle(color: shotTypeColors[shotType], fontWeight: FontWeight.bold, fontSize: 18),
+                                    children: [
+                                      if (idx >= 0 && idx < allAccuracies.length)
+                                        TextSpan(
+                                          text: '\n$date',
+                                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                        ),
+                                    ],
                                   );
                                 }).toList();
                               },
@@ -1197,7 +1205,7 @@ class _ProfileState extends State<Profile> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "My Accuracy".toUpperCase(),
+                      "Shot Accuracy".toUpperCase(),
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     Icon(
