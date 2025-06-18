@@ -57,6 +57,14 @@ class _ProfileState extends State<Profile> {
   bool _showSessions = true;
   bool _showAccuracy = false;
 
+  // Dummy data for non-pro users
+  final Map<String, double> _dummyAvgAccuracy = {
+    'wrist': 72.0,
+    'backhand': 65.0,
+    'slap': 80.0,
+    'snap': 68.0,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +92,147 @@ class _ProfileState extends State<Profile> {
 
   // 1. Radial area chart for overall average accuracy per shot type
   Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
+    if (!_isProUser) {
+      final shotTypes = ['wrist', 'backhand', 'slap', 'snap'];
+      Map<String, double> avgAccuracy = Map<String, double>.from(_dummyAvgAccuracy);
+      String challengeLabel = 'challenge 1';
+      Widget dateRangeWidget = Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              challengeLabel,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 0),
+            child: Text(
+              "Accuracy data".toUpperCase(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Jan 1, 2025 - Jun 1, 2025",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 18,
+                fontWeight: FontWeight.w100,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          ),
+        ],
+      );
+      Widget radarWithLabels = Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            height: 220,
+            width: 220,
+            child: RadarChart(
+              RadarChartData(
+                radarBackgroundColor: Colors.transparent,
+                tickCount: 5,
+                ticksTextStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 12,
+                ),
+                getTitle: (index, angle) => RadarChartTitle(
+                  positionPercentageOffset: (shotTypes[index] == "backhand" || shotTypes[index] == "snap") ? 0.3 : 0.1,
+                  text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                ),
+                dataSets: [
+                  RadarDataSet(
+                    fillColor: Colors.transparent,
+                    borderColor: Colors.transparent,
+                    entryRadius: 0,
+                    borderWidth: 0,
+                    dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
+                  ),
+                  RadarDataSet(
+                    fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
+                    borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                    entryRadius: 6,
+                    borderWidth: 2,
+                    dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                  ),
+                  RadarDataSet(
+                    fillColor: Colors.transparent,
+                    borderColor: Colors.transparent,
+                    entryRadius: 0,
+                    borderWidth: 0,
+                    dataEntries: shotTypes.map((type) => const RadarEntry(value: 100)).toList(),
+                  ),
+                ],
+                radarShape: RadarShape.circle,
+                gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
+                radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
+                tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
+                final radius = constraints.maxWidth / 2 * 0.85;
+                List<Widget> labels = [];
+                for (int i = 0; i < shotTypes.length; i++) {
+                  final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
+                  final value = avgAccuracy[shotTypes[i]]!;
+                  final pointRadius = radius * (value / 100.0);
+                  double dx = center.dx + pointRadius * math.cos(angle);
+                  double dy = center.dy + pointRadius * math.sin(angle) - 18;
+                  if (shotTypes[i] == "backhand") {
+                    dx = center.dx + pointRadius * math.cos(angle) + 18;
+                    dy = center.dy + pointRadius * math.sin(angle) - 22;
+                  } else if (shotTypes[i] == "slap") {
+                    dx = center.dx + pointRadius * math.cos(angle) - 6;
+                    dy = center.dy + pointRadius * math.sin(angle) - 22;
+                  }
+                  labels.add(Positioned(
+                    left: dx - 22,
+                    top: dy,
+                    child: Text(
+                      "${value.round()}%",
+                      style: TextStyle(
+                        color: shotTypeColors[shotTypes[i]],
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 16,
+                        shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
+                      ),
+                    ),
+                  ));
+                }
+                return Stack(children: labels);
+              },
+            ),
+          ),
+        ],
+      );
+      return Column(
+        children: [
+          dateRangeWidget,
+          radarWithLabels,
+        ],
+      );
+    }
+
     if (iterationId == null) return Container();
 
     // Swap 'snap' and 'backhand' in shotTypes for the radar chart
@@ -1247,65 +1396,6 @@ class _ProfileState extends State<Profile> {
                           child: SingleChildScrollView(
                             child: Column(
                               children: [
-                                // The dropdown and challenge summary
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  child: Column(
-                                    children: [
-                                      // Challenge dropdown (copied from above)
-                                      Container(
-                                        margin: const EdgeInsets.only(right: 15),
-                                        child: Row(
-                                          children: [
-                                            StreamBuilder<QuerySnapshot>(
-                                              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
-                                              builder: (context, snapshot) {
-                                                if (!snapshot.hasData) {
-                                                  return const CircularProgressIndicator();
-                                                }
-                                                List<DropdownMenuItem<String>> iterations = [];
-                                                String? latestIterationId;
-                                                snapshot.data!.docs.asMap().forEach((i, iDoc) {
-                                                  iterations.add(DropdownMenuItem<String>(
-                                                    value: iDoc.reference.id,
-                                                    child: Text(
-                                                      "challenge ${(i + 1)}".toString(),
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                        fontSize: 20,
-                                                        fontFamily: 'NovecentoSans',
-                                                      ),
-                                                    ),
-                                                  ));
-                                                  latestIterationId = iDoc.reference.id;
-                                                });
-                                                if (_selectedIterationId == null && iterations.isNotEmpty) {
-                                                  _selectedIterationId = latestIterationId;
-                                                }
-                                                if (iterations.length <= 1) {
-                                                  return Container();
-                                                }
-                                                return DropdownButton<String>(
-                                                  value: _selectedIterationId,
-                                                  items: iterations,
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _selectedIterationId = value;
-                                                    });
-                                                  },
-                                                  dropdownColor: Theme.of(context).colorScheme.primary,
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Optionally, add the challenge summary row here if you want
-                                    ],
-                                  ),
-                                ),
-                                _buildRadialAccuracyChart(context, _selectedIterationId),
-                                const SizedBox(height: 15),
                                 _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
                                 const SizedBox(height: 15),
                                 _buildAccuracyScatterChart(context, _selectedIterationId),
@@ -1330,7 +1420,7 @@ class _ProfileState extends State<Profile> {
                                       Icon(Icons.lock, color: Colors.white, size: 48),
                                       SizedBox(height: 12),
                                       Text(
-                                        'Start a Pro subscription to unlock accuracy tracking!',
+                                        'Start a Pro subscription to\nunlock accuracy tracking!',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: Colors.white,
