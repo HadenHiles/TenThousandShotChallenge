@@ -162,447 +162,450 @@ class _ProfileSettingsState extends State<ProfileSettings> {
             },
             body: Stack(
               children: [
-                SettingsList(
-                  lightTheme: SettingsThemeData(
-                    settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                  darkTheme: SettingsThemeData(
-                    settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                  sections: [
-                    // Subscription Section
-                    SettingsSection(
-                      title: Text(
-                        'Subscription',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      tiles: [
-                        SettingsTile(
-                          title: Text(
-                            'Subscription Level',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          description: Text(
-                            _subscriptionLevel,
-                            style: TextStyle(
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 70), // Add enough space for the footer
+                  child: SettingsList(
+                    lightTheme: SettingsThemeData(
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                    darkTheme: SettingsThemeData(
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                    sections: [
+                      // Subscription Section
+                      SettingsSection(
+                        title: Text(
+                          'Subscription',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        tiles: [
+                          SettingsTile(
+                            title: Text(
+                              'Subscription Level',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            description: Text(
+                              _subscriptionLevel,
+                              style: TextStyle(
+                                color: _subscriptionLevel == "Free"
+                                    ? Colors.grey
+                                    : _subscriptionLevel == "Premium"
+                                        ? Colors.blue
+                                        : Colors.amber,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            leading: Icon(
+                              Icons.workspace_premium,
                               color: _subscriptionLevel == "Free"
                                   ? Colors.grey
                                   : _subscriptionLevel == "Premium"
                                       ? Colors.blue
                                       : Colors.amber,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
                             ),
-                          ),
-                          leading: Icon(
-                            Icons.workspace_premium,
-                            color: _subscriptionLevel == "Free"
-                                ? Colors.grey
-                                : _subscriptionLevel == "Premium"
-                                    ? Colors.blue
-                                    : Colors.amber,
-                          ),
-                          onPressed: (BuildContext context) {
-                            // Show a dialog or navigate to a subscription management screen
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Manage Subscription'),
-                                content: Text(
-                                  _subscriptionLevel == "Free" ? "Upgrade to Premium or Pro to unlock advanced features like shot accuracy tracking and more!" : "You are currently on the $_subscriptionLevel plan.",
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('Close'),
+                            onPressed: (BuildContext context) {
+                              // Show a dialog or navigate to a subscription management screen
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Manage Subscription'),
+                                  content: Text(
+                                    _subscriptionLevel == "Free" ? "Upgrade to Premium or Pro to unlock advanced features like shot accuracy tracking and more!" : "You are currently on the $_subscriptionLevel plan.",
                                   ),
-                                  if (_subscriptionLevel == "Free")
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        // TODO: Integrate RevenueCat paywall here
-                                        Navigator.of(context).pop();
-                                        Fluttertoast.showToast(
-                                          msg: 'Subscription flow coming soon!',
-                                          toastLength: Toast.LENGTH_SHORT,
-                                        );
-                                      },
-                                      child: const Text('Upgrade'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: const Text('Close'),
                                     ),
+                                    if (_subscriptionLevel == "Free")
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          // TODO: Integrate RevenueCat paywall here
+                                          Navigator.of(context).pop();
+                                          Fluttertoast.showToast(
+                                            msg: 'Subscription flow coming soon!',
+                                            toastLength: Toast.LENGTH_SHORT,
+                                          );
+                                        },
+                                        child: const Text('Upgrade'),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      SettingsSection(
+                        title: Text(
+                          'General',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        tiles: [
+                          SettingsTile(
+                            title: Text(
+                              'How many pucks do you have?',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            leading: Container(
+                              margin: const EdgeInsets.only(left: 10),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 14,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  // Top Left
+                                  Positioned(
+                                    left: -6,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Bottom Left
+                                  Positioned(
+                                    left: -5,
+                                    bottom: -5,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Top right
+                                  Positioned(
+                                    right: -4,
+                                    top: -6,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 6,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  // Bottom right
+                                  Positioned(
+                                    right: -4,
+                                    bottom: -8,
+                                    child: Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 8,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    SettingsSection(
-                      title: Text(
-                        'General',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      tiles: [
-                        SettingsTile(
-                          title: Text(
-                            'How many pucks do you have?',
-                            style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            onPressed: (BuildContext context) {
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return const EditPuckCount();
+                                  },
+                                ),
+                              );
+                            },
                           ),
-                          leading: Container(
-                            margin: const EdgeInsets.only(left: 10),
-                            child: Stack(
-                              clipBehavior: Clip.none,
+                          SettingsTile.switchTile(
+                            title: Text(
+                              'Dark Mode',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            leading: Icon(
+                              Icons.brightness_2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            initialValue: _darkMode,
+                            onToggle: (bool value) async {
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              setState(() {
+                                _darkMode = !_darkMode;
+                                prefs.setBool('dark_mode', _darkMode);
+                              });
+
+                              if (context.mounted) {
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                                  Preferences(
+                                    value,
+                                    prefs.getInt('puck_count'),
+                                    prefs.getBool('friend_notifications'),
+                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                                    prefs.getString('fcm_token'),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          SettingsTile(
+                            title: Text(
+                              "Recalculate Shot Totals",
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            description: Text(
+                              "Use this if your shot count is out of sync",
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            enabled: true,
+                            leading: _refreshingShots
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.refresh_rounded,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                            onPressed: (context) async {
+                              if (_shotsRefreshedOnce) {
+                                setState(() {
+                                  _refreshingShots = true;
+                                });
+
+                                Future.delayed(const Duration(milliseconds: 800)).then(
+                                  (value) => setState(() {
+                                    _refreshingShots = false;
+                                  }),
+                                );
+                              } else {
+                                setState(() {
+                                  _refreshingShots = true;
+                                });
+                                await recalculateIterationTotals().then((_) {
+                                  Future.delayed(const Duration(milliseconds: 200)).then(
+                                    (value) {
+                                      setState(() {
+                                        _refreshingShots = false;
+                                        _shotsRefreshedOnce = true;
+                                      });
+
+                                      Fluttertoast.showToast(
+                                        msg: 'Finished recalculating shot totals',
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 1,
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        textColor: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 16.0,
+                                      );
+                                    },
+                                  );
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      SettingsSection(
+                        title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
+                        tiles: [
+                          SettingsTile.switchTile(
+                            title: Text(
+                              'Friend Session Notifications',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            leading: Icon(
+                              Icons.brightness_2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            initialValue: _friendNotifications,
+                            onToggle: (bool value) async {
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                              await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'friend_notifications': !_friendNotifications}).then((_) {
+                                setState(() {
+                                  _friendNotifications = !_friendNotifications;
+                                  prefs.setBool('friend_notifications', _friendNotifications);
+                                });
+                              });
+
+                              if (context.mounted) {
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                                  Preferences(
+                                    prefs.getBool('dark_mode'),
+                                    prefs.getInt('puck_count'),
+                                    value,
+                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                                    prefs.getString('fcm_token'),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      SettingsSection(
+                        title: Text(
+                          'Account',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        tiles: [
+                          SettingsTile.switchTile(
+                            title: Text(
+                              'Public',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            leading: Icon(
+                              Icons.privacy_tip_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            initialValue: _publicProfile,
+                            onToggle: (bool value) async {
+                              await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
+                                setState(() {
+                                  _publicProfile = !_publicProfile;
+                                });
+                              });
+                            },
+                          ),
+                          SettingsTile(
+                            title: Text(
+                              'Edit Profile',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            leading: Icon(
+                              Icons.person,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            onPressed: (BuildContext context) {
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return const EditProfile();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          SettingsTile(
+                            title: Row(
                               children: [
-                                Icon(
-                                  FontAwesomeIcons.hockeyPuck,
-                                  size: 14,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                Text(
+                                  'Delete Account',
+                                  style: Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                // Top Left
-                                Positioned(
-                                  left: -6,
-                                  top: -6,
-                                  child: Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 8,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                ),
-                                // Bottom Left
-                                Positioned(
-                                  left: -5,
-                                  bottom: -5,
-                                  child: Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 6,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                ),
-                                // Top right
-                                Positioned(
-                                  right: -4,
-                                  top: -6,
-                                  child: Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 6,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                ),
-                                // Bottom right
-                                Positioned(
-                                  right: -4,
-                                  bottom: -8,
-                                  child: Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 8,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 5),
+                                  child: RotatedBox(
+                                    quarterTurns: 2,
+                                    child: Icon(
+                                      Icons.info_outlined,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          onPressed: (BuildContext context) {
-                            navigatorKey.currentState!.push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return const EditPuckCount();
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                        SettingsTile.switchTile(
-                          title: Text(
-                            'Dark Mode',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          leading: Icon(
-                            Icons.brightness_2,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          initialValue: _darkMode,
-                          onToggle: (bool value) async {
-                            SharedPreferences prefs = await SharedPreferences.getInstance();
-                            setState(() {
-                              _darkMode = !_darkMode;
-                              prefs.setBool('dark_mode', _darkMode);
-                            });
-
-                            if (context.mounted) {
-                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                                Preferences(
-                                  value,
-                                  prefs.getInt('puck_count'),
-                                  prefs.getBool('friend_notifications'),
-                                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                                  prefs.getString('fcm_token'),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        SettingsTile(
-                          title: Text(
-                            "Recalculate Shot Totals",
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          description: Text(
-                            "Use this if your shot count is out of sync",
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          enabled: true,
-                          leading: _refreshingShots
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.refresh_rounded,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                          onPressed: (context) async {
-                            if (_shotsRefreshedOnce) {
-                              setState(() {
-                                _refreshingShots = true;
-                              });
-
-                              Future.delayed(const Duration(milliseconds: 800)).then(
-                                (value) => setState(() {
-                                  _refreshingShots = false;
-                                }),
-                              );
-                            } else {
-                              setState(() {
-                                _refreshingShots = true;
-                              });
-                              await recalculateIterationTotals().then((_) {
-                                Future.delayed(const Duration(milliseconds: 200)).then(
-                                  (value) {
-                                    setState(() {
-                                      _refreshingShots = false;
-                                      _shotsRefreshedOnce = true;
-                                    });
-
-                                    Fluttertoast.showToast(
-                                      msg: 'Finished recalculating shot totals',
-                                      toastLength: Toast.LENGTH_SHORT,
-                                      gravity: ToastGravity.BOTTOM,
-                                      timeInSecForIosWeb: 1,
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                      textColor: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16.0,
-                                    );
-                                  },
-                                );
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    SettingsSection(
-                      title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
-                      tiles: [
-                        SettingsTile.switchTile(
-                          title: Text(
-                            'Friend Session Notifications',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          leading: Icon(
-                            Icons.brightness_2,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          initialValue: _friendNotifications,
-                          onToggle: (bool value) async {
-                            SharedPreferences prefs = await SharedPreferences.getInstance();
-
-                            await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'friend_notifications': !_friendNotifications}).then((_) {
-                              setState(() {
-                                _friendNotifications = !_friendNotifications;
-                                prefs.setBool('friend_notifications', _friendNotifications);
-                              });
-                            });
-
-                            if (context.mounted) {
-                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                                Preferences(
-                                  prefs.getBool('dark_mode'),
-                                  prefs.getInt('puck_count'),
-                                  value,
-                                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                                  prefs.getString('fcm_token'),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    SettingsSection(
-                      title: Text(
-                        'Account',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      tiles: [
-                        SettingsTile.switchTile(
-                          title: Text(
-                            'Public',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          leading: Icon(
-                            Icons.privacy_tip_rounded,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          initialValue: _publicProfile,
-                          onToggle: (bool value) async {
-                            await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
-                              setState(() {
-                                _publicProfile = !_publicProfile;
-                              });
-                            });
-                          },
-                        ),
-                        SettingsTile(
-                          title: Text(
-                            'Edit Profile',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          leading: Icon(
-                            Icons.person,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          onPressed: (BuildContext context) {
-                            navigatorKey.currentState!.push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return const EditProfile();
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                        SettingsTile(
-                          title: Row(
-                            children: [
-                              Text(
-                                'Delete Account',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 5),
-                                child: RotatedBox(
-                                  quarterTurns: 2,
-                                  child: Icon(
-                                    Icons.info_outlined,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          leading: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
-                          onPressed: (BuildContext context) {
-                            showDialog(
-                              context: context,
-                              builder: (_) {
-                                return AlertDialog(
-                                  title: const Text(
-                                    "Are you absolutely sure you want to delete your account?",
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 24,
+                            leading: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            onPressed: (BuildContext context) {
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return AlertDialog(
+                                    title: const Text(
+                                      "Are you absolutely sure you want to delete your account?",
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 24,
+                                      ),
                                     ),
-                                  ),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: Text(
+                                          "Cancel".toUpperCase(),
+                                          style: TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          FirebaseAuth.instance.currentUser!.delete().then((_) {
+                                            navigatorKey.currentState!.pop();
+                                            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
+                                              return const Login();
+                                            }));
+
+                                            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                          }).onError((FirebaseAuthException error, stackTrace) {
+                                            String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                            Fluttertoast.showToast(
+                                              msg: msg,
+                                              toastLength: Toast.LENGTH_LONG,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+                                          });
+                                        },
+                                        child: Text(
+                                          "Delete Account".toUpperCase(),
+                                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                                         ),
                                       ),
                                     ],
-                                  ),
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(false),
-                                      child: Text(
-                                        "Cancel".toUpperCase(),
-                                        style: TextStyle(
-                                          fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        FirebaseAuth.instance.currentUser!.delete().then((_) {
-                                          navigatorKey.currentState!.pop();
-                                          navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
-                                            return const Login();
-                                          }));
-
-                                          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                                        }).onError((FirebaseAuthException error, stackTrace) {
-                                          String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
-                                          Fluttertoast.showToast(
-                                            msg: msg,
-                                            toastLength: Toast.LENGTH_LONG,
-                                            gravity: ToastGravity.BOTTOM,
-                                            timeInSecForIosWeb: 1,
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                            textColor: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 16.0,
-                                          );
-                                        });
-                                      },
-                                      child: Text(
-                                        "Delete Account".toUpperCase(),
-                                        style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        SettingsTile(
-                          title: Text(
-                            'Logout',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
-                            ),
-                          ),
-                          leading: const Icon(
-                            Icons.logout,
-                            color: Colors.red,
-                          ),
-                          onPressed: (BuildContext context) {
-                            signOut();
-
-                            navigatorKey.currentState!.pop();
-                            navigatorKey.currentState!.pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return const Login();
+                                  );
                                 },
+                              );
+                            },
+                          ),
+                          SettingsTile(
+                            title: Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                            ),
+                            leading: const Icon(
+                              Icons.logout,
+                              color: Colors.red,
+                            ),
+                            onPressed: (BuildContext context) {
+                              signOut();
+
+                              navigatorKey.currentState!.pop();
+                              navigatorKey.currentState!.pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return const Login();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -661,7 +664,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         ),
                         Container(
                           margin: const EdgeInsets.all(0),
-                          height: 20,
+                          height: 35,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
