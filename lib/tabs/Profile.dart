@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:math' as math;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,6 +36,7 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   final user = FirebaseAuth.instance.currentUser;
   final GlobalKey _avatarMenuKey = GlobalKey();
+  final bool _isProUser = false; //TODO: Actually verify the user's subscription level
 
   String? _selectedIterationId;
   DateTime? firstSessionDate = DateTime.now();
@@ -1237,21 +1239,130 @@ class _ProfileState extends State<Profile> {
             ),
             AnimatedCrossFade(
               firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(top: 16.0, bottom: 50),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildRadialAccuracyChart(context, _selectedIterationId),
-                      const SizedBox(height: 15),
-                      _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                      const SizedBox(height: 15),
-                      _buildAccuracyScatterChart(context, _selectedIterationId),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-                ),
-              ),
+              secondChild: !_isProUser
+                  ? Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0, bottom: 50),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                // The dropdown and challenge summary
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: Column(
+                                    children: [
+                                      // Challenge dropdown (copied from above)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 15),
+                                        child: Row(
+                                          children: [
+                                            StreamBuilder<QuerySnapshot>(
+                                              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
+                                              builder: (context, snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return const CircularProgressIndicator();
+                                                }
+                                                List<DropdownMenuItem<String>> iterations = [];
+                                                String? latestIterationId;
+                                                snapshot.data!.docs.asMap().forEach((i, iDoc) {
+                                                  iterations.add(DropdownMenuItem<String>(
+                                                    value: iDoc.reference.id,
+                                                    child: Text(
+                                                      "challenge ${(i + 1)}".toString(),
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                        fontSize: 20,
+                                                        fontFamily: 'NovecentoSans',
+                                                      ),
+                                                    ),
+                                                  ));
+                                                  latestIterationId = iDoc.reference.id;
+                                                });
+                                                if (_selectedIterationId == null && iterations.isNotEmpty) {
+                                                  _selectedIterationId = latestIterationId;
+                                                }
+                                                if (iterations.length <= 1) {
+                                                  return Container();
+                                                }
+                                                return DropdownButton<String>(
+                                                  value: _selectedIterationId,
+                                                  items: iterations,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _selectedIterationId = value;
+                                                    });
+                                                  },
+                                                  dropdownColor: Theme.of(context).colorScheme.primary,
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Optionally, add the challenge summary row here if you want
+                                    ],
+                                  ),
+                                ),
+                                _buildRadialAccuracyChart(context, _selectedIterationId),
+                                const SizedBox(height: 15),
+                                _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                                const SizedBox(height: 15),
+                                _buildAccuracyScatterChart(context, _selectedIterationId),
+                                const SizedBox(height: 30),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                              child: Container(
+                                color: Colors.black.withOpacity(0.4),
+                                alignment: Alignment.center,
+                                child: const Padding(
+                                  padding: EdgeInsets.all(24.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.lock, color: Colors.white, size: 48),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        'Start a Pro subscription to unlock accuracy tracking!',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 50),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _buildRadialAccuracyChart(context, _selectedIterationId),
+                            const SizedBox(height: 15),
+                            _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                            const SizedBox(height: 15),
+                            _buildAccuracyScatterChart(context, _selectedIterationId),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                      ),
+                    ),
               crossFadeState: _showAccuracy ? CrossFadeState.showSecond : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 350),
               sizeCurve: Curves.easeInOut,
