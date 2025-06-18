@@ -90,199 +90,219 @@ class _ProfileState extends State<Profile> {
     List<DateTime> accuracyDates = [];
 
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
         }
-        final sessionDocs = snapshot.data!.docs;
-        Future<List<ShootingSession>> loadSessionsWithShots() async {
-          List<ShootingSession> sessions = [];
-          for (final doc in sessionDocs) {
-            try {
-              final session = ShootingSession.fromSnapshot(doc);
-              final shotsSnap = await doc.reference.collection('shots').get();
-              final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
-              session.shots = shots;
-              sessions.add(session);
-            } catch (_) {}
-          }
-          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
-        }
+        final docs = snapshot.data!.docs;
+        int challengeIndex = docs.indexWhere((doc) => doc.reference.id == iterationId);
+        String challengeLabel = challengeIndex != -1 ? 'challenge ${(challengeIndex + 1)}' : '';
 
-        return FutureBuilder<List<ShootingSession>>(
-          future: loadSessionsWithShots(),
-          builder: (context, asyncSnapshot) {
-            if (!asyncSnapshot.hasData) {
+        // The rest of the original chart logic
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
               return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
             }
-            final sessions = asyncSnapshot.data!;
-            if (sessions.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  "no accuracy data tracked for this challenge",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 15,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-              );
-            }
-
-            Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
-            Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
-
-            for (final session in sessions) {
-              for (final shot in session.shots!) {
-                if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
-                  totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
-                  totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
-                  if (session.date != null) accuracyDates.add(session.date!);
-                }
+            final sessionDocs = snapshot.data!.docs;
+            Future<List<ShootingSession>> loadSessionsWithShots() async {
+              List<ShootingSession> sessions = [];
+              for (final doc in sessionDocs) {
+                try {
+                  final session = ShootingSession.fromSnapshot(doc);
+                  final shotsSnap = await doc.reference.collection('shots').get();
+                  final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
+                  session.shots = shots;
+                  sessions.add(session);
+                } catch (_) {}
               }
-            }
-            for (final type in shotTypes) {
-              avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+              return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
             }
 
-            // Show date range for available accuracy data
-            Widget dateRangeWidget = Container();
-            if (accuracyDates.isNotEmpty) {
-              accuracyDates.sort();
-              final first = accuracyDates.first;
-              final last = accuracyDates.last;
-              final dateFormat = DateFormat('MMM d, yyyy');
-              dateRangeWidget = Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 0),
-                    child: Text(
-                      "Accuracy data".toUpperCase(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                    ),
-                  ),
-                  Padding(
+            return FutureBuilder<List<ShootingSession>>(
+              future: loadSessionsWithShots(),
+              builder: (context, asyncSnapshot) {
+                if (!asyncSnapshot.hasData) {
+                  return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+                }
+                final sessions = asyncSnapshot.data!;
+                if (sessions.isEmpty) {
+                  return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      "${dateFormat.format(first)} - ${dateFormat.format(last)}",
+                      "no accuracy data tracked for this challenge",
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w100,
+                        fontSize: 15,
                         fontFamily: 'NovecentoSans',
                       ),
                     ),
-                  ),
-                ],
-              );
-            }
+                  );
+                }
 
-            // --- Radial Chart: always 100% outer ring, circular, faded lines ---
-            Widget radarWithLabels = Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  height: 220,
-                  width: 220,
-                  child: RadarChart(
-                    RadarChartData(
-                      radarBackgroundColor: Colors.transparent,
-                      tickCount: 5,
-                      ticksTextStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 12,
-                      ),
-                      getTitle: (index, angle) => RadarChartTitle(
-                        positionPercentageOffset: (shotTypes[index] == "backhand" || shotTypes[index] == "snap") ? 0.3 : 0.1,
-                        text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
-                      ),
-                      dataSets: [
-                        RadarDataSet(
-                          fillColor: Colors.transparent,
-                          borderColor: Colors.transparent,
-                          entryRadius: 0,
-                          borderWidth: 0,
-                          dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
-                        ),
-                        RadarDataSet(
-                          fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
-                          borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
-                          entryRadius: 6,
-                          borderWidth: 2,
-                          dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
-                        ),
-                        RadarDataSet(
-                          fillColor: Colors.transparent,
-                          borderColor: Colors.transparent,
-                          entryRadius: 0,
-                          borderWidth: 0,
-                          dataEntries: shotTypes.map((type) => const RadarEntry(value: 100)).toList(),
-                        ),
-                      ],
-                      radarShape: RadarShape.circle,
-                      gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
-                      radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
-                      tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
-                    ),
-                  ),
-                ),
-                // Overlay % labels above each plot point
-                Positioned.fill(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
-                      final radius = constraints.maxWidth / 2 * 0.85;
-                      List<Widget> labels = [];
-                      for (int i = 0; i < shotTypes.length; i++) {
-                        final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
-                        final value = avgAccuracy[shotTypes[i]]!;
-                        final pointRadius = radius * (value / 100.0);
-                        double dx = center.dx + pointRadius * math.cos(angle);
-                        double dy = center.dy + pointRadius * math.sin(angle) - 18;
+                Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+                Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
 
-                        if (shotTypes[i] == "backhand") {
-                          dx = center.dx + pointRadius * math.cos(angle) + 18;
-                          dy = center.dy + pointRadius * math.sin(angle) - 22;
-                        } else if (shotTypes[i] == "slap") {
-                          dx = center.dx + pointRadius * math.cos(angle) - 6;
-                          dy = center.dy + pointRadius * math.sin(angle) - 22;
-                        }
+                for (final session in sessions) {
+                  for (final shot in session.shots!) {
+                    if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+                      totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+                      totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+                      if (session.date != null) accuracyDates.add(session.date!);
+                    }
+                  }
+                }
+                for (final type in shotTypes) {
+                  avgAccuracy[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+                }
 
-                        labels.add(Positioned(
-                          left: dx - 22,
-                          top: dy,
-                          child: Text(
-                            "${value.round()}%",
-                            style: TextStyle(
-                              color: shotTypeColors[shotTypes[i]],
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'NovecentoSans',
-                              fontSize: 16,
-                              shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
-                            ),
+                // Show date range for available accuracy data
+                Widget dateRangeWidget = Column(
+                  children: [
+                    if (challengeLabel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          challengeLabel,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NovecentoSans',
                           ),
-                        ));
-                      }
-                      return Stack(children: labels);
-                    },
-                  ),
-                ),
-              ],
-            );
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 0),
+                      child: Text(
+                        "Accuracy data".toUpperCase(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'NovecentoSans',
+                        ),
+                      ),
+                    ),
+                    if (accuracyDates.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          "${DateFormat('MMM d, yyyy').format(accuracyDates.first)} - ${DateFormat('MMM d, yyyy').format(accuracyDates.last)}",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w100,
+                            fontFamily: 'NovecentoSans',
+                          ),
+                        ),
+                      ),
+                  ],
+                );
 
-            return Column(
-              children: [
-                dateRangeWidget,
-                radarWithLabels,
-              ],
+                // --- Radial Chart: always 100% outer ring, circular, faded lines ---
+                Widget radarWithLabels = Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      height: 220,
+                      width: 220,
+                      child: RadarChart(
+                        RadarChartData(
+                          radarBackgroundColor: Colors.transparent,
+                          tickCount: 5,
+                          ticksTextStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 12,
+                          ),
+                          getTitle: (index, angle) => RadarChartTitle(
+                            positionPercentageOffset: (shotTypes[index] == "backhand" || shotTypes[index] == "snap") ? 0.3 : 0.1,
+                            text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                          ),
+                          dataSets: [
+                            RadarDataSet(
+                              fillColor: Colors.transparent,
+                              borderColor: Colors.transparent,
+                              entryRadius: 0,
+                              borderWidth: 0,
+                              dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
+                            ),
+                            RadarDataSet(
+                              fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
+                              borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                              entryRadius: 6,
+                              borderWidth: 2,
+                              dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
+                            ),
+                            RadarDataSet(
+                              fillColor: Colors.transparent,
+                              borderColor: Colors.transparent,
+                              entryRadius: 0,
+                              borderWidth: 0,
+                              dataEntries: shotTypes.map((type) => const RadarEntry(value: 100)).toList(),
+                            ),
+                          ],
+                          radarShape: RadarShape.circle,
+                          gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
+                          radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
+                          tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
+                        ),
+                      ),
+                    ),
+                    // Overlay % labels above each plot point
+                    Positioned.fill(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
+                          final radius = constraints.maxWidth / 2 * 0.85;
+                          List<Widget> labels = [];
+                          for (int i = 0; i < shotTypes.length; i++) {
+                            final angle = (i / shotTypes.length) * 2 * math.pi - math.pi / 2;
+                            final value = avgAccuracy[shotTypes[i]]!;
+                            final pointRadius = radius * (value / 100.0);
+                            double dx = center.dx + pointRadius * math.cos(angle);
+                            double dy = center.dy + pointRadius * math.sin(angle) - 18;
+
+                            if (shotTypes[i] == "backhand") {
+                              dx = center.dx + pointRadius * math.cos(angle) + 18;
+                              dy = center.dy + pointRadius * math.sin(angle) - 22;
+                            } else if (shotTypes[i] == "slap") {
+                              dx = center.dx + pointRadius * math.cos(angle) - 6;
+                              dy = center.dy + pointRadius * math.sin(angle) - 22;
+                            }
+
+                            labels.add(Positioned(
+                              left: dx - 22,
+                              top: dy,
+                              child: Text(
+                                "${value.round()}%",
+                                style: TextStyle(
+                                  color: shotTypeColors[shotTypes[i]],
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 16,
+                                  shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
+                                ),
+                              ),
+                            ));
+                          }
+                          return Stack(children: labels);
+                        },
+                      ),
+                    ),
+                  ],
+                );
+
+                return Column(
+                  children: [
+                    dateRangeWidget,
+                    radarWithLabels,
+                  ],
+                );
+              },
             );
           },
         );
@@ -1197,7 +1217,6 @@ class _ProfileState extends State<Profile> {
               child: Container(
                 decoration: BoxDecoration(
                   color: lighten(Theme.of(context).colorScheme.primary, 0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 margin: const EdgeInsets.only(top: 8),
@@ -1254,7 +1273,6 @@ class _ProfileState extends State<Profile> {
               child: Container(
                 decoration: BoxDecoration(
                   color: lighten(Theme.of(context).colorScheme.primary, 0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 child: Row(
