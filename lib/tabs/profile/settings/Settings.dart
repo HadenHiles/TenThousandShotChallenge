@@ -614,7 +614,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3), //color of shadow
+                          color: Colors.black.withValues(alpha: 0.3), //color of shadow
                           spreadRadius: 2, //spread radius
                           blurRadius: 10, // blur radius
                           offset: const Offset(0, 0), // changes position of shadow

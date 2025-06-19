@@ -13,7 +13,7 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.grey.shade300,
     ),
     iconTheme: const IconThemeData(
@@ -114,7 +114,7 @@ class HomeTheme {
         color: Colors.white,
       ),
     ),
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: Color(0xff333333),
     ),
     iconTheme: const IconThemeData(

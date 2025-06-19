@@ -100,7 +100,7 @@ class _BarcodeScannerWithControllerState extends State<BarcodeScannerWithControl
             child: Container(
               alignment: Alignment.bottomCenter,
               height: 100,
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [

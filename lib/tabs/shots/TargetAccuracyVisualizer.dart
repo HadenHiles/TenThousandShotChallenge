@@ -62,7 +62,7 @@ class TargetAccuracyVisualizer extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: hitDotColor.withOpacity(0.18),
+                color: hitDotColor.withValues(alpha: 0.18),
                 blurRadius: 1.5,
                 spreadRadius: 0.5,
               ),
@@ -104,7 +104,7 @@ class TargetAccuracyVisualizer extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: shotColor.withOpacity(0.18),
+              color: shotColor.withValues(alpha: 0.18),
             ),
           ),
           Container(
@@ -112,7 +112,7 @@ class TargetAccuracyVisualizer extends StatelessWidget {
             height: size * 0.7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: shotColor.withOpacity(0.32),
+              color: shotColor.withValues(alpha: 0.32),
             ),
           ),
           Container(
@@ -120,7 +120,7 @@ class TargetAccuracyVisualizer extends StatelessWidget {
             height: size * 0.45,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: shotColor.withOpacity(0.55),
+              color: shotColor.withValues(alpha: 0.55),
             ),
           ),
           // Dots (hits and misses) - middle layer
