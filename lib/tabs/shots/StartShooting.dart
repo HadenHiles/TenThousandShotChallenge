@@ -126,7 +126,7 @@ class _StartShootingState extends State<StartShooting> {
                           " / $shotCount",
                           style: TextStyle(
                             fontSize: 18,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -315,7 +315,7 @@ class _StartShootingState extends State<StartShooting> {
           if (showAccuracyFeature && !_chartCollapsed)
             Positioned.fill(
               child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.98),
+                color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.98),
                 child: Column(
                   children: [
                     // Chart card and visualizers
@@ -377,7 +377,7 @@ class _StartShootingState extends State<StartShooting> {
                                         Text(
                                           type[0].toUpperCase() + type.substring(1),
                                           style: TextStyle(
-                                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'NovecentoSans',
                                             fontSize: 14,
@@ -466,7 +466,7 @@ class _StartShootingState extends State<StartShooting> {
                                                     Container(
                                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                       decoration: BoxDecoration(
-                                                        color: shotTypeColors[_selectedShotType]!.withOpacity(0.9),
+                                                        color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.9),
                                                         borderRadius: BorderRadius.circular(4),
                                                       ),
                                                       child: Text(
@@ -517,11 +517,11 @@ class _StartShootingState extends State<StartShooting> {
                                                     horizontalInterval: 20,
                                                     verticalInterval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
                                                     getDrawingHorizontalLine: (value) => FlLine(
-                                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                                                       strokeWidth: 1,
                                                     ),
                                                     getDrawingVerticalLine: (value) => FlLine(
-                                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                                                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                                                       strokeWidth: 1,
                                                     ),
                                                   ),
@@ -600,7 +600,7 @@ class _StartShootingState extends State<StartShooting> {
                                                   borderData: FlBorderData(
                                                     show: true,
                                                     border: Border.all(
-                                                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                                                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                                                     ),
                                                   ),
                                                   lineBarsData: [
@@ -621,7 +621,7 @@ class _StartShootingState extends State<StartShooting> {
                                                         ],
                                                         isCurved: false,
                                                         barWidth: 1,
-                                                        color: shotTypeColors[_selectedShotType]!.withOpacity(0.5),
+                                                        color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.5),
                                                         dashArray: [4, 4],
                                                         dotData: const FlDotData(show: false),
                                                       ),
@@ -631,7 +631,7 @@ class _StartShootingState extends State<StartShooting> {
                                                     handleBuiltInTouches: true,
                                                     touchSpotThreshold: 22, // <-- Increase touch area for all dots
                                                     touchTooltipData: LineTouchTooltipData(
-                                                      getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                                                      getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
                                                       tooltipRoundedRadius: 10,
                                                       fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
                                                       fitInsideVertically: false,
@@ -699,7 +699,7 @@ class _StartShootingState extends State<StartShooting> {
                                                   child: Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                     decoration: BoxDecoration(
-                                                      color: shotTypeColors[_selectedShotType]!.withOpacity(0.1),
+                                                      color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.1),
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
                                                     child: Text(

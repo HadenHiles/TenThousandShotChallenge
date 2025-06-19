@@ -47,7 +47,7 @@ class _ShotsOverTimeLineChartState extends State<ShotsOverTimeLineChart> {
               'avg',
               style: TextStyle(
                 fontSize: 12,
-                color: showAvg ? Colors.white.withOpacity(0.5) : Colors.white,
+                color: showAvg ? Colors.white.withValues(alpha: 0.5) : Colors.white,
               ),
             ),
           ),
@@ -115,13 +115,13 @@ class _ShotsOverTimeLineChartState extends State<ShotsOverTimeLineChart> {
         verticalInterval: 1,
         getDrawingHorizontalLine: (value) {
           return FlLine(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             strokeWidth: 1,
           );
         },
         getDrawingVerticalLine: (value) {
           return FlLine(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             strokeWidth: 1,
           );
         },
@@ -182,7 +182,7 @@ class _ShotsOverTimeLineChartState extends State<ShotsOverTimeLineChart> {
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: gradientColors.map((color) => color.withOpacity(0.3)).toList(),
+              colors: gradientColors.map((color) => color.withValues(alpha: 0.3)).toList(),
             ),
           ),
         ),
@@ -271,8 +271,8 @@ class _ShotsOverTimeLineChartState extends State<ShotsOverTimeLineChart> {
             show: true,
             gradient: LinearGradient(
               colors: [
-                ColorTween(begin: gradientColors[0], end: gradientColors[1]).lerp(0.2)!.withOpacity(0.1),
-                ColorTween(begin: gradientColors[0], end: gradientColors[1]).lerp(0.2)!.withOpacity(0.1),
+                ColorTween(begin: gradientColors[0], end: gradientColors[1]).lerp(0.2)!.withValues(alpha: 0.1),
+                ColorTween(begin: gradientColors[0], end: gradientColors[1]).lerp(0.2)!.withValues(alpha: 0.1),
               ],
             ),
           ),

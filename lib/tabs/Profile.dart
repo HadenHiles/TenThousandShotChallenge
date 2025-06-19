@@ -103,7 +103,7 @@ class _ProfileState extends State<Profile> {
             child: Text(
               challengeLabel,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'NovecentoSans',
@@ -115,7 +115,7 @@ class _ProfileState extends State<Profile> {
             child: Text(
               "Accuracy data".toUpperCase(),
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'NovecentoSans',
@@ -127,7 +127,7 @@ class _ProfileState extends State<Profile> {
             child: Text(
               "Jan 1, 2025 - Jun 1, 2025",
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                 fontSize: 18,
                 fontWeight: FontWeight.w100,
                 fontFamily: 'NovecentoSans',
@@ -147,7 +147,7 @@ class _ProfileState extends State<Profile> {
                 radarBackgroundColor: Colors.transparent,
                 tickCount: 5,
                 ticksTextStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0),
                   fontFamily: 'NovecentoSans',
                   fontSize: 12,
                 ),
@@ -164,8 +164,8 @@ class _ProfileState extends State<Profile> {
                     dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
                   ),
                   RadarDataSet(
-                    fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
-                    borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                    fillColor: Theme.of(context).primaryColor.withValues(alpha: 0.10),
+                    borderColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                     entryRadius: 6,
                     borderWidth: 2,
                     dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
@@ -179,9 +179,9 @@ class _ProfileState extends State<Profile> {
                   ),
                 ],
                 radarShape: RadarShape.circle,
-                gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
-                radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
-                tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
+                gridBorderData: BorderSide(color: Colors.black.withValues(alpha: 0.2), width: 2),
+                radarBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.25), width: 1.5),
+                tickBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.15), width: 0.8),
               ),
             ),
           ),
@@ -285,7 +285,7 @@ class _ProfileState extends State<Profile> {
                     child: Text(
                       "no accuracy data tracked for this challenge",
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                         fontSize: 15,
                         fontFamily: 'NovecentoSans',
                       ),
@@ -318,7 +318,7 @@ class _ProfileState extends State<Profile> {
                         child: Text(
                           challengeLabel,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'NovecentoSans',
@@ -330,7 +330,7 @@ class _ProfileState extends State<Profile> {
                       child: Text(
                         "Accuracy data".toUpperCase(),
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'NovecentoSans',
@@ -343,7 +343,7 @@ class _ProfileState extends State<Profile> {
                         child: Text(
                           "${DateFormat('MMM d, yyyy').format(accuracyDates.first)} - ${DateFormat('MMM d, yyyy').format(accuracyDates.last)}",
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                             fontSize: 18,
                             fontWeight: FontWeight.w100,
                             fontFamily: 'NovecentoSans',
@@ -365,7 +365,7 @@ class _ProfileState extends State<Profile> {
                           radarBackgroundColor: Colors.transparent,
                           tickCount: 5,
                           ticksTextStyle: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0),
                             fontFamily: 'NovecentoSans',
                             fontSize: 12,
                           ),
@@ -382,8 +382,8 @@ class _ProfileState extends State<Profile> {
                               dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
                             ),
                             RadarDataSet(
-                              fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
-                              borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                              fillColor: Theme.of(context).primaryColor.withValues(alpha: 0.10),
+                              borderColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                               entryRadius: 6,
                               borderWidth: 2,
                               dataEntries: shotTypes.map((type) => RadarEntry(value: avgAccuracy[type]!)).toList(),
@@ -397,9 +397,9 @@ class _ProfileState extends State<Profile> {
                             ),
                           ],
                           radarShape: RadarShape.circle,
-                          gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
-                          radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
-                          tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
+                          gridBorderData: BorderSide(color: Colors.black.withValues(alpha: 0.2), width: 2),
+                          radarBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.25), width: 1.5),
+                          tickBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.15), width: 0.8),
                         ),
                       ),
                     ),
@@ -536,7 +536,7 @@ class _ProfileState extends State<Profile> {
                         Text(
                           type[0].toUpperCase() + type.substring(1),
                           style: TextStyle(
-                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
                             fontWeight: FontWeight.bold,
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
@@ -669,7 +669,7 @@ class _ProfileState extends State<Profile> {
                           maxY: 100,
                           minX: 0,
                           maxX: spots.isNotEmpty ? spots.last.x : 1,
-                          gridData: FlGridData(show: true, horizontalInterval: 20, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 1)),
+                          gridData: FlGridData(show: true, horizontalInterval: 20, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1)),
                           titlesData: FlTitlesData(
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(showTitles: true, reservedSize: 32, interval: 20, getTitlesWidget: (v, meta) => Text('${v.toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12))),
@@ -692,7 +692,7 @@ class _ProfileState extends State<Profile> {
                               ),
                             ),
                           ),
-                          borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2))),
+                          borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2))),
                           lineBarsData: [
                             LineChartBarData(
                               spots: spots,
@@ -717,7 +717,7 @@ class _ProfileState extends State<Profile> {
                               LineChartBarData(
                                 spots: trendLine,
                                 isCurved: false,
-                                color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                 barWidth: 2,
                                 isStrokeCapRound: true,
                                 dotData: const FlDotData(show: false),
@@ -1410,7 +1410,7 @@ class _ProfileState extends State<Profile> {
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                               child: Container(
-                                color: Colors.black.withOpacity(0.4),
+                                color: Colors.black.withValues(alpha: 0.4),
                                 alignment: Alignment.center,
                                 child: const Padding(
                                   padding: EdgeInsets.all(24.0),

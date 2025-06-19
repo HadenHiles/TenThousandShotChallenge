@@ -55,9 +55,7 @@ Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
         code: 'ERROR_ABORTED_BY_USER',
         message: 'Sign in aborted by user',
       );
-    default:
-      throw UnimplementedError();
-  }
+    }
 }
 
 Future<void> signOut() async {
