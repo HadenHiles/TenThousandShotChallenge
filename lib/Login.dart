@@ -93,10 +93,7 @@ class _LoginState extends State<Login> {
                         Buttons.google,
                         onPressed: () {
                           socialSignIn(context, 'google', (error) {
-                            // ignore: deprecated_member_use
-                            // ignore: deprecated_member_use
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            // ignore: deprecated_member_use
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: Theme.of(context).cardTheme.color,
@@ -116,6 +113,7 @@ class _LoginState extends State<Login> {
                                 ),
                               ),
                             );
+                            return Future.error(error);
                           });
                         },
                       ),
@@ -154,6 +152,8 @@ class _LoginState extends State<Login> {
                                         ),
                                       ),
                                     );
+
+                                    return Future.error(error);
                                   });
                                 },
                               ),
@@ -784,7 +784,7 @@ class _LoginState extends State<Login> {
     }
   }
 
-  Future<void> socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {
+  socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();

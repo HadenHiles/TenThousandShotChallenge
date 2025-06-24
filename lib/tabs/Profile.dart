@@ -730,7 +730,7 @@ class _ProfileState extends State<Profile> {
                               fitInsideHorizontally: false,
                               fitInsideVertically: false,
                               tooltipMargin: 8,
-                              tooltipRoundedRadius: 8,
+                              tooltipBorderRadius: BorderRadius.circular(8),
                               tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((touchedSpot) {
