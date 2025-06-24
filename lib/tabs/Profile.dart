@@ -1355,14 +1355,17 @@ class _ProfileState extends State<Profile> {
             // --- My Accuracy Section (moved above Recent Sessions) ---
             GestureDetector(
               onTap: () {
-                setState(() {
-                  // Toggle: If already open, close. If closed, open and close the other.
-                  if (_showAccuracy) {
-                    _showAccuracy = false;
-                  } else {
-                    _showAccuracy = true;
-                    _showSessions = false;
-                  }
+                // Use Future.microtask to avoid scrollable assertion errors
+                Future.microtask(() {
+                  setState(() {
+                    // Toggle: If already open, close. If closed, open and close the other.
+                    if (_showAccuracy) {
+                      _showAccuracy = false;
+                    } else {
+                      _showAccuracy = true;
+                      _showSessions = false;
+                    }
+                  });
                 });
               },
               child: Container(
@@ -1461,14 +1464,16 @@ class _ProfileState extends State<Profile> {
             // Collapsible Recent Sessions section header (now below My Accuracy)
             GestureDetector(
               onTap: () {
-                setState(() {
-                  // Toggle: If already open, close. If closed, open and close the other.
-                  if (_showSessions) {
-                    _showSessions = false;
-                  } else {
-                    _showSessions = true;
-                    _showAccuracy = false;
-                  }
+                // Use Future.microtask to avoid scrollable assertion errors
+                Future.microtask(() {
+                  setState(() {
+                    // Toggle: If already open, close. If closed, open and close the other.
+                    if (_showSessions) {
+                      _showSessions = false;
+                    } else {
+                      _showSessions = true;
+                    }
+                  });
                 });
               },
               child: Container(
