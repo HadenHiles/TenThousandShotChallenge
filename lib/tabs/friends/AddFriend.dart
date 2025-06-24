@@ -121,9 +121,11 @@ class _AddFriendState extends State<AddFriend> {
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         onPressed: () {
-                          Share.share(
-                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                          SharePlus.instance.share(
+                            ShareParams(
+                              text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                              subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                            )
                           );
                         },
                         icon: Icon(
@@ -411,9 +413,11 @@ class _AddFriendState extends State<AddFriend> {
                                       margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
-                                          Share.share(
-                                            'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                                            subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                                          SharePlus.instance.share(
+                                            ShareParams(
+                                              text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                                              subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                                            )
                                           );
                                         },
                                         icon: Icon(
