@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "767649510191-39t61sn1botvnq6t8g0vi8afk1d372ho.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.howtohockey.tenthousandshotchallenge",
+            "certificate_hash": "d3d2165e1747683b2fdae75922e5a12db70b4dff"
+          }
+        },
+        {
           "client_id": "767649510191-5l35q1ohi7mae12na45fmr670nalilm8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.howtohockey.tenthousandshotchallenge",
             "certificate_hash": "302f96c8c96a9b484e3cc810b786cfc7d0606e6a"
+          }
+        },
+        {
+          "client_id": "767649510191-919fnq8a9r61dmmekr05hcr32sqvir5l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.howtohockey.tenthousandshotchallenge",
+            "certificate_hash": "069bd1a9079982a1780ffac2fa85eacd1dee7c6f"
           }
         },
         {
@@ -35,6 +51,14 @@
           "android_info": {
             "package_name": "com.howtohockey.tenthousandshotchallenge",
             "certificate_hash": "fc105c7e28b296173113dec2f394189b742c843b"
+          }
+        },
+        {
+          "client_id": "767649510191-o5bjauf510c419rtfr4pfqou9gf9p71i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.howtohockey.tenthousandshotchallenge",
+            "certificate_hash": "e4b3d6b50ec7e70937965f96b401a5f17b781ec5"
           }
         },
         {
