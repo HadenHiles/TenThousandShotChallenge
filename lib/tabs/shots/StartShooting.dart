@@ -771,7 +771,7 @@ class _StartShootingState extends State<StartShooting> {
       'snap': 68.0,
     };
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.98),
+      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.98),
       child: Center(
         child: Stack(
           alignment: Alignment.center,
@@ -793,7 +793,7 @@ class _StartShootingState extends State<StartShooting> {
                             radarBackgroundColor: Colors.transparent,
                             tickCount: 5,
                             ticksTextStyle: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0),
+                              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0),
                               fontFamily: 'NovecentoSans',
                               fontSize: 12,
                             ),
@@ -810,8 +810,8 @@ class _StartShootingState extends State<StartShooting> {
                                 dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
                               ),
                               RadarDataSet(
-                                fillColor: Theme.of(context).primaryColor.withOpacity(0.10),
-                                borderColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                                fillColor: Theme.of(context).primaryColor.withValues(alpha: 0.10),
+                                borderColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                 entryRadius: 6,
                                 borderWidth: 2,
                                 dataEntries: shotTypes.map((type) => RadarEntry(value: dummyAvgAccuracy[type]!)).toList(),
@@ -825,9 +825,9 @@ class _StartShootingState extends State<StartShooting> {
                               ),
                             ],
                             radarShape: RadarShape.circle,
-                            gridBorderData: BorderSide(color: Colors.black.withOpacity(0.2), width: 2),
-                            radarBorderData: BorderSide(color: Colors.grey.withOpacity(0.25), width: 1.5),
-                            tickBorderData: BorderSide(color: Colors.grey.withOpacity(0.15), width: 0.8),
+                            gridBorderData: BorderSide(color: Colors.black.withValues(alpha: 0.2), width: 2),
+                            radarBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.25), width: 1.5),
+                            tickBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.15), width: 0.8),
                           ),
                         ),
                       ),
@@ -837,7 +837,7 @@ class _StartShootingState extends State<StartShooting> {
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                         child: Container(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                         ),
                       ),
                     ),
@@ -847,35 +847,60 @@ class _StartShootingState extends State<StartShooting> {
             ),
             // Pro required overlay
             Positioned.fill(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.lock, color: Theme.of(context).primaryColor, size: 48),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Pro required",
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 28,
-                        fontFamily: 'NovecentoSans',
-                        shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
-                      ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock, color: Theme.of(context).primaryColor, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Pro required",
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                      fontFamily: 'NovecentoSans',
+                      shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Upgrade to Pro to unlock accuracy tracking and charts!",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'NovecentoSans',
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Upgrade to Pro to unlock accuracy tracking and charts!",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'NovecentoSans',
                     ),
-                  ],
-                ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: 180,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.close),
+                      label: const Text("Close"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Collapse the chart overlay
+                        setState(() {
+                          _chartCollapsed = true;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
