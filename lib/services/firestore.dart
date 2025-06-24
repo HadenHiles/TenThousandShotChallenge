@@ -23,9 +23,8 @@ Future<bool?> saveShootingSession(List<Shots> shots) async {
   int slapTargetsHit = 0;
   int backhandTargetsHit = 0;
 
-  for (var s in shots) {
+  for (Shots s in shots) {
     total += s.count ?? 0;
-
     switch (s.type) {
       case "wrist":
         wrist += s.count ?? 0;

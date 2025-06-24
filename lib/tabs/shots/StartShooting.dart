@@ -632,7 +632,7 @@ class _StartShootingState extends State<StartShooting> {
                                                     touchSpotThreshold: 22, // <-- Increase touch area for all dots
                                                     touchTooltipData: LineTouchTooltipData(
                                                       getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
-                                                      tooltipRoundedRadius: 10,
+                                                      tooltipBorderRadius: BorderRadius.circular(10),
                                                       fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
                                                       fitInsideVertically: false,
                                                       tooltipMargin: 24, // Add more margin so tooltips aren't clipped

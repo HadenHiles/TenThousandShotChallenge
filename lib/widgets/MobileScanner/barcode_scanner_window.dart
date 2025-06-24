@@ -91,7 +91,7 @@ class _BarcodeScannerWithScanWindowState extends State<BarcodeScannerWithScanWin
             onDetect: (BarcodeCapture barcodes) {
               return Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
             },
-            errorBuilder: (context, error, child) {
+            errorBuilder: (context, error) {
               return ScannerErrorWidget(error: error);
             },
           ),
