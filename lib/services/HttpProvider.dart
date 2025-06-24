@@ -3,9 +3,9 @@ import 'package:http/http.dart';
 
 class HttpProvider {
   Future<Response> getData(String? url, Map<String, String>? headers) async {
-    var file = await YouTubeCacheManager.instance.getSingleFile(url!, headers: headers);
+    final file = await YouTubeCacheManager.instance.getSingleFile(url!, headers: headers);
     if (await file.exists()) {
-      var res = await file.readAsString();
+      final String res = await file.readAsString();
       return Response(res, 200);
     }
     return Response("", 404);

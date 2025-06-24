@@ -78,7 +78,7 @@ class _ShotsOverTimeLineChartState extends State<ShotsOverTimeLineChart> {
     }
 
     return SideTitleWidget(
-      axisSide: meta.axisSide,
+      meta: meta,
       child: text,
     );
   }

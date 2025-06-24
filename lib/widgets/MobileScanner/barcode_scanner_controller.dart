@@ -16,7 +16,6 @@ class _BarcodeScannerWithControllerState extends State<BarcodeScannerWithControl
   final MobileScannerController controller = MobileScannerController(
     autoStart: false,
     torchEnabled: true,
-    useNewCameraSelector: true,
   );
 
   Barcode? _barcode;
@@ -90,7 +89,7 @@ class _BarcodeScannerWithControllerState extends State<BarcodeScannerWithControl
         children: [
           MobileScanner(
             controller: controller,
-            errorBuilder: (context, error, child) {
+            errorBuilder: (context, error) {
               return ScannerErrorWidget(error: error);
             },
             fit: BoxFit.contain,

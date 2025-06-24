@@ -29,7 +29,7 @@ class _IntroScreenState extends State<IntroScreen> {
   DateTime? _targetDate;
   int? _shotsPerDay;
 
-  Future<void> _onIntroEnd(context) async {
+  Future<void> _onIntroEnd(dynamic context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('intro_shown', true);
 

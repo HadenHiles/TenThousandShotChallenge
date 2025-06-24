@@ -33,9 +33,9 @@ class _LoginState extends State<Login> {
   final User? user = FirebaseAuth.instance.currentUser;
 
   // static variables
-  final _signInFormKey = GlobalKey<FormState>();
-  final _signUpFormKey = GlobalKey<FormState>();
-  final _forgotPasswordFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _signInFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _signUpFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _forgotPasswordFormKey = GlobalKey<FormState>();
   final TextEditingController _forgotPasswordEmail = TextEditingController();
   final TextEditingController _signInEmail = TextEditingController();
   final TextEditingController _signInPass = TextEditingController();
@@ -55,7 +55,7 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false);
+    final AppleSignInAvailable appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false);
 
     //If user is signed in
     if (_signedIn) {
@@ -691,7 +691,7 @@ class _LoginState extends State<Login> {
     );
   }
 
-  signUp(BuildContext context, AuthAttempt authAttempt, Function error) async {
+  Future<void> signUp(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
     try {
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -737,7 +737,7 @@ class _LoginState extends State<Login> {
     }
   }
 
-  signIn(BuildContext context, AuthAttempt authAttempt, Function error) async {
+  Future<void> signIn(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password).then((credential) async {
         Navigator.of(context, rootNavigator: true).pop('dialog');
@@ -784,7 +784,7 @@ class _LoginState extends State<Login> {
     }
   }
 
-  socialSignIn(BuildContext context, String provider, Function error) async {
+  Future<void> socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
