@@ -65,6 +65,10 @@ class _StartShootingState extends State<StartShooting> {
   }
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
+    if (!_isProUser) {
+      // If not pro, do not show the dialog
+      return null;
+    }
     int value = (_lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
     // Helper to round to nearest even number
     int roundEven(num n) => (n / 2).round() * 2;
