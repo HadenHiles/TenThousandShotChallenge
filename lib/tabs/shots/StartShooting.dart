@@ -1180,9 +1180,9 @@ class _StartShootingState extends State<StartShooting> {
               Feedback.forLongPress(context);
 
               int? targetsHit;
-              if (showAccuracyFeature) {
-                targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // <-- Use session puck count
-                if (targetsHit == null) return;
+              if (showAccuracyFeature && _isProUser) {
+                targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // Only show dialog for pro users
+                if (targetsHit == null && _isProUser) return;
                 setState(() {
                   _lastTargetsHit = targetsHit;
                 });
@@ -1192,7 +1192,7 @@ class _StartShootingState extends State<StartShooting> {
                 DateTime.now(),
                 _selectedShotType,
                 _currentShotCount,
-                showAccuracyFeature ? targetsHit : null,
+                (showAccuracyFeature && _isProUser) ? targetsHit : null,
               );
               setState(() {
                 _shots.insert(0, shots);
