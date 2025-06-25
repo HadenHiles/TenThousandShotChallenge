@@ -39,8 +39,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   // Simulated subscription level (replace with RevenueCat or your backend)
   String _subscriptionLevel = "Free"; // Can be "Free", "Premium", or "Pro"
 
-  User? get user =>
-      Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   @override
   void initState() {
@@ -57,11 +56,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
     });
 
-    Provider.of<FirebaseFirestore>(context, listen: false)
-        .collection('users')
-        .doc(user!.uid)
-        .get()
-        .then((snapshot) {
+    Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).get().then((snapshot) {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
         _publicProfile = u.public ?? false;
@@ -128,8 +123,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -171,16 +165,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
             body: Stack(
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(
-                      bottom: 70), // Add enough space for the footer
+                  padding: const EdgeInsets.only(bottom: 70), // Add enough space for the footer
                   child: SettingsList(
                     lightTheme: SettingsThemeData(
-                      settingsListBackground:
-                          Theme.of(context).colorScheme.primaryContainer,
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
                     ),
                     darkTheme: SettingsThemeData(
-                      settingsListBackground:
-                          Theme.of(context).colorScheme.primaryContainer,
+                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
                     ),
                     sections: [
                       // Subscription Section
@@ -223,13 +214,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   title: const Text('Manage Subscription'),
                                   content: Text(
                                     _subscriptionLevel == "Free"
-                                        ? "Upgrade to Premium or Pro to unlock advanced features like shot accuracy tracking and more!"
+                                        ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!"
                                         : "You are currently on the $_subscriptionLevel plan.",
                                   ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      style: ButtonStyle(
+                                        foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
+                                        backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
+                                      ),
                                       child: const Text('Close'),
                                     ),
                                     if (_subscriptionLevel == "Free")
@@ -238,11 +232,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                           // TODO: Integrate RevenueCat paywall here
                                           Navigator.of(context).pop();
                                           Fluttertoast.showToast(
-                                            msg:
-                                                'Subscription flow coming soon!',
+                                            msg: 'Subscription flow coming soon!',
                                             toastLength: Toast.LENGTH_SHORT,
                                           );
                                         },
+                                        style: ButtonStyle(
+                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                        ),
                                         child: const Text('Upgrade'),
                                       ),
                                   ],
@@ -271,8 +267,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   Icon(
                                     FontAwesomeIcons.hockeyPuck,
                                     size: 14,
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   // Top Left
                                   Positioned(
@@ -281,9 +276,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 8,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Bottom Left
@@ -293,9 +286,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 6,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Top right
@@ -305,9 +296,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 6,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                   // Bottom right
@@ -317,9 +306,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     child: Icon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 8,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                 ],
@@ -346,25 +333,19 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             initialValue: _darkMode,
                             onToggle: (bool value) async {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
                               setState(() {
                                 _darkMode = !_darkMode;
                                 prefs.setBool('dark_mode', _darkMode);
                               });
 
                               if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context,
-                                        listen: false)
-                                    .updateSettings(
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
                                   Preferences(
                                     value,
                                     prefs.getInt('puck_count'),
                                     prefs.getBool('friend_notifications'),
-                                    DateTime(
-                                        DateTime.now().year,
-                                        DateTime.now().month,
-                                        DateTime.now().day + 100),
+                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
                                     prefs.getString('fcm_token'),
                                   ),
                                 );
@@ -391,8 +372,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   )
                                 : Icon(
                                     Icons.refresh_rounded,
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                             onPressed: (context) async {
                               if (_shotsRefreshedOnce) {
@@ -400,9 +380,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   _refreshingShots = true;
                                 });
 
-                                Future.delayed(
-                                        const Duration(milliseconds: 800))
-                                    .then(
+                                Future.delayed(const Duration(milliseconds: 800)).then(
                                   (value) => setState(() {
                                     _refreshingShots = false;
                                   }),
@@ -412,14 +390,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   _refreshingShots = true;
                                 });
                                 await recalculateIterationTotals(
-                                  Provider.of<FirebaseAuth>(context,
-                                      listen: false),
-                                  Provider.of<FirebaseFirestore>(context,
-                                      listen: false),
+                                  Provider.of<FirebaseAuth>(context, listen: false),
+                                  Provider.of<FirebaseFirestore>(context, listen: false),
                                 ).then((_) {
-                                  Future.delayed(
-                                          const Duration(milliseconds: 200))
-                                      .then(
+                                  Future.delayed(const Duration(milliseconds: 200)).then(
                                     (value) {
                                       setState(() {
                                         _refreshingShots = false;
@@ -427,16 +401,12 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       });
 
                                       Fluttertoast.showToast(
-                                        msg:
-                                            'Finished recalculating shot totals',
+                                        msg: 'Finished recalculating shot totals',
                                         toastLength: Toast.LENGTH_SHORT,
                                         gravity: ToastGravity.BOTTOM,
                                         timeInSecForIosWeb: 1,
-                                        backgroundColor:
-                                            Theme.of(context).cardTheme.color,
-                                        textColor: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        textColor: Theme.of(context).colorScheme.onPrimary,
                                         fontSize: 16.0,
                                       );
                                     },
@@ -448,8 +418,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         ],
                       ),
                       SettingsSection(
-                        title: Text('Notifications',
-                            style: Theme.of(context).textTheme.titleLarge),
+                        title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                         tiles: [
                           SettingsTile.switchTile(
                             title: Text(
@@ -462,35 +431,25 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             initialValue: _friendNotifications,
                             onToggle: (bool value) async {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
 
-                              Provider.of<FirebaseFirestore>(context,
-                                      listen: false)
+                              Provider.of<FirebaseFirestore>(context, listen: false)
                                   .collection('users')
                                   .doc(user!.uid)
-                                  .update({
-                                'friend_notifications': !_friendNotifications
-                              }).then((_) {
+                                  .update({'friend_notifications': !_friendNotifications}).then((_) {
                                 setState(() {
                                   _friendNotifications = !_friendNotifications;
-                                  prefs.setBool('friend_notifications',
-                                      _friendNotifications);
+                                  prefs.setBool('friend_notifications', _friendNotifications);
                                 });
                               });
 
                               if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context,
-                                        listen: false)
-                                    .updateSettings(
+                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
                                   Preferences(
                                     prefs.getBool('dark_mode'),
                                     prefs.getInt('puck_count'),
                                     value,
-                                    DateTime(
-                                        DateTime.now().year,
-                                        DateTime.now().month,
-                                        DateTime.now().day + 100),
+                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
                                     prefs.getString('fcm_token'),
                                   ),
                                 );
@@ -516,12 +475,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             initialValue: _publicProfile,
                             onToggle: (bool value) async {
-                              Provider.of<FirebaseFirestore>(context,
-                                      listen: false)
+                              Provider.of<FirebaseFirestore>(context, listen: false)
                                   .collection('users')
                                   .doc(user!.uid)
-                                  .update({'public': !_publicProfile}).then(
-                                      (_) {
+                                  .update({'public': !_publicProfile}).then((_) {
                                 setState(() {
                                   _publicProfile = !_publicProfile;
                                 });
@@ -560,9 +517,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     quarterTurns: 2,
                                     child: Icon(
                                       Icons.info_outlined,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                 ),
@@ -586,58 +541,40 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     ),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
                                           style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
                                     actions: [
                                       TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
+                                        onPressed: () => Navigator.of(context).pop(false),
                                         child: Text(
                                           "Cancel".toUpperCase(),
                                           style: TextStyle(
                                             fontFamily: 'NovecentoSans',
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          FirebaseAuth.instance.currentUser!
-                                              .delete()
-                                              .then((_) {
+                                          FirebaseAuth.instance.currentUser!.delete().then((_) {
                                             navigatorKey.currentState!.pop();
-                                            navigatorKey.currentState!
-                                                .pushReplacement(
-                                                    MaterialPageRoute(
-                                                        builder: (_) {
+                                            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
                                               return const Login();
                                             }));
 
-                                            SystemChannels.platform
-                                                .invokeMethod(
-                                                    'SystemNavigator.pop');
-                                          }).onError(
-                                                  (FirebaseAuthException error,
-                                                      stackTrace) {
-                                            String msg = error.code ==
-                                                    "requires-recent-login"
+                                            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                          }).onError((FirebaseAuthException error, stackTrace) {
+                                            String msg = error.code == "requires-recent-login"
                                                 ? "This action requires a recent login, please logout and try again."
                                                 : "Error deleting account, please email admin@howtohockey.com";
                                             Fluttertoast.showToast(
@@ -645,22 +582,15 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                               toastLength: Toast.LENGTH_LONG,
                                               gravity: ToastGravity.BOTTOM,
                                               timeInSecForIosWeb: 1,
-                                              backgroundColor: Theme.of(context)
-                                                  .cardTheme
-                                                  .color,
-                                              textColor: Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimary,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
                                               fontSize: 16.0,
                                             );
                                           });
                                         },
                                         child: Text(
                                           "Delete Account".toUpperCase(),
-                                          style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context)
-                                                  .primaryColor),
+                                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                                         ),
                                       ),
                                     ],
@@ -674,10 +604,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               'Logout',
                               style: TextStyle(
                                 color: Colors.red,
-                                fontSize: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge!
-                                    .fontSize,
+                                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                               ),
                             ),
                             leading: const Icon(
@@ -709,12 +636,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: 0.3), //color of shadow
+                          color: Colors.black.withValues(alpha: 0.3), //color of shadow
                           spreadRadius: 2, //spread radius
                           blurRadius: 10, // blur radius
-                          offset:
-                              const Offset(0, 0), // changes position of shadow
+                          offset: const Offset(0, 0), // changes position of shadow
                           //first paramerter of offset is left-right
                           //second parameter is top to down
                         ),
@@ -736,11 +661,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             TextButton(
                               style: ButtonStyle(
-                                padding: WidgetStateProperty.all(
-                                    const EdgeInsets.symmetric(
-                                        vertical: 0, horizontal: 10)),
-                                backgroundColor:
-                                    WidgetStateProperty.all(Colors.transparent),
+                                padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
+                                backgroundColor: WidgetStateProperty.all(Colors.transparent),
                               ),
                               onPressed: () async {
                                 String link = "https://github.com/HadenHiles";
@@ -754,8 +676,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               child: Text(
                                 "Developed by Haden Hiles".toLowerCase(),
                                 style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                   fontSize: 16,
                                   fontFamily: "NovecentoSans",
                                 ),
@@ -777,11 +698,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               ),
                               TextButton(
                                 style: ButtonStyle(
-                                  padding: WidgetStateProperty.all(
-                                      const EdgeInsets.only(
-                                          bottom: 2, left: 5)),
-                                  backgroundColor: WidgetStateProperty.all(
-                                      Colors.transparent),
+                                  padding: WidgetStateProperty.all(const EdgeInsets.only(bottom: 2, left: 5)),
+                                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
                                 ),
                                 onPressed: () async {
                                   String link = "https://howtohockey.com";
@@ -795,8 +713,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 child: Text(
                                   "How To Hockey Inc.".toLowerCase(),
                                   style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 14,
                                     fontFamily: "NovecentoSans",
                                   ),
