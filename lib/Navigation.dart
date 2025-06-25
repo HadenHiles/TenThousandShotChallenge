@@ -85,8 +85,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState
-                  ?.push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState?.push(MaterialPageRoute(builder: (BuildContext context) {
                 return const AddFriend();
               }));
             },
@@ -111,11 +110,9 @@ class _NavigationState extends State<Navigation> {
               onPressed: () async {
                 await showTeamQRCode(context).then((hasTeam) async {
                   if (!hasTeam) {
-                    final barcodeScanRes =
-                        await navigatorKey.currentState!.push(
+                    final barcodeScanRes = await navigatorKey.currentState!.push(
                       MaterialPageRoute(
-                        builder: (context) => const BarcodeScannerSimple(
-                            title: "Scan Team QR Code"),
+                        builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
                       ),
                     );
 
@@ -124,8 +121,7 @@ class _NavigationState extends State<Navigation> {
                       Provider.of<FirebaseAuth>(context, listen: false),
                       Provider.of<FirebaseFirestore>(context, listen: false),
                     ).then((success) {
-                      navigatorKey.currentState!
-                          .pushReplacement(MaterialPageRoute(
+                      navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
                         builder: (context) {
                           return Navigation(
                             title: NavigationTitle(title: "Team".toUpperCase()),
@@ -172,8 +168,7 @@ class _NavigationState extends State<Navigation> {
               size: 28,
             ),
             onPressed: () {
-              navigatorKey.currentState!
-                  .push(MaterialPageRoute(builder: (BuildContext context) {
+              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
                 return const ProfileSettings();
               }));
             },
@@ -224,8 +219,7 @@ class _NavigationState extends State<Navigation> {
       _tabs[widget.selectedIndex!] = NavigationTab(
         title: widget.selectedIndex == 0 ? logo : widget.title,
         body: _tabs[_selectedIndex].body,
-        actions:
-            _actions!.isNotEmpty ? _actions : _tabs[_selectedIndex].actions,
+        actions: _actions!.isNotEmpty ? _actions : _tabs[_selectedIndex].actions,
       );
     });
 
@@ -235,57 +229,40 @@ class _NavigationState extends State<Navigation> {
   }
 
   // Helper to get FirebaseFirestore from Provider
-  FirebaseFirestore getFirestore(BuildContext context) =>
-      Provider.of<FirebaseFirestore>(context, listen: false);
-  FirebaseAuth getAuth(BuildContext context) =>
-      Provider.of<FirebaseAuth>(context, listen: false);
+  FirebaseFirestore getFirestore(BuildContext context) => Provider.of<FirebaseFirestore>(context, listen: false);
+  FirebaseAuth getAuth(BuildContext context) => Provider.of<FirebaseAuth>(context, listen: false);
 
   // Load shared preferences
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool darkMode =
-        prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
+    bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
     bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
     DateTime targetDate = prefs.getString('target_date') != null
         ? DateTime.parse(prefs.getString('target_date')!)
-        : DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day + 100);
+        : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
     String fcmToken = prefs.getString('fcm_token')!;
 
     // Potentially update user's FCM Token if stale
     if (preferences!.fcmToken != fcmToken) {
-      await getFirestore(context)
-          .collection('users')
-          .doc(user!.uid)
-          .update({'fcm_token': fcmToken}).then((_) => null);
+      await getFirestore(context).collection('users').doc(user!.uid).update({'fcm_token': fcmToken}).then((_) => null);
     }
 
     // Update the preferences reference with the latest settings
-    preferences = Preferences(
-        darkMode, puckCount, friendNotifications, targetDate, fcmToken);
+    preferences = Preferences(darkMode, puckCount, friendNotifications, targetDate, fcmToken);
 
     if (mounted) {
-      Provider.of<PreferencesStateNotifier>(context, listen: false)
-          .updateSettings(preferences);
+      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     }
   }
 
   Future<Null> _loadTeam() async {
-    await getFirestore(context)
-        .collection('users')
-        .doc(user?.uid)
-        .get()
-        .then((uDoc) async {
+    await getFirestore(context).collection('users').doc(user?.uid).get().then((uDoc) async {
       if (uDoc.exists) {
         UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
         if (userProfile.teamId != null) {
-          await getFirestore(context)
-              .collection('teams')
-              .doc(userProfile.teamId)
-              .get()
-              .then((tSnap) async {
+          await getFirestore(context).collection('teams').doc(userProfile.teamId).get().then((tSnap) async {
             if (tSnap.exists) {
               Team t = Team.fromSnapshot(tSnap);
 
@@ -293,8 +270,7 @@ class _NavigationState extends State<Navigation> {
                 team = t;
 
                 _tabs[2] = NavigationTab(
-                  title: NavigationTitle(
-                      title: team!.name ?? "Team".toUpperCase()),
+                  title: NavigationTitle(title: team!.name ?? "Team".toUpperCase()),
                   body: const TeamPage(),
                   actions: [
                     team!.ownerId != user!.uid
@@ -304,13 +280,11 @@ class _NavigationState extends State<Navigation> {
                             child: IconButton(
                               icon: Icon(
                                 Icons.edit,
-                                color:
-                                    HomeTheme.darkTheme.colorScheme.onPrimary,
+                                color: HomeTheme.darkTheme.colorScheme.onPrimary,
                                 size: 28,
                               ),
                               onPressed: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) {
+                                Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
                                   return const EditTeam();
                                 }));
                               },
@@ -327,28 +301,19 @@ class _NavigationState extends State<Navigation> {
                         onPressed: () async {
                           await showTeamQRCode(context).then((hasTeam) async {
                             if (!hasTeam) {
-                              final barcodeScanRes =
-                                  await navigatorKey.currentState!.push(
+                              final barcodeScanRes = await navigatorKey.currentState!.push(
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const BarcodeScannerSimple(
-                                          title: "Scan Team QR Code"),
+                                  builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
                                 ),
                               );
 
-                              joinTeam(
-                                      barcodeScanRes,
-                                      Provider.of<FirebaseAuth>(context,
-                                          listen: false),
-                                      Provider.of<FirebaseFirestore>(context,
-                                          listen: false))
+                              joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false),
+                                      Provider.of<FirebaseFirestore>(context, listen: false))
                                   .then((success) {
-                                navigatorKey.currentState!
-                                    .pushReplacement(MaterialPageRoute(
+                                navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
                                   builder: (context) {
                                     return Navigation(
-                                      title: NavigationTitle(
-                                          title: "Team".toUpperCase()),
+                                      title: NavigationTitle(title: "Team".toUpperCase()),
                                       selectedIndex: 2,
                                     );
                                   },
@@ -378,8 +343,7 @@ class _NavigationState extends State<Navigation> {
         body: SlidingUpPanel(
           backdropEnabled: true,
           controller: sessionPanelController,
-          maxHeight: MediaQuery.of(context).size.height -
-              MediaQuery.of(context).padding.top,
+          maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           minHeight: sessionService.isRunning ? 65 : 0,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
@@ -416,16 +380,14 @@ class _NavigationState extends State<Navigation> {
                         color: Theme.of(context).primaryColor,
                       ),
                       child: ListTile(
-                        tileColor: Theme.of(context)
-                            .primaryColor, // This doesn't work in latest flutter upgrade
+                        tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               "${printWeekday(DateTime.now())} Session",
                               style: TextStyle(
-                                color:
-                                    Theme.of(context).colorScheme.onSecondary,
+                                color: Theme.of(context).colorScheme.onSecondary,
                                 fontFamily: "NovecentoSans",
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
@@ -444,16 +406,13 @@ class _NavigationState extends State<Navigation> {
                                       sessionService.resume();
                                     }
                                   },
-                                  focusColor: darken(
-                                      Theme.of(context).primaryColor, 0.2),
+                                  focusColor: darken(Theme.of(context).primaryColor, 0.2),
                                   enableFeedback: true,
                                   borderRadius: BorderRadius.circular(30),
                                   child: Padding(
                                     padding: const EdgeInsets.all(10),
                                     child: Icon(
-                                      sessionService.isPaused
-                                          ? Icons.play_arrow
-                                          : Icons.pause,
+                                      sessionService.isPaused ? Icons.play_arrow : Icons.pause,
                                       size: 30,
                                       color: Colors.white,
                                     ),
@@ -463,12 +422,9 @@ class _NavigationState extends State<Navigation> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
                                     Text(
-                                      printDuration(
-                                          sessionService.currentDuration, true),
+                                      printDuration(sessionService.currentDuration, true),
                                       style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
+                                        color: Theme.of(context).colorScheme.onSecondary,
                                         fontFamily: "NovecentoSans",
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -481,14 +437,11 @@ class _NavigationState extends State<Navigation> {
                           ],
                         ),
                         trailing: InkWell(
-                          focusColor:
-                              darken(Theme.of(context).primaryColor, 0.6),
+                          focusColor: darken(Theme.of(context).primaryColor, 0.6),
                           enableFeedback: true,
                           borderRadius: BorderRadius.circular(30),
                           child: Icon(
-                            _sessionPanelState == PanelState.CLOSED
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
+                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                             color: Theme.of(context).colorScheme.onSecondary,
                           ),
                           onTap: () {
@@ -507,8 +460,7 @@ class _NavigationState extends State<Navigation> {
                             }
                           },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 20),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                         onTap: () {
                           if (sessionPanelController.isPanelClosed) {
                             sessionPanelController.open();
@@ -537,18 +489,15 @@ class _NavigationState extends State<Navigation> {
             initialData: NetworkStatus.Online,
             child: NetworkAwareWidget(
               onlineChild: NestedScrollView(
-                headerSliverBuilder:
-                    (BuildContext context, bool innerBoxIsScrolled) {
+                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
                   return [3].contains(_selectedIndex)
                       ? []
                       : [
                           SliverAppBar(
                             collapsedHeight: 65,
                             expandedHeight: 85,
-                            automaticallyImplyLeading:
-                                [4].contains(_selectedIndex) ? true : false,
-                            backgroundColor:
-                                HomeTheme.darkTheme.colorScheme.primary,
+                            automaticallyImplyLeading: [4].contains(_selectedIndex) ? true : false,
+                            backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                             iconTheme: Theme.of(context).iconTheme,
                             actionsIconTheme: Theme.of(context).iconTheme,
                             centerTitle: true,
@@ -556,18 +505,15 @@ class _NavigationState extends State<Navigation> {
                             pinned: true,
                             flexibleSpace: DecoratedBox(
                               decoration: BoxDecoration(
-                                color: HomeTheme
-                                    .darkTheme.colorScheme.primaryContainer,
+                                color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                               ),
                               child: FlexibleSpaceBar(
                                 collapseMode: CollapseMode.parallax,
                                 centerTitle: true,
-                                titlePadding:
-                                    const EdgeInsets.symmetric(vertical: 15),
+                                titlePadding: const EdgeInsets.symmetric(vertical: 15),
                                 title: _title,
                                 background: Container(
-                                  color: HomeTheme
-                                      .darkTheme.colorScheme.primaryContainer,
+                                  color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                                 ),
                               ),
                             ),
@@ -622,8 +568,7 @@ class _NavigationState extends State<Navigation> {
         ),
         bottomNavigationBar: SizedOverflowBox(
           alignment: AlignmentDirectional.topCenter,
-          size: Size.fromHeight(AppBar().preferredSize.height -
-              (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
+          size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
           child: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const <BottomNavigationBarItem>[
