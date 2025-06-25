@@ -68,9 +68,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   // Simulate loading subscription level (replace with RevenueCat logic)
   Future<void> _loadSubscriptionLevel() async {
     // TODO: Replace this with your actual subscription check
-    // For demonstration, we'll just keep it as "Free"
     setState(() {
-      // _subscriptionLevel = "pro";
+      _subscriptionLevel = "pro";
       // _subscriptionLevel = "free";
     });
   }
