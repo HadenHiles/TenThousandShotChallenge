@@ -39,7 +39,7 @@ class _ProfileState extends State<Profile> {
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final GlobalKey _avatarMenuKey = GlobalKey();
-  final bool _isProUser = false; //TODO: Actually verify the user's subscription level
+  final bool _isProUser = true; //TODO: Actually verify the user's subscription level
 
   String? _selectedIterationId;
   DateTime? firstSessionDate = DateTime.now();
