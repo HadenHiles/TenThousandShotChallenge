@@ -37,7 +37,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _shotsRefreshedOnce = false;
 
   // Simulated subscription level (replace with RevenueCat or your backend)
-  String _subscriptionLevel = "Free"; // Can be "Free", "Premium", or "Pro"
+  String _subscriptionLevel = "free"; // Can be "Free", "Premium", or "Pro"
 
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
@@ -70,9 +70,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     // TODO: Replace this with your actual subscription check
     // For demonstration, we'll just keep it as "Free"
     setState(() {
-      _subscriptionLevel = "Pro";
-      // _subscriptionLevel = "Premium";
-      // _subscriptionLevel = "Pro";
+      // _subscriptionLevel = "pro";
+      // _subscriptionLevel = "free";
     });
   }
 
@@ -187,23 +186,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             description: Text(
-                              _subscriptionLevel,
+                              _subscriptionLevel.toUpperCase(),
                               style: TextStyle(
-                                color: _subscriptionLevel == "Free"
-                                    ? Colors.grey
-                                    : _subscriptionLevel == "Premium"
-                                        ? Colors.blue
-                                        : Colors.amber,
+                                color: _subscriptionLevel == "pro" ? Colors.blue : Colors.grey,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             leading: Icon(
                               Icons.workspace_premium,
-                              color: _subscriptionLevel == "Free"
-                                  ? Colors.grey
-                                  : _subscriptionLevel == "Pro"
-                                      ? Colors.blue
+                              color: _subscriptionLevel == "pro" ? Colors.blue : Colors.grey,
                             ),
                             onPressed: (BuildContext context) {
                               // Show a dialog or navigate to a subscription management screen
@@ -212,9 +204,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
                                   content: Text(
-                                    _subscriptionLevel == "Free"
+                                    _subscriptionLevel != "pro"
                                         ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!"
-                                        : "You are currently on the $_subscriptionLevel plan.",
+                                        : "You are currently on the ${_subscriptionLevel.toUpperCase()} plan.",
                                   ),
                                   actions: [
                                     TextButton(
@@ -225,7 +217,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                       child: const Text('Close'),
                                     ),
-                                    if (_subscriptionLevel == "Free")
+                                    if (_subscriptionLevel != "pro")
                                       ElevatedButton(
                                         onPressed: () {
                                           // TODO: Integrate RevenueCat paywall here
