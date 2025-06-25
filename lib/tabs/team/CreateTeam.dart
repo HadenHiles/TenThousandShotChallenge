@@ -25,7 +25,7 @@ class CreateTeam extends StatefulWidget {
 }
 
 class _CreateTeamState extends State<CreateTeam> {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
   final _formKey = GlobalKey<FormState>();
   final f = NumberFormat("###,###,###", "en_US");
   final TextEditingController teamNameTextFieldController = TextEditingController();
@@ -36,7 +36,13 @@ class _CreateTeamState extends State<CreateTeam> {
   final TextEditingController targetDateController = TextEditingController();
   DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
   bool _public = false;
-  Team? team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, FirebaseAuth.instance.currentUser!.uid, true, true, []);
+  Team? team;
+
+  @override
+  void initState() {
+    super.initState();
+    team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, user?.uid ?? "", true, true, []);
+  }
 
   Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
     DateTime returnDate = currentDate;

@@ -20,7 +20,7 @@ class EditProfile extends StatefulWidget {
 }
 
 class _EditProfileState extends State<EditProfile> {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController displayNameTextFieldController = TextEditingController();
@@ -30,7 +30,7 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
+    Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).get().then((uDoc) {
       UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
       _avatar = userProfile.photoUrl!;
@@ -53,7 +53,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   void _saveProfile() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+    Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
       'display_name': displayNameTextFieldController.text.toString(),
       'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
       'photo_url': _avatar,

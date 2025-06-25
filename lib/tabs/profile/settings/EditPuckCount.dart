@@ -18,7 +18,7 @@ class EditPuckCount extends StatefulWidget {
 }
 
 class _EditPuckCountState extends State<EditPuckCount> {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController puckCountTextFieldController = TextEditingController();

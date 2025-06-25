@@ -45,7 +45,11 @@ class _PlayerState extends State<Player> {
       _loadingPlayer = true;
     });
 
-    FirebaseFirestore.instance.collection('users').doc(widget.uid).get().then((uDoc) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.uid)
+        .get()
+        .then((uDoc) {
       _userPlayer = UserProfile.fromSnapshot(uDoc);
 
       setState(() {
@@ -60,7 +64,13 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> _loadIsFriend() async {
-    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').doc(widget.uid).get().then((snapshot) {
+    await FirebaseFirestore.instance
+        .collection('teammates')
+        .doc(user!.uid)
+        .collection('teammates')
+        .doc(widget.uid)
+        .get()
+        .then((snapshot) {
       setState(() {
         _isFriend = snapshot.exists;
       });
@@ -68,7 +78,13 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> _getAttempts() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
+    await FirebaseFirestore.instance
+        .collection('iterations')
+        .doc(widget.uid)
+        .collection('iterations')
+        .orderBy('start_date', descending: false)
+        .get()
+        .then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(
@@ -140,7 +156,8 @@ class _PlayerState extends State<Player> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -170,7 +187,8 @@ class _PlayerState extends State<Player> {
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.add,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     size: 28,
                                   ),
                                   onPressed: () {
@@ -183,15 +201,21 @@ class _PlayerState extends State<Player> {
                                           title: Text(
                                             "Invite ${_userPlayer!.displayName} to be your friend?",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                               fontSize: 20,
                                             ),
                                           ),
-                                          backgroundColor: Theme.of(context).colorScheme.surface,
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .surface,
                                           content: Text(
                                             "They will receive an invite notification from you.",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                             ),
                                           ),
                                           actions: [
@@ -202,7 +226,9 @@ class _PlayerState extends State<Player> {
                                               child: Text(
                                                 "Cancel",
                                                 style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
                                                 ),
                                               ),
                                             ),
@@ -210,31 +236,58 @@ class _PlayerState extends State<Player> {
                                               onPressed: () {
                                                 Navigator.of(context).pop();
                                                 Navigator.of(context).pop();
-                                                inviteFriend(user!.uid, widget.uid!).then((success) {
+                                                inviteFriend(
+                                                        user!.uid,
+                                                        widget.uid!,
+                                                        Provider.of<
+                                                                FirebaseFirestore>(
+                                                            context,
+                                                            listen: false))
+                                                    .then((success) {
                                                   if (success!) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        backgroundColor:
+                                                            Theme.of(context)
+                                                                .cardTheme
+                                                                .color,
                                                         content: Text(
                                                           "${_userPlayer!.displayName} Invited!",
                                                           style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary,
                                                           ),
                                                         ),
-                                                        duration: const Duration(seconds: 4),
+                                                        duration:
+                                                            const Duration(
+                                                                seconds: 4),
                                                       ),
                                                     );
                                                   } else {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
                                                       SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        backgroundColor:
+                                                            Theme.of(context)
+                                                                .cardTheme
+                                                                .color,
                                                         content: Text(
                                                           "Failed to invite ${_userPlayer!.displayName} :(",
                                                           style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary,
                                                           ),
                                                         ),
-                                                        duration: const Duration(seconds: 4),
+                                                        duration:
+                                                            const Duration(
+                                                                seconds: 4),
                                                       ),
                                                     );
                                                   }
@@ -242,7 +295,9 @@ class _PlayerState extends State<Player> {
                                               },
                                               child: Text(
                                                 "Invite",
-                                                style: TextStyle(color: Theme.of(context).primaryColor),
+                                                style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .primaryColor),
                                               ),
                                             ),
                                           ],
@@ -271,7 +326,9 @@ class _PlayerState extends State<Player> {
                                         Text(
                                           "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
                                           ),
                                         ),
                                         "Cancel",
@@ -280,38 +337,63 @@ class _PlayerState extends State<Player> {
                                         },
                                         "Continue",
                                         () {
-                                          navigatorKey.currentState!.pushReplacement(
-                                            MaterialPageRoute(builder: (context) {
+                                          navigatorKey.currentState!
+                                              .pushReplacement(
+                                            MaterialPageRoute(
+                                                builder: (context) {
                                               return Navigation(
-                                                title: NavigationTitle(title: "Players".toUpperCase()),
+                                                title: NavigationTitle(
+                                                    title: "Players"
+                                                        .toUpperCase()),
                                                 selectedIndex: 1,
                                               );
                                             }),
                                           );
 
-                                          removePlayerFromFriends(_userPlayer!.reference!.id).then((success) {
+                                          removePlayerFromFriends(
+                                            _userPlayer!.reference!.id,
+                                            Provider.of<FirebaseAuth>(context,
+                                                listen: false),
+                                            Provider.of<FirebaseFirestore>(
+                                                context,
+                                                listen: false),
+                                          ).then((success) {
                                             if (success) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
                                                 SnackBar(
-                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                  duration: const Duration(milliseconds: 2500),
+                                                  backgroundColor:
+                                                      Theme.of(context)
+                                                          .cardTheme
+                                                          .color,
+                                                  duration: const Duration(
+                                                      milliseconds: 2500),
                                                   content: Text(
                                                     '${_userPlayer!.displayName} was removed.',
                                                     style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimary,
                                                     ),
                                                   ),
                                                 ),
                                               );
                                             } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
                                                 SnackBar(
-                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                  duration: const Duration(milliseconds: 4000),
+                                                  backgroundColor:
+                                                      Theme.of(context)
+                                                          .cardTheme
+                                                          .color,
+                                                  duration: const Duration(
+                                                      milliseconds: 4000),
                                                   content: Text(
                                                     'Error removing Player :(',
                                                     style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimary,
                                                     ),
                                                   ),
                                                 ),
@@ -366,7 +448,8 @@ class _PlayerState extends State<Player> {
                             Row(
                               children: [
                                 Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 15),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 15),
                                   width: 60,
                                   height: 60,
                                   clipBehavior: Clip.antiAlias,
@@ -387,93 +470,140 @@ class _PlayerState extends State<Player> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SizedBox(
-                                      width: (MediaQuery.of(context).size.width - 100) * 0.6,
+                                      width:
+                                          (MediaQuery.of(context).size.width -
+                                                  100) *
+                                              0.6,
                                       child: StreamBuilder<DocumentSnapshot>(
                                         // ignore: deprecated_member_use
-                                        stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
+                                        stream: FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(widget.uid)
+                                            .snapshots(),
                                         builder: (context, snapshot) {
                                           if (!snapshot.hasData) {
                                             return const Column(
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
                                               mainAxisSize: MainAxisSize.max,
                                               children: [
                                                 Center(
                                                   child: SizedBox(
                                                     height: 20,
                                                     width: 20,
-                                                    child: CircularProgressIndicator(),
+                                                    child:
+                                                        CircularProgressIndicator(),
                                                   ),
                                                 ),
                                               ],
                                             );
                                           }
 
-                                          UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
+                                          UserProfile userProfile =
+                                              UserProfile.fromSnapshot(snapshot
+                                                  .data as DocumentSnapshot);
 
                                           return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userPlayer!.displayName!,
+                                            userProfile.displayName != null &&
+                                                    userProfile
+                                                        .displayName!.isNotEmpty
+                                                ? userProfile.displayName!
+                                                : _userPlayer!.displayName!,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 22,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).textTheme.bodyLarge!.color,
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyLarge!
+                                                  .color,
                                             ),
                                           );
                                         },
                                       ),
                                     ),
                                     StreamBuilder(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                                        stream: FirebaseFirestore.instance
+                                            .collection('iterations')
+                                            .doc(widget.uid)
+                                            .collection('iterations')
+                                            .snapshots(),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<QuerySnapshot>
+                                                snapshot) {
                                           if (!snapshot.hasData) {
                                             return const Center(
                                               child: SizedBox(
                                                 width: 120,
                                                 height: 2,
-                                                child: LinearProgressIndicator(),
+                                                child:
+                                                    LinearProgressIndicator(),
                                               ),
                                             );
                                           } else {
                                             int total = 0;
-                                            for (var doc in snapshot.data!.docs) {
-                                              total += Iteration.fromSnapshot(doc).total!;
+                                            for (var doc
+                                                in snapshot.data!.docs) {
+                                              total +=
+                                                  Iteration.fromSnapshot(doc)
+                                                      .total!;
                                             }
 
                                             return Text(
-                                              total.toString() + " Lifetime Shots".toLowerCase(),
+                                              total.toString() +
+                                                  " Lifetime Shots"
+                                                      .toLowerCase(),
                                               style: TextStyle(
                                                 fontSize: 20,
                                                 fontFamily: 'NovecentoSans',
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             );
                                           }
                                         }),
                                     StreamBuilder(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                                        stream: FirebaseFirestore.instance
+                                            .collection('iterations')
+                                            .doc(widget.uid)
+                                            .collection('iterations')
+                                            .snapshots(),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<QuerySnapshot>
+                                                snapshot) {
                                           if (!snapshot.hasData) {
                                             return const Center(
                                               child: SizedBox(
                                                 width: 120,
                                                 height: 2,
-                                                child: LinearProgressIndicator(),
+                                                child:
+                                                    LinearProgressIndicator(),
                                               ),
                                             );
                                           } else {
-                                            Duration totalDuration = const Duration();
-                                            for (var doc in snapshot.data!.docs) {
-                                              totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
+                                            Duration totalDuration =
+                                                const Duration();
+                                            for (var doc
+                                                in snapshot.data!.docs) {
+                                              totalDuration +=
+                                                  Iteration.fromSnapshot(doc)
+                                                      .totalDuration!;
                                             }
 
-                                            return totalDuration > const Duration()
+                                            return totalDuration >
+                                                    const Duration()
                                                 ? Text(
                                                     "IN ${printDuration(totalDuration, true)}",
                                                     style: TextStyle(
                                                       fontSize: 20,
-                                                      fontFamily: 'NovecentoSans',
-                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                      fontFamily:
+                                                          'NovecentoSans',
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimary,
                                                     ),
                                                   )
                                                 : Container();
@@ -484,7 +614,8 @@ class _PlayerState extends State<Player> {
                               ],
                             ),
                             Container(
-                              width: (MediaQuery.of(context).size.width - 100) * 0.4,
+                              width: (MediaQuery.of(context).size.width - 100) *
+                                  0.4,
                               margin: const EdgeInsets.only(right: 10),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -495,7 +626,9 @@ class _PlayerState extends State<Player> {
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 22,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -504,25 +637,35 @@ class _PlayerState extends State<Player> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       Container(
-                                        margin: const EdgeInsets.only(top: 10, right: 5),
+                                        margin: const EdgeInsets.only(
+                                            top: 10, right: 5),
                                         child: Text(
                                           "challenge ".toUpperCase(),
                                           textAlign: TextAlign.right,
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                             fontSize: 20,
                                             fontFamily: 'NovecentoSans',
                                           ),
                                         ),
                                       ),
                                       StreamBuilder<QuerySnapshot>(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
+                                        stream: FirebaseFirestore.instance
+                                            .collection('iterations')
+                                            .doc(widget.uid)
+                                            .collection('iterations')
+                                            .snapshots(),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasData) {
                                             return Text(
-                                              (snapshot.data!.docs.length).toString(),
+                                              (snapshot.data!.docs.length)
+                                                  .toString(),
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                                 fontSize: 34,
                                                 fontFamily: 'NovecentoSans',
                                               ),
@@ -553,7 +696,8 @@ class _PlayerState extends State<Player> {
                                 });
                               },
                               underline: Container(),
-                              dropdownColor: Theme.of(context).colorScheme.primary,
+                              dropdownColor:
+                                  Theme.of(context).colorScheme.primary,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
                                 color: Theme.of(context).colorScheme.onPrimary,
@@ -566,7 +710,8 @@ class _PlayerState extends State<Player> {
                                 Text(
                                   "Wrist".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -575,10 +720,12 @@ class _PlayerState extends State<Player> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: wristShotColor),
+                                  decoration: const BoxDecoration(
+                                      color: wristShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -601,7 +748,8 @@ class _PlayerState extends State<Player> {
                                 Text(
                                   "Snap".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -610,10 +758,12 @@ class _PlayerState extends State<Player> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: snapShotColor),
+                                  decoration:
+                                      const BoxDecoration(color: snapShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -636,7 +786,8 @@ class _PlayerState extends State<Player> {
                                 Text(
                                   "Backhand".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -645,10 +796,12 @@ class _PlayerState extends State<Player> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: backhandShotColor),
+                                  decoration: const BoxDecoration(
+                                      color: backhandShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -671,7 +824,8 @@ class _PlayerState extends State<Player> {
                                 Text(
                                   "Slap".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -680,10 +834,12 @@ class _PlayerState extends State<Player> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: slapShotColor),
+                                  decoration:
+                                      const BoxDecoration(color: slapShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -708,19 +864,32 @@ class _PlayerState extends State<Player> {
                         ),
                         Expanded(
                           child: StreamBuilder<QuerySnapshot>(
-                            stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
+                            stream: _selectedIterationId == null
+                                ? null
+                                : FirebaseFirestore.instance
+                                    .collection('iterations')
+                                    .doc(widget.uid)
+                                    .collection('iterations')
+                                    .doc(_selectedIterationId)
+                                    .collection('sessions')
+                                    .orderBy('date', descending: true)
+                                    .snapshots(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               }
                               final sessions = snapshot.data!.docs;
                               if (sessions.isEmpty) {
                                 return Center(
                                   child: Text(
-                                    "${_userPlayer?.displayName?.split(' ').first ?? 'Player'} doesn't have any sessions yet".toLowerCase(),
+                                    "${_userPlayer?.displayName?.split(' ').first ?? 'Player'} doesn't have any sessions yet"
+                                        .toLowerCase(),
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -728,13 +897,16 @@ class _PlayerState extends State<Player> {
                               }
                               return RefreshIndicator(
                                 color: Theme.of(context).primaryColor,
-                                onRefresh: () async {}, // Optionally implement refresh logic
+                                onRefresh:
+                                    () async {}, // Optionally implement refresh logic
                                 child: ListView.builder(
                                   controller: sessionsController,
                                   itemCount: sessions.length,
                                   itemBuilder: (_, int index) {
                                     final doc = sessions[index];
-                                    return _buildSessionItem(ShootingSession.fromSnapshot(doc), index % 2 == 0);
+                                    return _buildSessionItem(
+                                        ShootingSession.fromSnapshot(doc),
+                                        index % 2 == 0);
                                   },
                                 ),
                               );
@@ -760,7 +932,9 @@ class _PlayerState extends State<Player> {
     return Container(
       padding: const EdgeInsets.only(top: 5, bottom: 15),
       decoration: BoxDecoration(
-        color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
+        color: showBackground
+            ? Theme.of(context).cardTheme.color
+            : Colors.transparent,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -933,7 +1107,9 @@ class _PlayerState extends State<Player> {
                                   child: Text(
                                     "W",
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -956,7 +1132,9 @@ class _PlayerState extends State<Player> {
                                   child: Text(
                                     "SN",
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -979,7 +1157,9 @@ class _PlayerState extends State<Player> {
                                   child: Text(
                                     "B",
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -1002,7 +1182,9 @@ class _PlayerState extends State<Player> {
                                   child: Text(
                                     "SL",
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16,
                                       fontFamily: 'NovecentoSans',
                                     ),

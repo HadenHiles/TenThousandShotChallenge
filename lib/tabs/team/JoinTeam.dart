@@ -21,7 +21,8 @@ class JoinTeam extends StatefulWidget {
 }
 
 class _JoinTeamState extends State<JoinTeam> {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user =>
+      Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController searchFieldController = TextEditingController();
@@ -77,7 +78,8 @@ class _JoinTeamState extends State<JoinTeam> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -106,15 +108,24 @@ class _JoinTeamState extends State<JoinTeam> {
                             child: TextButton(
                               style: Theme.of(context).textButtonTheme.style,
                               onPressed: () {
-                                joinTeam(_teams[_selectedTeam!].id).then((success) {
+                                joinTeam(
+                                  _teams[_selectedTeam!].id,
+                                  Provider.of<FirebaseAuth>(context,
+                                      listen: false),
+                                  Provider.of<FirebaseFirestore>(context,
+                                      listen: false),
+                                ).then((success) {
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        backgroundColor:
+                                            Theme.of(context).cardTheme.color,
                                         content: Text(
                                           "Joined team ${Team.fromSnapshot(_teams[_selectedTeam!]).name}!",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                         duration: const Duration(seconds: 4),
@@ -127,7 +138,8 @@ class _JoinTeamState extends State<JoinTeam> {
                                     });
                                     searchFieldController.text = "";
 
-                                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
+                                    Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(builder: (context) {
                                       return const Navigation(
                                         selectedIndex: 2,
                                         title: NavigationTitle(title: "Team"),
@@ -136,11 +148,14 @@ class _JoinTeamState extends State<JoinTeam> {
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        backgroundColor:
+                                            Theme.of(context).cardTheme.color,
                                         content: Text(
                                           "Failed to join ${Team.fromSnapshot(_teams[_selectedTeam!]).name} :(",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                         duration: const Duration(seconds: 4),
@@ -155,9 +170,12 @@ class _JoinTeamState extends State<JoinTeam> {
                                   SizedBox(
                                     width: 125,
                                     child: AutoSizeText(
-                                      ('Join ${Team.fromSnapshot(_teams[_selectedTeam!]).name}').toUpperCase(),
+                                      ('Join ${Team.fromSnapshot(_teams[_selectedTeam!]).name}')
+                                          .toUpperCase(),
                                       style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                         fontFamily: "NovecentoSans",
                                         fontSize: 18,
                                         height: 1.1,
@@ -170,7 +188,8 @@ class _JoinTeamState extends State<JoinTeam> {
                                   Icon(
                                     Icons.add,
                                     size: 16,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ],
                               ),
@@ -201,7 +220,8 @@ class _JoinTeamState extends State<JoinTeam> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                          margin: EdgeInsets.only(
+                              left: MediaQuery.of(context).size.width * 0.05),
                           width: (MediaQuery.of(context).size.width * 0.7) - 10,
                           child: Form(
                             key: _formKey,
@@ -210,12 +230,15 @@ class _JoinTeamState extends State<JoinTeam> {
                                 TextFormField(
                                   keyboardType: TextInputType.text,
                                   decoration: InputDecoration(
-                                    hintText: 'Enter Team Name or ID'.toUpperCase(),
+                                    hintText:
+                                        'Enter Team Name or ID'.toUpperCase(),
                                     labelText: "Find team".toUpperCase(),
                                     alignLabelWithHint: true,
                                     labelStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                     hintStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -226,7 +249,8 @@ class _JoinTeamState extends State<JoinTeam> {
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   onChanged: (value) async {
                                     if (value.isNotEmpty) {
@@ -236,22 +260,42 @@ class _JoinTeamState extends State<JoinTeam> {
 
                                       List<DocumentSnapshot> teams = [];
                                       if (value.isNotEmpty) {
-                                        await FirebaseFirestore.instance.collection('teams').orderBy('name_lowercase', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
+                                        await FirebaseFirestore.instance
+                                            .collection('teams')
+                                            .orderBy('name_lowercase',
+                                                descending: false)
+                                            .where('public', isEqualTo: true)
+                                            .startAt([value.toLowerCase()])
+                                            .endAt([
+                                              '${value.toLowerCase()}\uf8ff'
+                                            ])
+                                            .get()
+                                            .then((tSnaps) async {
                                               for (var tDoc in tSnaps.docs) {
-                                                if (tDoc.reference.id != user!.uid) {
+                                                if (tDoc.reference.id !=
+                                                    user!.uid) {
                                                   teams.add(tDoc);
                                                 }
                                               }
                                             });
                                         if (teams.isEmpty) {
-                                          await FirebaseFirestore.instance.collection('teams').orderBy('code', descending: false).where('code', isEqualTo: value.toUpperCase()).get().then((tSnaps) async {
+                                          await FirebaseFirestore.instance
+                                              .collection('teams')
+                                              .orderBy('code',
+                                                  descending: false)
+                                              .where('code',
+                                                  isEqualTo:
+                                                      value.toUpperCase())
+                                              .get()
+                                              .then((tSnaps) async {
                                             for (var tDoc in tSnaps.docs) {
                                               teams.add(tDoc);
                                             }
                                           });
                                         }
 
-                                        await Future.delayed(const Duration(milliseconds: 500));
+                                        await Future.delayed(
+                                            const Duration(milliseconds: 500));
 
                                         setState(() {
                                           _teams = teams;
@@ -294,53 +338,75 @@ class _JoinTeamState extends State<JoinTeam> {
                                 style: TextStyle(
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 20,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                               Container(
                                 margin: const EdgeInsets.only(right: 0),
                                 child: IconButton(
                                   onPressed: () async {
-                                    final barcodeScanRes = await Navigator.of(context).push(
+                                    final barcodeScanRes =
+                                        await Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                                        builder: (context) =>
+                                            const BarcodeScannerSimple(
+                                                title: "Scan Team QR Code"),
                                       ),
                                     );
 
-                                    joinTeam(barcodeScanRes).then((success) async {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                    joinTeam(
+                                      barcodeScanRes,
+                                      Provider.of<FirebaseAuth>(context,
+                                          listen: false),
+                                      Provider.of<FirebaseFirestore>(context,
+                                          listen: false),
+                                    ).then((success) async {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          backgroundColor:
+                                              Theme.of(context).cardTheme.color,
                                           content: Text(
                                             "You joined the team!",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                             ),
                                           ),
-                                          duration: const Duration(milliseconds: 2500),
+                                          duration: const Duration(
+                                              milliseconds: 2500),
                                         ),
                                       );
 
-                                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                      Navigator.of(context)
+                                          .pushReplacement(MaterialPageRoute(
                                         builder: (context) {
                                           return const Navigation(
                                             selectedIndex: 2,
-                                            title: NavigationTitle(title: "Team"),
+                                            title:
+                                                NavigationTitle(title: "Team"),
                                           );
                                         },
                                         maintainState: false,
                                       ));
                                     }).onError((error, stackTrace) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          backgroundColor:
+                                              Theme.of(context).cardTheme.color,
                                           content: Text(
                                             "There was an error scanning your teams QR code :(",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                             ),
                                           ),
-                                          duration: const Duration(milliseconds: 4000),
+                                          duration: const Duration(
+                                              milliseconds: 4000),
                                         ),
                                       );
                                     });
@@ -348,7 +414,8 @@ class _JoinTeamState extends State<JoinTeam> {
                                   icon: Icon(
                                     Icons.qr_code_2_rounded,
                                     size: 50,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   color: Theme.of(context).primaryColor,
                                 ),
@@ -359,18 +426,22 @@ class _JoinTeamState extends State<JoinTeam> {
                       ],
                     ),
                     Flexible(
-                      child: _isSearching && _teams.isEmpty && searchFieldController.text.isNotEmpty
+                      child: _isSearching &&
+                              _teams.isEmpty &&
+                              searchFieldController.text.isNotEmpty
                           ? Column(
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Center(
-                                  child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                                  child: CircularProgressIndicator(
+                                      color: Theme.of(context).primaryColor),
                                 )
                               ],
                             )
-                          : _teams.isEmpty && searchFieldController.text.isNotEmpty
+                          : _teams.isEmpty &&
+                                  searchFieldController.text.isNotEmpty
                               ? Column(
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -383,7 +454,9 @@ class _JoinTeamState extends State<JoinTeam> {
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -394,7 +467,9 @@ class _JoinTeamState extends State<JoinTeam> {
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 26,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -402,14 +477,18 @@ class _JoinTeamState extends State<JoinTeam> {
                                       margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
-                                          navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
+                                          navigatorKey.currentState!.push(
+                                              MaterialPageRoute(builder:
+                                                  (BuildContext context) {
                                             return const CreateTeam();
                                           }));
                                         },
                                         icon: Icon(
                                           Icons.add_circle_outline_rounded,
                                           size: 40,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -452,7 +531,9 @@ class _JoinTeamState extends State<JoinTeam> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: _selectedTeam == i ? Theme.of(context).cardTheme.color : Colors.transparent,
+              color: _selectedTeam == i
+                  ? Theme.of(context).cardTheme.color
+                  : Colors.transparent,
             ),
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
             child: Row(
@@ -475,7 +556,10 @@ class _JoinTeamState extends State<JoinTeam> {
                                   style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).textTheme.bodyLarge!.color,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge!
+                                        .color,
                                   ),
                                 ),
                               )

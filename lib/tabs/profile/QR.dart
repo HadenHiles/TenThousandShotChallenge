@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:rotating_icon_button/rotating_icon_button.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -55,8 +56,8 @@ void showQRCode(User? user) {
   );
 }
 
-Future<bool> showTeamQRCode() async {
-  User? user = FirebaseAuth.instance.currentUser;
+Future<bool> showTeamQRCode(BuildContext context) async {
+  User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   if (user != null) {
     return FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
