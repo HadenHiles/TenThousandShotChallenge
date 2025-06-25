@@ -2,6 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -21,7 +22,7 @@ class Friends extends StatefulWidget {
 }
 
 class _FriendsState extends State<Friends> {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   bool _isLoadingFriends = false;
   List<DocumentSnapshot> _friends = [];
@@ -453,7 +454,7 @@ class _FriendsState extends State<Friends> {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
-        await deleteInvite(friend.reference!.id, user!.uid).then((deleted) {
+        await deleteInvite(friend.reference!.id, user!.uid, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false),).then((deleted) {
           if (!deleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -643,7 +644,7 @@ class _FriendsState extends State<Friends> {
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
-                      acceptInvite(Invite(friend.reference!.id, DateTime.now())).then((accepted) {
+                      acceptInvite(Invite(friend.reference!.id, DateTime.now()), Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false),).then((accepted) {
                         if (!accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:numberpicker/numberpicker.dart';
@@ -23,7 +24,8 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class StartShooting extends StatefulWidget {
-  const StartShooting({super.key, required this.sessionPanelController, this.shots});
+  const StartShooting(
+      {super.key, required this.sessionPanelController, this.shots});
 
   final PanelController sessionPanelController;
   final List<Shots>? shots;
@@ -34,7 +36,8 @@ class StartShooting extends StatefulWidget {
 
 class _StartShootingState extends State<StartShooting> {
   final bool showAccuracyFeature = true;
-  final bool _isProUser = false; // TODO: Actually verify the user's subscription level
+  final bool _isProUser =
+      false; // TODO: Actually verify the user's subscription level
 
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
@@ -64,12 +67,14 @@ class _StartShootingState extends State<StartShooting> {
     _currentShotCount = preferences!.puckCount!;
   }
 
-  Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
+  Future<int?> showAccuracyInputDialog(
+      BuildContext context, int shotCount) async {
     if (!_isProUser) {
       // If not pro, do not show the dialog
       return null;
     }
-    int value = (_lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
+    int value =
+        (_lastTargetsHit ?? (shotCount * 0.5).round()).clamp(0, shotCount);
     // Helper to round to nearest even number
     int roundEven(num n) => (n / 2).round() * 2;
     // Build presets, ensuring no duplicates; if duplicate, allow one as odd
@@ -107,7 +112,8 @@ class _StartShootingState extends State<StartShooting> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(8),
@@ -129,7 +135,10 @@ class _StartShootingState extends State<StartShooting> {
                           " / $shotCount",
                           style: TextStyle(
                             fontSize: 18,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -142,7 +151,8 @@ class _StartShootingState extends State<StartShooting> {
                     divisions: shotCount > 0 ? shotCount : 1,
                     activeColor: Theme.of(context).primaryColor,
                     thumbColor: Theme.of(context).primaryColor,
-                    onChanged: (v) => setState(() => value = v.round().clamp(0, shotCount)),
+                    onChanged: (v) =>
+                        setState(() => value = v.round().clamp(0, shotCount)),
                   ),
                   Wrap(
                     spacing: 8,
@@ -150,13 +160,17 @@ class _StartShootingState extends State<StartShooting> {
                     children: presets
                         .map((preset) => ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: value == preset ? Colors.grey.shade300 : Colors.grey.shade100,
+                                backgroundColor: value == preset
+                                    ? Colors.grey.shade300
+                                    : Colors.grey.shade100,
                                 foregroundColor: Colors.black87,
                                 minimumSize: const Size(48, 32),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 elevation: value == preset ? 2 : 0,
                               ),
-                              onPressed: () => setState(() => value = preset.clamp(0, shotCount)),
+                              onPressed: () => setState(
+                                  () => value = preset.clamp(0, shotCount)),
                               child: Text("$preset"),
                             ))
                         .toList(),
@@ -173,12 +187,14 @@ class _StartShootingState extends State<StartShooting> {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.check, color: Colors.white),
-                  label: const Text('Save', style: TextStyle(color: Colors.white)),
+                  label:
+                      const Text('Save', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: () => Navigator.of(context).pop(value.clamp(0, shotCount)),
+                  onPressed: () =>
+                      Navigator.of(context).pop(value.clamp(0, shotCount)),
                 ),
               ],
             );
@@ -215,7 +231,8 @@ class _StartShootingState extends State<StartShooting> {
         if (s.targetsHit != null && s.count != null && s.count! > 0) {
           double accuracy = s.targetsHit! / s.count!;
           cumulativeShots += s.count!;
-          spots.add(FlSpot(cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
+          spots.add(FlSpot(
+              cumulativeShots.toDouble(), (accuracy * 100).roundToDouble()));
           shotCounts.add(cumulativeShots);
           totalHits += s.targetsHit!;
           totalShots += s.count!;
@@ -223,7 +240,8 @@ class _StartShootingState extends State<StartShooting> {
       }
       accuracySpotsByType[type] = spots;
       shotCountsByType[type] = shotCounts;
-      avgAccuracyByType[type] = totalShots > 0 ? (totalHits / totalShots) * 100 : 0;
+      avgAccuracyByType[type] =
+          totalShots > 0 ? (totalHits / totalShots) * 100 : 0;
     }
 
     double? minX, maxX;
@@ -249,7 +267,8 @@ class _StartShootingState extends State<StartShooting> {
                       color: Colors.green.shade50,
                       margin: const EdgeInsets.all(12),
                       child: ListTile(
-                        leading: const Icon(Icons.track_changes, color: Colors.green),
+                        leading: const Icon(Icons.track_changes,
+                            color: Colors.green),
                         title: Text(
                           "Want to track your shot accuracy?",
                           style: TextStyle(
@@ -279,7 +298,9 @@ class _StartShootingState extends State<StartShooting> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _chartCollapsed ? "Show Accuracy Chart" : "Shot Accuracy",
+                            _chartCollapsed
+                                ? "Show Accuracy Chart"
+                                : "Shot Accuracy",
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               fontSize: 18,
@@ -289,10 +310,14 @@ class _StartShootingState extends State<StartShooting> {
                           ),
                           IconButton(
                             icon: Icon(
-                              _chartCollapsed ? Icons.expand_more : Icons.expand_less,
+                              _chartCollapsed
+                                  ? Icons.expand_more
+                                  : Icons.expand_less,
                               color: Theme.of(context).primaryColor,
                             ),
-                            tooltip: _chartCollapsed ? "Expand Chart" : "Collapse Chart",
+                            tooltip: _chartCollapsed
+                                ? "Expand Chart"
+                                : "Collapse Chart",
                             onPressed: () {
                               setState(() {
                                 _chartCollapsed = !_chartCollapsed;
@@ -319,7 +344,9 @@ class _StartShootingState extends State<StartShooting> {
             Positioned.fill(
               child: _isProUser
                   ? Container(
-                      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.98),
+                      color: Theme.of(context)
+                          .scaffoldBackgroundColor
+                          .withValues(alpha: 0.98),
                       child: Column(
                         children: [
                           // Chart card and visualizers
@@ -327,14 +354,17 @@ class _StartShootingState extends State<StartShooting> {
                             child: Card(
                               margin: EdgeInsets.zero,
                               elevation: 8,
-                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                              shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero),
                               color: Theme.of(context).scaffoldBackgroundColor,
                               child: Column(
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 8, bottom: 0),
+                                    padding: const EdgeInsets.only(
+                                        top: 8, bottom: 0),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           "Shot Accuracy",
@@ -342,13 +372,16 @@ class _StartShootingState extends State<StartShooting> {
                                             fontFamily: 'NovecentoSans',
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                         IconButton(
                                           icon: Icon(
                                             Icons.expand_less,
-                                            color: Theme.of(context).primaryColor,
+                                            color:
+                                                Theme.of(context).primaryColor,
                                           ),
                                           tooltip: "Collapse Chart",
                                           onPressed: () {
@@ -361,15 +394,30 @@ class _StartShootingState extends State<StartShooting> {
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 12, bottom: 12),
+                                    padding: const EdgeInsets.only(
+                                        top: 12, bottom: 12),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
                                       children: shotTypes.map((type) {
                                         final color = shotTypeColors[type]!;
-                                        final isActive = _selectedShotType == type;
-                                        final shotsOfType = _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
-                                        final totalHits = shotsOfType.fold<int>(0, (sum, s) => sum + (s.targetsHit ?? 0));
-                                        final totalShots = shotsOfType.fold<int>(0, (sum, s) => sum + (s.count ?? 0));
+                                        final isActive =
+                                            _selectedShotType == type;
+                                        final shotsOfType = _shots
+                                            .where((s) =>
+                                                s.type == type &&
+                                                s.targetsHit != null &&
+                                                s.count != null)
+                                            .toList();
+                                        final totalHits = shotsOfType.fold<int>(
+                                            0,
+                                            (sum, s) =>
+                                                sum + (s.targetsHit ?? 0));
+                                        final totalShots =
+                                            shotsOfType.fold<int>(
+                                                0,
+                                                (sum, s) =>
+                                                    sum + (s.count ?? 0));
                                         return GestureDetector(
                                           onTap: () {
                                             setState(() {
@@ -379,22 +427,32 @@ class _StartShootingState extends State<StartShooting> {
                                           child: Column(
                                             children: [
                                               Text(
-                                                type[0].toUpperCase() + type.substring(1),
+                                                type[0].toUpperCase() +
+                                                    type.substring(1),
                                                 style: TextStyle(
-                                                  color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
+                                                  color: isActive
+                                                      ? color
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimary
+                                                          .withValues(
+                                                              alpha: 0.6),
                                                   fontWeight: FontWeight.bold,
                                                   fontFamily: 'NovecentoSans',
                                                   fontSize: 14,
                                                 ),
                                               ),
                                               AnimatedContainer(
-                                                duration: const Duration(milliseconds: 250),
+                                                duration: const Duration(
+                                                    milliseconds: 250),
                                                 curve: Curves.easeOutCubic,
                                                 width: isActive ? 90 : 70,
                                                 height: isActive ? 110 : 85,
                                                 child: Opacity(
-                                                  opacity: isActive ? 1.0 : 0.45,
-                                                  child: TargetAccuracyVisualizer(
+                                                  opacity:
+                                                      isActive ? 1.0 : 0.45,
+                                                  child:
+                                                      TargetAccuracyVisualizer(
                                                     hits: totalHits,
                                                     total: totalShots,
                                                     shotColor: color,
@@ -414,43 +472,65 @@ class _StartShootingState extends State<StartShooting> {
                                       padding: const EdgeInsets.all(12),
                                       margin: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).cardTheme.color,
+                                        color:
+                                            Theme.of(context).cardTheme.color,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
-                                      child: accuracySpotsByType[_selectedShotType]!.isEmpty
+                                      child: accuracySpotsByType[
+                                                  _selectedShotType]!
+                                              .isEmpty
                                           ? Center(
                                               child: Text(
                                                 "Add shots to see your accuracy chart.",
                                                 style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
                                                   fontSize: 14,
                                                 ),
                                               ),
                                             )
                                           : LayoutBuilder(
                                               builder: (context, constraints) {
-                                                final chartWidth = constraints.maxWidth;
-                                                final chartHeight = constraints.maxHeight;
-                                                final spots = accuracySpotsByType[_selectedShotType]!;
-                                                final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
+                                                final chartWidth =
+                                                    constraints.maxWidth;
+                                                final chartHeight =
+                                                    constraints.maxHeight;
+                                                final spots =
+                                                    accuracySpotsByType[
+                                                        _selectedShotType]!;
+                                                final filtered = _shots
+                                                    .where((s) =>
+                                                        s.type ==
+                                                        _selectedShotType)
+                                                    .toList();
 
                                                 // Find min/max for scaling
-                                                final minX = spots.isNotEmpty ? spots.first.x : 0;
-                                                final maxX = spots.isNotEmpty ? spots.last.x : 1;
+                                                final minX = spots.isNotEmpty
+                                                    ? spots.first.x
+                                                    : 0;
+                                                final maxX = spots.isNotEmpty
+                                                    ? spots.last.x
+                                                    : 1;
                                                 const minY = 0.0;
                                                 const maxY = 100.0;
 
                                                 List<Widget> labels = [];
-                                                for (int i = 0; i < spots.length; i++) {
+                                                for (int i = 0;
+                                                    i < spots.length;
+                                                    i++) {
                                                   final spot = spots[i];
                                                   // Find targetsHit/count for this spot
                                                   int cumulative = 0;
                                                   int? targetsHit;
                                                   int? count;
-                                                  for (int j = 0; j < filtered.length; j++) {
+                                                  for (int j = 0;
+                                                      j < filtered.length;
+                                                      j++) {
                                                     final s = filtered[j];
                                                     cumulative += s.count!;
-                                                    if (cumulative.toDouble() == spot.x) {
+                                                    if (cumulative.toDouble() ==
+                                                        spot.x) {
                                                       targetsHit = s.targetsHit;
                                                       count = s.count;
                                                       break;
@@ -458,8 +538,13 @@ class _StartShootingState extends State<StartShooting> {
                                                   }
 
                                                   // Calculate position
-                                                  final x = ((spot.x - minX) / (maxX - minX)) * chartWidth;
-                                                  final y = chartHeight - ((spot.y - minY) / (maxY - minY)) * chartHeight;
+                                                  final x = ((spot.x - minX) /
+                                                          (maxX - minX)) *
+                                                      chartWidth;
+                                                  final y = chartHeight -
+                                                      ((spot.y - minY) /
+                                                              (maxY - minY)) *
+                                                          chartHeight;
 
                                                   labels.add(
                                                     Positioned(
@@ -468,34 +553,70 @@ class _StartShootingState extends State<StartShooting> {
                                                       child: Column(
                                                         children: [
                                                           Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                            decoration: BoxDecoration(
-                                                              color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.9),
-                                                              borderRadius: BorderRadius.circular(4),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        6,
+                                                                    vertical:
+                                                                        2),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: shotTypeColors[
+                                                                      _selectedShotType]!
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.9),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          4),
                                                             ),
                                                             child: Text(
                                                               "${targetsHit ?? '-'}",
-                                                              style: const TextStyle(
-                                                                color: Colors.white,
-                                                                fontWeight: FontWeight.bold,
-                                                                fontFamily: 'NovecentoSans',
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontFamily:
+                                                                    'NovecentoSans',
                                                                 fontSize: 12,
                                                               ),
                                                             ),
                                                           ),
-                                                          const SizedBox(height: 4),
+                                                          const SizedBox(
+                                                              height: 4),
                                                           Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.black38,
-                                                              borderRadius: BorderRadius.circular(4),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        6,
+                                                                    vertical:
+                                                                        2),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: Colors
+                                                                  .black38,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          4),
                                                             ),
                                                             child: Text(
                                                               "${count ?? '-'}",
-                                                              style: const TextStyle(
-                                                                color: Colors.white,
-                                                                fontWeight: FontWeight.bold,
-                                                                fontFamily: 'NovecentoSans',
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontFamily:
+                                                                    'NovecentoSans',
                                                                 fontSize: 12,
                                                               ),
                                                             ),
@@ -513,153 +634,375 @@ class _StartShootingState extends State<StartShooting> {
                                                       LineChartData(
                                                         minY: 0,
                                                         maxY: 100,
-                                                        minX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.first.x : 0,
-                                                        maxX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.last.x : 1,
+                                                        minX: (accuracySpotsByType[
+                                                                    _selectedShotType]!
+                                                                .isNotEmpty)
+                                                            ? accuracySpotsByType[
+                                                                    _selectedShotType]!
+                                                                .first
+                                                                .x
+                                                            : 0,
+                                                        maxX: (accuracySpotsByType[
+                                                                    _selectedShotType]!
+                                                                .isNotEmpty)
+                                                            ? accuracySpotsByType[
+                                                                    _selectedShotType]!
+                                                                .last
+                                                                .x
+                                                            : 1,
                                                         gridData: FlGridData(
                                                           show: true,
-                                                          drawVerticalLine: true,
-                                                          horizontalInterval: 20,
-                                                          verticalInterval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
-                                                          getDrawingHorizontalLine: (value) => FlLine(
-                                                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                                                          drawVerticalLine:
+                                                              true,
+                                                          horizontalInterval:
+                                                              20,
+                                                          verticalInterval: (accuracySpotsByType[
+                                                                          _selectedShotType]!
+                                                                      .isNotEmpty &&
+                                                                  accuracySpotsByType[
+                                                                              _selectedShotType]!
+                                                                          .last
+                                                                          .x >
+                                                                      accuracySpotsByType[
+                                                                              _selectedShotType]!
+                                                                          .first
+                                                                          .x)
+                                                              ? ((accuracySpotsByType[_selectedShotType]!
+                                                                              .last
+                                                                              .x -
+                                                                          accuracySpotsByType[_selectedShotType]!
+                                                                              .first
+                                                                              .x) /
+                                                                      5)
+                                                                  .clamp(
+                                                                      1,
+                                                                      double
+                                                                          .infinity)
+                                                              : 1,
+                                                          getDrawingHorizontalLine:
+                                                              (value) => FlLine(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary
+                                                                .withValues(
+                                                                    alpha: 0.1),
                                                             strokeWidth: 1,
                                                           ),
-                                                          getDrawingVerticalLine: (value) => FlLine(
-                                                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                                                          getDrawingVerticalLine:
+                                                              (value) => FlLine(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary
+                                                                .withValues(
+                                                                    alpha: 0.1),
                                                             strokeWidth: 1,
                                                           ),
                                                         ),
-                                                        titlesData: FlTitlesData(
-                                                          leftTitles: AxisTitles(
-                                                            axisNameWidget: Padding(
-                                                              padding: const EdgeInsets.only(bottom: 8),
+                                                        titlesData:
+                                                            FlTitlesData(
+                                                          leftTitles:
+                                                              AxisTitles(
+                                                            axisNameWidget:
+                                                                Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      bottom:
+                                                                          8),
                                                               child: Text(
                                                                 'Accuracy (%)',
-                                                                style: TextStyle(
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .onPrimary,
                                                                   fontSize: 14,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  fontFamily: 'NovecentoSans',
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily:
+                                                                      'NovecentoSans',
                                                                 ),
                                                               ),
                                                             ),
                                                             axisNameSize: 28,
-                                                            sideTitles: SideTitles(
+                                                            sideTitles:
+                                                                SideTitles(
                                                               showTitles: true,
                                                               reservedSize: 32,
-                                                              getTitlesWidget: (value, meta) => Padding(
-                                                                padding: const EdgeInsets.only(right: 4),
+                                                              getTitlesWidget:
+                                                                  (value, meta) =>
+                                                                      Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                        right:
+                                                                            4),
                                                                 child: Text(
-                                                                  value.toInt().toString(),
-                                                                  style: TextStyle(
-                                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                                    fontSize: 12,
-                                                                    fontFamily: 'NovecentoSans',
+                                                                  value
+                                                                      .toInt()
+                                                                      .toString(),
+                                                                  style:
+                                                                      TextStyle(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .colorScheme
+                                                                        .onPrimary,
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontFamily:
+                                                                        'NovecentoSans',
                                                                   ),
                                                                 ),
                                                               ),
                                                               interval: 20,
                                                             ),
                                                           ),
-                                                          bottomTitles: AxisTitles(
-                                                            axisNameWidget: Padding(
-                                                              padding: const EdgeInsets.only(top: 8),
+                                                          bottomTitles:
+                                                              AxisTitles(
+                                                            axisNameWidget:
+                                                                Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      top: 8),
                                                               child: Text(
                                                                 'Shots Taken',
-                                                                style: TextStyle(
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .onPrimary,
                                                                   fontSize: 14,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  fontFamily: 'NovecentoSans',
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily:
+                                                                      'NovecentoSans',
                                                                 ),
                                                               ),
                                                             ),
                                                             axisNameSize: 28,
-                                                            sideTitles: SideTitles(
+                                                            sideTitles:
+                                                                SideTitles(
                                                               showTitles: true,
                                                               reservedSize: 32,
-                                                              getTitlesWidget: (value, meta) {
-                                                                bool show = accuracySpotsByType[_selectedShotType]!.any((spot) => spot.x == value);
+                                                              getTitlesWidget:
+                                                                  (value,
+                                                                      meta) {
+                                                                bool show = accuracySpotsByType[
+                                                                        _selectedShotType]!
+                                                                    .any((spot) =>
+                                                                        spot.x ==
+                                                                        value);
                                                                 if (show) {
                                                                   return Padding(
-                                                                    padding: const EdgeInsets.only(top: 4),
+                                                                    padding: const EdgeInsets
+                                                                        .only(
+                                                                        top: 4),
                                                                     child: Text(
-                                                                      value.toInt().toString(),
-                                                                      style: TextStyle(
-                                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                                        fontSize: 12,
-                                                                        fontFamily: 'NovecentoSans',
+                                                                      value
+                                                                          .toInt()
+                                                                          .toString(),
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Theme.of(context)
+                                                                            .colorScheme
+                                                                            .onPrimary,
+                                                                        fontSize:
+                                                                            12,
+                                                                        fontFamily:
+                                                                            'NovecentoSans',
                                                                       ),
                                                                     ),
                                                                   );
                                                                 }
-                                                                return const SizedBox.shrink();
+                                                                return const SizedBox
+                                                                    .shrink();
                                                               },
-                                                              interval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
+                                                              interval: (accuracySpotsByType[
+                                                                              _selectedShotType]!
+                                                                          .isNotEmpty &&
+                                                                      accuracySpotsByType[_selectedShotType]!
+                                                                              .last
+                                                                              .x >
+                                                                          accuracySpotsByType[_selectedShotType]!
+                                                                              .first
+                                                                              .x)
+                                                                  ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) /
+                                                                          5)
+                                                                      .clamp(
+                                                                          1,
+                                                                          double
+                                                                              .infinity)
+                                                                  : 1,
                                                             ),
                                                           ),
-                                                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                                          rightTitles: const AxisTitles(
+                                                              sideTitles:
+                                                                  SideTitles(
+                                                                      showTitles:
+                                                                          false)),
+                                                          topTitles: const AxisTitles(
+                                                              sideTitles:
+                                                                  SideTitles(
+                                                                      showTitles:
+                                                                          false)),
                                                         ),
-                                                        borderData: FlBorderData(
+                                                        borderData:
+                                                            FlBorderData(
                                                           show: true,
                                                           border: Border.all(
-                                                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary
+                                                                .withValues(
+                                                                    alpha: 0.2),
                                                           ),
                                                         ),
                                                         lineBarsData: [
-                                                          if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                                          if (accuracySpotsByType[
+                                                                  _selectedShotType]!
+                                                              .isNotEmpty)
                                                             LineChartBarData(
-                                                              spots: accuracySpotsByType[_selectedShotType]!,
+                                                              spots: accuracySpotsByType[
+                                                                  _selectedShotType]!,
                                                               isCurved: true,
                                                               barWidth: 4,
-                                                              color: shotTypeColors[_selectedShotType],
-                                                              dotData: const FlDotData(show: true),
+                                                              color: shotTypeColors[
+                                                                  _selectedShotType],
+                                                              dotData:
+                                                                  const FlDotData(
+                                                                      show:
+                                                                          true),
                                                             ),
                                                           // Optional: average line for selected type
-                                                          if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                                          if (accuracySpotsByType[
+                                                                  _selectedShotType]!
+                                                              .isNotEmpty)
                                                             LineChartBarData(
                                                               spots: [
-                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.first.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
-                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.last.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
+                                                                FlSpot(
+                                                                    accuracySpotsByType[
+                                                                            _selectedShotType]!
+                                                                        .first
+                                                                        .x,
+                                                                    avgAccuracyByType[
+                                                                            _selectedShotType]!
+                                                                        .roundToDouble()),
+                                                                FlSpot(
+                                                                    accuracySpotsByType[
+                                                                            _selectedShotType]!
+                                                                        .last
+                                                                        .x,
+                                                                    avgAccuracyByType[
+                                                                            _selectedShotType]!
+                                                                        .roundToDouble()),
                                                               ],
                                                               isCurved: false,
                                                               barWidth: 1,
-                                                              color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.5),
+                                                              color: shotTypeColors[
+                                                                      _selectedShotType]!
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.5),
                                                               dashArray: [4, 4],
-                                                              dotData: const FlDotData(show: false),
+                                                              dotData:
+                                                                  const FlDotData(
+                                                                      show:
+                                                                          false),
                                                             ),
                                                         ],
-                                                        lineTouchData: LineTouchData(
+                                                        lineTouchData:
+                                                            LineTouchData(
                                                           enabled: true,
-                                                          handleBuiltInTouches: true,
-                                                          touchSpotThreshold: 22, // <-- Increase touch area for all dots
-                                                          touchTooltipData: LineTouchTooltipData(
-                                                            getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
-                                                            tooltipBorderRadius: BorderRadius.circular(10),
-                                                            fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
-                                                            fitInsideVertically: false,
-                                                            tooltipMargin: 24, // Add more margin so tooltips aren't clipped
-                                                            getTooltipItems: (touchedSpots) {
-                                                              final color = shotTypeColors[_selectedShotType]!;
-                                                              final spots = accuracySpotsByType[_selectedShotType]!;
-                                                              return touchedSpots.map((touched) {
+                                                          handleBuiltInTouches:
+                                                              true,
+                                                          touchSpotThreshold:
+                                                              22, // <-- Increase touch area for all dots
+                                                          touchTooltipData:
+                                                              LineTouchTooltipData(
+                                                            getTooltipColor:
+                                                                (d) => Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .surface
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.95),
+                                                            tooltipBorderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                            fitInsideHorizontally:
+                                                                false, // Allow tooltip to overflow horizontally
+                                                            fitInsideVertically:
+                                                                false,
+                                                            tooltipMargin:
+                                                                24, // Add more margin so tooltips aren't clipped
+                                                            getTooltipItems:
+                                                                (touchedSpots) {
+                                                              final color =
+                                                                  shotTypeColors[
+                                                                      _selectedShotType]!;
+                                                              final spots =
+                                                                  accuracySpotsByType[
+                                                                      _selectedShotType]!;
+                                                              return touchedSpots
+                                                                  .map(
+                                                                      (touched) {
                                                                 // Use a small epsilon for floating point comparison
-                                                                final index = spots.indexWhere((spot) => (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
-                                                                if (index == -1) return null; // <-- Return null instead of continue
+                                                                final index = spots.indexWhere((spot) =>
+                                                                    (spot.x - touched.x)
+                                                                            .abs() <
+                                                                        0.01 &&
+                                                                    (spot.y - touched.y)
+                                                                            .abs() <
+                                                                        0.01);
+                                                                if (index ==
+                                                                    -1) {
+                                                                  return null; // <-- Return null instead of continue
+                                                                }
 
                                                                 // Find the corresponding shot for this spot
-                                                                final filtered = _shots.where((s) => s.type == _selectedShotType).toList();
-                                                                int cumulative = 0;
+                                                                final filtered = _shots
+                                                                    .where((s) =>
+                                                                        s.type ==
+                                                                        _selectedShotType)
+                                                                    .toList();
+                                                                int cumulative =
+                                                                    0;
                                                                 int? targetsHit;
                                                                 int? count;
-                                                                for (int i = 0; i < filtered.length; i++) {
-                                                                  final s = filtered[filtered.length - 1 - i];
-                                                                  if (s.targetsHit != null && s.count != null && s.count! > 0) {
-                                                                    cumulative += s.count!;
-                                                                    if (cumulative.toDouble() == touched.x) {
-                                                                      targetsHit = s.targetsHit;
-                                                                      count = s.count;
+                                                                for (int i = 0;
+                                                                    i <
+                                                                        filtered
+                                                                            .length;
+                                                                    i++) {
+                                                                  final s = filtered[
+                                                                      filtered.length -
+                                                                          1 -
+                                                                          i];
+                                                                  if (s.targetsHit != null &&
+                                                                      s.count !=
+                                                                          null &&
+                                                                      s.count! >
+                                                                          0) {
+                                                                    cumulative +=
+                                                                        s.count!;
+                                                                    if (cumulative
+                                                                            .toDouble() ==
+                                                                        touched
+                                                                            .x) {
+                                                                      targetsHit =
+                                                                          s.targetsHit;
+                                                                      count = s
+                                                                          .count;
                                                                       break;
                                                                     }
                                                                   }
@@ -671,20 +1014,45 @@ class _StartShootingState extends State<StartShooting> {
                                                                   "Shots: ${count ?? '-'}\n"
                                                                   "Accuracy: ${touched.y.toStringAsFixed(1)}%",
                                                                   TextStyle(
-                                                                    color: color,
-                                                                    fontWeight: FontWeight.bold,
-                                                                    fontFamily: 'NovecentoSans',
-                                                                    fontSize: 14,
+                                                                    color:
+                                                                        color,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        'NovecentoSans',
+                                                                    fontSize:
+                                                                        14,
                                                                   ),
                                                                 );
                                                               }).toList();
                                                             },
                                                           ),
-                                                          touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                                                            if (touchResponse != null && touchResponse.lineBarSpots != null && touchResponse.lineBarSpots!.isNotEmpty) {
-                                                              final spot = touchResponse.lineBarSpots!.first;
-                                                              final spots = accuracySpotsByType[_selectedShotType]!;
-                                                              final index = spots.indexWhere((s) => (s.x - spot.x).abs() < 0.01 && (s.y - spot.y).abs() < 0.01);
+                                                          touchCallback: (FlTouchEvent
+                                                                  event,
+                                                              LineTouchResponse?
+                                                                  touchResponse) {
+                                                            if (touchResponse != null &&
+                                                                touchResponse
+                                                                        .lineBarSpots !=
+                                                                    null &&
+                                                                touchResponse
+                                                                    .lineBarSpots!
+                                                                    .isNotEmpty) {
+                                                              final spot =
+                                                                  touchResponse
+                                                                      .lineBarSpots!
+                                                                      .first;
+                                                              final spots =
+                                                                  accuracySpotsByType[
+                                                                      _selectedShotType]!;
+                                                              final index = spots.indexWhere((s) =>
+                                                                  (s.x - spot.x)
+                                                                          .abs() <
+                                                                      0.01 &&
+                                                                  (s.y - spot.y)
+                                                                          .abs() <
+                                                                      0.01);
                                                               if (index != -1) {
                                                                 setState(() {
                                                                   // _selectedPlotIndex = index;
@@ -696,22 +1064,39 @@ class _StartShootingState extends State<StartShooting> {
                                                       ),
                                                     ),
                                                     // Average accuracy label for active type
-                                                    if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
+                                                    if (accuracySpotsByType[
+                                                            _selectedShotType]!
+                                                        .isNotEmpty)
                                                       Positioned(
                                                         left: 8,
                                                         top: 8,
                                                         child: Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                          decoration: BoxDecoration(
-                                                            color: shotTypeColors[_selectedShotType]!.withValues(alpha: 0.1),
-                                                            borderRadius: BorderRadius.circular(8),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 8,
+                                                                  vertical: 4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: shotTypeColors[
+                                                                    _selectedShotType]!
+                                                                .withValues(
+                                                                    alpha: 0.1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
                                                           ),
                                                           child: Text(
                                                             "Avg: ${avgAccuracyByType[_selectedShotType]!.round()}%",
                                                             style: TextStyle(
-                                                              color: shotTypeColors[_selectedShotType],
-                                                              fontWeight: FontWeight.bold,
-                                                              fontFamily: 'NovecentoSans',
+                                                              color: shotTypeColors[
+                                                                  _selectedShotType],
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontFamily:
+                                                                  'NovecentoSans',
                                                             ),
                                                           ),
                                                         ),
@@ -725,23 +1110,30 @@ class _StartShootingState extends State<StartShooting> {
                                   Expanded(child: Container()),
                                   // Close button at the bottom
                                   Padding(
-                                    padding: const EdgeInsets.only(bottom: 24, top: 8),
+                                    padding: const EdgeInsets.only(
+                                        bottom: 24, top: 8),
                                     child: SizedBox(
                                       width: 180,
                                       child: ElevatedButton.icon(
                                         icon: const Icon(Icons.close),
                                         label: const Text("Close"),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(context).colorScheme.primary,
-                                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          foregroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 14),
                                           textStyle: const TextStyle(
                                             fontFamily: 'NovecentoSans',
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                         ),
                                         onPressed: () {
@@ -766,7 +1158,8 @@ class _StartShootingState extends State<StartShooting> {
     );
   }
 
-  Widget _buildBlurredProChart(BuildContext context, List<String> shotTypes, Map<String, Color> shotTypeColors) {
+  Widget _buildBlurredProChart(BuildContext context, List<String> shotTypes,
+      Map<String, Color> shotTypeColors) {
     // Dummy data for non-pro users
     final Map<String, double> dummyAvgAccuracy = {
       'wrist': 72.0,
@@ -797,13 +1190,21 @@ class _StartShootingState extends State<StartShooting> {
                             radarBackgroundColor: Colors.transparent,
                             tickCount: 5,
                             ticksTextStyle: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimary
+                                  .withValues(alpha: 0),
                               fontFamily: 'NovecentoSans',
                               fontSize: 12,
                             ),
                             getTitle: (index, angle) => RadarChartTitle(
-                              positionPercentageOffset: (shotTypes[index] == "backhand" || shotTypes[index] == "snap") ? 0.3 : 0.1,
-                              text: shotTypes[index][0].toUpperCase() + shotTypes[index].substring(1),
+                              positionPercentageOffset:
+                                  (shotTypes[index] == "backhand" ||
+                                          shotTypes[index] == "snap")
+                                      ? 0.3
+                                      : 0.1,
+                              text: shotTypes[index][0].toUpperCase() +
+                                  shotTypes[index].substring(1),
                             ),
                             dataSets: [
                               RadarDataSet(
@@ -811,27 +1212,44 @@ class _StartShootingState extends State<StartShooting> {
                                 borderColor: Colors.transparent,
                                 entryRadius: 0,
                                 borderWidth: 0,
-                                dataEntries: shotTypes.map((type) => const RadarEntry(value: 30)).toList(),
+                                dataEntries: shotTypes
+                                    .map((type) => const RadarEntry(value: 30))
+                                    .toList(),
                               ),
                               RadarDataSet(
-                                fillColor: Theme.of(context).primaryColor.withValues(alpha: 0.10),
-                                borderColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                fillColor: Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.10),
+                                borderColor: Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.5),
                                 entryRadius: 6,
                                 borderWidth: 2,
-                                dataEntries: shotTypes.map((type) => RadarEntry(value: dummyAvgAccuracy[type]!)).toList(),
+                                dataEntries: shotTypes
+                                    .map((type) => RadarEntry(
+                                        value: dummyAvgAccuracy[type]!))
+                                    .toList(),
                               ),
                               RadarDataSet(
                                 fillColor: Colors.transparent,
                                 borderColor: Colors.transparent,
                                 entryRadius: 0,
                                 borderWidth: 0,
-                                dataEntries: shotTypes.map((type) => const RadarEntry(value: 100)).toList(),
+                                dataEntries: shotTypes
+                                    .map((type) => const RadarEntry(value: 100))
+                                    .toList(),
                               ),
                             ],
                             radarShape: RadarShape.circle,
-                            gridBorderData: BorderSide(color: Colors.black.withValues(alpha: 0.2), width: 2),
-                            radarBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.25), width: 1.5),
-                            tickBorderData: BorderSide(color: Colors.grey.withValues(alpha: 0.15), width: 0.8),
+                            gridBorderData: BorderSide(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                width: 2),
+                            radarBorderData: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.25),
+                                width: 1.5),
+                            tickBorderData: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.15),
+                                width: 0.8),
                           ),
                         ),
                       ),
@@ -854,7 +1272,8 @@ class _StartShootingState extends State<StartShooting> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lock, color: Theme.of(context).primaryColor, size: 48),
+                  Icon(Icons.lock,
+                      color: Theme.of(context).primaryColor, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     "Pro required",
@@ -863,7 +1282,12 @@ class _StartShootingState extends State<StartShooting> {
                       fontWeight: FontWeight.bold,
                       fontSize: 28,
                       fontFamily: 'NovecentoSans',
-                      shadows: const [Shadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))],
+                      shadows: const [
+                        Shadow(
+                            color: Colors.black26,
+                            blurRadius: 2,
+                            offset: Offset(0, 1))
+                      ],
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -885,7 +1309,8 @@ class _StartShootingState extends State<StartShooting> {
                       label: const Text("Close"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: const TextStyle(
                           fontFamily: 'NovecentoSans',
@@ -932,7 +1357,8 @@ class _StartShootingState extends State<StartShooting> {
                 _selectedShotType = 'wrist';
               });
             },
-            borderRadius: BorderRadius.circular(_selectedShotType == 'wrist' ? 12 : 6),
+            borderRadius:
+                BorderRadius.circular(_selectedShotType == 'wrist' ? 12 : 6),
           ),
           ShotTypeButton(
             type: 'snap',
@@ -943,7 +1369,8 @@ class _StartShootingState extends State<StartShooting> {
                 _selectedShotType = 'snap';
               });
             },
-            borderRadius: BorderRadius.circular(_selectedShotType == 'snap' ? 12 : 6),
+            borderRadius:
+                BorderRadius.circular(_selectedShotType == 'snap' ? 12 : 6),
           ),
           ShotTypeButton(
             type: 'slap',
@@ -954,7 +1381,8 @@ class _StartShootingState extends State<StartShooting> {
                 _selectedShotType = 'slap';
               });
             },
-            borderRadius: BorderRadius.circular(_selectedShotType == 'slap' ? 12 : 6),
+            borderRadius:
+                BorderRadius.circular(_selectedShotType == 'slap' ? 12 : 6),
           ),
           ShotTypeButton(
             type: 'backhand',
@@ -965,7 +1393,8 @@ class _StartShootingState extends State<StartShooting> {
                 _selectedShotType = 'backhand';
               });
             },
-            borderRadius: BorderRadius.circular(_selectedShotType == 'backhand' ? 12 : 6),
+            borderRadius:
+                BorderRadius.circular(_selectedShotType == 'backhand' ? 12 : 6),
           ),
         ],
       ),
@@ -976,7 +1405,9 @@ class _StartShootingState extends State<StartShooting> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        preferences!.puckCount != _currentShotCount ? const SizedBox(height: 10) : Container(),
+        preferences!.puckCount != _currentShotCount
+            ? const SizedBox(height: 10)
+            : Container(),
         GestureDetector(
           onTap: () async {
             Feedback.forLongPress(context);
@@ -992,12 +1423,15 @@ class _StartShootingState extends State<StartShooting> {
             );
 
             if (context.mounted) {
-              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+              Provider.of<PreferencesStateNotifier>(context, listen: false)
+                  .updateSettings(
                 Preferences(
-                  prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
+                  prefs.getBool('dark_mode') ??
+                      ThemeMode.system == ThemeMode.dark,
                   _currentShotCount,
                   prefs.getBool('friend_notifications'),
-                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                  DateTime(DateTime.now().year, DateTime.now().month,
+                      DateTime.now().day + 100),
                   prefs.getString('fcm_token'),
                 ),
               );
@@ -1055,7 +1489,9 @@ class _StartShootingState extends State<StartShooting> {
             ],
           ),
         ),
-        preferences!.puckCount != _currentShotCount ? const SizedBox(height: 5) : Container(),
+        preferences!.puckCount != _currentShotCount
+            ? const SizedBox(height: 5)
+            : Container(),
         Text(
           "# of Shots".toUpperCase(),
           style: TextStyle(
@@ -1082,13 +1518,15 @@ class _StartShootingState extends State<StartShooting> {
                         color: Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       child: TextField(
                         controller: controller,
                         autofocus: true,
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           hintText: "1 - 500",
@@ -1121,7 +1559,8 @@ class _StartShootingState extends State<StartShooting> {
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('OK'),
                     ),
@@ -1142,8 +1581,10 @@ class _StartShootingState extends State<StartShooting> {
             maxValue: 500,
             step: 1,
             itemHeight: 60,
-            textStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-            selectedTextStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 20),
+            textStyle:
+                TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            selectedTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary, fontSize: 20),
             axis: Axis.horizontal,
             haptics: true,
             infiniteLoop: true,
@@ -1155,7 +1596,8 @@ class _StartShootingState extends State<StartShooting> {
             },
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+              border:
+                  Border.all(color: Theme.of(context).primaryColor, width: 2),
             ),
           ),
         ),
@@ -1181,7 +1623,8 @@ class _StartShootingState extends State<StartShooting> {
 
               int? targetsHit;
               if (showAccuracyFeature && _isProUser) {
-                targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // Only show dialog for pro users
+                targetsHit = await showAccuracyInputDialog(context,
+                    _currentShotCount); // Only show dialog for pro users
                 if (targetsHit == null && _isProUser) return;
                 setState(() {
                   _lastTargetsHit = targetsHit;
@@ -1199,7 +1642,8 @@ class _StartShootingState extends State<StartShooting> {
               });
             },
             style: ButtonStyle(
-              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
+              padding: WidgetStateProperty.all(
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
               backgroundColor: WidgetStateProperty.all(Colors.green.shade600),
             ),
             child: const Icon(
@@ -1284,7 +1728,8 @@ class _StartShootingState extends State<StartShooting> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.delete_forever, color: Colors.grey),
+                              const Icon(Icons.delete_forever,
+                                  color: Colors.grey),
                               const SizedBox(width: 8),
                               Text(
                                 "Cancel".toUpperCase(),
@@ -1307,14 +1752,29 @@ class _StartShootingState extends State<StartShooting> {
                               totalShots += s.count!;
                             }
 
-                            await saveShootingSession(_shots).then((success) async {
+                            await saveShootingSession(
+                              _shots,
+                              Provider.of<FirebaseAuth>(context, listen: false),
+                              Provider.of<FirebaseFirestore>(context,
+                                  listen: false),
+                            ).then((success) async {
                               sessionService.reset();
                               widget.sessionPanelController.close();
                               reset();
 
-                              await FirebaseFirestore.instance.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                              await FirebaseFirestore.instance
+                                  .collection('iterations')
+                                  .doc(Provider.of<FirebaseAuth>(context,
+                                          listen: false)
+                                      .currentUser!
+                                      .uid)
+                                  .collection('iterations')
+                                  .where('complete', isEqualTo: false)
+                                  .get()
+                                  .then((snapshot) {
                                 if (snapshot.docs.isNotEmpty) {
-                                  Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
+                                  Iteration i =
+                                      Iteration.fromSnapshot(snapshot.docs[0]);
 
                                   if ((i.total! + totalShots) < 10000) {
                                     Fluttertoast.showToast(
@@ -1322,8 +1782,11 @@ class _StartShootingState extends State<StartShooting> {
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.BOTTOM,
                                       timeInSecForIosWeb: 1,
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                      textColor: Theme.of(context).colorScheme.onPrimary,
+                                      backgroundColor:
+                                          Theme.of(context).cardTheme.color,
+                                      textColor: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 16.0,
                                     );
                                   } else {
@@ -1331,7 +1794,9 @@ class _StartShootingState extends State<StartShooting> {
                                       context: context,
                                       builder: (context) {
                                         return Dialog(
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(4.0)),
                                           child: SingleChildScrollView(
                                             clipBehavior: Clip.none,
                                             child: Stack(
@@ -1341,78 +1806,119 @@ class _StartShootingState extends State<StartShooting> {
                                                 SizedBox(
                                                   height: 550,
                                                   child: Padding(
-                                                    padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(
+                                                        10, 70, 10, 10),
                                                     child: Column(
                                                       children: [
                                                         Text(
-                                                          "Challenge Complete!".toUpperCase(),
-                                                          textAlign: TextAlign.center,
+                                                          "Challenge Complete!"
+                                                              .toUpperCase(),
+                                                          textAlign:
+                                                              TextAlign.center,
                                                           style: TextStyle(
-                                                            color: Theme.of(context).primaryColor,
-                                                            fontFamily: "NovecentoSans",
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .primaryColor,
+                                                            fontFamily:
+                                                                "NovecentoSans",
                                                             fontSize: 32,
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 5),
+                                                        const SizedBox(
+                                                            height: 5),
                                                         Text(
                                                           "Nice job, ya beauty!\n10,000 shots isn't easy.",
-                                                          textAlign: TextAlign.center,
+                                                          textAlign:
+                                                              TextAlign.center,
                                                           style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                            fontFamily: "NovecentoSans",
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary,
+                                                            fontFamily:
+                                                                "NovecentoSans",
                                                             fontSize: 22,
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 5),
+                                                        const SizedBox(
+                                                            height: 5),
                                                         Opacity(
                                                           opacity: 0.8,
                                                           child: Text(
                                                             "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
-                                                            textAlign: TextAlign.center,
+                                                            textAlign: TextAlign
+                                                                .center,
                                                             style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontFamily: "NovecentoSans",
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
+                                                              fontFamily:
+                                                                  "NovecentoSans",
                                                               fontSize: 16,
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 15),
+                                                        const SizedBox(
+                                                            height: 15),
                                                         GestureDetector(
                                                           onTap: () async {
-                                                            String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                            await canLaunchUrlString(link).then((can) {
-                                                              launchUrlString(link).catchError((err) {
+                                                            String link =
+                                                                "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                            await canLaunchUrlString(
+                                                                    link)
+                                                                .then((can) {
+                                                              launchUrlString(
+                                                                      link)
+                                                                  .catchError(
+                                                                      (err) {
                                                                 print(err);
                                                                 return false;
                                                               });
                                                             });
                                                           },
                                                           child: Card(
-                                                            color: Theme.of(context).cardTheme.color,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .cardTheme
+                                                                .color,
                                                             elevation: 4,
                                                             child: SizedBox(
                                                               width: 125,
                                                               height: 180,
                                                               child: Column(
-                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .start,
                                                                 children: [
                                                                   const Image(
-                                                                    image: NetworkImage(
+                                                                    image:
+                                                                        NetworkImage(
                                                                       "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
                                                                     ),
                                                                     width: 150,
                                                                   ),
                                                                   Expanded(
-                                                                    child: Column(
-                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                    child:
+                                                                        Column(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .center,
                                                                       children: [
                                                                         Container(
-                                                                          padding: const EdgeInsets.all(5),
-                                                                          child: Text(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              5),
+                                                                          child:
+                                                                              Text(
                                                                             "Sniper Snapback".toUpperCase(),
-                                                                            maxLines: 2,
-                                                                            textAlign: TextAlign.center,
-                                                                            style: TextStyle(
+                                                                            maxLines:
+                                                                                2,
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                            style:
+                                                                                TextStyle(
                                                                               fontFamily: "NovecentoSans",
                                                                               fontSize: 18,
                                                                               color: Theme.of(context).colorScheme.onPrimary,
@@ -1427,45 +1933,77 @@ class _StartShootingState extends State<StartShooting> {
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 5),
+                                                        const SizedBox(
+                                                            height: 5),
                                                         Container(
-                                                          decoration: BoxDecoration(
-                                                            color: Theme.of(context).colorScheme.primaryContainer,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .primaryContainer,
                                                           ),
-                                                          padding: const EdgeInsets.all(5),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(5),
                                                           child: SelectableText(
                                                             "TENKSNIPER",
                                                             style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontFamily: "NovecentoSans",
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
+                                                              fontFamily:
+                                                                  "NovecentoSans",
                                                               fontSize: 24,
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 5),
+                                                        const SizedBox(
+                                                            height: 5),
                                                         TextButton(
                                                           onPressed: () async {
-                                                            Navigator.of(context).pop();
-                                                            String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                            await canLaunchUrlString(link).then((can) {
-                                                              launchUrlString(link).catchError((err) {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                            String link =
+                                                                "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                            await canLaunchUrlString(
+                                                                    link)
+                                                                .then((can) {
+                                                              launchUrlString(
+                                                                      link)
+                                                                  .catchError(
+                                                                      (err) {
                                                                 print(err);
                                                                 return false;
                                                               });
                                                             });
                                                           },
                                                           style: ButtonStyle(
-                                                            backgroundColor: WidgetStateProperty.all(
-                                                              Theme.of(context).primaryColor,
+                                                            backgroundColor:
+                                                                WidgetStateProperty
+                                                                    .all(
+                                                              Theme.of(context)
+                                                                  .primaryColor,
                                                             ),
-                                                            padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                            padding: WidgetStateProperty.all(
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    vertical: 4,
+                                                                    horizontal:
+                                                                        15)),
                                                           ),
                                                           child: Text(
-                                                            "Get yours".toUpperCase(),
-                                                            style: const TextStyle(
-                                                              fontFamily: "NovecentoSans",
+                                                            "Get yours"
+                                                                .toUpperCase(),
+                                                            style:
+                                                                const TextStyle(
+                                                              fontFamily:
+                                                                  "NovecentoSans",
                                                               fontSize: 30,
-                                                              color: Colors.white,
+                                                              color:
+                                                                  Colors.white,
                                                             ),
                                                           ),
                                                         ),
@@ -1479,7 +2017,8 @@ class _StartShootingState extends State<StartShooting> {
                                                     width: 100,
                                                     height: 100,
                                                     child: Image(
-                                                      image: AssetImage("assets/images/GoalLight.gif"),
+                                                      image: AssetImage(
+                                                          "assets/images/GoalLight.gif"),
                                                     ),
                                                   ),
                                                 ),
@@ -1496,11 +2035,14 @@ class _StartShootingState extends State<StartShooting> {
                               print(error);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                  backgroundColor:
+                                      Theme.of(context).cardTheme.color,
                                   content: Text(
                                     'There was an error saving your shooting session :(',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                   ),
                                   duration: const Duration(milliseconds: 1500),
@@ -1519,7 +2061,8 @@ class _StartShootingState extends State<StartShooting> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.save_alt_rounded, color: Colors.white),
+                              const Icon(Icons.save_alt_rounded,
+                                  color: Colors.white),
                               const SizedBox(width: 8),
                               Text(
                                 "Finish".toUpperCase(),
@@ -1621,12 +2164,15 @@ class _StartShootingState extends State<StartShooting> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
           child: ListTile(
-            tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
+            tileColor: (i % 2 == 0)
+                ? Theme.of(context).cardTheme.color
+                : Theme.of(context).colorScheme.primary,
             leading: Container(
               margin: const EdgeInsets.only(bottom: 4),
               child: Text(
                 s.count.toString(),
-                style: const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+                style:
+                    const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
               ),
             ),
             title: Row(

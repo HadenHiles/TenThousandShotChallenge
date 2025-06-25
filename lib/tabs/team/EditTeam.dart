@@ -33,8 +33,10 @@ class _EditTeamState extends State<EditTeam> {
   final user = FirebaseAuth.instance.currentUser;
   final _formKey = GlobalKey<FormState>();
   final f = NumberFormat("###,###,###", "en_US");
-  final TextEditingController teamNameTextFieldController = TextEditingController();
-  final TextEditingController teamShotGoalTextFieldController = TextEditingController();
+  final TextEditingController teamNameTextFieldController =
+      TextEditingController();
+  final TextEditingController teamShotGoalTextFieldController =
+      TextEditingController();
   int? _goalTotal = 0;
   final TextEditingController startDateController = TextEditingController();
   DateTime? _startDate = DateTime.now();
@@ -45,10 +47,18 @@ class _EditTeamState extends State<EditTeam> {
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get()
+        .then((uDoc) {
       UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
-      FirebaseFirestore.instance.collection('teams').doc(userProfile.teamId).get().then((tDoc) {
+      FirebaseFirestore.instance
+          .collection('teams')
+          .doc(userProfile.teamId)
+          .get()
+          .then((tDoc) {
         setState(() {
           team = Team.fromSnapshot(tDoc);
           _goalTotal = team!.goalTotal;
@@ -59,15 +69,18 @@ class _EditTeamState extends State<EditTeam> {
 
         teamNameTextFieldController.text = team!.name!;
         teamShotGoalTextFieldController.text = team!.goalTotal!.toString();
-        startDateController.text = DateFormat('MMMM d, y').format(team!.startDate!);
-        targetDateController.text = DateFormat('MMMM d, y').format(team!.targetDate!);
+        startDateController.text =
+            DateFormat('MMMM d, y').format(team!.startDate!);
+        targetDateController.text =
+            DateFormat('MMMM d, y').format(team!.targetDate!);
       });
     });
 
     super.initState();
   }
 
-  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
+  Future<DateTime> _editDate(TextEditingController dateController,
+      DateTime currentDate, DateTime minTime, DateTime maxTime) async {
     DateTime returnDate = currentDate;
 
     await DatePicker.showDatePicker(
@@ -116,7 +129,8 @@ class _EditTeamState extends State<EditTeam> {
             builder: (BuildContext context) {
               return Navigation(
                 selectedIndex: 2,
-                title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
+                title: NavigationTitle(
+                    title: teamNameTextFieldController.text.toUpperCase()),
                 actions: [
                   team!.ownerId != user!.uid
                       ? const SizedBox()
@@ -129,7 +143,8 @@ class _EditTeamState extends State<EditTeam> {
                               size: 28,
                             ),
                             onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (BuildContext context) {
                                 return const EditTeam();
                               }));
                             },
@@ -144,18 +159,29 @@ class _EditTeamState extends State<EditTeam> {
                         size: 28,
                       ),
                       onPressed: () async {
-                        await showTeamQRCode().then((hasTeam) async {
+                        await showTeamQRCode(context).then((hasTeam) async {
                           if (!hasTeam) {
-                            final barcodeScanRes = await Navigator.of(context).push(
+                            final barcodeScanRes =
+                                await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+                                builder: (context) =>
+                                    const BarcodeScannerSimple(
+                                        title: "Scan Team QR Code"),
                               ),
                             );
 
-                            joinTeam(barcodeScanRes).then((success) {
-                              navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
+                            joinTeam(
+                              barcodeScanRes,
+                              Provider.of<FirebaseAuth>(context, listen: false),
+                              Provider.of<FirebaseFirestore>(context,
+                                  listen: false),
+                            ).then((success) {
+                              navigatorKey.currentState!.pushReplacement(
+                                  MaterialPageRoute(builder: (context) {
                                 return Navigation(
-                                  title: NavigationTitle(title: teamNameTextFieldController.text.toUpperCase()),
+                                  title: NavigationTitle(
+                                      title: teamNameTextFieldController.text
+                                          .toUpperCase()),
                                   selectedIndex: 2,
                                 );
                               }));
@@ -221,7 +247,8 @@ class _EditTeamState extends State<EditTeam> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -295,7 +322,17 @@ class _EditTeamState extends State<EditTeam> {
                                 Text(
                                   "Team Name:".toLowerCase(),
                                   style: TextStyle(
-                                    color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                    color: preferences!.darkMode!
+                                        ? darken(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                            0.4)
+                                        : darken(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            0.3),
                                     fontFamily: "NovecentoSans",
                                     fontSize: 14,
                                   ),
@@ -321,9 +358,20 @@ class _EditTeamState extends State<EditTeam> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Team Shooting Goal (number of total team shots)".toLowerCase(),
+                                  "Team Shooting Goal (number of total team shots)"
+                                      .toLowerCase(),
                                   style: TextStyle(
-                                    color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                    color: preferences!.darkMode!
+                                        ? darken(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                            0.4)
+                                        : darken(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            0.3),
                                     fontFamily: "NovecentoSans",
                                     fontSize: 14,
                                   ),
@@ -331,7 +379,8 @@ class _EditTeamState extends State<EditTeam> {
                                 ),
                                 BasicTextField(
                                   keyboardType: TextInputType.number,
-                                  hintText: '# of shots the team is aiming to take',
+                                  hintText:
+                                      '# of shots the team is aiming to take',
                                   controller: teamShotGoalTextFieldController,
                                   validator: (value) {
                                     if (value.isEmpty) {
@@ -356,21 +405,43 @@ class _EditTeamState extends State<EditTeam> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Starting From:".toLowerCase(),
                                         style: TextStyle(
-                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          color: preferences!.darkMode!
+                                              ? darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  0.4)
+                                              : darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primaryContainer,
+                                                  0.3),
                                           fontFamily: "NovecentoSans",
                                           fontSize: 14,
                                         ),
                                         textAlign: TextAlign.left,
                                       ),
                                       Text(
-                                        "By Target Completion Date:".toLowerCase(),
+                                        "By Target Completion Date:"
+                                            .toLowerCase(),
                                         style: TextStyle(
-                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          color: preferences!.darkMode!
+                                              ? darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  0.4)
+                                              : darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primaryContainer,
+                                                  0.3),
                                           fontFamily: "NovecentoSans",
                                           fontSize: 14,
                                         ),
@@ -381,23 +452,33 @@ class _EditTeamState extends State<EditTeam> {
                                   Row(
                                     children: [
                                       SizedBox(
-                                        width: MediaQuery.of(context).size.width * 0.4,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
                                         child: AutoSizeTextField(
                                           controller: startDateController,
                                           style: const TextStyle(fontSize: 12),
                                           maxLines: 1,
                                           maxFontSize: 18,
                                           decoration: InputDecoration(
-                                            focusColor: Theme.of(context).colorScheme.primary,
-                                            contentPadding: const EdgeInsets.all(15),
-                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                            focusColor: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            contentPadding:
+                                                const EdgeInsets.all(15),
+                                            fillColor: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
                                           ),
                                           readOnly: true,
                                           onTap: () async {
                                             await _editDate(
                                               startDateController,
                                               team!.startDate!,
-                                              DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
+                                              DateTime(
+                                                  DateTime.now().year - 5,
+                                                  DateTime.now().month,
+                                                  DateTime.now().day),
                                               DateTime.now(),
                                             ).then((date) {
                                               setState(() {
@@ -408,11 +489,23 @@ class _EditTeamState extends State<EditTeam> {
                                         ),
                                       ),
                                       SizedBox(
-                                        width: MediaQuery.of(context).size.width * 0.1,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.1,
                                         child: Text(
                                           'To'.toUpperCase(),
                                           style: TextStyle(
-                                            color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                            color: preferences!.darkMode!
+                                                ? darken(
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .onPrimary,
+                                                    0.4)
+                                                : darken(
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .primaryContainer,
+                                                    0.3),
                                             fontFamily: "NovecentoSans",
                                             fontSize: 14,
                                           ),
@@ -420,16 +513,23 @@ class _EditTeamState extends State<EditTeam> {
                                         ),
                                       ),
                                       SizedBox(
-                                        width: MediaQuery.of(context).size.width * 0.4,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
                                         child: AutoSizeTextField(
                                           controller: targetDateController,
                                           style: const TextStyle(fontSize: 12),
                                           maxLines: 1,
                                           maxFontSize: 18,
                                           decoration: InputDecoration(
-                                            focusColor: Theme.of(context).colorScheme.primary,
-                                            contentPadding: const EdgeInsets.all(15),
-                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                            focusColor: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            contentPadding:
+                                                const EdgeInsets.all(15),
+                                            fillColor: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
                                           ),
                                           readOnly: true,
                                           onTap: () async {
@@ -437,7 +537,10 @@ class _EditTeamState extends State<EditTeam> {
                                               targetDateController,
                                               team!.targetDate!,
                                               _startDate!,
-                                              DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                                              DateTime(
+                                                  DateTime.now().year + 1,
+                                                  DateTime.now().month,
+                                                  DateTime.now().day),
                                             ).then((date) {
                                               setState(() {
                                                 _targetDate = date;
@@ -449,14 +552,19 @@ class _EditTeamState extends State<EditTeam> {
                                     ],
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Text(
                                           'Public',
-                                          style: Theme.of(context).textTheme.bodyLarge,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
                                         ),
                                         Switch(
                                           value: _public,
@@ -501,7 +609,12 @@ class _EditTeamState extends State<EditTeam> {
                     },
                     "Continue",
                     () async {
-                      await deleteTeam(team!.id!).then((r) {
+                      await deleteTeam(
+                              team!.id!,
+                              Provider.of<FirebaseAuth>(context, listen: false),
+                              Provider.of<FirebaseFirestore>(context,
+                                  listen: false))
+                          .then((r) {
                         if (r) {
                           Fluttertoast.showToast(
                             msg: 'Team deleted!'.toUpperCase(),
@@ -513,9 +626,12 @@ class _EditTeamState extends State<EditTeam> {
                             fontSize: 16.0,
                           );
 
-                          Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          Navigator.of(context)
+                              .pushReplacement(MaterialPageRoute(
                             builder: (context) {
-                              return const Navigation(title: NavigationTitle(title: "Team"), selectedIndex: 2);
+                              return const Navigation(
+                                  title: NavigationTitle(title: "Team"),
+                                  selectedIndex: 2);
                             },
                             maintainState: false,
                           ));
@@ -540,8 +656,10 @@ class _EditTeamState extends State<EditTeam> {
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).cardTheme.color,
                 backgroundColor: Theme.of(context).cardTheme.color,
-                disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                disabledForegroundColor:
+                    Theme.of(context).colorScheme.onPrimary,
+                shape: const BeveledRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(0))),
               ),
               child: FittedBox(
                 child: Row(

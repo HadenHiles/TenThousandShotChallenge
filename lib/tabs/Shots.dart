@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/ShotCount.dart';
@@ -29,7 +30,8 @@ class Shots extends StatefulWidget {
 
 class _ShotsState extends State<Shots> {
   // Static variables
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user =>
+      Provider.of<FirebaseAuth>(context, listen: false).currentUser;
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
   bool _showShotsPerDay = true;
@@ -42,21 +44,36 @@ class _ShotsState extends State<Shots> {
   }
 
   Future<Null> _loadTargetDate() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
+    await Provider.of<FirebaseFirestore>(context, listen: false)
+        .collection('iterations')
+        .doc(user!.uid)
+        .collection('iterations')
+        .where('complete', isEqualTo: false)
+        .get()
+        .then((iSnap) {
       if (iSnap.docs.isNotEmpty) {
         Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
         setState(() {
-          _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+          _targetDate = i.targetDate ??
+              DateTime(DateTime.now().year, DateTime.now().month,
+                  DateTime.now().day + 100);
           currentIteration = i;
         });
 
-        _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+        _targetDateController.text = DateFormat('MMMM d, y').format(
+            i.targetDate ??
+                DateTime(DateTime.now().year, DateTime.now().month,
+                    DateTime.now().day + 100));
       } else {
         setState(() {
-          _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+          _targetDate = DateTime(DateTime.now().year, DateTime.now().month,
+              DateTime.now().day + 100);
         });
 
-        _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+        _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            DateTime.now().day + 100));
       }
     });
   }
@@ -65,8 +82,10 @@ class _ShotsState extends State<Shots> {
     DatePicker.showDatePicker(
       context,
       showTitleActions: true,
-      minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
-      maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+      minTime: DateTime(
+          DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
+      maxTime: DateTime(
+          DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
       onChanged: (date) {},
       onConfirm: (date) async {
         setState(() {
@@ -75,7 +94,13 @@ class _ShotsState extends State<Shots> {
 
         _targetDateController.text = DateFormat('MMMM d, y').format(date);
 
-        await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
+        await Provider.of<FirebaseFirestore>(context, listen: false)
+            .collection('iterations')
+            .doc(user!.uid)
+            .collection('iterations')
+            .where('complete', isEqualTo: false)
+            .get()
+            .then((iSnap) async {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
@@ -83,7 +108,18 @@ class _ShotsState extends State<Shots> {
               currentIteration = i;
             });
 
-            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
+            Iteration updated = Iteration(
+                i.startDate,
+                date,
+                i.endDate,
+                i.totalDuration,
+                i.total,
+                i.totalWrist,
+                i.totalSnap,
+                i.totalSlap,
+                i.totalBackhand,
+                i.complete,
+                DateTime.now());
             await ref.update(updated.toMap()).then((_) async {
               _loadTargetDate();
             });
@@ -131,16 +167,29 @@ class _ShotsState extends State<Shots> {
                             SizedBox(
                               width: 150,
                               child: StreamBuilder<QuerySnapshot>(
-                                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                stream: Provider.of<FirebaseFirestore>(context,
+                                        listen: false)
+                                    .collection('iterations')
+                                    .doc(user!.uid)
+                                    .collection('iterations')
+                                    .where('complete', isEqualTo: false)
+                                    .snapshots(),
                                 builder: (context, snapshot) {
                                   if (!snapshot.hasData) {
                                     return CircularProgressIndicator(
                                       color: Theme.of(context).primaryColor,
                                     );
                                   } else if (snapshot.data!.docs.isNotEmpty) {
-                                    Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                                    Iteration i = Iteration.fromSnapshot(
+                                        snapshot.data!.docs[0]);
 
-                                    _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                                    _targetDateController.text =
+                                        DateFormat('MMMM d, y').format(
+                                            i.targetDate ??
+                                                DateTime(
+                                                    DateTime.now().year,
+                                                    DateTime.now().month,
+                                                    DateTime.now().day + 100));
 
                                     return AutoSizeTextField(
                                       controller: _targetDateController,
@@ -148,17 +197,32 @@ class _ShotsState extends State<Shots> {
                                       maxLines: 1,
                                       maxFontSize: 20,
                                       decoration: InputDecoration(
-                                        labelText: "10,000 Shots By:".toLowerCase(),
+                                        labelText:
+                                            "10,000 Shots By:".toLowerCase(),
                                         labelStyle: TextStyle(
-                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          color: preferences!.darkMode!
+                                              ? darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  0.4)
+                                              : darken(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primaryContainer,
+                                                  0.3),
                                           fontFamily: "NovecentoSans",
                                         ),
-                                        focusColor: Theme.of(context).colorScheme.primary,
+                                        focusColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         border: null,
                                         disabledBorder: InputBorder.none,
                                         enabledBorder: InputBorder.none,
                                         contentPadding: const EdgeInsets.all(2),
-                                        fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                        fillColor: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer,
                                       ),
                                       readOnly: true,
                                       onTap: () {
@@ -176,7 +240,9 @@ class _ShotsState extends State<Shots> {
                               right: 0,
                               child: InkWell(
                                 enableFeedback: true,
-                                focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                focusColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
                                 onTap: _editTargetDate,
                                 borderRadius: BorderRadius.circular(30),
                                 child: const Padding(
@@ -198,7 +264,13 @@ class _ShotsState extends State<Shots> {
                             SizedBox(
                               width: 80,
                               child: StreamBuilder<QuerySnapshot>(
-                                stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                stream: Provider.of<FirebaseFirestore>(context,
+                                        listen: false)
+                                    .collection('iterations')
+                                    .doc(user!.uid)
+                                    .collection('iterations')
+                                    .where('complete', isEqualTo: false)
+                                    .snapshots(),
                                 builder: (context, snapshot) {
                                   if (!snapshot.hasData) {
                                     return Center(
@@ -207,42 +279,73 @@ class _ShotsState extends State<Shots> {
                                       ),
                                     );
                                   } else if (snapshot.data!.docs.isNotEmpty) {
-                                    Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                    int? total = i.total! >= 10000 ? 10000 : i.total;
+                                    Iteration i = Iteration.fromSnapshot(
+                                        snapshot.data!.docs[0]);
+                                    int? total =
+                                        i.total! >= 10000 ? 10000 : i.total;
                                     int shotsRemaining = 10000 - total!;
-                                    int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-                                    double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
+                                    int daysRemaining = _targetDate!
+                                        .difference(DateTime.now())
+                                        .inDays;
+                                    double weeksRemaining = double.parse(
+                                        (daysRemaining / 7).toStringAsFixed(4));
 
                                     int shotsPerDay = 0;
                                     if (daysRemaining <= 1) {
                                       shotsPerDay = shotsRemaining;
                                     } else {
-                                      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                      shotsPerDay =
+                                          shotsRemaining <= daysRemaining
+                                              ? 1
+                                              : (shotsRemaining / daysRemaining)
+                                                  .round();
                                     }
 
                                     int shotsPerWeek = 0;
                                     if (weeksRemaining <= 1) {
                                       shotsPerWeek = shotsRemaining;
                                     } else {
-                                      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                      shotsPerWeek =
+                                          shotsRemaining <= weeksRemaining
+                                              ? 1
+                                              : (shotsRemaining.toDouble() /
+                                                      weeksRemaining)
+                                                  .round()
+                                                  .toInt();
                                     }
 
                                     String shotsPerDayText = shotsRemaining < 1
                                         ? "Done!".toLowerCase()
                                         : shotsPerDay <= 999
-                                            ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                            : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
+                                            ? shotsPerDay.toString() +
+                                                " / Day".toLowerCase()
+                                            : numberFormat.format(shotsPerDay) +
+                                                " / Day".toLowerCase();
                                     String shotsPerWeekText = shotsRemaining < 1
                                         ? "Done!".toLowerCase()
                                         : shotsPerWeek <= 999
-                                            ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                            : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
+                                            ? shotsPerWeek.toString() +
+                                                " / Week".toLowerCase()
+                                            : numberFormat
+                                                    .format(shotsPerWeek) +
+                                                " / Week".toLowerCase();
 
-                                    if (_targetDate!.compareTo(DateTime.now()) < 0) {
-                                      daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
+                                    if (_targetDate!.compareTo(DateTime.now()) <
+                                        0) {
+                                      daysRemaining = DateTime.now()
+                                              .difference(i.targetDate!)
+                                              .inDays *
+                                          -1;
 
-                                      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                      shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                      shotsPerDayText =
+                                          "${daysRemaining.abs()} Days Past Goal"
+                                              .toLowerCase();
+                                      shotsPerWeekText = shotsRemaining <= 999
+                                          ? shotsRemaining.toString() +
+                                              " remaining".toLowerCase()
+                                          : numberFormat
+                                                  .format(shotsRemaining) +
+                                              " remaining".toLowerCase();
                                     }
 
                                     return GestureDetector(
@@ -252,11 +355,15 @@ class _ShotsState extends State<Shots> {
                                         });
                                       },
                                       child: AutoSizeText(
-                                        _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                        _showShotsPerDay
+                                            ? shotsPerDayText
+                                            : shotsPerWeekText,
                                         maxFontSize: 26,
                                         maxLines: 1,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                           fontFamily: "NovecentoSans",
                                           fontSize: 26,
                                         ),
@@ -270,7 +377,9 @@ class _ShotsState extends State<Shots> {
                             ),
                             InkWell(
                               enableFeedback: true,
-                              focusColor: Theme.of(context).colorScheme.primaryContainer,
+                              focusColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
                               onTap: () {
                                 setState(() {
                                   _showShotsPerDay = !_showShotsPerDay;
@@ -307,17 +416,26 @@ class _ShotsState extends State<Shots> {
               height: 5,
             ),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+              stream: Provider.of<FirebaseFirestore>(context, listen: false)
+                  .collection('iterations')
+                  .doc(user!.uid)
+                  .collection('iterations')
+                  .where('complete', isEqualTo: false)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(
                     child: LinearProgressIndicator(),
                   );
                 } else if (snapshot.data!.docs.isNotEmpty) {
-                  Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                  int? maxIterationTotalForWidth = iteration.total! <= 10000 ? iteration.total : 10000;
+                  Iteration iteration =
+                      Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                  int? maxIterationTotalForWidth =
+                      iteration.total! <= 10000 ? iteration.total : 10000;
                   int? iterationTotal = iteration.total;
-                  double totalShotsWidth = (maxIterationTotalForWidth! / 10000) * (MediaQuery.of(context).size.width - 60);
+                  double totalShotsWidth =
+                      (maxIterationTotalForWidth! / 10000) *
+                          (MediaQuery.of(context).size.width - 60);
 
                   return Column(
                     children: [
@@ -335,56 +453,106 @@ class _ShotsState extends State<Shots> {
                           mainAxisSize: MainAxisSize.max,
                           children: [
                             Tooltip(
-                              message: "${iteration.totalWrist} Wrist Shots".toLowerCase(),
+                              message: "${iteration.totalWrist} Wrist Shots"
+                                  .toLowerCase(),
                               preferBelow: false,
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              textStyle: TextStyle(
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 20,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer),
                               child: Container(
                                 height: 40,
-                                width: iteration.totalWrist! > 0 ? (iteration.totalWrist! / iterationTotal!) * totalShotsWidth : 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                width: iteration.totalWrist! > 0
+                                    ? (iteration.totalWrist! /
+                                            iterationTotal!) *
+                                        totalShotsWidth
+                                    : 0,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 2),
                                 decoration: const BoxDecoration(
                                   color: wristShotColor,
                                 ),
                               ),
                             ),
                             Tooltip(
-                              message: "${iteration.totalSnap} Snap Shots".toLowerCase(),
+                              message: "${iteration.totalSnap} Snap Shots"
+                                  .toLowerCase(),
                               preferBelow: false,
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              textStyle: TextStyle(
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 20,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer),
                               child: Container(
                                 height: 40,
-                                width: iteration.totalSnap! > 0 ? (iteration.totalSnap! / iterationTotal!) * totalShotsWidth : 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                width: iteration.totalSnap! > 0
+                                    ? (iteration.totalSnap! / iterationTotal!) *
+                                        totalShotsWidth
+                                    : 0,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 2),
                                 decoration: const BoxDecoration(
                                   color: snapShotColor,
                                 ),
                               ),
                             ),
                             Tooltip(
-                              message: "${iteration.totalBackhand} Backhands".toLowerCase(),
+                              message: "${iteration.totalBackhand} Backhands"
+                                  .toLowerCase(),
                               preferBelow: false,
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              textStyle: TextStyle(
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 20,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer),
                               child: Container(
                                 height: 40,
-                                width: iteration.totalBackhand! > 0 ? (iteration.totalBackhand! / iterationTotal!) * totalShotsWidth : 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                width: iteration.totalBackhand! > 0
+                                    ? (iteration.totalBackhand! /
+                                            iterationTotal!) *
+                                        totalShotsWidth
+                                    : 0,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 2),
                                 decoration: const BoxDecoration(
                                   color: backhandShotColor,
                                 ),
                               ),
                             ),
                             Tooltip(
-                              message: "${iteration.totalSlap} Slap Shots".toLowerCase(),
+                              message: "${iteration.totalSlap} Slap Shots"
+                                  .toLowerCase(),
                               preferBelow: false,
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                              textStyle: TextStyle(
+                                  fontFamily: "NovecentoSans",
+                                  fontSize: 20,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer),
                               child: Container(
                                 height: 40,
-                                width: iteration.totalSlap! > 0 ? (iteration.totalSlap! / iterationTotal!) * totalShotsWidth : 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                width: iteration.totalSlap! > 0
+                                    ? (iteration.totalSlap! / iterationTotal!) *
+                                        totalShotsWidth
+                                    : 0,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 2),
                                 decoration: const BoxDecoration(
                                   color: slapShotColor,
                                 ),
@@ -408,17 +576,23 @@ class _ShotsState extends State<Shots> {
                               height: 40,
                               width: totalShotsWidth < 35
                                   ? 40
-                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                  : totalShotsWidth >
+                                          (MediaQuery.of(context).size.width -
+                                              140)
                                       ? totalShotsWidth - 65
                                       : totalShotsWidth,
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
                               child: Text(
-                                iteration.total! <= 999 ? iteration.total.toString() : numberFormat.format(iteration.total),
+                                iteration.total! <= 999
+                                    ? iteration.total.toString()
+                                    : numberFormat.format(iteration.total),
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 22,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                             ),
@@ -428,14 +602,17 @@ class _ShotsState extends State<Shots> {
                               children: [
                                 Container(
                                   height: 40,
-                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 2),
                                   child: Text(
                                     " / ${numberFormat.format(10000)}",
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 22,
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                   ),
                                 ),
@@ -455,7 +632,12 @@ class _ShotsState extends State<Shots> {
               height: 5,
             ),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+              stream: Provider.of<FirebaseFirestore>(context, listen: false)
+                  .collection('iterations')
+                  .doc(user!.uid)
+                  .collection('iterations')
+                  .where('complete', isEqualTo: false)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Column(
@@ -471,12 +653,17 @@ class _ShotsState extends State<Shots> {
                     ],
                   );
                 } else if (snapshot.data!.docs.isNotEmpty) {
-                  Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                  Iteration iteration =
+                      Iteration.fromSnapshot(snapshot.data!.docs[0]);
                   List<ShotCount> shotCounts = [
-                    ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
-                    ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
-                    ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
-                    ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
+                    ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0,
+                        Colors.cyan),
+                    ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0,
+                        Colors.blue),
+                    ShotCount('Backhand'.toUpperCase(),
+                        iteration.totalBackhand ?? 0, Colors.indigo),
+                    ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0,
+                        Colors.teal),
                   ];
 
                   return Column(
@@ -495,7 +682,8 @@ class _ShotsState extends State<Shots> {
                                 Text(
                                   "Wrist".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -504,10 +692,12 @@ class _ShotsState extends State<Shots> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: wristShotColor),
+                                  decoration: const BoxDecoration(
+                                      color: wristShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -526,12 +716,20 @@ class _ShotsState extends State<Shots> {
                                 SizedBox(
                                   width: 50,
                                   child: AutoSizeText(
-                                    iteration.totalWrist! > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
+                                    iteration.totalWrist! > 999
+                                        ? numberFormat
+                                            .format(iteration.totalWrist)
+                                            .toLowerCase()
+                                        : iteration.totalWrist
+                                            .toString()
+                                            .toLowerCase(),
                                     maxFontSize: 18,
                                     maxLines: 1,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 18,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -544,7 +742,8 @@ class _ShotsState extends State<Shots> {
                                 Text(
                                   "Snap".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -553,10 +752,12 @@ class _ShotsState extends State<Shots> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: snapShotColor),
+                                  decoration:
+                                      const BoxDecoration(color: snapShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -575,12 +776,20 @@ class _ShotsState extends State<Shots> {
                                 SizedBox(
                                   width: 50,
                                   child: AutoSizeText(
-                                    iteration.totalSnap! > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
+                                    iteration.totalSnap! > 999
+                                        ? numberFormat
+                                            .format(iteration.totalSnap)
+                                            .toLowerCase()
+                                        : iteration.totalSnap
+                                            .toString()
+                                            .toLowerCase(),
                                     maxFontSize: 18,
                                     maxLines: 1,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 18,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -593,7 +802,8 @@ class _ShotsState extends State<Shots> {
                                 Text(
                                   "Backhand".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -602,10 +812,12 @@ class _ShotsState extends State<Shots> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: backhandShotColor),
+                                  decoration: const BoxDecoration(
+                                      color: backhandShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -624,12 +836,20 @@ class _ShotsState extends State<Shots> {
                                 SizedBox(
                                   width: 50,
                                   child: AutoSizeText(
-                                    iteration.totalBackhand! > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
+                                    iteration.totalBackhand! > 999
+                                        ? numberFormat
+                                            .format(iteration.totalBackhand)
+                                            .toLowerCase()
+                                        : iteration.totalBackhand
+                                            .toString()
+                                            .toLowerCase(),
                                     maxFontSize: 18,
                                     maxLines: 1,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 18,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -642,7 +862,8 @@ class _ShotsState extends State<Shots> {
                                 Text(
                                   "Slap".toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 18,
                                     fontFamily: 'NovecentoSans',
                                   ),
@@ -651,10 +872,12 @@ class _ShotsState extends State<Shots> {
                                   width: 30,
                                   height: 25,
                                   margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: slapShotColor),
+                                  decoration:
+                                      const BoxDecoration(color: slapShotColor),
                                   child: const Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Opacity(
                                         opacity: 0.75,
@@ -673,12 +896,20 @@ class _ShotsState extends State<Shots> {
                                 SizedBox(
                                   width: 50,
                                   child: AutoSizeText(
-                                    iteration.totalSlap! > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
+                                    iteration.totalSlap! > 999
+                                        ? numberFormat
+                                            .format(iteration.totalSlap)
+                                            .toLowerCase()
+                                        : iteration.totalSlap
+                                            .toString()
+                                            .toLowerCase(),
                                     maxFontSize: 18,
                                     maxLines: 1,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 18,
                                       fontFamily: 'NovecentoSans',
                                     ),
@@ -694,12 +925,14 @@ class _ShotsState extends State<Shots> {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: iteration.total! < 1
                             ? Text(
-                                "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
+                                "Tap \"Start Shooting\" to record a shooting session!"
+                                    .toUpperCase(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               )
                             : Container(
@@ -707,8 +940,10 @@ class _ShotsState extends State<Shots> {
                                 child: Stack(
                                   children: [
                                     Positioned(
-                                      top: MediaQuery.of(context).size.height * (0.3 / 2),
-                                      left: MediaQuery.of(context).size.width * (0.7 / 2),
+                                      top: MediaQuery.of(context).size.height *
+                                          (0.3 / 2),
+                                      left: MediaQuery.of(context).size.width *
+                                          (0.7 / 2),
                                       child: Transform.translate(
                                         offset: const Offset(-14, -40),
                                         child: Stack(
@@ -717,7 +952,9 @@ class _ShotsState extends State<Shots> {
                                             Icon(
                                               FontAwesomeIcons.hockeyPuck,
                                               size: 30,
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                             ),
                                             // Top Left
                                             Positioned(
@@ -726,7 +963,9 @@ class _ShotsState extends State<Shots> {
                                               child: Icon(
                                                 FontAwesomeIcons.hockeyPuck,
                                                 size: 18,
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             ),
                                             // Bottom Left
@@ -736,7 +975,9 @@ class _ShotsState extends State<Shots> {
                                               child: Icon(
                                                 FontAwesomeIcons.hockeyPuck,
                                                 size: 14,
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             ),
                                             // Top right
@@ -746,7 +987,9 @@ class _ShotsState extends State<Shots> {
                                               child: Icon(
                                                 FontAwesomeIcons.hockeyPuck,
                                                 size: 14,
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             ),
                                             // Bottom right
@@ -756,7 +999,9 @@ class _ShotsState extends State<Shots> {
                                               child: Icon(
                                                 FontAwesomeIcons.hockeyPuck,
                                                 size: 18,
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             ),
                                           ],
@@ -812,25 +1057,39 @@ class _ShotsState extends State<Shots> {
                   children: [
                     Container(
                       padding: EdgeInsets.only(
-                        bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                        bottom: !sessionService.isRunning
+                            ? AppBar().preferredSize.height
+                            : AppBar().preferredSize.height + 65,
                       ),
                       child: Column(
                         children: [
                           StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context,
+                                    listen: false)
+                                .collection('iterations')
+                                .doc(user!.uid)
+                                .collection('iterations')
+                                .where('complete', isEqualTo: false)
+                                .snapshots(),
                             builder: (context, snapshot) {
-                              if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                                Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                              if (snapshot.hasData &&
+                                  snapshot.data!.docs.isNotEmpty) {
+                                Iteration iteration = Iteration.fromSnapshot(
+                                    snapshot.data!.docs[0]);
 
                                 return iteration.total! < 10000
                                     ? Container()
                                     : SizedBox(
-                                        width: MediaQuery.of(context).size.width - 30,
+                                        width:
+                                            MediaQuery.of(context).size.width -
+                                                30,
                                         child: TextButton(
                                           style: TextButton.styleFrom(
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.all(10),
-                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            backgroundColor: Theme.of(context)
+                                                .cardTheme
+                                                .color,
                                           ),
                                           onPressed: () {
                                             dialog(
@@ -840,7 +1099,9 @@ class _ShotsState extends State<Shots> {
                                                 Text(
                                                   "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
                                                   style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface,
                                                   ),
                                                 ),
                                                 "Cancel",
@@ -849,29 +1110,59 @@ class _ShotsState extends State<Shots> {
                                                 },
                                                 "Continue",
                                                 () {
-                                                  startNewIteration().then((success) {
+                                                  startNewIteration(
+                                                    Provider.of<FirebaseAuth>(
+                                                        context,
+                                                        listen: false),
+                                                    Provider.of<
+                                                            FirebaseFirestore>(
+                                                        context,
+                                                        listen: false),
+                                                  ).then((success) {
                                                     if (success!) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
                                                         SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          duration: const Duration(milliseconds: 1200),
+                                                          backgroundColor:
+                                                              Theme.of(context)
+                                                                  .cardTheme
+                                                                  .color,
+                                                          duration:
+                                                              const Duration(
+                                                                  milliseconds:
+                                                                      1200),
                                                           content: Text(
                                                             'Challenge restarted!',
                                                             style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
                                                             ),
                                                           ),
                                                         ),
                                                       );
                                                     } else {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
                                                         SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          duration: const Duration(milliseconds: 1200),
+                                                          backgroundColor:
+                                                              Theme.of(context)
+                                                                  .cardTheme
+                                                                  .color,
+                                                          duration:
+                                                              const Duration(
+                                                                  milliseconds:
+                                                                      1200),
                                                           content: Text(
                                                             'There was an error restarting the challenge :(',
                                                             style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
                                                             ),
                                                           ),
                                                         ),
@@ -879,7 +1170,8 @@ class _ShotsState extends State<Shots> {
                                                     }
                                                   });
 
-                                                  navigatorKey.currentState!.pop();
+                                                  navigatorKey.currentState!
+                                                      .pop();
                                                 },
                                               ),
                                             );
@@ -888,7 +1180,9 @@ class _ShotsState extends State<Shots> {
                                             'Start New Challenge'.toUpperCase(),
                                             style: TextStyle(
                                               fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                               fontSize: 20,
                                             ),
                                           ),
@@ -901,13 +1195,15 @@ class _ShotsState extends State<Shots> {
                           sessionService.isRunning
                               ? Container()
                               : Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
                                   width: MediaQuery.of(context).size.width - 30,
                                   child: TextButton(
                                     style: TextButton.styleFrom(
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.all(10),
-                                      backgroundColor: Theme.of(context).primaryColor,
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
                                     ),
                                     onPressed: () {
                                       if (!sessionService.isRunning) {
@@ -922,7 +1218,9 @@ class _ShotsState extends State<Shots> {
                                             Text(
                                               "Starting a new session will override your existing one.\n\nWould you like to continue?",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onSurface,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface,
                                               ),
                                             ),
                                             "Cancel",
@@ -935,7 +1233,8 @@ class _ShotsState extends State<Shots> {
                                               sessionService.reset();
                                               Navigator.of(context).pop();
                                               sessionService.start();
-                                              widget.sessionPanelController.show();
+                                              widget.sessionPanelController
+                                                  .show();
                                             },
                                           ),
                                         );

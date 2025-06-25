@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:global_configuration/global_configuration.dart';
+import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/YouTubeVideo.dart';
 import 'package:tenthousandshotchallenge/models/firestore/LearnToPlayItem.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
@@ -25,7 +26,7 @@ class Explore extends StatefulWidget {
 }
 
 class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
-  final user = FirebaseAuth.instance.currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final PageController _explorePageController = PageController(initialPage: 0);
   bool _loadingExploreVideos = true;

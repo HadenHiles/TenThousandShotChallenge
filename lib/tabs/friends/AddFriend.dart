@@ -81,7 +81,8 @@ class _AddFriendState extends State<AddFriend> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -121,12 +122,12 @@ class _AddFriendState extends State<AddFriend> {
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         onPressed: () {
-                          SharePlus.instance.share(
-                            ShareParams(
-                              text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                              subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                            )
-                          );
+                          SharePlus.instance.share(ShareParams(
+                            text:
+                                'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                            subject:
+                                'Take the How To Hockey 10,000 Shot Challenge!',
+                          ));
                         },
                         icon: Icon(
                           Icons.share,
@@ -146,15 +147,23 @@ class _AddFriendState extends State<AddFriend> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                inviteFriend(user!.uid, _friends[_selectedFriend!].id).then((success) {
+                                inviteFriend(
+                                  user!.uid,
+                                  _friends[_selectedFriend!].id,
+                                  Provider.of<FirebaseFirestore>(context,
+                                      listen: false),
+                                ).then((success) {
                                   if (success!) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        backgroundColor:
+                                            Theme.of(context).cardTheme.color,
                                         content: Text(
                                           "${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} Invited!",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                         duration: const Duration(seconds: 4),
@@ -169,11 +178,14 @@ class _AddFriendState extends State<AddFriend> {
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        backgroundColor:
+                                            Theme.of(context).cardTheme.color,
                                         content: Text(
                                           "Failed to invite ${UserProfile.fromSnapshot(_friends[_selectedFriend!]).displayName} :(",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                         duration: const Duration(seconds: 4),
@@ -209,7 +221,8 @@ class _AddFriendState extends State<AddFriend> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Container(
-                          margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.05),
+                          margin: EdgeInsets.only(
+                              left: MediaQuery.of(context).size.width * 0.05),
                           width: (MediaQuery.of(context).size.width * 0.7) - 10,
                           child: Form(
                             key: _formKey,
@@ -218,12 +231,15 @@ class _AddFriendState extends State<AddFriend> {
                                 TextFormField(
                                   keyboardType: TextInputType.text,
                                   decoration: InputDecoration(
-                                    hintText: 'Enter Name or Email'.toUpperCase(),
+                                    hintText:
+                                        'Enter Name or Email'.toUpperCase(),
                                     labelText: "Find a friend".toUpperCase(),
                                     alignLabelWithHint: true,
                                     labelStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                     hintStyle: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -234,7 +250,8 @@ class _AddFriendState extends State<AddFriend> {
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontFamily: 'NovecentoSans',
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   onChanged: (value) async {
                                     if (value.isNotEmpty) {
@@ -244,24 +261,49 @@ class _AddFriendState extends State<AddFriend> {
 
                                       List<DocumentSnapshot> users = [];
                                       if (value.isNotEmpty) {
-                                        await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                        await FirebaseFirestore.instance
+                                            .collection('users')
+                                            .orderBy('display_name_lowercase',
+                                                descending: false)
+                                            .orderBy('display_name',
+                                                descending: false)
+                                            .where('public', isEqualTo: true)
+                                            .startAt([value.toLowerCase()])
+                                            .endAt([
+                                              '${value.toLowerCase()}\uf8ff'
+                                            ])
+                                            .get()
+                                            .then((uSnaps) async {
                                               for (var uDoc in uSnaps.docs) {
-                                                if (uDoc.reference.id != user!.uid) {
+                                                if (uDoc.reference.id !=
+                                                    user!.uid) {
                                                   users.add(uDoc);
                                                 }
                                               }
                                             });
                                         if (users.isEmpty) {
-                                          await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                          await FirebaseFirestore.instance
+                                              .collection('users')
+                                              .orderBy('email',
+                                                  descending: false)
+                                              .where('public', isEqualTo: true)
+                                              .startAt([value.toLowerCase()])
+                                              .endAt([
+                                                '${value.toLowerCase()}\uf8ff'
+                                              ])
+                                              .get()
+                                              .then((uSnaps) async {
                                                 for (var uDoc in uSnaps.docs) {
-                                                  if (uDoc.reference.id != user!.uid) {
+                                                  if (uDoc.reference.id !=
+                                                      user!.uid) {
                                                     users.add(uDoc);
                                                   }
                                                 }
                                               });
                                         }
 
-                                        await Future.delayed(const Duration(milliseconds: 500));
+                                        await Future.delayed(
+                                            const Duration(milliseconds: 500));
 
                                         setState(() {
                                           _friends = users;
@@ -304,54 +346,78 @@ class _AddFriendState extends State<AddFriend> {
                                 style: TextStyle(
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 20,
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                               Container(
                                 margin: const EdgeInsets.only(right: 0),
                                 child: IconButton(
                                   onPressed: () async {
-                                    final barcodeScanRes = await Navigator.of(context).push(
+                                    final barcodeScanRes =
+                                        await Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (context) => const BarcodeScannerSimple(title: "Scan Friend's QR Code"),
+                                        builder: (context) =>
+                                            const BarcodeScannerSimple(
+                                                title: "Scan Friend's QR Code"),
                                       ),
                                     );
 
-                                    addFriendBarcode(barcodeScanRes).then(
+                                    addFriendBarcode(
+                                      barcodeScanRes,
+                                      Provider.of<FirebaseAuth>(context,
+                                          listen: false),
+                                      Provider.of<FirebaseFirestore>(context,
+                                          listen: false),
+                                    ).then(
                                       (success) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           SnackBar(
-                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            backgroundColor: Theme.of(context)
+                                                .cardTheme
+                                                .color,
                                             content: Text(
                                               "You are now friends!",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                               ),
                                             ),
-                                            duration: const Duration(milliseconds: 2500),
+                                            duration: const Duration(
+                                                milliseconds: 2500),
                                           ),
                                         );
 
-                                        navigatorKey.currentState!.pushReplacement(
+                                        navigatorKey.currentState!
+                                            .pushReplacement(
                                           MaterialPageRoute(builder: (context) {
                                             return Navigation(
-                                              title: NavigationTitle(title: "Friends".toUpperCase()),
+                                              title: NavigationTitle(
+                                                  title:
+                                                      "Friends".toUpperCase()),
                                               selectedIndex: 1,
                                             );
                                           }),
                                         );
                                       },
                                     ).onError((error, stackTrace) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          backgroundColor:
+                                              Theme.of(context).cardTheme.color,
                                           content: Text(
                                             "There was an error scanning your friend's QR code :(",
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                             ),
                                           ),
-                                          duration: const Duration(milliseconds: 4000),
+                                          duration: const Duration(
+                                              milliseconds: 4000),
                                         ),
                                       );
                                     });
@@ -359,7 +425,8 @@ class _AddFriendState extends State<AddFriend> {
                                   icon: Icon(
                                     Icons.qr_code_2_rounded,
                                     size: 50,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
                                   ),
                                   color: Theme.of(context).primaryColor,
                                 ),
@@ -370,18 +437,22 @@ class _AddFriendState extends State<AddFriend> {
                       ],
                     ),
                     Flexible(
-                      child: _isSearching && _friends.isEmpty && searchFieldController.text.isNotEmpty
+                      child: _isSearching &&
+                              _friends.isEmpty &&
+                              searchFieldController.text.isNotEmpty
                           ? Column(
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Center(
-                                  child: CircularProgressIndicator(color: Theme.of(context).primaryColor),
+                                  child: CircularProgressIndicator(
+                                      color: Theme.of(context).primaryColor),
                                 )
                               ],
                             )
-                          : _friends.isEmpty && searchFieldController.text.isNotEmpty
+                          : _friends.isEmpty &&
+                                  searchFieldController.text.isNotEmpty
                               ? Column(
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -394,7 +465,9 @@ class _AddFriendState extends State<AddFriend> {
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -405,7 +478,9 @@ class _AddFriendState extends State<AddFriend> {
                                         style: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 26,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -413,17 +488,19 @@ class _AddFriendState extends State<AddFriend> {
                                       margin: const EdgeInsets.only(top: 5),
                                       child: IconButton(
                                         onPressed: () {
-                                          SharePlus.instance.share(
-                                            ShareParams(
-                                              text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
-                                              subject: 'Take the How To Hockey 10,000 Shot Challenge!',
-                                            )
-                                          );
+                                          SharePlus.instance.share(ShareParams(
+                                            text:
+                                                'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
+                                            subject:
+                                                'Take the How To Hockey 10,000 Shot Challenge!',
+                                          ));
                                         },
                                         icon: Icon(
                                           Icons.share,
                                           size: 40,
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       ),
                                     ),
@@ -466,7 +543,9 @@ class _AddFriendState extends State<AddFriend> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: _selectedFriend == i ? Theme.of(context).cardTheme.color : Colors.transparent,
+              color: _selectedFriend == i
+                  ? Theme.of(context).cardTheme.color
+                  : Colors.transparent,
             ),
             padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
@@ -476,12 +555,15 @@ class _AddFriendState extends State<AddFriend> {
                         height: 60,
                         width: 60,
                         margin: const EdgeInsets.symmetric(horizontal: 15),
-                        decoration: BoxDecoration(color: Colors.blue.shade600, borderRadius: BorderRadius.circular(30)),
+                        decoration: BoxDecoration(
+                            color: Colors.blue.shade600,
+                            borderRadius: BorderRadius.circular(30)),
                         child: IconButton(
                           onPressed: () {
                             setState(() {
                               _selectedFriend = null;
-                              searchFieldController.text = searchFieldController.text;
+                              searchFieldController.text =
+                                  searchFieldController.text;
                             });
                           },
                           icon: const Icon(
@@ -524,7 +606,10 @@ class _AddFriendState extends State<AddFriend> {
                                   style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).textTheme.bodyLarge!.color,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge!
+                                        .color,
                                   ),
                                 ),
                               )
@@ -538,8 +623,13 @@ class _AddFriendState extends State<AddFriend> {
                         SizedBox(
                           width: 135,
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                              stream: FirebaseFirestore.instance
+                                  .collection('iterations')
+                                  .doc(friend.reference!.id)
+                                  .collection('iterations')
+                                  .snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return const Center(
                                     child: SizedBox(
@@ -561,15 +651,22 @@ class _AddFriendState extends State<AddFriend> {
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
                                   );
                                 }
                               }),
                         ),
                         StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                            stream: FirebaseFirestore.instance
+                                .collection('iterations')
+                                .doc(friend.reference!.id)
+                                .collection('iterations')
+                                .snapshots(),
+                            builder: (BuildContext context,
+                                AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return const Center(
                                   child: SizedBox(
@@ -581,7 +678,8 @@ class _AddFriendState extends State<AddFriend> {
                               } else {
                                 Duration totalDuration = const Duration();
                                 for (var doc in snapshot.data!.docs) {
-                                  totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
+                                  totalDuration += Iteration.fromSnapshot(doc)
+                                      .totalDuration!;
                                 }
 
                                 return totalDuration > const Duration()
@@ -591,7 +689,9 @@ class _AddFriendState extends State<AddFriend> {
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                         ),
                                       )
                                     : Container();
