@@ -1478,14 +1478,17 @@ class _ProfileState extends State<Profile> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(top: 16.0, bottom: 50),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                                const SizedBox(height: 15),
-                                _buildAccuracyScatterChart(context, _selectedIterationId),
-                                const SizedBox(height: 30),
-                              ],
+                          child: Opacity(
+                            opacity: _showAccuracy ? 1.0 : 0.0,
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                                  const SizedBox(height: 15),
+                                  _buildAccuracyScatterChart(context, _selectedIterationId),
+                                  const SizedBox(height: 30),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1525,16 +1528,19 @@ class _ProfileState extends State<Profile> {
                     )
                   : Padding(
                       padding: const EdgeInsets.only(top: 16.0, bottom: 50),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _buildRadialAccuracyChart(context, _selectedIterationId),
-                            const SizedBox(height: 15),
-                            _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
-                            const SizedBox(height: 15),
-                            _buildAccuracyScatterChart(context, _selectedIterationId),
-                            const SizedBox(height: 30),
-                          ],
+                      child: Opacity(
+                        opacity: _showAccuracy ? 1.0 : 0.0,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              _buildRadialAccuracyChart(context, _selectedIterationId),
+                              const SizedBox(height: 15),
+                              _buildShotTypeAccuracyVisualizers(context, _selectedIterationId),
+                              const SizedBox(height: 15),
+                              _buildAccuracyScatterChart(context, _selectedIterationId),
+                              const SizedBox(height: 30),
+                            ],
+                          ),
                         ),
                       ),
                     ),
