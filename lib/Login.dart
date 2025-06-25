@@ -54,8 +54,7 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final AppleSignInAvailable appleSignInAvailable =
-        Provider.of<AppleSignInAvailable>(context, listen: false);
+    final AppleSignInAvailable appleSignInAvailable = Provider.of<AppleSignInAvailable>(context, listen: false);
 
     //If user is signed in
     if (_signedIn) {
@@ -80,8 +79,7 @@ class _LoginState extends State<Login> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
-                      margin: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).size.height * .05),
+                      margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * .05),
                       height: MediaQuery.of(context).size.height * .35,
                       child: Image.asset(
                         'assets/images/logo-small.png',
@@ -97,13 +95,11 @@ class _LoginState extends State<Login> {
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                backgroundColor:
-                                    Theme.of(context).cardTheme.color,
+                                backgroundColor: Theme.of(context).cardTheme.color,
                                 content: Text(
                                   error,
                                   style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
                                 duration: const Duration(seconds: 10),
@@ -111,8 +107,7 @@ class _LoginState extends State<Login> {
                                   label: "Dismiss",
                                   onPressed: () {
                                     // ignore: deprecated_member_use
-                                    ScaffoldMessenger.of(context)
-                                        .hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                   },
                                 ),
                               ),
@@ -135,19 +130,15 @@ class _LoginState extends State<Login> {
                                   socialSignIn(context, 'apple', (error) {
                                     // ignore: deprecated_member_use
                                     // ignore: deprecated_member_use
-                                    ScaffoldMessenger.of(context)
-                                        .hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                     // ignore: deprecated_member_use
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        backgroundColor:
-                                            Theme.of(context).cardTheme.color,
+                                        backgroundColor: Theme.of(context).cardTheme.color,
                                         content: Text(
                                           error,
                                           style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                         duration: const Duration(seconds: 10),
@@ -155,8 +146,7 @@ class _LoginState extends State<Login> {
                                           label: "Dismiss",
                                           onPressed: () {
                                             // ignore: deprecated_member_use
-                                            ScaffoldMessenger.of(context)
-                                                .hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           },
                                         ),
                                       ),
@@ -200,8 +190,7 @@ class _LoginState extends State<Login> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -239,8 +228,7 @@ class _LoginState extends State<Login> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         mainAxisSize: MainAxisSize.max,
                                         children: [
                                           SizedBox(
@@ -265,31 +253,24 @@ class _LoginState extends State<Login> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: <Widget>[
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: TextFormField(
                                                 controller: _signInEmail,
                                                 decoration: InputDecoration(
                                                   labelText: 'Email',
                                                   labelStyle: TextStyle(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onPrimary,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
                                                   hintText: 'Enter your email',
                                                   hintStyle: TextStyle(
-                                                    color: Theme.of(context)
-                                                        .cardTheme
-                                                        .color,
+                                                    color: Theme.of(context).cardTheme.color,
                                                   ),
                                                 ),
-                                                keyboardType:
-                                                    TextInputType.emailAddress,
+                                                keyboardType: TextInputType.emailAddress,
                                                 validator: (String? value) {
                                                   if (value!.isEmpty) {
                                                     return 'Please enter your email';
-                                                  } else if (!validEmail(
-                                                      value)) {
+                                                  } else if (!validEmail(value)) {
                                                     return 'Invalid email address';
                                                   }
 
@@ -298,28 +279,21 @@ class _LoginState extends State<Login> {
                                               ),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: TextFormField(
                                                 controller: _signInPass,
                                                 obscureText: _hidePassword,
                                                 decoration: InputDecoration(
                                                   labelText: 'Password',
                                                   labelStyle: TextStyle(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onPrimary,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
                                                   ),
-                                                  hintText:
-                                                      'Enter your password',
+                                                  hintText: 'Enter your password',
                                                   hintStyle: TextStyle(
-                                                    color: Theme.of(context)
-                                                        .cardTheme
-                                                        .color,
+                                                    color: Theme.of(context).cardTheme.color,
                                                   ),
                                                 ),
-                                                keyboardType: TextInputType
-                                                    .visiblePassword,
+                                                keyboardType: TextInputType.visiblePassword,
                                                 validator: (String? value) {
                                                   if (value!.isEmpty) {
                                                     return 'Please enter a password';
@@ -330,27 +304,18 @@ class _LoginState extends State<Login> {
                                               ),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: SizedBox(
                                                 width: double.infinity,
                                                 child: ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Theme.of(context)
-                                                            .primaryColor,
-                                                    foregroundColor:
-                                                        Colors.white,
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Theme.of(context).primaryColor,
+                                                    foregroundColor: Colors.white,
                                                   ),
                                                   child: const Text("Sign in"),
                                                   onPressed: () async {
-                                                    if (_signInFormKey
-                                                        .currentState!
-                                                        .validate()) {
-                                                      _signInFormKey
-                                                          .currentState!
-                                                          .save();
+                                                    if (_signInFormKey.currentState!.validate()) {
+                                                      _signInFormKey.currentState!.save();
 
                                                       signIn(
                                                           context,
@@ -360,40 +325,23 @@ class _LoginState extends State<Login> {
                                                           ), (error) async {
                                                         // ignore: deprecated_member_use
                                                         // ignore: deprecated_member_use
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .hideCurrentSnackBar();
+                                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                         // ignore: deprecated_member_use
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
+                                                        ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
-                                                            backgroundColor:
-                                                                Theme.of(
-                                                                        context)
-                                                                    .cardTheme
-                                                                    .color,
+                                                            backgroundColor: Theme.of(context).cardTheme.color,
                                                             content: Text(
                                                               error,
                                                               style: TextStyle(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .colorScheme
-                                                                    .onPrimary,
+                                                                color: Theme.of(context).colorScheme.onPrimary,
                                                               ),
                                                             ),
-                                                            duration:
-                                                                const Duration(
-                                                                    seconds:
-                                                                        10),
-                                                            action:
-                                                                SnackBarAction(
+                                                            duration: const Duration(seconds: 10),
+                                                            action: SnackBarAction(
                                                               label: "Dismiss",
                                                               onPressed: () {
                                                                 // ignore: deprecated_member_use
-                                                                ScaffoldMessenger.of(
-                                                                        context)
-                                                                    .hideCurrentSnackBar();
+                                                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                               },
                                                             ),
                                                           ),
@@ -405,98 +353,63 @@ class _LoginState extends State<Login> {
                                               ),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: ElevatedButton(
-                                                child: const Text(
-                                                    "Forgot password?"),
+                                                child: const Text("Forgot password?"),
                                                 onPressed: () {
                                                   showDialog(
                                                     context: context,
                                                     builder: (context) {
                                                       return SimpleDialog(
-                                                        contentPadding:
-                                                            const EdgeInsets
-                                                                .all(25),
+                                                        contentPadding: const EdgeInsets.all(25),
                                                         children: [
                                                           Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .start,
+                                                            mainAxisAlignment: MainAxisAlignment.start,
                                                             children: [
                                                               Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .spaceBetween,
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .max,
+                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                mainAxisSize: MainAxisSize.max,
                                                                 children: [
                                                                   SizedBox(
                                                                     height: 50,
-                                                                    child: Image
-                                                                        .asset(
+                                                                    child: Image.asset(
                                                                       'assets/images/logo-small-red.png',
-                                                                      width:
-                                                                          120,
+                                                                      width: 120,
                                                                     ),
                                                                   ),
                                                                   const Text(
                                                                     'Forgot Password',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      fontSize:
-                                                                          16,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
+                                                                    style: TextStyle(
+                                                                      fontSize: 16,
+                                                                      fontWeight: FontWeight.bold,
                                                                     ),
                                                                   )
                                                                 ],
                                                               ),
                                                               Form(
-                                                                key:
-                                                                    _forgotPasswordFormKey,
+                                                                key: _forgotPasswordFormKey,
                                                                 child: Column(
-                                                                  mainAxisSize:
-                                                                      MainAxisSize
-                                                                          .min,
+                                                                  mainAxisSize: MainAxisSize.min,
                                                                   children: <Widget>[
                                                                     Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .all(
-                                                                          8.0),
-                                                                      child:
-                                                                          TextFormField(
-                                                                        controller:
-                                                                            _forgotPasswordEmail,
-                                                                        decoration:
-                                                                            InputDecoration(
-                                                                          labelText:
-                                                                              'Email',
-                                                                          labelStyle:
-                                                                              TextStyle(
-                                                                            color:
-                                                                                Theme.of(context).colorScheme.onPrimary,
+                                                                      padding: const EdgeInsets.all(8.0),
+                                                                      child: TextFormField(
+                                                                        controller: _forgotPasswordEmail,
+                                                                        decoration: InputDecoration(
+                                                                          labelText: 'Email',
+                                                                          labelStyle: TextStyle(
+                                                                            color: Theme.of(context).colorScheme.onPrimary,
                                                                           ),
-                                                                          hintText:
-                                                                              'Confirm your password',
-                                                                          hintStyle:
-                                                                              TextStyle(
-                                                                            color:
-                                                                                Theme.of(context).cardTheme.color,
+                                                                          hintText: 'Confirm your password',
+                                                                          hintStyle: TextStyle(
+                                                                            color: Theme.of(context).cardTheme.color,
                                                                           ),
                                                                         ),
-                                                                        keyboardType:
-                                                                            TextInputType.emailAddress,
-                                                                        validator:
-                                                                            (String?
-                                                                                value) {
-                                                                          if (value!
-                                                                              .isEmpty) {
+                                                                        keyboardType: TextInputType.emailAddress,
+                                                                        validator: (String? value) {
+                                                                          if (value!.isEmpty) {
                                                                             return 'Please enter your email';
-                                                                          } else if (!validEmail(
-                                                                              value)) {
+                                                                          } else if (!validEmail(value)) {
                                                                             return 'Invalid email address';
                                                                           }
 
@@ -505,19 +418,15 @@ class _LoginState extends State<Login> {
                                                                       ),
                                                                     ),
                                                                     Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .all(
-                                                                          8.0),
-                                                                      child:
-                                                                          ElevatedButton(
-                                                                        child: const Text(
-                                                                            "Send reset email"),
-                                                                        onPressed:
-                                                                            () {
-                                                                          if (_forgotPasswordFormKey
-                                                                              .currentState!
-                                                                              .validate()) {
-                                                                            FirebaseAuth.instance.sendPasswordResetEmail(email: _forgotPasswordEmail.text.toString()).then((value) {
+                                                                      padding: const EdgeInsets.all(8.0),
+                                                                      child: ElevatedButton(
+                                                                        child: const Text("Send reset email"),
+                                                                        onPressed: () {
+                                                                          if (_forgotPasswordFormKey.currentState!.validate()) {
+                                                                            FirebaseAuth.instance
+                                                                                .sendPasswordResetEmail(
+                                                                                    email: _forgotPasswordEmail.text.toString())
+                                                                                .then((value) {
                                                                               _forgotPasswordEmail.text = "";
 
                                                                               navigatorKey.currentState?.pop();
@@ -581,8 +490,7 @@ class _LoginState extends State<Login> {
                         width: 300,
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor:
-                                darken(Theme.of(context).primaryColor, 0.1),
+                            backgroundColor: darken(Theme.of(context).primaryColor, 0.1),
                           ),
                           child: Text(
                             'Sign up'.toUpperCase(),
@@ -605,12 +513,10 @@ class _LoginState extends State<Login> {
                                   children: [
                                     SingleChildScrollView(
                                       child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.start,
                                         children: [
                                           Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             mainAxisSize: MainAxisSize.max,
                                             children: [
                                               SizedBox(
@@ -635,27 +541,20 @@ class _LoginState extends State<Login> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: <Widget>[
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
                                                     controller: _signUpEmail,
                                                     decoration: InputDecoration(
                                                       labelText: 'Email',
                                                       labelStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onPrimary,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
-                                                      hintText:
-                                                          'Enter your email',
+                                                      hintText: 'Enter your email',
                                                       hintStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .cardTheme
-                                                            .color,
+                                                        color: Theme.of(context).cardTheme.color,
                                                       ),
                                                     ),
-                                                    keyboardType: TextInputType
-                                                        .emailAddress,
+                                                    keyboardType: TextInputType.emailAddress,
                                                     validator: (String? value) {
                                                       if (value!.isEmpty) {
                                                         return 'Please enter your email';
@@ -669,33 +568,25 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
                                                     controller: _signUpPass,
                                                     obscureText: _hidePassword,
                                                     decoration: InputDecoration(
                                                       labelText: 'Password',
                                                       labelStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onPrimary,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
-                                                      hintText:
-                                                          'Enter your password',
+                                                      hintText: 'Enter your password',
                                                       hintStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .cardTheme
-                                                            .color,
+                                                        color: Theme.of(context).cardTheme.color,
                                                       ),
                                                     ),
-                                                    keyboardType: TextInputType
-                                                        .visiblePassword,
+                                                    keyboardType: TextInputType.visiblePassword,
                                                     validator: (String? value) {
                                                       if (value!.isEmpty) {
                                                         return 'Please enter a password';
-                                                      } else if (!validPassword(
-                                                          value)) {
+                                                      } else if (!validPassword(value)) {
                                                         return 'Please enter a stronger password';
                                                       }
 
@@ -704,35 +595,25 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: TextFormField(
-                                                    controller:
-                                                        _signUpConfirmPass,
+                                                    controller: _signUpConfirmPass,
                                                     obscureText: _hidePassword,
                                                     decoration: InputDecoration(
-                                                      labelText:
-                                                          'Confirm Password',
+                                                      labelText: 'Confirm Password',
                                                       labelStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onPrimary,
+                                                        color: Theme.of(context).colorScheme.onPrimary,
                                                       ),
-                                                      hintText:
-                                                          'Confirm your password',
+                                                      hintText: 'Confirm your password',
                                                       hintStyle: TextStyle(
-                                                        color: Theme.of(context)
-                                                            .cardTheme
-                                                            .color,
+                                                        color: Theme.of(context).cardTheme.color,
                                                       ),
                                                     ),
-                                                    keyboardType: TextInputType
-                                                        .visiblePassword,
+                                                    keyboardType: TextInputType.visiblePassword,
                                                     validator: (String? value) {
                                                       if (value!.isEmpty) {
                                                         return 'Please confirm your password';
-                                                      } else if (value !=
-                                                          _signUpPass.text) {
+                                                      } else if (value != _signUpPass.text) {
                                                         return 'Passwords do not match';
                                                       }
 
@@ -741,75 +622,43 @@ class _LoginState extends State<Login> {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(8.0),
                                                   child: SizedBox(
                                                     width: double.infinity,
                                                     child: ElevatedButton(
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Theme.of(context)
-                                                                .primaryColor,
-                                                        foregroundColor:
-                                                            Colors.white,
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Theme.of(context).primaryColor,
+                                                        foregroundColor: Colors.white,
                                                       ),
-                                                      child:
-                                                          const Text("Sign up"),
+                                                      child: const Text("Sign up"),
                                                       onPressed: () async {
-                                                        if (_signUpFormKey
-                                                            .currentState!
-                                                            .validate()) {
-                                                          _signUpFormKey
-                                                              .currentState!
-                                                              .save();
+                                                        if (_signUpFormKey.currentState!.validate()) {
+                                                          _signUpFormKey.currentState!.save();
 
                                                           signUp(
                                                               context,
                                                               AuthAttempt(
-                                                                _signUpEmail
-                                                                    .text,
-                                                                _signUpPass
-                                                                    .text,
+                                                                _signUpEmail.text,
+                                                                _signUpPass.text,
                                                               ), (error) async {
                                                             // ignore: deprecated_member_use
-                                                            ScaffoldMessenger
-                                                                    .of(context)
-                                                                .hideCurrentSnackBar();
+                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                             // ignore: deprecated_member_use
-                                                            ScaffoldMessenger
-                                                                    .of(context)
-                                                                .showSnackBar(
+                                                            ScaffoldMessenger.of(context).showSnackBar(
                                                               SnackBar(
-                                                                backgroundColor:
-                                                                    Theme.of(
-                                                                            context)
-                                                                        .cardTheme
-                                                                        .color,
+                                                                backgroundColor: Theme.of(context).cardTheme.color,
                                                                 content: Text(
                                                                   error,
-                                                                  style:
-                                                                      TextStyle(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .colorScheme
-                                                                        .onPrimary,
+                                                                  style: TextStyle(
+                                                                    color: Theme.of(context).colorScheme.onPrimary,
                                                                   ),
                                                                 ),
-                                                                duration:
-                                                                    const Duration(
-                                                                        seconds:
-                                                                            10),
-                                                                action:
-                                                                    SnackBarAction(
-                                                                  label:
-                                                                      "Dismiss",
-                                                                  onPressed:
-                                                                      () {
+                                                                duration: const Duration(seconds: 10),
+                                                                action: SnackBarAction(
+                                                                  label: "Dismiss",
+                                                                  onPressed: () {
                                                                     // ignore: deprecated_member_use
-                                                                    ScaffoldMessenger.of(
-                                                                            context)
-                                                                        .hideCurrentSnackBar();
+                                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                                   },
                                                                 ),
                                                               ),
@@ -844,8 +693,7 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Future<void> signUp(BuildContext context, AuthAttempt authAttempt,
-      Future<void> Function(String) error) async {
+  Future<void> signUp(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
     try {
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -856,12 +704,8 @@ class _LoginState extends State<Login> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
         // Update/add the user's display name to firestore
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid)
-            .set({
-          'display_name_lowercase':
-              FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
+          'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
           'display_name': FirebaseAuth.instance.currentUser?.email,
           'email': FirebaseAuth.instance.currentUser?.email,
           'photo_url': null,
@@ -898,19 +742,15 @@ class _LoginState extends State<Login> {
     }
   }
 
-  Future<void> signIn(BuildContext context, AuthAttempt authAttempt,
-      Future<void> Function(String) error) async {
+  Future<void> signIn(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
     try {
       await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-              email: authAttempt.email, password: authAttempt.password)
+          .signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password)
           .then((credential) async {
         Navigator.of(context, rootNavigator: true).pop('dialog');
 
         // Update/add the user's display name to firestore
-        DocumentReference uDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) async {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           if (u.exists) {
@@ -919,8 +759,7 @@ class _LoginState extends State<Login> {
             }).then((value) => null);
           } else {
             uDoc.set({
-              'display_name_lowercase':
-                  FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
               'display_name': FirebaseAuth.instance.currentUser?.email,
               'email': FirebaseAuth.instance.currentUser?.email,
               'public': true,
@@ -955,14 +794,11 @@ class _LoginState extends State<Login> {
     }
   }
 
-  socialSignIn(BuildContext context, String provider,
-      Future<void> Function(String) error) async {
+  socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             // Update/add the user's display name to firestore
@@ -972,8 +808,7 @@ class _LoginState extends State<Login> {
           } else {
             // Update/add the user's display name to firestore
             uDoc.set({
-              'display_name_lowercase':
-                  FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
               'display_name': FirebaseAuth.instance.currentUser?.displayName,
               'email': FirebaseAuth.instance.currentUser?.email,
               'photo_url': FirebaseAuth.instance.currentUser?.photoURL,
@@ -1003,12 +838,9 @@ class _LoginState extends State<Login> {
         await error(message);
       });
     } else if (provider == 'apple') {
-      signInWithApple(scopes: [Scope.email, Scope.fullName])
-          .then((appleSignInAccount) async {
+      signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid);
+        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             // Update/add the user's display name to firestore
@@ -1018,8 +850,7 @@ class _LoginState extends State<Login> {
           } else {
             // Update/add the user's display name to firestore
             uDoc.set({
-              'display_name_lowercase':
-                  FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
+              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
               'display_name': FirebaseAuth.instance.currentUser?.displayName,
               'email': FirebaseAuth.instance.currentUser?.email,
               'photo_url': FirebaseAuth.instance.currentUser?.photoURL,

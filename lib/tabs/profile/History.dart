@@ -20,8 +20,7 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
-  const History(
-      {super.key, this.sessionPanelController, this.updateSessionShotsCB});
+  const History({super.key, this.sessionPanelController, this.updateSessionShotsCB});
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;
@@ -31,8 +30,7 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  User? get user =>
-      Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+  User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
   ScrollController? sessionsController;
   String? _selectedIterationId;
 
@@ -66,8 +64,7 @@ class _HistoryState extends State<History> {
   }
 
   // Helper to get if the selected iteration is completed
-  bool _isCurrentIterationCompleted(
-      AsyncSnapshot<DocumentSnapshot> iterationSnapshot) {
+  bool _isCurrentIterationCompleted(AsyncSnapshot<DocumentSnapshot> iterationSnapshot) {
     if (iterationSnapshot.hasData && iterationSnapshot.data!.exists) {
       final iteration = Iteration.fromSnapshot(iterationSnapshot.data!);
       return iteration.complete ?? false;
@@ -78,8 +75,7 @@ class _HistoryState extends State<History> {
   @override
   Widget build(BuildContext context) {
     return StreamProvider<NetworkStatus>(
-      create: (context) =>
-          NetworkStatusService().networkStatusController.stream,
+      create: (context) => NetworkStatusService().networkStatusController.stream,
       initialData: NetworkStatus.Online,
       child: NetworkAwareWidget(
         offlineChild: Scaffold(
@@ -121,8 +117,7 @@ class _HistoryState extends State<History> {
         onlineChild: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
@@ -154,8 +149,7 @@ class _HistoryState extends State<History> {
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
                       centerTitle: true,
-                      title: NavigationTitle(
-                          title: "Shooting History".toUpperCase()),
+                      title: NavigationTitle(title: "Shooting History".toUpperCase()),
                       background: Container(
                         color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                       ),
@@ -215,8 +209,7 @@ class _HistoryState extends State<History> {
                               });
                             },
                             underline: Container(),
-                            dropdownColor:
-                                Theme.of(context).colorScheme.primary,
+                            dropdownColor: Theme.of(context).colorScheme.primary,
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               color: Theme.of(context).colorScheme.onPrimary,
@@ -235,14 +228,11 @@ class _HistoryState extends State<History> {
                 ),
                 // Iteration summary (realtime)
                 Container(
-                  decoration: BoxDecoration(
-                      color:
-                          lighten(Theme.of(context).colorScheme.primary, 0.1)),
+                  decoration: BoxDecoration(color: lighten(Theme.of(context).colorScheme.primary, 0.1)),
                   child: _selectedIterationId == null
                       ? Container()
                       : StreamBuilder<DocumentSnapshot>(
-                          stream: Provider.of<FirebaseFirestore>(context,
-                                  listen: false)
+                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
                               .collection('iterations')
                               .doc(user!.uid)
                               .collection('iterations')
@@ -250,37 +240,25 @@ class _HistoryState extends State<History> {
                               .snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.hasData && snapshot.data!.exists) {
-                              Iteration i = Iteration.fromSnapshot(
-                                  snapshot.data as DocumentSnapshot);
+                              Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                               if (i.endDate != null) {
-                                int daysTaken = i.endDate!
-                                        .difference(firstSessionDate)
-                                        .inDays +
-                                    1;
+                                int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
                                 daysTaken = daysTaken < 1 ? 1 : daysTaken;
-                                String endDate =
-                                    DateFormat('MMMM d, y').format(i.endDate!);
+                                String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                                 String iterationDescription;
                                 String goalDescription = "";
-                                String fTotal = i.total! > 999
-                                    ? numberFormat.format(i.total)
-                                    : i.total.toString();
+                                String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                                 if (daysTaken <= 1) {
-                                  iterationDescription =
-                                      "$fTotal shots in $daysTaken day";
+                                  iterationDescription = "$fTotal shots in $daysTaken day";
                                 } else {
-                                  iterationDescription =
-                                      "$fTotal shots in $daysTaken days";
+                                  iterationDescription = "$fTotal shots in $daysTaken days";
                                 }
 
                                 if (i.targetDate != null) {
-                                  String targetDate =
-                                      DateFormat('M/d/y').format(i.targetDate!);
-                                  int daysBeforeAfterTarget = i.targetDate!
-                                      .difference(i.endDate!)
-                                      .inDays;
+                                  String targetDate = DateFormat('M/d/y').format(i.targetDate!);
+                                  int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
                                   if (daysBeforeAfterTarget > 0) {
                                     goalDescription +=
@@ -295,43 +273,27 @@ class _HistoryState extends State<History> {
                                   goalDescription += "completed on $endDate";
                                 }
 
-                                return _iterationSummaryRow(
-                                    iterationDescription, goalDescription);
+                                return _iterationSummaryRow(iterationDescription, goalDescription);
                               } else {
-                                int daysSoFar = latestSessionDate
-                                        .difference(firstSessionDate)
-                                        .inDays +
-                                    1;
+                                int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
                                 daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
                                 String? iterationDescription;
                                 String goalDescription = "";
                                 int remainingShots = 10000 - i.total!;
-                                String fRemainingShots = remainingShots > 999
-                                    ? numberFormat.format(remainingShots)
-                                    : remainingShots.toString();
-                                String fTotal = i.total! > 999
-                                    ? numberFormat.format(i.total)
-                                    : i.total.toString();
+                                String fRemainingShots =
+                                    remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
+                                String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                                 if (daysSoFar <= 1 && daysSoFar != 0) {
-                                  iterationDescription =
-                                      "$fTotal shots in $daysSoFar day";
+                                  iterationDescription = "$fTotal shots in $daysSoFar day";
                                 } else {
-                                  iterationDescription =
-                                      "$fTotal shots in $daysSoFar days";
+                                  iterationDescription = "$fTotal shots in $daysSoFar days";
                                 }
 
-                                if (i.targetDate != null &&
-                                    remainingShots > 0) {
-                                  int daysBeforeAfterTarget = i.targetDate!
-                                      .difference(DateTime.now())
-                                      .inDays;
-                                  if (i.targetDate!.compareTo(DateTime.now()) <
-                                      0) {
-                                    daysBeforeAfterTarget = DateTime.now()
-                                            .difference(i.targetDate!)
-                                            .inDays *
-                                        -1;
+                                if (i.targetDate != null && remainingShots > 0) {
+                                  int daysBeforeAfterTarget = i.targetDate!.difference(DateTime.now()).inDays;
+                                  if (i.targetDate!.compareTo(DateTime.now()) < 0) {
+                                    daysBeforeAfterTarget = DateTime.now().difference(i.targetDate!).inDays * -1;
                                   }
 
                                   if (daysBeforeAfterTarget > 0) {
@@ -341,13 +303,11 @@ class _HistoryState extends State<History> {
                                     goalDescription +=
                                         "${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} past goal";
                                   } else {
-                                    goalDescription +=
-                                        "1 day left to take $fRemainingShots shots";
+                                    goalDescription += "1 day left to take $fRemainingShots shots";
                                   }
                                 }
 
-                                return _iterationSummaryRow(
-                                    iterationDescription, goalDescription);
+                                return _iterationSummaryRow(iterationDescription, goalDescription);
                               }
                             }
                             return Container();
@@ -359,19 +319,16 @@ class _HistoryState extends State<History> {
                   child: _selectedIterationId == null
                       ? Container()
                       : StreamBuilder<DocumentSnapshot>(
-                          stream: Provider.of<FirebaseFirestore>(context,
-                                  listen: false)
+                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
                               .collection('iterations')
                               .doc(user!.uid)
                               .collection('iterations')
                               .doc(_selectedIterationId)
                               .snapshots(),
                           builder: (context, iterationSnapshot) {
-                            final iterationCompleted =
-                                _isCurrentIterationCompleted(iterationSnapshot);
+                            final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
                             return StreamBuilder<QuerySnapshot>(
-                              stream: Provider.of<FirebaseFirestore>(context,
-                                      listen: false)
+                              stream: Provider.of<FirebaseFirestore>(context, listen: false)
                                   .collection('iterations')
                                   .doc(user!.uid)
                                   .collection('iterations')
@@ -380,22 +337,16 @@ class _HistoryState extends State<History> {
                                   .orderBy('date', descending: true)
                                   .snapshots(),
                               builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator());
                                 }
-                                if (!snapshot.hasData ||
-                                    snapshot.data!.docs.isEmpty) {
+                                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                                   return Center(
                                     child: Text(
-                                      "You don't have any sessions yet"
-                                          .toUpperCase(),
+                                      "You don't have any sessions yet".toUpperCase(),
                                       style: TextStyle(
                                         fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                         fontSize: 16,
                                       ),
                                     ),
@@ -412,9 +363,8 @@ class _HistoryState extends State<History> {
                                     padding: EdgeInsets.only(
                                       top: 0,
                                       right: 0,
-                                      bottom: !sessionService.isRunning
-                                          ? AppBar().preferredSize.height
-                                          : AppBar().preferredSize.height + 65,
+                                      bottom:
+                                          !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
                                       left: 0,
                                     ),
                                     itemCount: sessions.length,
@@ -479,8 +429,7 @@ class _HistoryState extends State<History> {
     );
   }
 
-  Widget _iterationSummaryRow(
-      String iterationDescription, String goalDescription) {
+  Widget _iterationSummaryRow(String iterationDescription, String goalDescription) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       height: 60,
@@ -495,32 +444,21 @@ class _HistoryState extends State<History> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(FontAwesomeIcons.hockeyPuck,
-                      size: 14, color: Theme.of(context).colorScheme.onPrimary),
+                  Icon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary),
                   Positioned(
-                      left: -6,
-                      top: -6,
-                      child: Icon(FontAwesomeIcons.hockeyPuck,
-                          size: 8,
-                          color: Theme.of(context).colorScheme.onPrimary)),
+                      left: -6, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
                   Positioned(
                       left: -5,
                       bottom: -5,
-                      child: Icon(FontAwesomeIcons.hockeyPuck,
-                          size: 6,
-                          color: Theme.of(context).colorScheme.onPrimary)),
+                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
                   Positioned(
                       right: -4,
                       top: -6,
-                      child: Icon(FontAwesomeIcons.hockeyPuck,
-                          size: 6,
-                          color: Theme.of(context).colorScheme.onPrimary)),
+                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
                   Positioned(
                       right: -4,
                       bottom: -8,
-                      child: Icon(FontAwesomeIcons.hockeyPuck,
-                          size: 8,
-                          color: Theme.of(context).colorScheme.onPrimary)),
+                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
                 ],
               ),
               const SizedBox(width: 8),
@@ -665,9 +603,7 @@ class _HistoryState extends State<History> {
                     onPressed: () => Navigator.of(context).pop(true),
                     child: Text(
                       "Delete".toUpperCase(),
-                      style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          color: Theme.of(context).primaryColor),
+                      style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                     ),
                   ),
                 ],
@@ -706,9 +642,7 @@ class _HistoryState extends State<History> {
         child: Container(
           padding: const EdgeInsets.only(top: 5, bottom: 15),
           decoration: BoxDecoration(
-            color: i % 2 == 0
-                ? Colors.transparent
-                : Theme.of(context).cardTheme.color,
+            color: i % 2 == 0 ? Colors.transparent : Theme.of(context).cardTheme.color,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -716,8 +650,7 @@ class _HistoryState extends State<History> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

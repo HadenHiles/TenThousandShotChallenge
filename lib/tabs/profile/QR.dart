@@ -134,7 +134,9 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                                 : RotatingIconButton(
                                     onTap: () async {
                                       final wordGenerator = WordGenerator();
-                                      String newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
+                                      String newCode = wordGenerator.randomNoun().toUpperCase() +
+                                          wordGenerator.randomVerb().toUpperCase() +
+                                          Random().nextInt(9999).toString().padLeft(4, '0');
 
                                       await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode}).then((_) {
                                         setState(() {

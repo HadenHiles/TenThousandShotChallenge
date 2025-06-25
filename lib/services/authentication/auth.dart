@@ -11,8 +11,7 @@ Future<UserCredential> signInWithGoogle() async {
   final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
   // Obtain the auth details from the request
-  final GoogleSignInAuthentication? googleAuth =
-      await googleUser?.authentication;
+  final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
 
   // Create a new credential
   final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -26,25 +25,19 @@ Future<UserCredential> signInWithGoogle() async {
 
 Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
   // 1. perform the sign-in request
-  final result = await TheAppleSignIn.performRequests(
-      [AppleIdRequest(requestedScopes: scopes)]);
+  final result = await TheAppleSignIn.performRequests([AppleIdRequest(requestedScopes: scopes)]);
   // 2. check the result
   switch (result.status) {
     case AuthorizationStatus.authorized:
       final appleIdCredential = result.credential;
       final oAuthProvider = OAuthProvider('apple.com');
       final credential = oAuthProvider.credential(
-        idToken: String.fromCharCodes(
-            appleIdCredential?.identityToken as Iterable<int>),
-        accessToken: String.fromCharCodes(
-            appleIdCredential?.authorizationCode as Iterable<int>),
+        idToken: String.fromCharCodes(appleIdCredential?.identityToken as Iterable<int>),
+        accessToken: String.fromCharCodes(appleIdCredential?.authorizationCode as Iterable<int>),
       );
-      return await auth
-          .signInWithCredential(credential)
-          .then((authResult) async {
+      return await auth.signInWithCredential(credential).then((authResult) async {
         if (scopes.contains(Scope.fullName)) {
-          final displayName =
-              '${appleIdCredential?.fullName?.givenName} ${appleIdCredential?.fullName?.familyName}';
+          final displayName = '${appleIdCredential?.fullName?.givenName} ${appleIdCredential?.fullName?.familyName}';
           await authResult.user?.updateDisplayName(displayName);
           authResult.user?.reload();
         }
@@ -75,9 +68,7 @@ bool emailVerified() {
 }
 
 bool validEmail(String email) {
-  return RegExp(
-          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-      .hasMatch(email);
+  return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
 }
 
 bool validPassword(String pass) {
