@@ -70,7 +70,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     // TODO: Replace this with your actual subscription check
     // For demonstration, we'll just keep it as "Free"
     setState(() {
-      _subscriptionLevel = "Free";
+      _subscriptionLevel = "Pro";
       // _subscriptionLevel = "Premium";
       // _subscriptionLevel = "Pro";
     });
@@ -202,9 +202,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               Icons.workspace_premium,
                               color: _subscriptionLevel == "Free"
                                   ? Colors.grey
-                                  : _subscriptionLevel == "Premium"
+                                  : _subscriptionLevel == "Pro"
                                       ? Colors.blue
-                                      : Colors.amber,
                             ),
                             onPressed: (BuildContext context) {
                               // Show a dialog or navigate to a subscription management screen
