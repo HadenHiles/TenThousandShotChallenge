@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
@@ -35,7 +36,7 @@ class StartShooting extends StatefulWidget {
 
 class _StartShootingState extends State<StartShooting> {
   final bool showAccuracyFeature = true;
-  final bool _isProUser = true; // TODO: Actually verify the user's subscription level
+  late String _subscriptionLevel;
 
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
@@ -51,6 +52,7 @@ class _StartShootingState extends State<StartShooting> {
     _currentShotCount = preferences!.puckCount!;
     _chartCollapsed = true; // Default to collapsed when starting a new session
     super.initState();
+    _loadSubscriptionLevel();
   }
 
   @override
@@ -65,8 +67,18 @@ class _StartShootingState extends State<StartShooting> {
     _currentShotCount = preferences!.puckCount!;
   }
 
+  _loadSubscriptionLevel() async {
+    subscriptionLevel(context).then((level) {
+      setState(() {
+        _subscriptionLevel = level;
+      });
+    }).catchError((error) {
+      print("Error loading subscription level: $error");
+    });
+  }
+
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
-    if (!_isProUser) {
+    if (_subscriptionLevel != 'pro') {
       // If not pro, do not show the dialog
       return null;
     }
@@ -245,7 +257,7 @@ class _StartShootingState extends State<StartShooting> {
               child: Column(
                 children: [
                   // Only show the prompt and expand/collapse button at the top
-                  if (_showAccuracyPrompt && showAccuracyFeature && !_isProUser)
+                  if (_showAccuracyPrompt && showAccuracyFeature && _subscriptionLevel != 'pro')
                     Card(
                       color: Colors.green.shade50,
                       margin: const EdgeInsets.all(12),
@@ -318,7 +330,7 @@ class _StartShootingState extends State<StartShooting> {
           // Chart overlay and pinned selector when expanded
           if (showAccuracyFeature && !_chartCollapsed)
             Positioned.fill(
-              child: _isProUser
+              child: _subscriptionLevel == 'pro'
                   ? Container(
                       color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.98),
                       child: Column(
@@ -1210,9 +1222,9 @@ class _StartShootingState extends State<StartShooting> {
               Feedback.forLongPress(context);
 
               int? targetsHit;
-              if (showAccuracyFeature && _isProUser) {
+              if (showAccuracyFeature && _subscriptionLevel == 'pro') {
                 targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // Only show dialog for pro users
-                if (targetsHit == null && _isProUser) return;
+                if (targetsHit == null && _subscriptionLevel == 'pro') return;
                 setState(() {
                   _lastTargetsHit = targetsHit;
                 });
@@ -1222,7 +1234,7 @@ class _StartShootingState extends State<StartShooting> {
                 DateTime.now(),
                 _selectedShotType,
                 _currentShotCount,
-                (showAccuracyFeature && _isProUser) ? targetsHit : null,
+                (showAccuracyFeature && _subscriptionLevel == 'pro') ? targetsHit : null,
               );
               setState(() {
                 _shots.insert(0, shots);

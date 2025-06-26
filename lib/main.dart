@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
@@ -41,6 +44,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final appleSignInAvailable = await AppleSignInAvailable.check();
+
+  // Initialize RevenueCat
+  await initRevenueCat();
 
   // Load global app configurations
   await GlobalConfiguration().loadFromAsset("youtube_settings");
@@ -103,6 +109,7 @@ void main() async {
         Provider<FirebaseAuth>.value(value: FirebaseAuth.instance),
         Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
         Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
+        Provider<CustomerInfo?>.value(value: await getCustomerInfo()),
       ],
       child: const Home(),
     ),
@@ -118,6 +125,32 @@ Future<void> _messageHandler(RemoteMessage message) async {
 
 Future<void> _messageClickHandler(RemoteMessage message) async {
   print('Background message clicked!');
+}
+
+Future<void> initRevenueCat() async {
+  await Purchases.setLogLevel(LogLevel.debug);
+
+  PurchasesConfiguration? configuration;
+
+  if (Platform.isAndroid) {
+    configuration = PurchasesConfiguration("goog_lMkTFgSIHgkcidnIYJvtHQCzQKs");
+  } else if (Platform.isIOS) {
+    configuration = PurchasesConfiguration("appl_PcUjDTGDZGysagZYobhltwmeGrq");
+  }
+
+  if (configuration != null) {
+    await Purchases.configure(configuration..appUserID = FirebaseAuth.instance.currentUser?.uid);
+  }
+}
+
+Future<CustomerInfo?> getCustomerInfo() async {
+  try {
+    CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+    return customerInfo;
+  } on PlatformException catch (e) {
+    print('Error fetching customer info: ${e.message}');
+    return null;
+  }
 }
 
 class Home extends StatelessWidget {
