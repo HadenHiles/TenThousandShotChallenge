@@ -1,18 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
-import 'package:flutter/services.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
 
@@ -24,52 +22,28 @@ import 'navigation_test.mocks.dart';
   NetworkStatusService,
   SessionService,
 ])
+late FakeFirebaseFirestore fakeFirestore;
+late fam.MockFirebaseAuth mockFirebaseAuth;
+late fam.MockUser mockUser;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
   late MockSharedPreferences mockSharedPreferences;
   late MockSessionService mockSessionService;
-  late FakeFirebaseFirestore fakeFirestore;
-  late fam.MockFirebaseAuth mockFirebaseAuth;
-  late fam.MockUser mockUser;
-
+  // Use fakes directly, no Firebase.initializeApp or channel mocks
   setUpAll(() async {
-    // Mock Firebase platform channels (for initialization only)
-    const MethodChannel firebaseCoreChannel = MethodChannel('plugins.flutter.io/firebase_core');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      firebaseCoreChannel,
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'Firebase#initializeCore') {
-          return [
-            {
-              'name': 'DEFAULT',
-              'options': {
-                'apiKey': 'test',
-                'appId': 'test',
-                'messagingSenderId': 'test',
-                'projectId': 'test',
-              },
-              'pluginConstants': {},
-            }
-          ];
-        }
-        if (methodCall.method == 'Firebase#initializeApp') {
-          return {
-            'name': methodCall.arguments['appName'],
-            'options': methodCall.arguments['options'],
-            'pluginConstants': {},
-          };
-        }
-        return null;
-      },
-    );
-    try {
-      await Firebase.initializeApp();
-    } catch (_) {}
-
-    // Setup fake Firestore and mock auth
     fakeFirestore = FakeFirebaseFirestore();
+    // Add a user document matching the UserProfile model
+    await fakeFirestore.collection('users').doc('test_uid').set({
+      'id': 'test_uid',
+      'display_name': 'Test User',
+      'email': 'test@example.com',
+      'photo_url': 'https://example.com/photo.png',
+      'public': true,
+      'friend_notifications': true,
+      'team_id': 'test_team',
+      'fcm_token': 'test_token',
+    });
     mockUser = fam.MockUser(
       isAnonymous: false,
       uid: 'test_uid',
@@ -105,7 +79,7 @@ void main() {
     });
   });
 
-  Widget createTestWidget({int selectedIndex = 0, Widget? title, List<Widget>? actions}) {
+  Widget createTestNavigationWidget({int selectedIndex = 0, Widget? title, List<Widget>? actions}) {
     return MaterialApp(
       home: MultiProvider(
         providers: [
@@ -126,7 +100,7 @@ void main() {
 
   group('Navigation Widget Tests', () {
     testWidgets('Navigation renders correctly with valid index', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget(selectedIndex: 0));
+      await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 0));
       await tester.pump(); // Let the widget settle
 
       expect(find.byType(Navigation), findsOneWidget);
@@ -135,8 +109,8 @@ void main() {
 
     testWidgets('Navigation handles custom title', (WidgetTester tester) async {
       const customTitle = Text('Custom Title');
-      
-      await tester.pumpWidget(createTestWidget(title: customTitle));
+
+      await tester.pumpWidget(createTestNavigationWidget(title: customTitle));
       await tester.pump();
 
       expect(find.text('Custom Title'), findsOneWidget);
@@ -150,14 +124,14 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(createTestWidget(actions: customActions));
+      await tester.pumpWidget(createTestNavigationWidget(actions: customActions));
       await tester.pump();
 
       expect(find.byIcon(Icons.star), findsOneWidget);
     });
 
     testWidgets('Navigation handles null values gracefully', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget());
+      await tester.pumpWidget(createTestNavigationWidget());
       await tester.pump();
 
       expect(find.byType(Navigation), findsOneWidget);
@@ -166,7 +140,7 @@ void main() {
     // Test different tab indices that are valid
     for (int i = 0; i < 5; i++) {
       testWidgets('Navigation displays tab $i correctly', (WidgetTester tester) async {
-        await tester.pumpWidget(createTestWidget(selectedIndex: i));
+        await tester.pumpWidget(createTestNavigationWidget(selectedIndex: i));
         await tester.pump();
 
         expect(find.byType(Navigation), findsOneWidget);
@@ -225,7 +199,7 @@ void main() {
   group('Navigation Provider Integration Tests', () {
     testWidgets('Navigation integrates with PreferencesStateNotifier', (WidgetTester tester) async {
       final preferencesNotifier = PreferencesStateNotifier();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<PreferencesStateNotifier>.value(
@@ -241,7 +215,7 @@ void main() {
 
     testWidgets('Navigation updates when preferences change', (WidgetTester tester) async {
       final preferencesNotifier = PreferencesStateNotifier();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<PreferencesStateNotifier>.value(
@@ -257,7 +231,7 @@ void main() {
       // Simulate preferences change
       preferencesNotifier.notifyListeners();
       await tester.pump();
-      
+
       expect(find.byType(Navigation), findsOneWidget);
     });
   });
@@ -299,12 +273,7 @@ void main() {
     testWidgets('Navigation handles different selectedIndex values', (WidgetTester tester) async {
       // Test with index 0 (default case)
       await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<PreferencesStateNotifier>(
-            create: (_) => PreferencesStateNotifier(),
-            child: const Navigation(selectedIndex: 0),
-          ),
-        ),
+        createTestNavigationWidget(selectedIndex: 0),
       );
 
       await tester.pump();
@@ -313,20 +282,15 @@ void main() {
 
     testWidgets('Navigation with custom properties', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<PreferencesStateNotifier>(
-            create: (_) => PreferencesStateNotifier(),
-            child: Navigation(
-              selectedIndex: 1,
-              title: const Text('Custom Title'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () {},
-                ),
-              ],
+        createTestNavigationWidget(
+          selectedIndex: 1,
+          title: const Text('Custom Title'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {},
             ),
-          ),
+          ],
         ),
       );
 
@@ -340,12 +304,7 @@ void main() {
   group('Navigation State Management Tests', () {
     testWidgets('Navigation maintains state correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<PreferencesStateNotifier>(
-            create: (_) => PreferencesStateNotifier(),
-            child: const Navigation(selectedIndex: 0),
-          ),
-        ),
+        createTestNavigationWidget(selectedIndex: 0),
       );
 
       await tester.pump();
