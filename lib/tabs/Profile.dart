@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
@@ -39,7 +40,7 @@ class _ProfileState extends State<Profile> {
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
   final GlobalKey _avatarMenuKey = GlobalKey();
-  final bool _isProUser = true; //TODO: Actually verify the user's subscription level
+  late String _subscriptionLevel;
 
   String? _selectedIterationId;
   DateTime? firstSessionDate = DateTime.now();
@@ -72,6 +73,17 @@ class _ProfileState extends State<Profile> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _setInitialIterationId());
+    _loadSubscriptionLevel();
+  }
+
+  _loadSubscriptionLevel() async {
+    subscriptionLevel(context).then((level) {
+      setState(() {
+        _subscriptionLevel = level;
+      });
+    }).catchError((error) {
+      print("Error loading subscription level: $error");
+    });
   }
 
   Future<void> _setInitialIterationId() async {
@@ -97,7 +109,7 @@ class _ProfileState extends State<Profile> {
 
   // 1. Radial area chart for overall average accuracy per shot type
   Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
-    if (!_isProUser) {
+    if (_subscriptionLevel != 'pro') {
       final shotTypes = ['wrist', 'backhand', 'slap', 'snap'];
       Map<String, double> avgAccuracy = Map<String, double>.from(_dummyAvgAccuracy);
       String challengeLabel = 'challenge 1';
@@ -1473,7 +1485,7 @@ class _ProfileState extends State<Profile> {
             ),
             AnimatedCrossFade(
               firstChild: const SizedBox.shrink(),
-              secondChild: !_isProUser
+              secondChild: _subscriptionLevel != 'pro'
                   ? Stack(
                       children: [
                         Padding(

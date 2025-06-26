@@ -55,7 +55,7 @@ android {
         applicationId "com.howtohockey.tenthousandshotchallenge"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk 23
+        minSdk 24
         targetSdk flutter.targetSdkVersion
         multiDexEnabled true
         versionCode flutterVersionCode.toInteger()

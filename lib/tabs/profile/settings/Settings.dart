@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
@@ -11,6 +12,7 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
@@ -48,6 +50,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     _loadSubscriptionLevel();
   }
 
+  _loadSubscriptionLevel() async {
+    subscriptionLevel(context).then((level) {
+      setState(() {
+        _subscriptionLevel = level;
+      });
+    }).catchError((error) {
+      print("Error loading subscription level: $error");
+    });
+  }
+
   //Loading counter value on start
   _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -62,15 +74,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         _publicProfile = u.public ?? false;
         _friendNotifications = u.friendNotifications ?? true;
       });
-    });
-  }
-
-  // Simulate loading subscription level (replace with RevenueCat logic)
-  Future<void> _loadSubscriptionLevel() async {
-    // TODO: Replace this with your actual subscription check
-    setState(() {
-      _subscriptionLevel = "pro";
-      // _subscriptionLevel = "free";
     });
   }
 
@@ -202,10 +205,41 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
-                                  content: Text(
-                                    _subscriptionLevel != "pro"
-                                        ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!"
-                                        : "You are currently on the ${_subscriptionLevel.toUpperCase()} plan.",
+                                  content: SizedBox(
+                                    height: 90,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _subscriptionLevel != "pro"
+                                              ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!"
+                                              : "You are currently on the ${_subscriptionLevel.toUpperCase()} plan.",
+                                          style: Theme.of(context).textTheme.bodyMedium,
+                                        ),
+                                        const SizedBox(height: 13),
+                                        SelectableText(
+                                          "ID: ${Provider.of<CustomerInfo>(context, listen: false).originalAppUserId}",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 9,
+                                          ),
+                                          textAlign: TextAlign.start,
+                                          cursorColor: Theme.of(context).primaryColor,
+                                          selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                        ),
+                                        SelectableText(
+                                          user?.email ?? 'N/A',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 9,
+                                          ),
+                                          textAlign: TextAlign.start,
+                                          cursorColor: Theme.of(context).primaryColor,
+                                          selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                   actions: [
                                     TextButton(
@@ -219,12 +253,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     if (_subscriptionLevel != "pro")
                                       ElevatedButton(
                                         onPressed: () {
-                                          // TODO: Integrate RevenueCat paywall here
                                           Navigator.of(context).pop();
-                                          Fluttertoast.showToast(
-                                            msg: 'Subscription flow coming soon!',
-                                            toastLength: Toast.LENGTH_SHORT,
-                                          );
+                                          presentPaywallIfNeeded();
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
