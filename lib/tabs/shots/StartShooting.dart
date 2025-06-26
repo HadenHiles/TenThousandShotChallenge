@@ -36,7 +36,7 @@ class StartShooting extends StatefulWidget {
 
 class _StartShootingState extends State<StartShooting> {
   final bool showAccuracyFeature = true;
-  late String _subscriptionLevel;
+  String _subscriptionLevel = "free";
 
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
