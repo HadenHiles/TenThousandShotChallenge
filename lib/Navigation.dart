@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
+import 'package:tenthousandshotchallenge/testing.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -29,8 +30,6 @@ import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_s
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'models/Preferences.dart';
-
-bool kIsInWidgetTest = false;
 
 final PanelController sessionPanelController = PanelController();
 
@@ -171,13 +170,17 @@ class _NavigationState extends State<Navigation> {
     ),
     NavigationTab(
       title: null,
-      body: (() {
-        if (kIsInWidgetTest) {
-          return const _ExploreTestStub();
-        } else {
-          return const Explore();
-        }
-      })(),
+      body: Builder(
+        builder: (context) {
+          final testEnv = Provider.of<TestEnv?>(context, listen: false);
+          final isTesting = testEnv?.isTesting ?? false;
+          if (isTesting) {
+            return const _ExploreTestStub();
+          } else {
+            return const Explore();
+          }
+        },
+      ),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
@@ -226,7 +229,7 @@ class _NavigationState extends State<Navigation> {
     setState(() {
       _selectedIndex = index;
       _leading = _tabs[index].leading;
-      _actions = _tabs[index].actions;
+      _actions = widget.actions ?? _tabs[index].actions;
     });
 
     if (sessionPanelController.isAttached) {
@@ -251,7 +254,7 @@ class _NavigationState extends State<Navigation> {
 
     setState(() {
       _leading = Container();
-      _actions = widget.actions ?? [];
+      _actions = widget.actions ?? _tabs[widget.selectedIndex ?? 0].actions;
       _selectedIndex = widget.selectedIndex!;
     });
 
