@@ -187,7 +187,6 @@ class Home extends StatelessWidget {
               ? const IntroScreen()
               : (user != null
                   ? const Navigation(
-                      title: null,
                       selectedIndex: 0,
                     )
                   : const Login()),

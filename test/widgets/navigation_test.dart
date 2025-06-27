@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -14,6 +16,7 @@ import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
 
+import '../mock_firebase.dart';
 import 'navigation_test.mocks.dart';
 
 // Generate mocks
@@ -28,8 +31,11 @@ late fam.MockUser mockUser;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setupFirebaseAuthMocks();
+  setupFirebaseCoreMocks();
   late MockSharedPreferences mockSharedPreferences;
   late MockSessionService mockSessionService;
+  late MockNetworkStatusService mockNetworkStatusService;
   // Use fakes directly, no Firebase.initializeApp or channel mocks
   setUpAll(() async {
     fakeFirestore = FakeFirebaseFirestore();
@@ -38,7 +44,7 @@ void main() {
       'id': 'test_uid',
       'display_name': 'Test User',
       'email': 'test@example.com',
-      'photo_url': 'https://example.com/photo.png',
+      'photo_url': 'https://place-hold.it/100x100',
       'public': true,
       'friend_notifications': true,
       'team_id': 'test_team',
@@ -49,10 +55,14 @@ void main() {
       uid: 'test_uid',
       email: 'test@example.com',
       displayName: 'Test User',
-      photoURL: 'https://example.com/photo.png',
+      photoURL: 'https://place-hold.it/100x100',
       isEmailVerified: true,
     );
     mockFirebaseAuth = fam.MockFirebaseAuth(mockUser: mockUser);
+    await mockFirebaseAuth.signInWithEmailAndPassword(
+      email: 'test@example.com',
+      password: 'any-password',
+    );
   });
 
   setUp(() async {
@@ -77,6 +87,10 @@ void main() {
       'friend_notifications': true,
       'fcm_token': 'test_token',
     });
+    // Setup mock NetworkStatusService to avoid timers
+    mockNetworkStatusService = MockNetworkStatusService();
+    final controller = StreamController<NetworkStatus>.broadcast();
+    when(mockNetworkStatusService.networkStatusController).thenReturn(controller);
   });
 
   Widget createTestNavigationWidget({int selectedIndex = 0, Widget? title, List<Widget>? actions}) {
@@ -88,10 +102,10 @@ void main() {
           ),
           Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
           Provider<FirebaseFirestore>.value(value: fakeFirestore),
+          Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
         ],
         child: Navigation(
           selectedIndex: selectedIndex,
-          title: title,
           actions: actions,
         ),
       ),
@@ -102,18 +116,10 @@ void main() {
     testWidgets('Navigation renders correctly with valid index', (WidgetTester tester) async {
       await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 0));
       await tester.pump(); // Let the widget settle
+      await tester.pump(); // Pump again for auth state
 
       expect(find.byType(Navigation), findsOneWidget);
       expect(find.byType(NavigationTab), findsOneWidget);
-    });
-
-    testWidgets('Navigation handles custom title', (WidgetTester tester) async {
-      const customTitle = Text('Custom Title');
-
-      await tester.pumpWidget(createTestNavigationWidget(title: customTitle));
-      await tester.pump();
-
-      expect(find.text('Custom Title'), findsOneWidget);
     });
 
     testWidgets('Navigation handles custom actions', (WidgetTester tester) async {
@@ -126,12 +132,14 @@ void main() {
 
       await tester.pumpWidget(createTestNavigationWidget(actions: customActions));
       await tester.pump();
+      await tester.pump();
 
       expect(find.byIcon(Icons.star), findsOneWidget);
     });
 
     testWidgets('Navigation handles null values gracefully', (WidgetTester tester) async {
       await tester.pumpWidget(createTestNavigationWidget());
+      await tester.pump();
       await tester.pump();
 
       expect(find.byType(Navigation), findsOneWidget);
@@ -141,6 +149,7 @@ void main() {
     for (int i = 0; i < 5; i++) {
       testWidgets('Navigation displays tab $i correctly', (WidgetTester tester) async {
         await tester.pumpWidget(createTestNavigationWidget(selectedIndex: i));
+        await tester.pump();
         await tester.pump();
 
         expect(find.byType(Navigation), findsOneWidget);
@@ -197,29 +206,19 @@ void main() {
   });
 
   group('Navigation Provider Integration Tests', () {
-    testWidgets('Navigation integrates with PreferencesStateNotifier', (WidgetTester tester) async {
-      final preferencesNotifier = PreferencesStateNotifier();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<PreferencesStateNotifier>.value(
-            value: preferencesNotifier,
-            child: const Navigation(selectedIndex: 0),
-          ),
-        ),
-      );
-
-      await tester.pump();
-      expect(find.byType(Navigation), findsOneWidget);
-    });
-
     testWidgets('Navigation updates when preferences change', (WidgetTester tester) async {
       final preferencesNotifier = PreferencesStateNotifier();
 
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<PreferencesStateNotifier>.value(
-            value: preferencesNotifier,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PreferencesStateNotifier>.value(
+                value: preferencesNotifier,
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+            ],
             child: const Navigation(selectedIndex: 0),
           ),
         ),
@@ -278,26 +277,6 @@ void main() {
 
       await tester.pump();
       expect(find.byType(Navigation), findsOneWidget);
-    });
-
-    testWidgets('Navigation with custom properties', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        createTestNavigationWidget(
-          selectedIndex: 1,
-          title: const Text('Custom Title'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {},
-            ),
-          ],
-        ),
-      );
-
-      await tester.pump();
-      expect(find.byType(Navigation), findsOneWidget);
-      expect(find.text('Custom Title'), findsOneWidget);
-      expect(find.byIcon(Icons.settings), findsOneWidget);
     });
   });
 
