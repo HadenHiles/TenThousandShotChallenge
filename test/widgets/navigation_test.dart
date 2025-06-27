@@ -18,13 +18,10 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
 
 import '../mock_firebase.dart';
 import 'navigation_test.mocks.dart';
-
-// This import is only for test files to set the widget test flag
-// ignore: library_prefixes
-import 'package:tenthousandshotchallenge/Navigation.dart' as nav;
+import 'package:tenthousandshotchallenge/testing.dart' as testenv;
 
 void setWidgetTestFlag() {
-  nav.kIsInWidgetTest = true;
+  testenv.isTesting = true;
 }
 
 // Generate mocks
@@ -106,6 +103,7 @@ void main() {
     return MaterialApp(
       home: MultiProvider(
         providers: [
+          Provider<bool>.value(value: testenv.isTesting),
           ChangeNotifierProvider<PreferencesStateNotifier>(
             create: (_) => PreferencesStateNotifier(),
           ),

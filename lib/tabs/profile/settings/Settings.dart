@@ -190,14 +190,14 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             description: Text(
                               _subscriptionLevel.toUpperCase(),
                               style: TextStyle(
-                                color: _subscriptionLevel == "pro" ? Colors.blue : Colors.grey,
+                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             leading: Icon(
                               Icons.workspace_premium,
-                              color: _subscriptionLevel == "pro" ? Colors.blue : Colors.grey,
+                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
                             ),
                             onPressed: (BuildContext context) {
                               // Show a dialog or navigate to a subscription management screen
@@ -206,23 +206,81 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
                                   content: SizedBox(
-                                    height: 90,
+                                    height: _subscriptionLevel == "pro" ? 160 : 90,
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
+                                        if (_subscriptionLevel == "pro")
+                                          Container(
+                                            margin: const EdgeInsets.only(bottom: 12),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).colorScheme.surface,
+                                              border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.workspace_premium, color: Theme.of(context).primaryColor, size: 28),
+                                                const SizedBox(width: 10),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "PRO PLAN",
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).primaryColor,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Row(
+                                                      children: [
+                                                        Text("Renews: "),
+                                                        Text(
+                                                          (() {
+                                                            final exp = Provider.of<CustomerInfo>(context, listen: false).latestExpirationDate;
+                                                            if (exp == null) return "N/A";
+                                                            if (exp is DateTime) {
+                                                              final dt = (exp as DateTime).toLocal();
+                                                              return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+                                                            }
+                                                            // If it's a String, try to parse
+                                                            try {
+                                                              final dt = DateTime.parse(exp);
+                                                              final local = dt.toLocal();
+                                                              return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
+                                                            } catch (_) {
+                                                              return exp.toString();
+                                                            }
+                                                          })(),
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         Text(
-                                          _subscriptionLevel != "pro"
-                                              ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!"
-                                              : "You are currently on the ${_subscriptionLevel.toUpperCase()} plan.",
-                                          style: Theme.of(context).textTheme.bodyMedium,
+                                          _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16,
+                                          ),
                                         ),
                                         const SizedBox(height: 13),
                                         SelectableText(
                                           "ID: ${Provider.of<CustomerInfo>(context, listen: false).originalAppUserId}",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 9,
+                                            fontSize: 11,
                                           ),
                                           textAlign: TextAlign.start,
                                           cursorColor: Theme.of(context).primaryColor,
@@ -232,7 +290,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                           user?.email ?? 'N/A',
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 9,
+                                            fontSize: 11,
                                           ),
                                           textAlign: TextAlign.start,
                                           cursorColor: Theme.of(context).primaryColor,
@@ -250,6 +308,22 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                       child: const Text('Close'),
                                     ),
+                                    if (_subscriptionLevel == "pro")
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          // Open the correct subscription management page
+                                          final platform = Theme.of(context).platform;
+                                          final url =
+                                              platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
+                                          if (await canLaunchUrlString(url)) {
+                                            await launchUrlString(url);
+                                          }
+                                        },
+                                        style: ButtonStyle(
+                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                        ),
+                                        child: const Text('Cancel Subscription'),
+                                      ),
                                     if (_subscriptionLevel != "pro")
                                       ElevatedButton(
                                         onPressed: () {
@@ -453,10 +527,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             onToggle: (bool value) async {
                               SharedPreferences prefs = await SharedPreferences.getInstance();
 
-                              Provider.of<FirebaseFirestore>(context, listen: false)
-                                  .collection('users')
-                                  .doc(user!.uid)
-                                  .update({'friend_notifications': !_friendNotifications}).then((_) {
+                              Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'friend_notifications': !_friendNotifications}).then((_) {
                                 setState(() {
                                   _friendNotifications = !_friendNotifications;
                                   prefs.setBool('friend_notifications', _friendNotifications);
@@ -495,10 +566,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             initialValue: _publicProfile,
                             onToggle: (bool value) async {
-                              Provider.of<FirebaseFirestore>(context, listen: false)
-                                  .collection('users')
-                                  .doc(user!.uid)
-                                  .update({'public': !_publicProfile}).then((_) {
+                              Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
                                 setState(() {
                                   _publicProfile = !_publicProfile;
                                 });
@@ -594,9 +662,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
                                             SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                                           }).onError((FirebaseAuthException error, stackTrace) {
-                                            String msg = error.code == "requires-recent-login"
-                                                ? "This action requires a recent login, please logout and try again."
-                                                : "Error deleting account, please email admin@howtohockey.com";
+                                            String msg =
+                                                error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
                                             Fluttertoast.showToast(
                                               msg: msg,
                                               toastLength: Toast.LENGTH_LONG,
