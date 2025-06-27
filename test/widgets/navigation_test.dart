@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
+import 'package:tenthousandshotchallenge/testing.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
@@ -18,10 +19,11 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
 
 import '../mock_firebase.dart';
 import 'navigation_test.mocks.dart';
-import 'package:tenthousandshotchallenge/testing.dart' as testenv;
+
+final testEnv = TestEnv(isTesting: true);
 
 void setWidgetTestFlag() {
-  testenv.isTesting = true;
+  // No longer needed, but kept for compatibility
 }
 
 // Generate mocks
@@ -36,6 +38,7 @@ late fam.MockUser mockUser;
 
 void main() {
   setWidgetTestFlag();
+  NetworkStatusService.isTestingOverride = true;
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseAuthMocks();
   setupFirebaseCoreMocks();
@@ -97,18 +100,20 @@ void main() {
     mockNetworkStatusService = MockNetworkStatusService();
     final controller = StreamController<NetworkStatus>.broadcast();
     when(mockNetworkStatusService.networkStatusController).thenReturn(controller);
+    // If you ever instantiate a real NetworkStatusService in tests, use: NetworkStatusService(isTesting: true)
   });
 
   Widget createTestNavigationWidget({int selectedIndex = 0, Widget? title, List<Widget>? actions}) {
     return MaterialApp(
       home: MultiProvider(
         providers: [
-          Provider<bool>.value(value: testenv.isTesting),
+          Provider<TestEnv>.value(value: testEnv),
           ChangeNotifierProvider<PreferencesStateNotifier>(
             create: (_) => PreferencesStateNotifier(),
           ),
           Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
           Provider<FirebaseFirestore>.value(value: fakeFirestore),
+          // Place mockNetworkStatusService last to override any ancestor
           Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
         ],
         child: Navigation(
