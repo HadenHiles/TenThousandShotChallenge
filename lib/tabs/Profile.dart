@@ -87,10 +87,10 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _setInitialIterationId() async {
+    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (user == null) return;
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-    final snapshot =
-        await firestore.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).get();
+    final snapshot = await firestore.collection('iterations').doc(user.uid).collection('iterations').orderBy('start_date', descending: false).get();
     if (snapshot.docs.isNotEmpty) {
       setState(() {
         _selectedIterationId = snapshot.docs.last.id;
@@ -259,12 +259,7 @@ class _ProfileState extends State<Profile> {
     List<DateTime> accuracyDates = [];
 
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .collection('iterations')
-          .doc(currentUser!.uid)
-          .collection('iterations')
-          .orderBy('start_date', descending: false)
-          .snapshots(),
+      stream: firestore.collection('iterations').doc(currentUser!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
@@ -275,13 +270,7 @@ class _ProfileState extends State<Profile> {
 
         // The rest of the original chart logic
         return StreamBuilder<QuerySnapshot>(
-          stream: firestore
-              .collection('iterations')
-              .doc(currentUser.uid)
-              .collection('iterations')
-              .doc(iterationId)
-              .collection('sessions')
-              .snapshots(),
+          stream: firestore.collection('iterations').doc(currentUser.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
@@ -298,11 +287,7 @@ class _ProfileState extends State<Profile> {
                   sessions.add(session);
                 } catch (_) {}
               }
-              return sessions
-                  .where((s) =>
-                      s.shots != null &&
-                      s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
-                  .toList();
+              return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
             }
 
             return FutureBuilder<List<ShootingSession>>(
@@ -331,11 +316,7 @@ class _ProfileState extends State<Profile> {
 
                 for (final session in sessions) {
                   for (final shot in session.shots!) {
-                    if (shot.type != null &&
-                        shotTypes.contains(shot.type) &&
-                        shot.targetsHit != null &&
-                        shot.count != null &&
-                        shot.count! > 0) {
+                    if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
                       totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
                       totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
                       if (session.date != null) {
@@ -502,17 +483,12 @@ class _ProfileState extends State<Profile> {
 
   // 2. TargetAccuracyVisualizers for each shot type, tappable
   Widget _buildShotTypeAccuracyVisualizers(BuildContext context, String? iterationId) {
+    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (iterationId == null) return Container();
 
     final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('iterations')
-          .doc(user!.uid)
-          .collection('iterations')
-          .doc(iterationId)
-          .collection('sessions')
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
@@ -529,11 +505,7 @@ class _ProfileState extends State<Profile> {
               sessions.add(session);
             } catch (_) {}
           }
-          return sessions
-              .where((s) =>
-                  s.shots != null &&
-                  s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0))
-              .toList();
+          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
         return FutureBuilder<List<ShootingSession>>(
@@ -553,11 +525,7 @@ class _ProfileState extends State<Profile> {
 
             for (final session in sessions) {
               for (final shot in session.shots!) {
-                if (shot.type != null &&
-                    shotTypes.contains(shot.type) &&
-                    shot.targetsHit != null &&
-                    shot.count != null &&
-                    shot.count! > 0) {
+                if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
                   totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
                   totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
                 }
@@ -589,7 +557,7 @@ class _ProfileState extends State<Profile> {
                         Text(
                           type[0].toUpperCase() + type.substring(1),
                           style: TextStyle(
-                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
+                            color: isActive ? color : Theme.of(context).colorScheme.onPrimary.withAlpha(153),
                             fontWeight: FontWeight.bold,
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
@@ -609,18 +577,12 @@ class _ProfileState extends State<Profile> {
 
   // 3. Scatter chart for accuracy over time for selected shot type
   Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId) {
+    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (iterationId == null) return Container();
 
     final shotType = _selectedAccuracyShotType;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('iterations')
-          .doc(user!.uid)
-          .collection('iterations')
-          .doc(iterationId)
-          .collection('sessions')
-          .orderBy('date', descending: false)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
@@ -638,11 +600,7 @@ class _ProfileState extends State<Profile> {
             } catch (_) {}
           }
           // Only sessions with at least one valid shot of this type
-          return sessions
-              .where((s) =>
-                  s.shots != null &&
-                  s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0))
-              .toList();
+          return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
         }
 
         return FutureBuilder<List<ShootingSession>>(
@@ -664,9 +622,7 @@ class _ProfileState extends State<Profile> {
             int sessionIndex = 0;
             for (final session in sessions) {
               // Combine all shots of this type in this session
-              final relevantShots = session.shots!
-                  .where((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0)
-                  .toList();
+              final relevantShots = session.shots!.where((shot) => shot.type == shotType && shot.targetsHit != null && shot.count != null && shot.count! > 0).toList();
               if (relevantShots.isNotEmpty) {
                 int totalHits = relevantShots.fold(0, (sum, s) => sum + (s.targetsHit ?? 0));
                 int totalShots = relevantShots.fold(0, (sum, s) => sum + (s.count ?? 0));
@@ -735,18 +691,11 @@ class _ProfileState extends State<Profile> {
                           maxY: 100,
                           minX: 0,
                           maxX: spots.isNotEmpty ? spots.last.x : 1,
-                          gridData: FlGridData(
-                              show: true,
-                              horizontalInterval: 20,
-                              getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1)),
+                          gridData: FlGridData(show: true, horizontalInterval: 20, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1)),
                           titlesData: FlTitlesData(
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 32,
-                                  interval: 20,
-                                  getTitlesWidget: (v, meta) => Text('${v.toInt()}%',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12))),
+                                  showTitles: true, reservedSize: 32, interval: 20, getTitlesWidget: (v, meta) => Text('${v.toInt()}%', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12))),
                             ),
                             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                             topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -758,8 +707,7 @@ class _ProfileState extends State<Profile> {
                                   if (xLabels.containsKey(value)) {
                                     return Padding(
                                       padding: const EdgeInsets.only(top: 2),
-                                      child: Text(xLabels[value]!,
-                                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12)),
+                                      child: Text(xLabels[value]!, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12)),
                                     );
                                   }
                                   return const SizedBox.shrink();
@@ -767,8 +715,7 @@ class _ProfileState extends State<Profile> {
                               ),
                             ),
                           ),
-                          borderData: FlBorderData(
-                              show: true, border: Border.all(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2))),
+                          borderData: FlBorderData(show: true, border: Border.all(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2))),
                           lineBarsData: [
                             LineChartBarData(
                               spots: spots,
@@ -812,8 +759,7 @@ class _ProfileState extends State<Profile> {
                                 return touchedSpots.map((touchedSpot) {
                                   // Find the correct index for this spot
                                   int idx = spots.indexWhere((s) => s.x == touchedSpot.x && s.y == touchedSpot.y);
-                                  final date =
-                                      (idx >= 0 && idx < accuracyDates.length) ? DateFormat('MMM d, yyyy').format(accuracyDates[idx]) : '';
+                                  final date = (idx >= 0 && idx < accuracyDates.length) ? DateFormat('MMM d, yyyy').format(accuracyDates[idx]) : '';
                                   return LineTooltipItem(
                                     (idx >= 0 && idx < allAccuracies.length) ? '${allAccuracies[idx].toStringAsFixed(1)}%' : '',
                                     TextStyle(color: shotTypeColors[shotType], fontWeight: FontWeight.bold, fontSize: 18),
@@ -1001,9 +947,7 @@ class _ProfileState extends State<Profile> {
                               return SizedBox(
                                 width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                 child: AutoSizeText(
-                                  userProfile.displayName != null && userProfile.displayName!.isNotEmpty
-                                      ? userProfile.displayName!
-                                      : user!.displayName!,
+                                  userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : user!.displayName!,
                                   maxLines: 1,
                                   maxFontSize: 22,
                                   style: TextStyle(
@@ -1036,9 +980,7 @@ class _ProfileState extends State<Profile> {
                                 return SizedBox(
                                   width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                   child: AutoSizeText(
-                                    total > 999
-                                        ? numberFormat.format(total) + " Lifetime Shots".toLowerCase()
-                                        : total.toString() + " Lifetime Shots".toLowerCase(),
+                                    total > 999 ? numberFormat.format(total) + " Lifetime Shots".toLowerCase() : total.toString() + " Lifetime Shots".toLowerCase(),
                                     maxFontSize: 20,
                                     maxLines: 1,
                                     style: TextStyle(
@@ -1088,12 +1030,7 @@ class _ProfileState extends State<Profile> {
                   child: Row(
                     children: [
                       StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('iterations')
-                            .doc(user!.uid)
-                            .collection('iterations')
-                            .orderBy('start_date', descending: false)
-                            .snapshots(),
+                        stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
                             return const CircularProgressIndicator();
@@ -1144,14 +1081,7 @@ class _ProfileState extends State<Profile> {
               ],
             ),
             StreamBuilder<DocumentSnapshot>(
-              stream: _selectedIterationId == null
-                  ? null
-                  : FirebaseFirestore.instance
-                      .collection('iterations')
-                      .doc(user!.uid)
-                      .collection('iterations')
-                      .doc(_selectedIterationId)
-                      .snapshots(),
+              stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.exists) {
                   Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
@@ -1338,8 +1268,7 @@ class _ProfileState extends State<Profile> {
                       height: 60,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment:
-                            (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: (remainingShots >= 10000 || remainingShots <= 0) ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
                         children: [
                           remainingShots >= 10000
                               ? Container()
@@ -1651,11 +1580,10 @@ class _ProfileState extends State<Profile> {
                           height: 25,
                           margin: const EdgeInsets.only(top: 2),
                           decoration: const BoxDecoration(color: snapShotColor),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Opacity(
+                          child: const Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Opacity(
                                 opacity: 0.75,
                                 child: Text(
                                   "SN",
@@ -1666,7 +1594,7 @@ class _ProfileState extends State<Profile> {
                                   ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                         Text(
@@ -1713,11 +1641,10 @@ class _ProfileState extends State<Profile> {
                           height: 25,
                           margin: const EdgeInsets.only(top: 2),
                           decoration: const BoxDecoration(color: slapShotColor),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Opacity(
+                          child: const Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Opacity(
                                 opacity: 0.75,
                                 child: Text(
                                   "SL",
@@ -1728,7 +1655,7 @@ class _ProfileState extends State<Profile> {
                                   ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -1737,12 +1664,7 @@ class _ProfileState extends State<Profile> {
                   // Recent Sessions StreamBuilder (only show if sessions expanded)
                   if (_selectedIterationId != null)
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('iterations')
-                          .doc(user!.uid)
-                          .collection('iterations')
-                          .doc(_selectedIterationId)
-                          .snapshots(),
+                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
                       builder: (context, snapshot) {
                         final iterationCompleted = _isCurrentIterationCompleted(snapshot);
                         return StreamBuilder<QuerySnapshot>(
@@ -2252,7 +2174,7 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                          width: calculateSessionShotWidth(s, s.totalSnap!),
+                                                   width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
                           decoration: const BoxDecoration(

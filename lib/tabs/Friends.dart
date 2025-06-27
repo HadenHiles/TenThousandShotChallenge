@@ -46,7 +46,13 @@ class _FriendsState extends State<Friends> {
       _inviteDates = [];
     });
 
-    await FirebaseFirestore.instance.collection('invites').doc(user!.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
+    await FirebaseFirestore.instance
+        .collection('invites')
+        .doc(user!.uid)
+        .collection('invites')
+        .orderBy('date', descending: true)
+        .get()
+        .then((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -85,7 +91,13 @@ class _FriendsState extends State<Friends> {
       _friends = [];
     });
 
-    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
+    await FirebaseFirestore.instance
+        .collection('teammates')
+        .doc(user!.uid)
+        .collection('teammates')
+        .orderBy('display_name', descending: false)
+        .get()
+        .then((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -282,7 +294,8 @@ class _FriendsState extends State<Friends> {
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
                                     final DocumentSnapshot document = _invites[index];
-                                    return _buildFriendInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
+                                    return _buildFriendInviteItem(
+                                        UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
                                   }
 
                                   return !_isLoadingInvites
@@ -381,7 +394,11 @@ class _FriendsState extends State<Friends> {
                     SizedBox(
                       width: 135,
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                          stream: FirebaseFirestore.instance
+                              .collection('iterations')
+                              .doc(friend.reference!.id)
+                              .collection('iterations')
+                              .snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return const Center(
@@ -411,7 +428,11 @@ class _FriendsState extends State<Friends> {
                           }),
                     ),
                     StreamBuilder(
-                        stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                        stream: FirebaseFirestore.instance
+                            .collection('iterations')
+                            .doc(friend.reference!.id)
+                            .collection('iterations')
+                            .snapshots(),
                         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                           if (!snapshot.hasData) {
                             return const Center(
@@ -451,10 +472,17 @@ class _FriendsState extends State<Friends> {
   }
 
   Widget _buildFriendInviteItem(UserProfile friend, Invite invite, bool bg) {
+    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
-        await deleteInvite(friend.reference!.id, user!.uid, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false),).then((deleted) {
+        await deleteInvite(
+          friend.reference!.id,
+          user!.uid,
+          Provider.of<FirebaseAuth>(context, listen: false),
+          Provider.of<FirebaseFirestore>(context, listen: false),
+        ).then((deleted) {
           if (!deleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -644,7 +672,11 @@ class _FriendsState extends State<Friends> {
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
-                      acceptInvite(Invite(friend.reference!.id, DateTime.now()), Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false),).then((accepted) {
+                      acceptInvite(
+                        Invite(friend.reference!.id, DateTime.now()),
+                        Provider.of<FirebaseAuth>(context, listen: false),
+                        Provider.of<FirebaseFirestore>(context, listen: false),
+                      ).then((accepted) {
                         if (!accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

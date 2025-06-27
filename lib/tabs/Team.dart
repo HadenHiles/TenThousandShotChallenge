@@ -392,15 +392,35 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 int currentTeamTotalShots = currentPlayers.fold(0, (sum, p) => sum + (p.shots ?? 0));
                 int numActivePlayers = currentPlayers.isNotEmpty ? currentPlayers.length : 1;
 
-                final shotTexts = _calculateShotTexts(currentTeamTotalShots, team, numActivePlayers);
+                // Null safety and fallback for team fields
+                final String safeName = team.name ?? 'Team';
+                final DateTime safeStartDate = team.startDate ?? DateTime.now();
+                final DateTime safeTargetDate = team.targetDate ?? DateTime.now().add(const Duration(days: 100));
+                final int safeGoalTotal = team.goalTotal ?? 0;
+                final String safeOwnerId = team.ownerId ?? '';
+                final bool safeOwnerParticipating = team.ownerParticipating ?? false;
+                final bool safePublic = team.public ?? false;
+                final List<String> safePlayers = team.players ?? [];
+                final Team safeTeam = Team(
+                  safeName,
+                  safeStartDate,
+                  safeTargetDate,
+                  safeGoalTotal,
+                  safeOwnerId,
+                  safeOwnerParticipating,
+                  safePublic,
+                  safePlayers,
+                );
+
+                final shotTexts = _calculateShotTexts(currentTeamTotalShots, safeTeam, numActivePlayers);
                 String displayShotsPerDayText = shotTexts['shotsPerDayText']!;
                 String displayShotsPerWeekText = shotTexts['shotsPerWeekText']!;
 
                 double totalShotsWidth = 0;
                 double totalShotsPercentage = 0;
-                if ((team.goalTotal ?? 0) > 0) {
+                if (safeGoalTotal > 0) {
                   totalShotsPercentage =
-                      (currentTeamTotalShots / team.goalTotal!.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / team.goalTotal!.toDouble());
+                      (currentTeamTotalShots / safeGoalTotal.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / safeGoalTotal.toDouble());
                 }
                 totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
                 if (totalShotsWidth < 0) totalShotsWidth = 0;
