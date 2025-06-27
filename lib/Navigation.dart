@@ -62,7 +62,7 @@ class _NavigationState extends State<Navigation> {
       title: Container(
         height: 40,
         padding: const EdgeInsets.only(top: 6),
-        child: Image.asset('/assets/images/logo.png'), // Use the correct logo asset
+        child: Image.asset('assets/images/logo-text-only.png'), // Use the correct logo asset
       ),
       actions: const [],
       body: Shots(sessionPanelController: sessionPanelController),
@@ -97,8 +97,7 @@ class _NavigationState extends State<Navigation> {
               if (user == null) {
                 return NavigationTitle(title: "Team");
               }
-              final userProfileStream =
-                  Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
+              final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
               return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: userProfileStream,
                 builder: (context, userSnapshot) {
@@ -271,9 +270,7 @@ class _NavigationState extends State<Navigation> {
     bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = prefs.getInt('puck_count') ?? 25;
     bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
-    DateTime targetDate = prefs.getString('target_date') != null
-        ? DateTime.parse(prefs.getString('target_date')!)
-        : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
+    DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
     String fcmToken = prefs.getString('fcm_token')!;
 
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
@@ -339,9 +336,7 @@ class _NavigationState extends State<Navigation> {
                                 ),
                               );
 
-                              joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false),
-                                      Provider.of<FirebaseFirestore>(context, listen: false))
-                                  .then((success) {
+                              joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
                                 navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
                                   builder: (context) {
                                     return Navigation(
@@ -545,7 +540,10 @@ class _NavigationState extends State<Navigation> {
                                 collapseMode: CollapseMode.parallax,
                                 centerTitle: true,
                                 titlePadding: const EdgeInsets.symmetric(vertical: 15),
-                                title: _leading,
+                                title: _tabs[_selectedIndex].title ??
+                                    const SizedBox(
+                                      height: 15,
+                                    ),
                                 background: Container(
                                   color: HomeTheme.darkTheme.colorScheme.primaryContainer,
                                 ),
