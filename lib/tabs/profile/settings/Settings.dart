@@ -206,36 +206,43 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
                                   content: SizedBox(
-                                    height: _subscriptionLevel == "pro" ? 160 : 90,
+                                    height: 215,
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        if (_subscriptionLevel == "pro")
-                                          Container(
-                                            margin: const EdgeInsets.only(bottom: 12),
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surface,
-                                              border: Border.all(color: Theme.of(context).primaryColor, width: 2),
-                                              borderRadius: BorderRadius.circular(12),
+                                        Container(
+                                          margin: const EdgeInsets.only(bottom: 12),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.surface,
+                                            border: Border.all(
+                                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                              width: 2,
                                             ),
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.workspace_premium, color: Theme.of(context).primaryColor, size: 28),
-                                                const SizedBox(width: 10),
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      "PRO PLAN",
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).primaryColor,
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 18,
-                                                      ),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.workspace_premium,
+                                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _subscriptionLevel == "pro" ? "PRO PLAN" : "FREE PLAN",
+                                                    style: TextStyle(
+                                                      color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 18,
                                                     ),
-                                                    const SizedBox(height: 4),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  if (_subscriptionLevel == "pro")
                                                     Row(
                                                       children: [
                                                         Text("Renews: "),
@@ -263,13 +270,21 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                                         ),
                                                       ],
                                                     ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
+                                                  if (_subscriptionLevel != "pro")
+                                                    Text(
+                                                      "No renewal date",
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
+                                        ),
                                         Text(
-                                          _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock advanced features like shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
+                                          _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                             fontSize: 16,
