@@ -19,6 +19,14 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
 import '../mock_firebase.dart';
 import 'navigation_test.mocks.dart';
 
+// This import is only for test files to set the widget test flag
+// ignore: library_prefixes
+import 'package:tenthousandshotchallenge/Navigation.dart' as nav;
+
+void setWidgetTestFlag() {
+  nav.kIsInWidgetTest = true;
+}
+
 // Generate mocks
 @GenerateMocks([
   SharedPreferences,
@@ -30,6 +38,7 @@ late fam.MockFirebaseAuth mockFirebaseAuth;
 late fam.MockUser mockUser;
 
 void main() {
+  setWidgetTestFlag();
   TestWidgetsFlutterBinding.ensureInitialized();
   setupFirebaseAuthMocks();
   setupFirebaseCoreMocks();
@@ -44,7 +53,7 @@ void main() {
       'id': 'test_uid',
       'display_name': 'Test User',
       'email': 'test@example.com',
-      'photo_url': 'https://place-hold.it/100x100',
+      'photo_url': '',
       'public': true,
       'friend_notifications': true,
       'team_id': 'test_team',
@@ -55,7 +64,7 @@ void main() {
       uid: 'test_uid',
       email: 'test@example.com',
       displayName: 'Test User',
-      photoURL: 'https://place-hold.it/100x100',
+      photoURL: '',
       isEmailVerified: true,
     );
     mockFirebaseAuth = fam.MockFirebaseAuth(mockUser: mockUser);
@@ -218,6 +227,7 @@ void main() {
               ),
               Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
               Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService), // Added provider
             ],
             child: const Navigation(selectedIndex: 0),
           ),

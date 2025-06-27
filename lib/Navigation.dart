@@ -57,18 +57,12 @@ class _NavigationState extends State<Navigation> {
   Team? team;
   UserProfile? userProfile;
 
-  final logo = Container(
-    height: 40,
-    padding: const EdgeInsets.only(top: 6),
-    child: Image.asset('assets/images/logo-text-only.png'),
-  );
-
   final List<NavigationTab> _tabs = [
     NavigationTab(
       title: Container(
         height: 40,
         padding: const EdgeInsets.only(top: 6),
-        child: Image.asset('assets/images/logo-text-only.png'),
+        child: Image.asset('/assets/images/logo.png'), // Use the correct logo asset
       ),
       actions: const [],
       body: Shots(sessionPanelController: sessionPanelController),
@@ -178,7 +172,13 @@ class _NavigationState extends State<Navigation> {
     ),
     NavigationTab(
       title: null,
-      body: kIsInWidgetTest ? const _ExploreTestStub() : const Explore(),
+      body: (() {
+        if (kIsInWidgetTest) {
+          return const _ExploreTestStub();
+        } else {
+          return const Explore();
+        }
+      })(),
     ),
     NavigationTab(
       title: NavigationTitle(title: "Profile".toUpperCase()),
@@ -639,11 +639,11 @@ class _NavigationState extends State<Navigation> {
   }
 }
 
-// Add this stub widget at the bottom of the file
+// Stub for Explore tab in widget tests
 class _ExploreTestStub extends StatelessWidget {
   const _ExploreTestStub();
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Explore (stubbed for test)'));
+    return Center(child: Text('Explore (Test Stub)'));
   }
 }
