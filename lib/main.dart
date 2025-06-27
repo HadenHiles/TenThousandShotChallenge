@@ -9,6 +9,7 @@ import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -110,6 +111,9 @@ void main() async {
         Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
         Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
         Provider<CustomerInfo?>.value(value: await getCustomerInfo()),
+        Provider<NetworkStatusService>(
+          create: (_) => NetworkStatusService(),
+        ),
       ],
       child: const Home(),
     ),
