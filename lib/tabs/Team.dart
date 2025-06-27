@@ -155,8 +155,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
   // Stream for a single player's data (profile + total shots)
   Stream<Plyr> _getSinglePlayerDataStream(String playerUid, DateTime teamStartDate, DateTime teamTargetDate) {
-    final userProfileStream =
-        Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(playerUid).snapshots().map((snap) {
+    final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(playerUid).snapshots().map((snap) {
       if (snap.exists) {
         return UserProfile.fromSnapshot(snap);
       }
@@ -198,15 +197,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             // If you must use FirestoreCache.getDocuments (fetches once then uses cache logic):
             return Stream.fromFuture(
               FirestoreCache.getDocuments(
-                query: iteration.reference!
-                    .collection("sessions")
-                    .where('date', isGreaterThanOrEqualTo: teamStartDate)
-                    .where('date', isLessThanOrEqualTo: teamTargetDate),
+                query: iteration.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: teamStartDate).where('date', isLessThanOrEqualTo: teamTargetDate),
                 // The cacheDocRef needs to be a DocumentReference<Map<String, dynamic>>
                 // If iteration.reference is already correctly typed, no need for withConverter here unless specifically required by your setup.
                 // However, if it's a DocumentReference<Object?> or similar, you might need:
-                cacheDocRef: iteration.reference!.withConverter<Map<String, dynamic>>(
-                    fromFirestore: (snapshot, _) => snapshot.data()!, toFirestore: (model, _) => model),
+                cacheDocRef: iteration.reference!.withConverter<Map<String, dynamic>>(fromFirestore: (snapshot, _) => snapshot.data()!, toFirestore: (model, _) => model),
                 firestoreCacheField: 'updated_at',
                 // cacheRefreshStrategy: const CacheRefreshStrategy.periodic(Duration(minutes: 3)), // If available and needed
               ),
@@ -231,9 +226,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           }
 
           // Combine the sums from all iterations for this player
-          return CombineLatestStream.list<int>(iterationShotSumStreams)
-              .map((listOfShotSums) => listOfShotSums.fold(0, (prev, sum) => prev + sum))
-              .startWith(0); // Emit 0 initially until sums are calculated
+          return CombineLatestStream.list<int>(iterationShotSumStreams).map((listOfShotSums) => listOfShotSums.fold(0, (prev, sum) => prev + sum)).startWith(0); // Emit 0 initially until sums are calculated
         })
         .startWith(0)
         .handleError((e) {
@@ -313,11 +306,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       // Target date is in the past
       int daysPast = normalizedToday.difference(normalizedTargetDate).inDays;
       finalShotsPerDayText = "${daysPast.abs()} Days Past Goal".toLowerCase();
-      finalShotsPerWeekText = shotsRemaining <= 0
-          ? "Goal Met!".toLowerCase()
-          : (shotsRemaining <= 999
-              ? "$shotsRemaining remaining".toLowerCase()
-              : "${numberFormat.format(shotsRemaining)} remaining".toLowerCase());
+      finalShotsPerWeekText = shotsRemaining <= 0 ? "Goal Met!".toLowerCase() : (shotsRemaining <= 999 ? "$shotsRemaining remaining".toLowerCase() : "${numberFormat.format(shotsRemaining)} remaining".toLowerCase());
     } else {
       // Future goal date or today
       finalShotsPerDayText = shotsRemaining < 1
@@ -380,8 +369,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             return StreamBuilder<List<Plyr>>(
               stream: _getTeamPlayersDataStream(team.players ?? [], team.startDate!, team.targetDate!),
               builder: (context, playersSnapshot) {
-                if (playersSnapshot.connectionState == ConnectionState.waiting &&
-                    !(playersSnapshot.hasData && playersSnapshot.data!.isNotEmpty)) {
+                if (playersSnapshot.connectionState == ConnectionState.waiting && !(playersSnapshot.hasData && playersSnapshot.data!.isNotEmpty)) {
                   return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
                 }
                 if (playersSnapshot.hasError) {
@@ -419,8 +407,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 double totalShotsWidth = 0;
                 double totalShotsPercentage = 0;
                 if (safeGoalTotal > 0) {
-                  totalShotsPercentage =
-                      (currentTeamTotalShots / safeGoalTotal.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / safeGoalTotal.toDouble());
+                  totalShotsPercentage = (currentTeamTotalShots / safeGoalTotal.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / safeGoalTotal.toDouble());
                 }
                 totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
                 if (totalShotsWidth < 0) totalShotsWidth = 0;
@@ -439,9 +426,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text("Goal".toUpperCase(),
-                                style:
-                                    TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
+                            Text("Goal".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
                             SizedBox(
                               width: 150,
                               child: AutoSizeTextField(
@@ -452,11 +437,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 decoration: InputDecoration(
                                   labelText: "${numberFormat.format(team.goalTotal ?? 0)} Shots By:".toLowerCase(),
                                   labelStyle: TextStyle(
-                                      color: isDarkMode
-                                          ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                          : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 22),
+                                      color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   contentPadding: const EdgeInsets.all(2),
@@ -472,10 +453,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   child: GestureDetector(
                                     onTap: () => setState(() => _showShotsPerDay = !_showShotsPerDay),
                                     child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText,
-                                        maxFontSize: 20,
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
+                                        maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
                                   ),
                                 ),
                                 InkWell(
@@ -488,10 +466,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           ],
                         ),
                       ),
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Text("Progress".toUpperCase(),
-                            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))
-                      ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
                       const SizedBox(height: 5),
                       Column(children: [
                         Container(
@@ -502,13 +479,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           child: Row(children: [
                             Tooltip(
                               message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
-                              textStyle:
-                                  TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                               decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                              child: Container(
-                                  height: 40,
-                                  width: currentTeamTotalShots > 0 ? totalShotsWidth : 0,
-                                  decoration: const BoxDecoration(color: wristShotColor)),
+                              child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: const BoxDecoration(color: wristShotColor)),
                             ),
                           ]),
                         ),
@@ -526,16 +499,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                       : totalShotsWidth,
                               padding: const EdgeInsets.symmetric(horizontal: 2),
                               child: AutoSizeText(numberFormat.format(currentTeamTotalShots),
-                                  textAlign: TextAlign.right,
-                                  maxFontSize: 18,
-                                  maxLines: 1,
-                                  style:
-                                      TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                                  textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                             ),
-                            Text(" / ${numberFormat.format(team.goalTotal ?? 0)}",
-                                textAlign: TextAlign.right,
-                                style:
-                                    TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                            Text(" / ${numberFormat.format(team.goalTotal ?? 0)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                           ]),
                         ),
                       ]),
@@ -572,9 +538,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text("Tap + to create a team".toUpperCase(),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+          Text("Tap + to create a team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 15.0),
             child: Ink(
@@ -589,15 +553,12 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     })),
           ),
           const Divider(height: 30),
-          Text("Or join an existing team".toUpperCase(),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+          Text("Or join an existing team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
           Padding(
             padding: const EdgeInsets.only(top: 15.0),
             child: MaterialButton(
                 color: Theme.of(context).cardTheme.color,
-                child: Text("Join Team".toUpperCase(),
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
+                child: Text("Join Team".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
                 onPressed: () {
                   if (navigatorKey.currentState != null) {
                     navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const JoinTeam()));
@@ -617,15 +578,12 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            teamName != null
-                ? "You have been removed from team \"$teamName\" or the team no longer exists.".toUpperCase()
-                : "The team you were part of no longer exists or your access was removed.".toUpperCase(),
+            teamName != null ? "You have been removed from team \"$teamName\" or the team no longer exists.".toUpperCase() : "The team you were part of no longer exists or your access was removed.".toUpperCase(),
             textAlign: TextAlign.center,
             style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 22),
           ),
           const SizedBox(height: 20),
-          Text("You are free to join or create a new team.",
-              textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16)),
+          Text("You are free to join or create a new team.", textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16)),
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: () async {
@@ -647,9 +605,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return Column(children: [
       Container(
           margin: const EdgeInsets.only(top: 40),
-          child: Text("No Players on the Team (yet!)".toUpperCase(),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary))),
+          child: Text("No Players on the Team (yet!)".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary))),
       Container(
           margin: const EdgeInsets.only(top: 15),
           child: Center(
@@ -716,18 +672,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
                         title: Text("Remove Player?".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 24)),
-                        content: Text("Are you sure you want to remove ${plyr.profile?.displayName ?? 'this player'} from your team?",
-                            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+                        content: Text("Are you sure you want to remove ${plyr.profile?.displayName ?? 'this player'} from your team?", style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         actions: <Widget>[
-                          TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: Text("Cancel".toUpperCase(),
-                                  style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary))),
-                          TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: Text("Delete".toUpperCase(),
-                                  style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor))),
+                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text("Cancel".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary))),
+                          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text("Delete".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor))),
                         ],
                       ),
                     ) ??
@@ -736,10 +685,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               background: Container(
                   color: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)),
-                    const Icon(Icons.delete, size: 16, color: Colors.white)
-                  ])),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
               child: _buildPlayerListItemContent(plyr, bg, place),
             )
           : _buildPlayerListItemContent(plyr, bg, place),
@@ -757,13 +705,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           }
         },
         style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).cardTheme.color,
-            backgroundColor: Theme.of(context).cardTheme.color,
-            shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+            foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text("Edit Team".toUpperCase(),
-              style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
+          Text("Edit Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
           Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: Theme.of(context).primaryColor, size: 24))
         ])),
       ),
@@ -788,12 +733,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         onPressed: () {
           dialog(
               context,
-              ConfirmDialog(
-                  "Leave team ${currentTeam.name}?".toLowerCase(),
-                  Text("Are you sure you want to leave this team?", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  "Cancel",
-                  () => Navigator.of(context).pop(),
-                  "Leave", () async {
+              ConfirmDialog("Leave team ${currentTeam.name}?".toLowerCase(), Text("Are you sure you want to leave this team?", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)), "Cancel",
+                  () => Navigator.of(context).pop(), "Leave", () async {
                 Navigator.of(context).pop();
                 // Use Provider to get firestore
                 final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
@@ -807,16 +748,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               }));
         },
         style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).cardTheme.color,
-            backgroundColor: Theme.of(context).cardTheme.color,
-            shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+            foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text("Leave Team".toUpperCase(),
-              style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
-          Padding(
-              padding: const EdgeInsets.only(top: 3, left: 4),
-              child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))
+          Text("Leave Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
+          Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))
         ])),
       ),
     );
