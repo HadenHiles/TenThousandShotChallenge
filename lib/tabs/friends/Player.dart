@@ -14,7 +14,6 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
-import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
@@ -290,7 +289,6 @@ class _PlayerState extends State<Player> {
                                           navigatorKey.currentState!.pushReplacement(
                                             MaterialPageRoute(builder: (context) {
                                               return Navigation(
-                                                title: NavigationTitle(title: "Players".toUpperCase()),
                                                 selectedIndex: 1,
                                               );
                                             }),

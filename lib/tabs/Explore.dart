@@ -65,7 +65,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     _exploreScrollController = ScrollController();
     _exploreScrollController!.addListener(swapPageListener);
 
-    _tabController = TabController(length: 4, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
     _tabController!.addListener(changeTabListener);
 
     super.initState();
@@ -122,18 +122,24 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   Future<Null> _loadYoutubeChannels() async {
     // Coach Jeremy Channel
-    await getChannelThumbnail(GlobalConfiguration().getValue("coach_jeremy_channel_id")).then((photo) {
-      setState(() {
-        _coachJeremyPhoto = photo;
+    final coachJeremyId = GlobalConfiguration().getValue("coach_jeremy_channel_id");
+    if (coachJeremyId != null && coachJeremyId is String && coachJeremyId.isNotEmpty) {
+      await getChannelThumbnail(coachJeremyId).then((photo) {
+        setState(() {
+          _coachJeremyPhoto = photo;
+        });
       });
-    });
+    }
 
     // HTH channel
-    await getChannelThumbnail(GlobalConfiguration().getValue("hth_channel_id")).then((photo) {
-      setState(() {
-        _hthPhoto = photo;
+    final hthId = GlobalConfiguration().getValue("hth_channel_id");
+    if (hthId != null && hthId is String && hthId.isNotEmpty) {
+      await getChannelThumbnail(hthId).then((photo) {
+        setState(() {
+          _hthPhoto = photo;
+        });
       });
-    });
+    }
   }
 
   Future<Null> _loadTrainingPrograms() async {
@@ -212,7 +218,13 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _checkIfChallengeCompletedOnce() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
+    await FirebaseFirestore.instance
+        .collection('iterations')
+        .doc(user!.uid)
+        .collection('iterations')
+        .where('complete', isEqualTo: true)
+        .get()
+        .then((snap) async {
       if (snap.docs.isNotEmpty) {
         setState(() {
           _oneChallengeCompleted = true;
@@ -941,7 +953,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               backgroundColor: WidgetStateProperty.all(
                                                                 Theme.of(context).primaryColor,
                                                               ),
-                                                              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                              padding: WidgetStateProperty.all(
+                                                                  const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                             ),
                                                             child: Text(
                                                               "Get yours".toUpperCase(),
