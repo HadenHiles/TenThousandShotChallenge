@@ -2174,7 +2174,7 @@ class _ProfileState extends State<Profile> {
                                 ),
                         ),
                         Container(
-                                                   width: calculateSessionShotWidth(s, s.totalSnap!),
+                          width: calculateSessionShotWidth(s, s.totalSnap!),
                           height: 30,
                           clipBehavior: Clip.antiAlias,
                           decoration: const BoxDecoration(
