@@ -34,7 +34,6 @@ const Color wristShotColor = Color(0xff00BCD4);
 const Color snapShotColor = Color(0xff2296F3);
 const Color backhandShotColor = Color(0xff4050B5);
 const Color slapShotColor = Color(0xff009688);
-bool introShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,8 +59,6 @@ void main() async {
     prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
     prefs.getString('fcm_token'),
   );
-
-  introShown = prefs.getBool('intro_shown') == null ? false : true;
 
   /**
    * Firebase messaging setup
@@ -159,6 +156,11 @@ Future<CustomerInfo?> getCustomerInfo() async {
 class Home extends StatelessWidget {
   const Home({super.key});
 
+  Future<bool> getIntroShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('intro_shown') ?? false;
+  }
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -172,27 +174,33 @@ class Home extends StatelessWidget {
     final auth = Provider.of<FirebaseAuth>(context);
     final user = auth.currentUser;
 
-    return Consumer<PreferencesStateNotifier>(
-      builder: (context, settingsState, child) {
-        preferences = settingsState.preferences;
+    return FutureBuilder<bool>(
+      future: getIntroShown(),
+      builder: (context, snapshot) {
+        final introShown = snapshot.data ?? false;
+        return Consumer<PreferencesStateNotifier>(
+          builder: (context, settingsState, child) {
+            preferences = settingsState.preferences;
 
-        return MaterialApp(
-          title: '10,000 Shot Challenge',
-          navigatorKey: navigatorKey,
-          debugShowCheckedModeBanner: false,
-          theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
-          darkTheme: HomeTheme.darkTheme,
-          themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
-          navigatorObservers: [
-            FirebaseAnalyticsObserver(analytics: analytics),
-          ],
-          home: !introShown
-              ? const IntroScreen()
-              : (user != null
-                  ? const Navigation(
-                      selectedIndex: 0,
-                    )
-                  : const Login()),
+            return MaterialApp(
+              title: '10,000 Shot Challenge',
+              navigatorKey: navigatorKey,
+              debugShowCheckedModeBanner: false,
+              theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+              darkTheme: HomeTheme.darkTheme,
+              themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
+              navigatorObservers: [
+                FirebaseAnalyticsObserver(analytics: analytics),
+              ],
+              home: !introShown
+                  ? const IntroScreen()
+                  : (user != null
+                      ? const Navigation(
+                          selectedIndex: 0,
+                        )
+                      : const Login()),
+            );
+          },
         );
       },
     );
