@@ -355,7 +355,7 @@ class _AddFriendState extends State<AddFriend> {
                                         navigatorKey.currentState!.pushReplacement(
                                           MaterialPageRoute(builder: (context) {
                                             return Navigation(
-                                              selectedIndex: 1,
+                                              tabId: 'friends',
                                             );
                                           }),
                                         );
@@ -555,11 +555,7 @@ class _AddFriendState extends State<AddFriend> {
                         SizedBox(
                           width: 135,
                           child: StreamBuilder(
-                              stream: FirebaseFirestore.instance
-                                  .collection('iterations')
-                                  .doc(friend.reference!.id)
-                                  .collection('iterations')
-                                  .snapshots(),
+                              stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                               builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                 if (!snapshot.hasData) {
                                   return const Center(
@@ -589,11 +585,7 @@ class _AddFriendState extends State<AddFriend> {
                               }),
                         ),
                         StreamBuilder(
-                            stream: FirebaseFirestore.instance
-                                .collection('iterations')
-                                .doc(friend.reference!.id)
-                                .collection('iterations')
-                                .snapshots(),
+                            stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return const Center(

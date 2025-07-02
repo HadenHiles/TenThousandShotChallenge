@@ -134,7 +134,7 @@ class _JoinTeamState extends State<JoinTeam> {
 
                                         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
                                           return const Navigation(
-                                            selectedIndex: 2,
+                                            tabId: 'team',
                                           );
                                         }));
                                       } else {
@@ -255,12 +255,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                                   }
                                                 });
                                             if (teams.isEmpty) {
-                                              await FirebaseFirestore.instance
-                                                  .collection('teams')
-                                                  .orderBy('code', descending: false)
-                                                  .where('code', isEqualTo: value.toUpperCase())
-                                                  .get()
-                                                  .then((tSnaps) async {
+                                              await FirebaseFirestore.instance.collection('teams').orderBy('code', descending: false).where('code', isEqualTo: value.toUpperCase()).get().then((tSnaps) async {
                                                 for (var tDoc in tSnaps.docs) {
                                                   teams.add(tDoc);
                                                 }
@@ -344,7 +339,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                           Navigator.of(context).pushReplacement(MaterialPageRoute(
                                             builder: (context) {
                                               return const Navigation(
-                                                selectedIndex: 2,
+                                                tabId: 'team',
                                               );
                                             },
                                             maintainState: false,

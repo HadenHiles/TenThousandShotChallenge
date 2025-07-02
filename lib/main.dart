@@ -196,7 +196,7 @@ class Home extends StatelessWidget {
                   ? const IntroScreen()
                   : (user != null
                       ? const Navigation(
-                          selectedIndex: 0,
+                          tabId: 'start',
                         )
                       : const Login()),
             );

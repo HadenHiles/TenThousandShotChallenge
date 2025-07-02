@@ -68,7 +68,7 @@ class _LoginState extends State<Login> {
 
     //If user is signed in
     if (_signedIn) {
-      return const Navigation(selectedIndex: 0);
+      return const Navigation(tabId: 'start');
     }
 
     return Scaffold(
