@@ -22,8 +22,7 @@ class IntroScreen extends StatefulWidget {
 class _IntroScreenState extends State<IntroScreen> {
   final introKey = GlobalKey<IntroductionScreenState>();
   final TextEditingController _puckCountTextFieldController = TextEditingController(text: preferences?.puckCount.toString());
-  final TextEditingController _targetDateTextFieldController =
-      TextEditingController(text: DateFormat('MMMM d, y').format(preferences!.targetDate!));
+  final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences!.targetDate!));
 
   bool? _darkMode = preferences?.darkMode;
 
@@ -38,7 +37,7 @@ class _IntroScreenState extends State<IntroScreen> {
       MaterialPageRoute(builder: (context) {
         return user != null
             ? const Navigation(
-                selectedIndex: 2,
+                tabId: 'team',
               )
             : const Login();
       }),

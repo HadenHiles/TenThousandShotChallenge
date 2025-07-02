@@ -114,7 +114,7 @@ class _EditTeamState extends State<EditTeam> {
           MaterialPageRoute(
             builder: (BuildContext context) {
               return Navigation(
-                selectedIndex: 2,
+                tabId: 'team',
                 actions: [
                   team!.ownerId != user!.uid
                       ? const SizedBox()
@@ -157,7 +157,7 @@ class _EditTeamState extends State<EditTeam> {
                             ).then((success) {
                               navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
                                 return Navigation(
-                                  selectedIndex: 2,
+                                  tabId: 'team',
                                 );
                               }));
                             });
@@ -298,9 +298,7 @@ class _EditTeamState extends State<EditTeam> {
                                     Text(
                                       "Team Name:".toLowerCase(),
                                       style: TextStyle(
-                                        color: preferences!.darkMode!
-                                            ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                            : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                         fontFamily: "NovecentoSans",
                                         fontSize: 14,
                                       ),
@@ -328,9 +326,7 @@ class _EditTeamState extends State<EditTeam> {
                                     Text(
                                       "Team Shooting Goal (number of total team shots)".toLowerCase(),
                                       style: TextStyle(
-                                        color: preferences!.darkMode!
-                                            ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                            : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                         fontFamily: "NovecentoSans",
                                         fontSize: 14,
                                       ),
@@ -368,9 +364,7 @@ class _EditTeamState extends State<EditTeam> {
                                           Text(
                                             "Starting From:".toLowerCase(),
                                             style: TextStyle(
-                                              color: preferences!.darkMode!
-                                                  ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                  : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                               fontFamily: "NovecentoSans",
                                               fontSize: 14,
                                             ),
@@ -379,9 +373,7 @@ class _EditTeamState extends State<EditTeam> {
                                           Text(
                                             "By Target Completion Date:".toLowerCase(),
                                             style: TextStyle(
-                                              color: preferences!.darkMode!
-                                                  ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                  : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                               fontFamily: "NovecentoSans",
                                               fontSize: 14,
                                             ),
@@ -423,9 +415,7 @@ class _EditTeamState extends State<EditTeam> {
                                             child: Text(
                                               'To'.toUpperCase(),
                                               style: TextStyle(
-                                                color: preferences!.darkMode!
-                                                    ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                    : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                                 fontFamily: "NovecentoSans",
                                                 fontSize: 14,
                                               ),
@@ -514,9 +504,7 @@ class _EditTeamState extends State<EditTeam> {
                         },
                         "Continue",
                         () async {
-                          await deleteTeam(team!.id!, Provider.of<FirebaseAuth>(context, listen: false),
-                                  Provider.of<FirebaseFirestore>(context, listen: false))
-                              .then((r) {
+                          await deleteTeam(team!.id!, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((r) {
                             if (r) {
                               Fluttertoast.showToast(
                                 msg: 'Team deleted!'.toUpperCase(),
@@ -530,7 +518,7 @@ class _EditTeamState extends State<EditTeam> {
 
                               Navigator.of(context).pushReplacement(MaterialPageRoute(
                                 builder: (context) {
-                                  return const Navigation(selectedIndex: 2);
+                                  return const Navigation(tabId: 'team');
                                 },
                                 maintainState: false,
                               ));

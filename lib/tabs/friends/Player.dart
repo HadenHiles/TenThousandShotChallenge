@@ -67,13 +67,7 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> _getAttempts() async {
-    await FirebaseFirestore.instance
-        .collection('iterations')
-        .doc(widget.uid)
-        .collection('iterations')
-        .orderBy('start_date', descending: false)
-        .get()
-        .then((snapshot) {
+    await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(
@@ -215,8 +209,7 @@ class _PlayerState extends State<Player> {
                                               onPressed: () {
                                                 Navigator.of(context).pop();
                                                 Navigator.of(context).pop();
-                                                inviteFriend(user!.uid, widget.uid!, Provider.of<FirebaseFirestore>(context, listen: false))
-                                                    .then((success) {
+                                                inviteFriend(user!.uid, widget.uid!, Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
                                                   if (success!) {
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
@@ -289,7 +282,7 @@ class _PlayerState extends State<Player> {
                                           navigatorKey.currentState!.pushReplacement(
                                             MaterialPageRoute(builder: (context) {
                                               return Navigation(
-                                                selectedIndex: 1,
+                                                tabId: 'friends',
                                               );
                                             }),
                                           );
@@ -421,9 +414,7 @@ class _PlayerState extends State<Player> {
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                                           return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty
-                                                ? userProfile.displayName!
-                                                : _userPlayer!.displayName!,
+                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userPlayer!.displayName!,
                                             maxLines: 1,
                                             style: TextStyle(
                                               fontSize: 22,
@@ -435,11 +426,7 @@ class _PlayerState extends State<Player> {
                                       ),
                                     ),
                                     StreamBuilder(
-                                        stream: FirebaseFirestore.instance
-                                            .collection('iterations')
-                                            .doc(widget.uid)
-                                            .collection('iterations')
-                                            .snapshots(),
+                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
                                         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                           if (!snapshot.hasData) {
                                             return const Center(
@@ -466,11 +453,7 @@ class _PlayerState extends State<Player> {
                                           }
                                         }),
                                     StreamBuilder(
-                                        stream: FirebaseFirestore.instance
-                                            .collection('iterations')
-                                            .doc(widget.uid)
-                                            .collection('iterations')
-                                            .snapshots(),
+                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
                                         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                                           if (!snapshot.hasData) {
                                             return const Center(
@@ -535,11 +518,7 @@ class _PlayerState extends State<Player> {
                                         ),
                                       ),
                                       StreamBuilder<QuerySnapshot>(
-                                        stream: FirebaseFirestore.instance
-                                            .collection('iterations')
-                                            .doc(widget.uid)
-                                            .collection('iterations')
-                                            .snapshots(),
+                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasData) {
                                             return Text(

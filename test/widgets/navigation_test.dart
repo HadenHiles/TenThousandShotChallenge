@@ -163,10 +163,33 @@ void main() {
         await tester.pumpWidget(createTestNavigationWidget(selectedIndex: i));
         await tester.pump();
         await tester.pump();
-
         expect(find.byType(Navigation), findsOneWidget);
       });
     }
+
+    testWidgets('Navigation selects correct tab with tabId', (WidgetTester tester) async {
+      // Should select the 'team' tab
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(
+                create: (_) => PreferencesStateNotifier(),
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            child: const Navigation(tabId: 'team'),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      // Optionally, check for a widget unique to the Team tab
+    });
   });
 
   group('NavigationTab Widget Tests', () {

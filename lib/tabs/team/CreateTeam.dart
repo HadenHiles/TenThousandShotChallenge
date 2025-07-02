@@ -40,8 +40,7 @@ class _CreateTeamState extends State<CreateTeam> {
   @override
   void initState() {
     super.initState();
-    team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, user?.uid ?? "", true, true, []);
+    team = Team("", DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day), DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100), 100000, user?.uid ?? "", true, true, []);
   }
 
   Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
@@ -111,7 +110,7 @@ class _CreateTeamState extends State<CreateTeam> {
 
         navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
           builder: (context) {
-            return const Navigation(selectedIndex: 2);
+            return const Navigation(tabId: 'team');
           },
           maintainState: false,
         ));
@@ -262,9 +261,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                     Text(
                                       "Team Name:".toLowerCase(),
                                       style: TextStyle(
-                                        color: preferences!.darkMode!
-                                            ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                            : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                         fontFamily: "NovecentoSans",
                                         fontSize: 14,
                                       ),
@@ -292,9 +289,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                     Text(
                                       "Team Shooting Goal (number of total team shots)".toLowerCase(),
                                       style: TextStyle(
-                                        color: preferences!.darkMode!
-                                            ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                            : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                         fontFamily: "NovecentoSans",
                                         fontSize: 14,
                                       ),
@@ -332,9 +327,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                           Text(
                                             "Starting From:".toLowerCase(),
                                             style: TextStyle(
-                                              color: preferences!.darkMode!
-                                                  ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                  : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                               fontFamily: "NovecentoSans",
                                               fontSize: 14,
                                             ),
@@ -343,9 +336,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                           Text(
                                             "By Target Completion Date:".toLowerCase(),
                                             style: TextStyle(
-                                              color: preferences!.darkMode!
-                                                  ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                  : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                               fontFamily: "NovecentoSans",
                                               fontSize: 14,
                                             ),
@@ -387,9 +378,7 @@ class _CreateTeamState extends State<CreateTeam> {
                                             child: Text(
                                               'To'.toUpperCase(),
                                               style: TextStyle(
-                                                color: preferences!.darkMode!
-                                                    ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                    : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                                 fontFamily: "NovecentoSans",
                                                 fontSize: 14,
                                               ),
