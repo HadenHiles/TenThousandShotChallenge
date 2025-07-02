@@ -58,6 +58,7 @@ class _NavigationState extends State<Navigation> {
 
   final List<NavigationTab> _tabs = [
     NavigationTab(
+      id: 'start',
       title: Container(
         height: 40,
         padding: const EdgeInsets.only(top: 6),
@@ -67,6 +68,7 @@ class _NavigationState extends State<Navigation> {
       body: Shots(sessionPanelController: sessionPanelController),
     ),
     NavigationTab(
+      id: 'friends',
       title: NavigationTitle(title: "Friends".toUpperCase()),
       actions: [
         Container(
@@ -88,6 +90,7 @@ class _NavigationState extends State<Navigation> {
       body: const Friends(),
     ),
     NavigationTab(
+      id: 'team',
       title: Builder(
         builder: (context) {
           return Builder(
@@ -169,6 +172,7 @@ class _NavigationState extends State<Navigation> {
       ],
     ),
     NavigationTab(
+      id: 'explore',
       title: null,
       body: Builder(
         builder: (context) {
@@ -183,6 +187,7 @@ class _NavigationState extends State<Navigation> {
       ),
     ),
     NavigationTab(
+      id: 'profile',
       title: NavigationTitle(title: "Profile".toUpperCase()),
       leading: Container(
         margin: const EdgeInsets.only(top: 10),
@@ -221,17 +226,23 @@ class _NavigationState extends State<Navigation> {
     ),
   ];
 
+  // Helper to select a tab by id
+  void selectTabById(String id) {
+    final index = _tabs.indexWhere((tab) => tab.id == id);
+    if (index != -1) {
+      _onItemTapped(index);
+    }
+  }
+
   void _onItemTapped(int index) async {
-    if (index == 2) {
+    if (_tabs[index].id == 'team') {
       _loadTeam();
     }
-
     setState(() {
       _selectedIndex = index;
       _leading = _tabs[index].leading;
       _actions = widget.actions ?? _tabs[index].actions;
     });
-
     if (sessionPanelController.isAttached) {
       if (!sessionPanelController.isPanelClosed) {
         sessionPanelController.close();
@@ -302,6 +313,7 @@ class _NavigationState extends State<Navigation> {
                 team = t;
 
                 _tabs[2] = NavigationTab(
+                  id: 'team',
                   title: NavigationTitle(title: team!.name ?? "Team".toUpperCase()),
                   body: const TeamPage(),
                   actions: [
@@ -343,7 +355,7 @@ class _NavigationState extends State<Navigation> {
                                 navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
                                   builder: (context) {
                                     return Navigation(
-                                      selectedIndex: 2,
+                                      selectedIndex: _tabs.indexWhere((tab) => tab.id == 'team'),
                                     );
                                   },
                                   maintainState: false,

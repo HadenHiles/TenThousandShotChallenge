@@ -178,6 +178,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: NavigationTab(
+            id: 'test',
             title: title,
             body: body,
             leading: leading,
@@ -196,7 +197,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: NavigationTab(body: body),
+          home: NavigationTab(id: 'minimal', body: body),
         ),
       );
 
@@ -208,7 +209,7 @@ void main() {
     testWidgets('NavigationTab handles null body gracefully', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: NavigationTab(),
+          home: NavigationTab(id: 'nulltest'),
         ),
       );
 
@@ -270,6 +271,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: const NavigationTab(
+              id: 'simple',
               body: Text('Simple Test'),
             ),
           ),

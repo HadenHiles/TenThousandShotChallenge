@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 
 class NavigationTab extends StatefulWidget {
-  const NavigationTab({super.key, this.title, this.leading, this.actions, this.body});
+  const NavigationTab({
+    super.key,
+    required this.id, // Require id
+    this.title,
+    this.leading,
+    this.actions,
+    this.body,
+  });
 
+  final String id; // Add id property
   final Widget? title;
   final Widget? leading;
   final List<Widget>? actions;
