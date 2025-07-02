@@ -488,7 +488,7 @@ class _ProfileState extends State<Profile> {
 
     final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
@@ -582,7 +582,8 @@ class _ProfileState extends State<Profile> {
 
     final shotType = _selectedAccuracyShotType;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
+      stream:
+          Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
@@ -891,7 +892,7 @@ class _ProfileState extends State<Profile> {
                                     height: 60,
                                     width: 60,
                                     child: StreamBuilder<DocumentSnapshot>(
-                                      stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
+                                      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).snapshots(),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasData) {
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data!);
@@ -923,7 +924,7 @@ class _ProfileState extends State<Profile> {
                         SizedBox(
                           width: (MediaQuery.of(context).size.width - 100) * 0.6,
                           child: StreamBuilder<DocumentSnapshot>(
-                            stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).snapshots(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) {
                                 return const Column(
@@ -961,7 +962,7 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                         StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
@@ -993,7 +994,7 @@ class _ProfileState extends State<Profile> {
                               }
                             }),
                         StreamBuilder(
-                            stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
@@ -1030,7 +1031,7 @@ class _ProfileState extends State<Profile> {
                   child: Row(
                     children: [
                       StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
+                        stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
                             return const CircularProgressIndicator();
@@ -1081,7 +1082,7 @@ class _ProfileState extends State<Profile> {
               ],
             ),
             StreamBuilder<DocumentSnapshot>(
-              stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+              stream: _selectedIterationId == null ? null : Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.exists) {
                   Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
@@ -1664,11 +1665,11 @@ class _ProfileState extends State<Profile> {
                   // Recent Sessions StreamBuilder (only show if sessions expanded)
                   if (_selectedIterationId != null)
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
                       builder: (context, snapshot) {
                         final iterationCompleted = _isCurrentIterationCompleted(snapshot);
                         return StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
+                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
                               .collection('iterations')
                               .doc(user!.uid)
                               .collection('iterations')
@@ -1714,6 +1715,7 @@ class _ProfileState extends State<Profile> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10.0),
                     child: ElevatedButton.icon(
+                      key: const Key('viewHistoryButton'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
