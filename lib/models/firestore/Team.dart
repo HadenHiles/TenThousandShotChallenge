@@ -26,8 +26,8 @@ class Team {
         assert(map['goal_total'] != null),
         assert(map['owner_id'] != null),
         assert(map['owner_participating'] != null),
-        id = map['id'],
-        code = map['code'],
+        id = map['id']?.toString(),
+        code = map['code']?.toString(),
         name = map['name'],
         nameLowercase = map['name_lowercase'],
         startDate = map['start_date']?.toDate(),
@@ -41,7 +41,7 @@ class Team {
   Map<String, dynamic> toMap() {
     final wordGenerator = WordGenerator();
     String code = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
-    int id = DateTime.now().millisecondsSinceEpoch;
+    String id = DateTime.now().millisecondsSinceEpoch.toString();
 
     return {
       'id': id,

@@ -1,1 +1,68 @@
-{"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"functions":{"predeploy":"npm --prefix \"$RESOURCE_DIR\" run build","source":"functions"},"hosting":{"public":"public","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}]},"flutter":{"platforms":{"android":{"default":{"projectId":"ten-thousand-puck-challenge","appId":"1:767649510191:android:56275d208ee7f3eb07a7da","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"ten-thousand-puck-challenge","configurations":{"android":"1:767649510191:android:56275d208ee7f3eb07a7da","ios":"1:767649510191:ios:5a4c6794939fd50407a7da"}}}}}}
+{
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "functions": {
+        "predeploy": "npm --prefix \"$RESOURCE_DIR\" run build",
+        "source": "functions"
+    },
+    "hosting": {
+        "public": "public",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    },
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "emulators": {
+        "auth": {
+            "port": 9099
+        },
+        "firestore": {
+            "port": 8080
+        },
+        "functions": {
+            "port": 5001
+        },
+        "ui": {
+            "enabled": true,
+            "port": 4000
+        },
+        "storage": {
+            "port": 9199
+        },
+        "hosting": {
+            "port": 5005
+        }
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "ten-thousand-puck-challenge",
+                    "appId": "1:767649510191:android:56275d208ee7f3eb07a7da",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "ten-thousand-puck-challenge",
+                    "configurations": {
+                        "android": "1:767649510191:android:56275d208ee7f3eb07a7da",
+                        "ios": "1:767649510191:ios:5a4c6794939fd50407a7da"
+                    }
+                }
+            }
+        }
+    }
+}

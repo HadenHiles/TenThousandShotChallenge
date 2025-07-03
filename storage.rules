@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Firebase Storage Rules for Ten Thousand Shot Challenge
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow users to upload and read their own avatar images
+    match /avatars/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow public read access to default avatars
+    match /public/avatars/{allPaths=**} {
+      allow read;
+    }
+    
+    // Allow users to upload session videos/images (if implemented in the future)
+    match /sessions/{userId}/{sessionId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public assets (team logos, etc.)
+    match /public/{allPaths=**} {
+      allow read;
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

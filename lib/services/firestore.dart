@@ -9,7 +9,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firebaseMessageService.dart';
 
-Future<bool?> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseFirestore firestore) async {
+Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseFirestore firestore) async {
   // Get the total number of shots and targets hit for the session
   int total = 0;
   int wrist = 0;
@@ -74,28 +74,21 @@ Future<bool?> saveShootingSession(List<Shots> shots, FirebaseAuth auth, Firebase
     DateTime.now(),
   );
 
-  return await firestore
-      .collection('iterations')
-      .doc(auth.currentUser!.uid)
-      .collection('iterations')
-      .where('complete', isEqualTo: false)
-      .get()
-      .then((snapshot) async {
+  try {
+    final snapshot = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get();
     if (snapshot.docs.isNotEmpty) {
       iteration = Iteration.fromSnapshot(snapshot.docs[0]);
-      saveSessionData(shootingSession, snapshot.docs[0].reference, shots, firestore)
-          .then((value) => true)
-          .onError((error, stackTrace) => false);
+      final result = await saveSessionData(shootingSession, snapshot.docs[0].reference, shots, firestore);
+      return result;
     } else {
-      await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap()).then((i) async {
-        saveSessionData(shootingSession, i, shots, firestore).then((value) => true).onError((error, stackTrace) => false);
-      }).onError((error, stackTrace) {
-        print(error);
-      });
+      final i = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap());
+      final result = await saveSessionData(shootingSession, i, shots, firestore);
+      return result;
     }
-  }).onError((error, stackTrace) {
-    print(error);
-  });
+  } catch (e) {
+    print(e);
+    return false;
+  }
 }
 
 Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots, FirebaseFirestore firestore) async {
@@ -136,13 +129,7 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
 }
 
 Future<bool> deleteSession(ShootingSession shootingSession, FirebaseAuth auth, FirebaseFirestore firestore) async {
-  return await firestore
-      .collection('iterations')
-      .doc(auth.currentUser!.uid)
-      .collection('iterations')
-      .doc(shootingSession.reference!.parent.parent!.id)
-      .get()
-      .then((iDoc) async {
+  return await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').doc(shootingSession.reference!.parent.parent!.id).get().then((iDoc) async {
     Iteration iteration = Iteration.fromSnapshot(iDoc);
     if (!iteration.complete!) {
       // Get a new write batch
@@ -282,13 +269,7 @@ Future<bool> recalculateIterationTotals(FirebaseAuth auth, FirebaseFirestore fir
 }
 
 Future<bool?> startNewIteration(FirebaseAuth auth, FirebaseFirestore firestore) async {
-  return await firestore
-      .collection('iterations')
-      .doc(auth.currentUser!.uid)
-      .collection('iterations')
-      .where('complete', isEqualTo: false)
-      .get()
-      .then((snapshot) async {
+  return await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
     if (snapshot.docs.isNotEmpty) {
       return snapshot.docs[0].reference.update({'complete': true, 'end_date': DateTime.now()}).then((_) {
         firestore
@@ -332,9 +313,7 @@ Future<bool?> inviteFriend(String fromUid, String toUid, FirebaseFirestore fires
                 return await firestore.collection('users').doc(toUid).get().then((u) async {
                   UserProfile user = UserProfile.fromSnapshot(u);
                   // Send the teammate a push notification! WOW
-                  return sendPushMessage(
-                          friendFCMToken, "Someone has challenged you!", "${user.displayName} has sent you an friend invitation.")
-                      .then((value) => true);
+                  return sendPushMessage(friendFCMToken, "Someone has challenged you!", "${user.displayName} has sent you an friend invitation.").then((value) => true);
                 }).onError((error, stackTrace) => false);
               }
 
@@ -356,33 +335,14 @@ Future<bool> acceptInvite(Invite invite, FirebaseAuth auth, FirebaseFirestore fi
   return await firestore.collection('users').doc(invite.fromUid).get().then((u) async {
     UserProfile friend = UserProfile.fromSnapshot(u);
     // Save the teammate to the current user's teammates
-    return await firestore
-        .collection('teammates')
-        .doc(auth.currentUser!.uid)
-        .collection('teammates')
-        .doc(friend.reference!.id)
-        .set(friend.toMap())
-        .then((_) async {
+    return await firestore.collection('teammates').doc(auth.currentUser!.uid).collection('teammates').doc(invite.fromUid).set(friend.toMap()).then((_) async {
       // Get the current user
       return await firestore.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
         // Save the current user as a teammate of the invitee teammate
-        return await firestore
-            .collection('teammates')
-            .doc(friend.reference!.id)
-            .collection('teammates')
-            .doc(auth.currentUser!.uid)
-            .set(user.toMap())
-            .then((_) async {
+        return await firestore.collection('teammates').doc(invite.fromUid).collection('teammates').doc(auth.currentUser!.uid).set(user.toMap()).then((_) async {
           // Delete the invite
-          return await firestore
-              .collection('invites')
-              .doc(auth.currentUser!.uid)
-              .collection('invites')
-              .doc(invite.fromUid)
-              .delete()
-              .then((value) => true)
-              .onError((error, stackTrace) => false);
+          return await firestore.collection('invites').doc(auth.currentUser!.uid).collection('invites').doc(invite.fromUid).delete().then((value) => true).onError((error, stackTrace) => false);
         });
       });
     });
@@ -391,14 +351,7 @@ Future<bool> acceptInvite(Invite invite, FirebaseAuth auth, FirebaseFirestore fi
 
 Future<bool> deleteInvite(String fromUid, String toUid, FirebaseAuth auth, FirebaseFirestore firestore) async {
   if (toUid == auth.currentUser!.uid) {
-    return await firestore
-        .collection('invites')
-        .doc(toUid)
-        .collection('invites')
-        .doc(fromUid)
-        .delete()
-        .then((value) => true)
-        .onError((error, stackTrace) => false);
+    return await firestore.collection('invites').doc(toUid).collection('invites').doc(fromUid).delete().then((value) => true).onError((error, stackTrace) => false);
   }
 
   return false;
@@ -409,25 +362,12 @@ Future<bool> addFriendBarcode(String friendUid, FirebaseAuth auth, FirebaseFires
   return await firestore.collection('users').doc(friendUid).get().then((u) async {
     UserProfile friend = UserProfile.fromSnapshot(u);
     // Save the teammate to the current user's teammates
-    return await firestore
-        .collection('teammates')
-        .doc(auth.currentUser!.uid)
-        .collection('teammates')
-        .doc(friend.reference!.id)
-        .set(friend.toMap())
-        .then((_) async {
+    return await firestore.collection('teammates').doc(auth.currentUser!.uid).collection('teammates').doc(friendUid).set(friend.toMap()).then((_) async {
       // Get the current user
       return await firestore.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
         // Save the current user as a teammate of the invitee teammate
-        return await firestore
-            .collection('teammates')
-            .doc(friend.reference!.id)
-            .collection('teammates')
-            .doc(auth.currentUser!.uid)
-            .set(user.toMap())
-            .then((value) => true)
-            .onError((error, stackTrace) => false);
+        return await firestore.collection('teammates').doc(friendUid).collection('teammates').doc(auth.currentUser!.uid).set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
       });
     });
   });
@@ -435,14 +375,7 @@ Future<bool> addFriendBarcode(String friendUid, FirebaseAuth auth, FirebaseFires
 
 Future<bool> removePlayerFromFriends(String uid, FirebaseAuth auth, FirebaseFirestore firestore) async {
   return await firestore.collection('teammates').doc(auth.currentUser!.uid).collection('teammates').doc(uid).delete().then((_) async {
-    return await firestore
-        .collection('teammates')
-        .doc(uid)
-        .collection('teammates')
-        .doc(auth.currentUser!.uid)
-        .delete()
-        .then((value) => true)
-        .onError((error, stackTrace) => false);
+    return await firestore.collection('teammates').doc(uid).collection('teammates').doc(auth.currentUser!.uid).delete().then((value) => true).onError((error, stackTrace) => false);
   });
 }
 
