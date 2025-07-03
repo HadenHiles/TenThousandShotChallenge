@@ -330,7 +330,7 @@ Future<void> _cleanupGeneratedTestArtifacts(String projectRoot) async {
     'test/firebase-export',
     'firebase-export',
     'test/unit_test_assets',
-    // Add any other generated test folders/files here
+    'test/test', // Clean up nested test folder
   ];
   for (final relPath in pathsToDelete) {
     final dir = Directory('$projectRoot/$relPath');
@@ -349,6 +349,19 @@ Future<void> _cleanupGeneratedTestArtifacts(String projectRoot) async {
         print('   Deleted file $relPath');
       } catch (e) {
         print('   Failed to delete file $relPath: $e');
+      }
+    }
+  }
+  // Also clean up any files matching test/firebase-export* in the root test directory
+  final testDir = Directory('$projectRoot/test');
+  if (await testDir.exists()) {
+    final exportFiles = testDir.listSync().whereType<File>().where((f) => f.path.contains('firebase-export'));
+    for (final file in exportFiles) {
+      try {
+        await file.delete();
+        print('   Deleted file ${file.path.replaceFirst('$projectRoot/', '')}');
+      } catch (e) {
+        print('   Failed to delete file ${file.path}: $e');
       }
     }
   }
