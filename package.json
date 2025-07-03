@@ -1,0 +1,33 @@
+{
+    "name": "ten-thousand-shot-challenge",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Test and dev tools for Ten Thousand Shot Challenge",
+    "scripts": {
+        "seed:firestore": "firestore-seed --emulatorHost localhost:8080 --project demo-project"
+    },
+    "dependencies": {
+        "firestore-seed": "^0.0.11"
+    },
+    "firestore-seed": {
+        "databaseURL": "http://localhost:9000?ns=demo-project",
+        "collections": [
+            {
+                "name": "users",
+                "data": "test/test_data/users.json"
+            },
+            {
+                "name": "teams",
+                "data": "test/test_data/teams.json"
+            },
+            {
+                "name": "iterations",
+                "data": "test/test_data/iterations.json"
+            },
+            {
+                "name": "invites",
+                "data": "test/test_data/invites.json"
+            }
+        ]
+    }
+}

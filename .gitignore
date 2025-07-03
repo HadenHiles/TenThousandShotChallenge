@@ -77,3 +77,18 @@ assets/cfg/youtube_settings.json
 assets/cfg/youtube_settings.json
 functions/service-account.json
 android/app/release/app-release.aab
+
+# Ignore any generated test files and folders (recursively)
+/test/test_data/**
+/test/emulator_data/**
+/test/test/**
+/test/scripts/firebase-export-*
+/test/scripts/test/**
+/test/scripts/test_data/**
+/test/scripts/emulator_data/**
+/test/scripts/**/firebase-export-*
+/test/firebase-export-*
+
+# Node modules
+node_modules/
+functions/node_modules/

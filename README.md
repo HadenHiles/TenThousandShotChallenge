@@ -1,6 +1,7 @@
 # 10,000 Shot Challenge
 
 A Flutter app for hockey players to participate in the How To Hockey 10,000 Shot Challenge. Some key features include:
+
 - Timed Shooting Sessions
 - Session History
 - All time shot totals
@@ -9,9 +10,11 @@ A Flutter app for hockey players to participate in the How To Hockey 10,000 Shot
 - App preferences/settings
 
 ## Feature Requests
+
 To report any bugs or request new features, submit an [issue](https://github.com/HadenHiles/TenThousandShotChallenge/issues).
 
 ## Pull Requests
+
 Pull requests are welcomed as long as all features are either a) optional or b) useful to the majority of app users.
 
 ### Getting Started With Flutter
