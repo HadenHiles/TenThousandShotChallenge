@@ -46,6 +46,7 @@ void main(List<String> arguments) async {
     if (emulatorProcess != null) {
       await _stopEmulators(emulatorProcess);
     }
+    await _cleanupGeneratedTestArtifacts(projectRoot);
     exit(1);
   });
 
@@ -54,6 +55,7 @@ void main(List<String> arguments) async {
     if (emulatorProcess != null) {
       await _stopEmulators(emulatorProcess);
     }
+    await _cleanupGeneratedTestArtifacts(projectRoot);
     exit(1);
   });
 
@@ -90,12 +92,13 @@ void main(List<String> arguments) async {
     if (emulatorProcess != null) {
       await _stopEmulators(emulatorProcess);
     }
+    await _cleanupGeneratedTestArtifacts(projectRoot);
 
     stopwatch.stop();
 
     print('');
     print('🎉 Complete Test Suite Finished Successfully!');
-    print('⏱️  Total Time: ${stopwatch.elapsed.inSeconds} seconds');
+    print('⏱️  Total Time: [1m[32m[0m${stopwatch.elapsed.inSeconds} seconds');
     print('✅ All tests passed!');
   } catch (e) {
     stopwatch.stop();
@@ -103,11 +106,12 @@ void main(List<String> arguments) async {
     print('❌ Test Suite Failed: $e');
     print('⏱️  Time: ${stopwatch.elapsed.inSeconds} seconds');
 
-    // Always cleanup emulators on failure
+    // Always cleanup emulators and test artifacts on failure
     if (emulatorProcess != null) {
       print('🧹 Cleaning up emulators...');
       await _stopEmulators(emulatorProcess);
     }
+    await _cleanupGeneratedTestArtifacts(projectRoot);
 
     exit(1);
   }
@@ -316,4 +320,37 @@ Future<void> _stopEmulators(Process? emulatorProcess) async {
   }
 
   print('✅ Emulators stopped');
+}
+
+Future<void> _cleanupGeneratedTestArtifacts(String projectRoot) async {
+  print('🧹 Cleaning up generated test artifacts...');
+  final pathsToDelete = [
+    'test/emulator_data',
+    'test/test_data',
+    'test/firebase-export',
+    'firebase-export',
+    'test/unit_test_assets',
+    // Add any other generated test folders/files here
+  ];
+  for (final relPath in pathsToDelete) {
+    final dir = Directory('$projectRoot/$relPath');
+    if (await dir.exists()) {
+      try {
+        await dir.delete(recursive: true);
+        print('   Deleted $relPath');
+      } catch (e) {
+        print('   Failed to delete $relPath: $e');
+      }
+    }
+    final file = File('$projectRoot/$relPath');
+    if (await file.exists()) {
+      try {
+        await file.delete();
+        print('   Deleted file $relPath');
+      } catch (e) {
+        print('   Failed to delete file $relPath: $e');
+      }
+    }
+  }
+  print('✅ Test artifacts cleanup complete');
 }
