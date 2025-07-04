@@ -58,12 +58,14 @@ class FakeEntitlementInfo implements EntitlementInfo {
   noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+bool get isIntegrationTest => Platform.environment['FLUTTER_TEST'] != 'true' && Platform.environment['USE_FIREBASE_EMULATOR'] == 'true';
+
 void main() {
   NetworkStatusService.isTestingOverride = true;
   TestWidgetsFlutterBinding.ensureInitialized();
   late FirebaseFirestore firestore;
   setUp(() async {
-    if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+    if (isIntegrationTest) {
       await Firebase.initializeApp();
       FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
       firestore = FirebaseFirestore.instance;

@@ -12,6 +12,8 @@ import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+bool get isIntegrationTest => Platform.environment['FLUTTER_TEST'] != 'true' && Platform.environment['USE_FIREBASE_EMULATOR'] == 'true';
+
 void main() {
   group('Firestore Integration Tests', () {
     late FirebaseFirestore firestore;
@@ -19,7 +21,7 @@ void main() {
     late MockUser mockUser;
 
     setUp(() async {
-      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+      if (isIntegrationTest) {
         await Firebase.initializeApp();
         FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
         firestore = FirebaseFirestore.instance;
