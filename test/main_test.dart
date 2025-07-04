@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -58,7 +60,17 @@ class FakeEntitlementInfo implements EntitlementInfo {
 
 void main() {
   NetworkStatusService.isTestingOverride = true;
-  setupFirebaseMocks();
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late FirebaseFirestore firestore;
+  setUp(() async {
+    if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+      await Firebase.initializeApp();
+      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+      firestore = FirebaseFirestore.instance;
+    } else {
+      firestore = FakeFirebaseFirestore();
+    }
+  });
   testWidgets('Home widget shows IntroScreen when introShown is false', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({
       'dark_mode': false,
@@ -87,7 +99,6 @@ void main() {
     )).thenAnswer((_) async => Void);
     when(mockAnalytics.resetAnalyticsData()).thenAnswer((_) async => Void);
     when(mockAnalytics.setAnalyticsCollectionEnabled(any)).thenAnswer((_) async => Void);
-    final mockFirestore = FakeFirebaseFirestore();
     final mockCustomerInfo = MockCustomerInfo();
     // Free user: no entitlements
     when(mockCustomerInfo.entitlements).thenReturn(FakeEntitlementInfos({}));
@@ -103,7 +114,7 @@ void main() {
             create: (_) => PreferencesStateNotifier(),
           ),
           Provider<FirebaseAuth>.value(value: mockAuth),
-          Provider<FirebaseFirestore>.value(value: mockFirestore),
+          Provider<FirebaseFirestore>.value(value: firestore),
           Provider<FirebaseAnalytics>.value(value: mockAnalytics),
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),
@@ -144,7 +155,6 @@ void main() {
     )).thenAnswer((_) async => Void);
     when(mockAnalytics.resetAnalyticsData()).thenAnswer((_) async => Void);
     when(mockAnalytics.setAnalyticsCollectionEnabled(any)).thenAnswer((_) async => Void);
-    final mockFirestore = FakeFirebaseFirestore();
     final mockCustomerInfo = MockCustomerInfo();
     // Free user: no entitlements
     when(mockCustomerInfo.entitlements).thenReturn(FakeEntitlementInfos({}));
@@ -160,7 +170,7 @@ void main() {
             create: (_) => PreferencesStateNotifier(),
           ),
           Provider<FirebaseAuth>.value(value: mockAuth),
-          Provider<FirebaseFirestore>.value(value: mockFirestore),
+          Provider<FirebaseFirestore>.value(value: firestore),
           Provider<FirebaseAnalytics>.value(value: mockAnalytics),
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),
@@ -206,9 +216,8 @@ void main() {
     )).thenAnswer((_) async => Void);
     when(mockAnalytics.resetAnalyticsData()).thenAnswer((_) async => Void);
     when(mockAnalytics.setAnalyticsCollectionEnabled(any)).thenAnswer((_) async => Void);
-    final mockFirestore = FakeFirebaseFirestore();
     // Create the user document to avoid not-found errors
-    await mockFirestore.collection('users').doc('testuid').set({
+    await firestore.collection('users').doc('testuid').set({
       'display_name_lowercase': 'test@example.com',
       'display_name': 'test@example.com',
       'email': 'test@example.com',
@@ -230,7 +239,7 @@ void main() {
             create: (_) => PreferencesStateNotifier(),
           ),
           Provider<FirebaseAuth>.value(value: mockAuth),
-          Provider<FirebaseFirestore>.value(value: mockFirestore),
+          Provider<FirebaseFirestore>.value(value: firestore),
           Provider<FirebaseAnalytics>.value(value: mockAnalytics),
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),

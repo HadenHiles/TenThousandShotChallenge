@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -12,6 +13,7 @@ import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart' as main_globals;
+import 'package:firebase_core/firebase_core.dart';
 
 import 'shots_test.mocks.dart';
 
@@ -23,7 +25,7 @@ import 'shots_test.mocks.dart';
 void main() {
   group('Shots Screen', () {
     late MockFirebaseAuth mockAuth;
-    late FakeFirebaseFirestore fakeFirestore;
+    late FirebaseFirestore fakeFirestore;
     late MockUser mockUser;
     late MockSessionService mockSessionService;
     late MockPanelController mockPanelController;
@@ -37,6 +39,14 @@ void main() {
     });
 
     setUp(() async {
+      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+        await Firebase.initializeApp();
+        fakeFirestore = FirebaseFirestore.instance;
+        FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+      } else {
+        fakeFirestore = FakeFirebaseFirestore();
+      }
+
       mockUser = MockUser(
         uid: 'test_uid',
         displayName: 'Test User',
@@ -50,7 +60,6 @@ void main() {
         await mockAuth.signInWithEmailAndPassword(email: 'test@example.com', password: 'password');
       }
 
-      fakeFirestore = FakeFirebaseFirestore();
       mockSessionService = MockSessionService();
       mockPanelController = MockPanelController();
 
