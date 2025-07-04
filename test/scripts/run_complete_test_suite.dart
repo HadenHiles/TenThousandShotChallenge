@@ -313,8 +313,14 @@ Future<void> _stopEmulators(Process? emulatorProcess) async {
   print('🛑 Stopping Emulators...');
 
   if (emulatorProcess != null) {
-    print('   Terminating emulator process (PID: \${emulatorProcess.pid})...');
+    print('   Terminating emulator process (PID: ${emulatorProcess.pid})...');
     emulatorProcess.kill(ProcessSignal.sigterm);
+    try {
+      await emulatorProcess.exitCode;
+      print('   Emulator process exited.');
+    } catch (e) {
+      print('   Error waiting for emulator process to exit: $e');
+    }
   } else {
     // Fallback to script if process is null (e.g. emulators were already running)
     await Process.run('bash', ['scripts/stop_emulators.sh']);
@@ -353,16 +359,23 @@ Future<void> _cleanupGeneratedTestArtifacts(String projectRoot) async {
       }
     }
   }
-  // Also clean up any files matching test/firebase-export* in the root test directory
-  final testDir = Directory('$projectRoot/test');
-  if (await testDir.exists()) {
-    final exportFiles = testDir.listSync().whereType<File>().where((f) => f.path.contains('firebase-export'));
-    for (final file in exportFiles) {
-      try {
-        await file.delete();
-        print('   Deleted file ${file.path.replaceFirst('$projectRoot/', '')}');
-      } catch (e) {
-        print('   Failed to delete file ${file.path}: $e');
+  // Also clean up any files/folders matching firebase-export* in the root and test directories
+  for (final dirPath in [projectRoot, '$projectRoot/test']) {
+    final dir = Directory(dirPath);
+    if (await dir.exists()) {
+      final exportEntities = dir.listSync().where((f) => f.path.contains('firebase-export'));
+      for (final entity in exportEntities) {
+        try {
+          if (entity is Directory) {
+            await entity.delete(recursive: true);
+            print('   Deleted directory ${entity.path.replaceFirst('$projectRoot/', '')}');
+          } else if (entity is File) {
+            await entity.delete();
+            print('   Deleted file ${entity.path.replaceFirst('$projectRoot/', '')}');
+          }
+        } catch (e) {
+          print('   Failed to delete ${entity.path}: $e');
+        }
       }
     }
   }
