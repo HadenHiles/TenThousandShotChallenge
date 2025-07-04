@@ -38,8 +38,10 @@ void main() {
       WidgetsFlutterBinding.ensureInitialized();
     });
 
+    bool isIntegrationTest = Platform.environment['FLUTTER_TEST'] != 'true' && Platform.environment['USE_FIREBASE_EMULATOR'] == 'true';
+
     setUp(() async {
-      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+      if (isIntegrationTest) {
         await Firebase.initializeApp();
         fakeFirestore = FirebaseFirestore.instance;
         FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);

@@ -38,6 +38,8 @@ late FirebaseFirestore fakeFirestore;
 late fam.MockFirebaseAuth mockFirebaseAuth;
 late fam.MockUser mockUser;
 
+bool get isIntegrationTest => Platform.environment['FLUTTER_TEST'] != 'true' && Platform.environment['USE_FIREBASE_EMULATOR'] == 'true';
+
 void main() {
   setWidgetTestFlag();
   NetworkStatusService.isTestingOverride = true;
@@ -49,7 +51,7 @@ void main() {
   late MockNetworkStatusService mockNetworkStatusService;
   // Use fakes directly, no Firebase.initializeApp or channel mocks
   setUpAll(() async {
-    if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+    if (isIntegrationTest) {
       await Firebase.initializeApp();
       FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
       fakeFirestore = FirebaseFirestore.instance;

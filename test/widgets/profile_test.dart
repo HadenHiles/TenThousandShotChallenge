@@ -9,6 +9,8 @@ import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:io';
 
+bool isIntegrationTest = Platform.environment['FLUTTER_TEST'] != 'true' && Platform.environment['USE_FIREBASE_EMULATOR'] == 'true';
+
 void main() {
   group('Profile Screen', () {
     late MockFirebaseAuth mockAuth;
@@ -16,7 +18,7 @@ void main() {
     late MockUser mockUser;
 
     setUp(() async {
-      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+      if (isIntegrationTest) {
         await Firebase.initializeApp();
         fakeFirestore = FirebaseFirestore.instance;
         FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);

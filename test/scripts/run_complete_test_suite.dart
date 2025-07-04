@@ -98,8 +98,9 @@ void main(List<String> arguments) async {
 
     print('');
     print('🎉 Complete Test Suite Finished Successfully!');
-    print('⏱️  Total Time: [1m[32m[0m${stopwatch.elapsed.inSeconds} seconds');
+    print('⏱️  Total Time: ${stopwatch.elapsed.inSeconds} seconds');
     print('✅ All tests passed!');
+    exit(0);
   } catch (e) {
     stopwatch.stop();
     print('');
