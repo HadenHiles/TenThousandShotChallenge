@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -9,16 +10,22 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() {
   group('Firestore Integration Tests', () {
-    late FakeFirebaseFirestore firestore;
+    late FirebaseFirestore firestore;
     late MockFirebaseAuth auth;
     late MockUser mockUser;
 
     setUp(() async {
-      // Setup fake Firestore and Auth
-      firestore = FakeFirebaseFirestore();
+      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+        await Firebase.initializeApp();
+        FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+        firestore = FirebaseFirestore.instance;
+      } else {
+        firestore = FakeFirebaseFirestore();
+      }
       mockUser = MockUser(
         uid: 'test_user_1',
         email: 'test@example.com',
@@ -461,7 +468,7 @@ void main() {
 }
 
 // Helper functions
-Future<void> _setupTestIteration(FakeFirebaseFirestore firestore, String uid) async {
+Future<void> _setupTestIteration(FirebaseFirestore firestore, String uid) async {
   final iteration = Iteration(
     DateTime.now(),
     DateTime.now().add(Duration(days: 100)),
@@ -479,7 +486,7 @@ Future<void> _setupTestIteration(FakeFirebaseFirestore firestore, String uid) as
   await firestore.collection('iterations').doc(uid).collection('iterations').add(iteration.toMap());
 }
 
-Future<void> _setupTestUsers(FakeFirebaseFirestore firestore) async {
+Future<void> _setupTestUsers(FirebaseFirestore firestore) async {
   await firestore.collection('users').doc('test_user_1').set({
     'display_name': 'Test User 1',
     'email': 'test1@example.com',

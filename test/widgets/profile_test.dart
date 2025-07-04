@@ -6,14 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'dart:io';
 
 void main() {
   group('Profile Screen', () {
     late MockFirebaseAuth mockAuth;
-    late FakeFirebaseFirestore fakeFirestore;
+    late FirebaseFirestore fakeFirestore;
     late MockUser mockUser;
 
     setUp(() async {
+      if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+        await Firebase.initializeApp();
+        fakeFirestore = FirebaseFirestore.instance;
+        FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+      } else {
+        fakeFirestore = FakeFirebaseFirestore();
+      }
       mockUser = MockUser(
         uid: 'test_uid',
         displayName: 'Test User',
@@ -25,7 +34,6 @@ void main() {
       if (mockAuth.currentUser == null) {
         await mockAuth.signInWithEmailAndPassword(email: 'test@example.com', password: 'password');
       }
-      fakeFirestore = FakeFirebaseFirestore();
 
       // Insert required user document
       await fakeFirestore.collection('users').doc('test_uid').set({

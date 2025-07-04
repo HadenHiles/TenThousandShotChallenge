@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +34,7 @@ void setWidgetTestFlag() {
   NetworkStatusService,
   SessionService,
 ])
-late FakeFirebaseFirestore fakeFirestore;
+late FirebaseFirestore fakeFirestore;
 late fam.MockFirebaseAuth mockFirebaseAuth;
 late fam.MockUser mockUser;
 
@@ -47,7 +49,13 @@ void main() {
   late MockNetworkStatusService mockNetworkStatusService;
   // Use fakes directly, no Firebase.initializeApp or channel mocks
   setUpAll(() async {
-    fakeFirestore = FakeFirebaseFirestore();
+    if (Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+      await Firebase.initializeApp();
+      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+      fakeFirestore = FirebaseFirestore.instance;
+    } else {
+      fakeFirestore = FakeFirebaseFirestore();
+    }
     // Add a user document matching the UserProfile model
     await fakeFirestore.collection('users').doc('test_uid').set({
       'id': 'test_uid',
