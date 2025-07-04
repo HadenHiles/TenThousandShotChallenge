@@ -294,7 +294,7 @@ class _NavigationState extends State<Navigation> {
     int puckCount = prefs.getInt('puck_count') ?? 25;
     bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
     DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-    String fcmToken = prefs.getString('fcm_token')!;
+    String fcmToken = prefs.getString('fcm_token') ?? '';
 
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (user != null && preferences!.fcmToken != fcmToken) {
