@@ -8,8 +8,7 @@ import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:shared_preferences/src/shared_preferences_legacy.dart' as _i3;
-import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart'
-    as _i4;
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart' as _i4;
 import 'package:tenthousandshotchallenge/services/session.dart' as _i5;
 
 // ignore_for_file: type=lint
@@ -26,8 +25,7 @@ import 'package:tenthousandshotchallenge/services/session.dart' as _i5;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeStreamController_0<T> extends _i1.SmartFake
-    implements _i2.StreamController<T> {
+class _FakeStreamController_0<T> extends _i1.SmartFake implements _i2.StreamController<T> {
   _FakeStreamController_0(
     Object parent,
     Invocation parentInvocation,
@@ -104,8 +102,7 @@ class MockSharedPreferences extends _i1.Mock implements _i3.SharedPreferences {
       ) as bool);
 
   @override
-  List<String>? getStringList(String? key) =>
-      (super.noSuchMethod(Invocation.method(
+  List<String>? getStringList(String? key) => (super.noSuchMethod(Invocation.method(
         #getStringList,
         [key],
       )) as List<String>?);
@@ -231,15 +228,13 @@ class MockSharedPreferences extends _i1.Mock implements _i3.SharedPreferences {
 /// A class which mocks [NetworkStatusService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNetworkStatusService extends _i1.Mock
-    implements _i4.NetworkStatusService {
+class MockNetworkStatusService extends _i1.Mock implements _i4.NetworkStatusService {
   MockNetworkStatusService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i2.StreamController<_i4.NetworkStatus> get networkStatusController =>
-      (super.noSuchMethod(
+  _i2.StreamController<_i4.NetworkStatus> get networkStatusController => (super.noSuchMethod(
         Invocation.getter(#networkStatusController),
         returnValue: _FakeStreamController_0<_i4.NetworkStatus>(
           this,
@@ -252,17 +247,6 @@ class MockNetworkStatusService extends _i1.Mock
         Invocation.getter(#isTesting),
         returnValue: false,
       ) as bool);
-
-  @override
-  set networkStatusController(
-          _i2.StreamController<_i4.NetworkStatus>? _networkStatusController) =>
-      super.noSuchMethod(
-        Invocation.setter(
-          #networkStatusController,
-          _networkStatusController,
-        ),
-        returnValueForMissingStub: null,
-      );
 }
 
 /// A class which mocks [SessionService].

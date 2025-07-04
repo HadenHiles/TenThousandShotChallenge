@@ -44,27 +44,19 @@ class _ShotsState extends State<Shots> {
   Future<Null> _loadTargetDate() async {
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (user == null) return;
-    await Provider.of<FirebaseFirestore>(context, listen: false)
-        .collection('iterations')
-        .doc(user.uid)
-        .collection('iterations')
-        .where('complete', isEqualTo: false)
-        .get()
-        .then((iSnap) {
+    await Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
       if (iSnap.docs.isNotEmpty) {
         Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
         setState(() {
           _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
           currentIteration = i;
         });
-        _targetDateController.text =
-            DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+        _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
       } else {
         setState(() {
           _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
         });
-        _targetDateController.text =
-            DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+        _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
       }
     });
   }
@@ -83,21 +75,14 @@ class _ShotsState extends State<Shots> {
         _targetDateController.text = DateFormat('MMMM d, y').format(date);
         final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
         if (user == null) return;
-        await Provider.of<FirebaseFirestore>(context, listen: false)
-            .collection('iterations')
-            .doc(user.uid)
-            .collection('iterations')
-            .where('complete', isEqualTo: false)
-            .get()
-            .then((iSnap) async {
+        await Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) async {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
             setState(() {
               currentIteration = i;
             });
-            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap,
-                i.totalBackhand, i.complete, DateTime.now());
+            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
             await ref.update(updated.toMap()).then((_) async {
               _loadTargetDate();
             });
@@ -151,12 +136,7 @@ class _ShotsState extends State<Shots> {
                                       ? Container()
                                       : Builder(
                                           builder: (context) => StreamBuilder<QuerySnapshot>(
-                                            stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                                                .collection('iterations')
-                                                .doc(user.uid)
-                                                .collection('iterations')
-                                                .where('complete', isEqualTo: false)
-                                                .snapshots(),
+                                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                                             builder: (context, snapshot) {
                                               if (!snapshot.hasData) {
                                                 return CircularProgressIndicator(
@@ -164,8 +144,7 @@ class _ShotsState extends State<Shots> {
                                                 );
                                               } else if (snapshot.data!.docs.isNotEmpty) {
                                                 Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                                _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ??
-                                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                                                _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
                                                 return AutoSizeTextField(
                                                   controller: _targetDateController,
                                                   style: const TextStyle(fontSize: 20),
@@ -174,9 +153,7 @@ class _ShotsState extends State<Shots> {
                                                   decoration: InputDecoration(
                                                     labelText: "10,000 Shots By:".toLowerCase(),
                                                     labelStyle: TextStyle(
-                                                      color: preferences!.darkMode!
-                                                          ? darken(Theme.of(context).colorScheme.onPrimary, 0.4)
-                                                          : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                      color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
                                                       fontFamily: "NovecentoSans",
                                                     ),
                                                     focusColor: Theme.of(context).colorScheme.primary,
@@ -227,12 +204,7 @@ class _ShotsState extends State<Shots> {
                                   child: user == null
                                       ? Container()
                                       : StreamBuilder<QuerySnapshot>(
-                                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                                              .collection('iterations')
-                                              .doc(user.uid)
-                                              .collection('iterations')
-                                              .where('complete', isEqualTo: false)
-                                              .snapshots(),
+                                          stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                                           builder: (context, snapshot) {
                                             if (!snapshot.hasData) {
                                               return Center(
@@ -250,16 +222,13 @@ class _ShotsState extends State<Shots> {
                                               if (daysRemaining <= 1) {
                                                 shotsPerDay = shotsRemaining;
                                               } else {
-                                                shotsPerDay =
-                                                    shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                                shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
                                               }
                                               int shotsPerWeek = 0;
                                               if (weeksRemaining <= 1) {
                                                 shotsPerWeek = shotsRemaining;
                                               } else {
-                                                shotsPerWeek = shotsRemaining <= weeksRemaining
-                                                    ? 1
-                                                    : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                                shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
                                               }
                                               String shotsPerDayText = shotsRemaining < 1
                                                   ? "Done!".toLowerCase()
@@ -274,9 +243,7 @@ class _ShotsState extends State<Shots> {
                                               if (_targetDate!.compareTo(DateTime.now()) < 0) {
                                                 daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
                                                 shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                                shotsPerWeekText = shotsRemaining <= 999
-                                                    ? shotsRemaining.toString() + " remaining".toLowerCase()
-                                                    : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                                shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
                                               }
                                               return GestureDetector(
                                                 onTap: () {
@@ -340,12 +307,7 @@ class _ShotsState extends State<Shots> {
                   height: 5,
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                      .collection('iterations')
-                      .doc(user!.uid)
-                      .collection('iterations')
-                      .where('complete', isEqualTo: false)
-                      .snapshots(),
+                  stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(
@@ -376,8 +338,7 @@ class _ShotsState extends State<Shots> {
                                   builder: (context) => Tooltip(
                                     message: "${iteration.totalWrist} Wrist Shots".toLowerCase(),
                                     preferBelow: false,
-                                    textStyle: TextStyle(
-                                        fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                     child: Container(
                                       height: 40,
@@ -393,8 +354,7 @@ class _ShotsState extends State<Shots> {
                                   builder: (context) => Tooltip(
                                     message: "${iteration.totalSnap} Snap Shots".toLowerCase(),
                                     preferBelow: false,
-                                    textStyle: TextStyle(
-                                        fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                     child: Container(
                                       height: 40,
@@ -410,13 +370,11 @@ class _ShotsState extends State<Shots> {
                                   builder: (context) => Tooltip(
                                     message: "${iteration.totalBackhand} Backhands".toLowerCase(),
                                     preferBelow: false,
-                                    textStyle: TextStyle(
-                                        fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                     child: Container(
                                       height: 40,
-                                      width:
-                                          iteration.totalBackhand! > 0 ? (iteration.totalBackhand! / iterationTotal!) * totalShotsWidth : 0,
+                                      width: iteration.totalBackhand! > 0 ? (iteration.totalBackhand! / iterationTotal!) * totalShotsWidth : 0,
                                       padding: const EdgeInsets.symmetric(horizontal: 2),
                                       decoration: const BoxDecoration(
                                         color: backhandShotColor,
@@ -428,8 +386,7 @@ class _ShotsState extends State<Shots> {
                                   builder: (context) => Tooltip(
                                     message: "${iteration.totalSlap} Slap Shots".toLowerCase(),
                                     preferBelow: false,
-                                    textStyle: TextStyle(
-                                        fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                                     decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
                                     child: Container(
                                       height: 40,
@@ -506,12 +463,7 @@ class _ShotsState extends State<Shots> {
                   height: 5,
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                      .collection('iterations')
-                      .doc(user.uid)
-                      .collection('iterations')
-                      .where('complete', isEqualTo: false)
-                      .snapshots(),
+                  stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Column(
@@ -546,209 +498,213 @@ class _ShotsState extends State<Shots> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                Column(
-                                  children: [
-                                    Text(
-                                      "Wrist".toUpperCase(),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 18,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      height: 25,
-                                      margin: const EdgeInsets.only(top: 2),
-                                      decoration: const BoxDecoration(color: wristShotColor),
-                                      child: const Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Opacity(
-                                            opacity: 0.75,
-                                            child: Text(
-                                              "W",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 50,
-                                      child: AutoSizeText(
-                                        iteration.totalWrist! > 999
-                                            ? numberFormat.format(iteration.totalWrist).toLowerCase()
-                                            : iteration.totalWrist.toString().toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
+                                Flexible(
+                                  fit: FlexFit.loose,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Wrist".toUpperCase(),
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 18,
                                           fontFamily: 'NovecentoSans',
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        margin: const EdgeInsets.only(top: 2),
+                                        decoration: const BoxDecoration(color: wristShotColor),
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Opacity(
+                                              opacity: 0.75,
+                                              child: Text(
+                                                "W",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 50,
+                                        child: AutoSizeText(
+                                          iteration.totalWrist! > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
+                                          maxFontSize: 18,
+                                          maxLines: 1,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 18,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      "Snap".toUpperCase(),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 18,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      height: 25,
-                                      margin: const EdgeInsets.only(top: 2),
-                                      decoration: const BoxDecoration(color: snapShotColor),
-                                      child: const Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Opacity(
-                                            opacity: 0.75,
-                                            child: Text(
-                                              "SN",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 50,
-                                      child: AutoSizeText(
-                                        iteration.totalSnap! > 999
-                                            ? numberFormat.format(iteration.totalSnap).toLowerCase()
-                                            : iteration.totalSnap.toString().toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
+                                Flexible(
+                                  fit: FlexFit.loose,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Snap".toUpperCase(),
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 18,
                                           fontFamily: 'NovecentoSans',
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        margin: const EdgeInsets.only(top: 2),
+                                        decoration: const BoxDecoration(color: snapShotColor),
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Opacity(
+                                              opacity: 0.75,
+                                              child: Text(
+                                                "SN",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 50,
+                                        child: AutoSizeText(
+                                          iteration.totalSnap! > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
+                                          maxFontSize: 18,
+                                          maxLines: 1,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 18,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      "Backhand".toUpperCase(),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 18,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      height: 25,
-                                      margin: const EdgeInsets.only(top: 2),
-                                      decoration: const BoxDecoration(color: backhandShotColor),
-                                      child: const Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Opacity(
-                                            opacity: 0.75,
-                                            child: Text(
-                                              "B",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 50,
-                                      child: AutoSizeText(
-                                        iteration.totalBackhand! > 999
-                                            ? numberFormat.format(iteration.totalBackhand).toLowerCase()
-                                            : iteration.totalBackhand.toString().toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
+                                Flexible(
+                                  fit: FlexFit.loose,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Backhand".toUpperCase(),
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 18,
                                           fontFamily: 'NovecentoSans',
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        margin: const EdgeInsets.only(top: 2),
+                                        decoration: const BoxDecoration(color: backhandShotColor),
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Opacity(
+                                              opacity: 0.75,
+                                              child: Text(
+                                                "B",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 50,
+                                        child: AutoSizeText(
+                                          iteration.totalBackhand! > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
+                                          maxFontSize: 18,
+                                          maxLines: 1,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 18,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      "Slap".toUpperCase(),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 18,
-                                        fontFamily: 'NovecentoSans',
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      height: 25,
-                                      margin: const EdgeInsets.only(top: 2),
-                                      decoration: const BoxDecoration(color: slapShotColor),
-                                      child: const Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Opacity(
-                                            opacity: 0.75,
-                                            child: Text(
-                                              "SL",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 50,
-                                      child: AutoSizeText(
-                                        iteration.totalSlap! > 999
-                                            ? numberFormat.format(iteration.totalSlap).toLowerCase()
-                                            : iteration.totalSlap.toString().toLowerCase(),
-                                        maxFontSize: 18,
-                                        maxLines: 1,
-                                        textAlign: TextAlign.center,
+                                Flexible(
+                                  fit: FlexFit.loose,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Slap".toUpperCase(),
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 18,
                                           fontFamily: 'NovecentoSans',
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        margin: const EdgeInsets.only(top: 2),
+                                        decoration: const BoxDecoration(color: slapShotColor),
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Opacity(
+                                              opacity: 0.75,
+                                              child: Text(
+                                                "SL",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 50,
+                                        child: AutoSizeText(
+                                          iteration.totalSlap! > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
+                                          maxFontSize: 18,
+                                          maxLines: 1,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 18,
+                                            fontFamily: 'NovecentoSans',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -881,12 +837,7 @@ class _ShotsState extends State<Shots> {
                           child: Column(
                             children: [
                               StreamBuilder<QuerySnapshot>(
-                                stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                                    .collection('iterations')
-                                    .doc(user.uid)
-                                    .collection('iterations')
-                                    .where('complete', isEqualTo: false)
-                                    .snapshots(),
+                                stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
                                 builder: (context, snapshot) {
                                   if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                                     Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);

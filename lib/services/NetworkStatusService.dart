@@ -7,22 +7,25 @@ enum NetworkStatus { Online, Offline }
 
 class NetworkStatusService {
   static bool? isTestingOverride;
-  StreamController<NetworkStatus> networkStatusController = StreamController<NetworkStatus>();
+  late final StreamController<NetworkStatus> _networkStatusController;
   final bool isTesting;
 
   NetworkStatusService({bool isTesting = false}) : isTesting = isTestingOverride ?? isTesting {
+    _networkStatusController = StreamController<NetworkStatus>.broadcast();
     if (!this.isTesting) {
       // actively listen for status updates
       DataConnectionChecker().onStatusChange.listen((status) {
         switch (status) {
           case DataConnectionStatus.connected:
-            networkStatusController.add(NetworkStatus.Online);
+            _networkStatusController.add(NetworkStatus.Online);
             break;
           case DataConnectionStatus.disconnected:
-            networkStatusController.add(NetworkStatus.Offline);
+            _networkStatusController.add(NetworkStatus.Offline);
             break;
         }
       });
     }
   }
+
+  StreamController<NetworkStatus> get networkStatusController => _networkStatusController;
 }

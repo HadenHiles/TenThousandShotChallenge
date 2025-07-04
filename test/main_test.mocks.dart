@@ -6,16 +6,14 @@
 import 'dart:async' as _i5;
 
 import 'package:firebase_analytics/firebase_analytics.dart' as _i6;
-import 'package:firebase_analytics_platform_interface/firebase_analytics_platform_interface.dart'
-    as _i7;
+import 'package:firebase_analytics_platform_interface/firebase_analytics_platform_interface.dart' as _i7;
 import 'package:firebase_core/firebase_core.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i9;
 import 'package:purchases_flutter/models/customer_info_wrapper.dart' as _i4;
 import 'package:purchases_flutter/models/entitlement_infos_wrapper.dart' as _i3;
 import 'package:purchases_flutter/models/store_transaction.dart' as _i8;
-import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart'
-    as _i10;
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -41,8 +39,7 @@ class _FakeFirebaseApp_0 extends _i1.SmartFake implements _i2.FirebaseApp {
         );
 }
 
-class _FakeEntitlementInfos_1 extends _i1.SmartFake
-    implements _i3.EntitlementInfos {
+class _FakeEntitlementInfos_1 extends _i1.SmartFake implements _i3.EntitlementInfos {
   _FakeEntitlementInfos_1(
     Object parent,
     Invocation parentInvocation,
@@ -52,8 +49,7 @@ class _FakeEntitlementInfos_1 extends _i1.SmartFake
         );
 }
 
-class _Fake$CustomerInfoCopyWith_2<$Res> extends _i1.SmartFake
-    implements _i4.$CustomerInfoCopyWith<$Res> {
+class _Fake$CustomerInfoCopyWith_2<$Res> extends _i1.SmartFake implements _i4.$CustomerInfoCopyWith<$Res> {
   _Fake$CustomerInfoCopyWith_2(
     Object parent,
     Invocation parentInvocation,
@@ -63,8 +59,7 @@ class _Fake$CustomerInfoCopyWith_2<$Res> extends _i1.SmartFake
         );
 }
 
-class _FakeStreamController_3<T> extends _i1.SmartFake
-    implements _i5.StreamController<T> {
+class _FakeStreamController_3<T> extends _i1.SmartFake implements _i5.StreamController<T> {
   _FakeStreamController_3(
     Object parent,
     Invocation parentInvocation,
@@ -167,13 +162,10 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
           {
             #adStorageConsentGranted: adStorageConsentGranted,
             #analyticsStorageConsentGranted: analyticsStorageConsentGranted,
-            #adPersonalizationSignalsConsentGranted:
-                adPersonalizationSignalsConsentGranted,
+            #adPersonalizationSignalsConsentGranted: adPersonalizationSignalsConsentGranted,
             #adUserDataConsentGranted: adUserDataConsentGranted,
-            #functionalityStorageConsentGranted:
-                functionalityStorageConsentGranted,
-            #personalizationStorageConsentGranted:
-                personalizationStorageConsentGranted,
+            #functionalityStorageConsentGranted: functionalityStorageConsentGranted,
+            #personalizationStorageConsentGranted: personalizationStorageConsentGranted,
             #securityStorageConsentGranted: securityStorageConsentGranted,
           },
         ),
@@ -182,9 +174,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> setDefaultEventParameters(
-          Map<String, Object?>? defaultParameters) =>
-      (super.noSuchMethod(
+  _i5.Future<void> setDefaultEventParameters(Map<String, Object?>? defaultParameters) => (super.noSuchMethod(
         Invocation.method(
           #setDefaultEventParameters,
           [defaultParameters],
@@ -194,8 +184,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> setAnalyticsCollectionEnabled(bool? enabled) =>
-      (super.noSuchMethod(
+  _i5.Future<void> setAnalyticsCollectionEnabled(bool? enabled) => (super.noSuchMethod(
         Invocation.method(
           #setAnalyticsCollectionEnabled,
           [enabled],
@@ -951,8 +940,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> logTutorialBegin({Map<String, Object>? parameters}) =>
-      (super.noSuchMethod(
+  _i5.Future<void> logTutorialBegin({Map<String, Object>? parameters}) => (super.noSuchMethod(
         Invocation.method(
           #logTutorialBegin,
           [],
@@ -963,8 +951,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> logTutorialComplete({Map<String, Object>? parameters}) =>
-      (super.noSuchMethod(
+  _i5.Future<void> logTutorialComplete({Map<String, Object>? parameters}) => (super.noSuchMethod(
         Invocation.method(
           #logTutorialComplete,
           [],
@@ -1115,8 +1102,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> setSessionTimeoutDuration(Duration? timeout) =>
-      (super.noSuchMethod(
+  _i5.Future<void> setSessionTimeoutDuration(Duration? timeout) => (super.noSuchMethod(
         Invocation.method(
           #setSessionTimeoutDuration,
           [timeout],
@@ -1126,9 +1112,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> initiateOnDeviceConversionMeasurementWithEmailAddress(
-          String? emailAddress) =>
-      (super.noSuchMethod(
+  _i5.Future<void> initiateOnDeviceConversionMeasurementWithEmailAddress(String? emailAddress) => (super.noSuchMethod(
         Invocation.method(
           #initiateOnDeviceConversionMeasurementWithEmailAddress,
           [emailAddress],
@@ -1138,9 +1122,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> initiateOnDeviceConversionMeasurementWithPhoneNumber(
-          String? phoneNumber) =>
-      (super.noSuchMethod(
+  _i5.Future<void> initiateOnDeviceConversionMeasurementWithPhoneNumber(String? phoneNumber) => (super.noSuchMethod(
         Invocation.method(
           #initiateOnDeviceConversionMeasurementWithPhoneNumber,
           [phoneNumber],
@@ -1150,9 +1132,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> initiateOnDeviceConversionMeasurementWithHashedEmailAddress(
-          String? hashedEmailAddress) =>
-      (super.noSuchMethod(
+  _i5.Future<void> initiateOnDeviceConversionMeasurementWithHashedEmailAddress(String? hashedEmailAddress) => (super.noSuchMethod(
         Invocation.method(
           #initiateOnDeviceConversionMeasurementWithHashedEmailAddress,
           [hashedEmailAddress],
@@ -1162,9 +1142,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i6.FirebaseAnalytics {
       ) as _i5.Future<void>);
 
   @override
-  _i5.Future<void> initiateOnDeviceConversionMeasurementWithHashedPhoneNumber(
-          String? hashedPhoneNumber) =>
-      (super.noSuchMethod(
+  _i5.Future<void> initiateOnDeviceConversionMeasurementWithHashedPhoneNumber(String? hashedPhoneNumber) => (super.noSuchMethod(
         Invocation.method(
           #initiateOnDeviceConversionMeasurementWithHashedPhoneNumber,
           [hashedPhoneNumber],
@@ -1210,8 +1188,7 @@ class MockCustomerInfo extends _i1.Mock implements _i4.CustomerInfo {
       ) as List<String>);
 
   @override
-  List<_i8.StoreTransaction> get nonSubscriptionTransactions =>
-      (super.noSuchMethod(
+  List<_i8.StoreTransaction> get nonSubscriptionTransactions => (super.noSuchMethod(
         Invocation.getter(#nonSubscriptionTransactions),
         returnValue: <_i8.StoreTransaction>[],
       ) as List<_i8.StoreTransaction>);
@@ -1250,8 +1227,7 @@ class MockCustomerInfo extends _i1.Mock implements _i4.CustomerInfo {
       ) as String);
 
   @override
-  _i4.$CustomerInfoCopyWith<_i4.CustomerInfo> get copyWith =>
-      (super.noSuchMethod(
+  _i4.$CustomerInfoCopyWith<_i4.CustomerInfo> get copyWith => (super.noSuchMethod(
         Invocation.getter(#copyWith),
         returnValue: _Fake$CustomerInfoCopyWith_2<_i4.CustomerInfo>(
           this,
@@ -1272,15 +1248,13 @@ class MockCustomerInfo extends _i1.Mock implements _i4.CustomerInfo {
 /// A class which mocks [NetworkStatusService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNetworkStatusService extends _i1.Mock
-    implements _i10.NetworkStatusService {
+class MockNetworkStatusService extends _i1.Mock implements _i10.NetworkStatusService {
   MockNetworkStatusService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.StreamController<_i10.NetworkStatus> get networkStatusController =>
-      (super.noSuchMethod(
+  _i5.StreamController<_i10.NetworkStatus> get networkStatusController => (super.noSuchMethod(
         Invocation.getter(#networkStatusController),
         returnValue: _FakeStreamController_3<_i10.NetworkStatus>(
           this,
@@ -1293,15 +1267,4 @@ class MockNetworkStatusService extends _i1.Mock
         Invocation.getter(#isTesting),
         returnValue: false,
       ) as bool);
-
-  @override
-  set networkStatusController(
-          _i5.StreamController<_i10.NetworkStatus>? _networkStatusController) =>
-      super.noSuchMethod(
-        Invocation.setter(
-          #networkStatusController,
-          _networkStatusController,
-        ),
-        returnValueForMissingStub: null,
-      );
 }

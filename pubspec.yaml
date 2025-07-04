@@ -68,6 +68,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  mock_exceptions: ^0.8.2
   mockito: ^5.4.4
 flutter_icons:
   android: launcher_icon

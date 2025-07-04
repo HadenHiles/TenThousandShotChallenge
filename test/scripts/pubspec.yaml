@@ -5,9 +5,9 @@ description: Dart CLI tools for Ten Thousand Shot Challenge test data import and
 environment:
   sdk: ">=3.0.0 <4.0.0"
 dependencies:
-  firebase_dart: ^10.5.0 # CLI-compatible Firebase (Firestore, Auth, Core)
   http: any
   path: any
 
 dev_dependencies:
+  firebase_dart: ^1.4.3 # CLI-compatible Firebase (Firestore, Auth, Core)
   lints: ^3.0.0
