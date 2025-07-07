@@ -3,20 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/Login.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -422,13 +419,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               ),
                             ),
                             onPressed: (BuildContext context) {
-                              navigatorKey.currentState!.push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return const EditPuckCount();
-                                  },
-                                ),
-                              );
+                              context.push('/editPuckCount');
                             },
                           ),
                           SettingsTile.switchTile(
@@ -598,13 +589,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                             onPressed: (BuildContext context) {
-                              navigatorKey.currentState!.push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return const EditProfile();
-                                  },
-                                ),
-                              );
+                              context.push("editProfile");
                             },
                           ),
                           SettingsTile(
@@ -670,10 +655,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       TextButton(
                                         onPressed: () {
                                           FirebaseAuth.instance.currentUser!.delete().then((_) {
-                                            navigatorKey.currentState!.pop();
-                                            navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) {
-                                              return const Login();
-                                            }));
+                                            context.pop();
+                                            context.push("login");
 
                                             SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                                           }).onError((FirebaseAuthException error, stackTrace) {
@@ -716,14 +699,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             onPressed: (BuildContext context) {
                               signOut();
 
-                              navigatorKey.currentState!.pop();
-                              navigatorKey.currentState!.pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return const Login();
-                                  },
-                                ),
-                              );
+                              context.pop();
+                              context.push("login");
                             },
                           ),
                         ],

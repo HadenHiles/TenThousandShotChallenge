@@ -13,7 +13,6 @@ import '../mock_firebase.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'dart:async';
-import 'package:tenthousandshotchallenge/main.dart';
 
 // Minimal mock for AppleSignInAvailable for widget tests
 class AppleSignInAvailable {
@@ -61,7 +60,7 @@ void main() {
 
   group('Login Tests', () {
     late FirebaseAuth auth;
-    late FirebaseFirestore firestore;
+    late FakeFirebaseFirestore firestore;
     late MockUser mockUser;
     late TestNetworkStatusService testNetworkStatusService;
     late StreamController<NetworkStatus> networkStatusController;
@@ -74,7 +73,7 @@ void main() {
         displayName: 'Test User',
         isEmailVerified: true,
       );
-      auth = ThrowingMockFirebaseAuth(mockUser: mockUser, signedIn: false);
+      auth = MockFirebaseAuth(mockUser: mockUser, signedIn: false);
       networkStatusController = StreamController<NetworkStatus>.broadcast();
       testNetworkStatusService = TestNetworkStatusService(networkStatusController);
       SharedPreferences.setMockInitialValues({});
@@ -115,11 +114,11 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
       expect(find.byType(Navigation), findsOneWidget);
     });
 
     testWidgets('Email login with wrong password shows error', (WidgetTester tester) async {
+      auth = WrongPasswordAuth(mockUser: mockUser, signedIn: false);
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -130,13 +129,11 @@ void main() {
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
           child: MaterialApp(
-            navigatorKey: navigatorKey, // Ensure global navigatorKey is used
             home: const login.Login(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      // Tap the 'Sign in with Email' button to open the dialog
       final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
       expect(emailButton, findsOneWidget);
       await tester.tap(emailButton);
@@ -147,12 +144,12 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      // Wait for dialog to close and SnackBar to appear
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(find.byKey(const Key('login_error_snackbar')), findsOneWidget);
+      await pumpUntilFound(tester, find.textContaining('Wrong password', findRichText: true));
+      expect(find.textContaining('Wrong password', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Email login with non-existent user shows error', (WidgetTester tester) async {
+      auth = UserNotFoundAuth(mockUser: mockUser, signedIn: false);
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -163,13 +160,11 @@ void main() {
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
           child: MaterialApp(
-            navigatorKey: navigatorKey, // Ensure global navigatorKey is used
             home: const login.Login(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      // Tap the 'Sign in with Email' button to open the dialog
       final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
       expect(emailButton, findsOneWidget);
       await tester.tap(emailButton);
@@ -180,9 +175,8 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      // Wait for dialog to close and SnackBar to appear
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(find.byKey(const Key('login_error_snackbar')), findsOneWidget);
+      await pumpUntilFound(tester, find.textContaining('No user found for that email', findRichText: true));
+      expect(find.textContaining('No user found for that email', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Email login with invalid email shows error', (WidgetTester tester) async {
@@ -196,13 +190,11 @@ void main() {
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
           child: MaterialApp(
-            navigatorKey: navigatorKey, // Ensure global navigatorKey is used
             home: const login.Login(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      // Tap the 'Sign in with Email' button to open the dialog
       final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
       expect(emailButton, findsOneWidget);
       await tester.tap(emailButton);
@@ -216,73 +208,47 @@ void main() {
       expect(find.textContaining('Invalid email', findRichText: true), findsOneWidget);
     });
 
-    // Test that the mock throws as expected
     test('MockFirebaseAuth throws for wrong password', () async {
+      final customAuth = WrongPasswordAuth(mockUser: mockUser, signedIn: false);
       expect(
-        () => auth.signInWithEmailAndPassword(email: 'test@example.com', password: 'wrong-password'),
+        () => customAuth.signInWithEmailAndPassword(email: 'test@example.com', password: 'wrong-password'),
         throwsA(isA<FirebaseAuthException>()),
       );
     });
   }); // Close the test group
 } // Close main()
 
-// Custom mock for Google login failure
-class GoogleErrorAuthMock extends MockFirebaseAuth {
-  GoogleErrorAuthMock({required MockUser mockUser}) : super(mockUser: mockUser);
-  @override
-  Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) {
-    throw FirebaseAuthException(code: 'google-error', message: 'Google sign-in error');
-  }
-}
-
-// Custom mock for Apple login failure
-class AppleErrorAuthMock extends MockFirebaseAuth {
-  AppleErrorAuthMock({required MockUser mockUser}) : super(mockUser: mockUser);
-  @override
-  Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) {
-    throw FirebaseAuthException(code: 'apple-error', message: 'Apple sign-in error');
-  }
-}
-
-class ThrowingMockFirebaseAuth extends MockFirebaseAuth {
-  final MockUser? _mockUser;
-  ThrowingMockFirebaseAuth({super.mockUser, super.signedIn})
-      : _mockUser = mockUser,
-        _signedIn = signedIn,
-        _authStateController = StreamController<User?>.broadcast() {
-    if (_signedIn && _mockUser != null) {
-      _authStateController.add(_mockUser);
-    } else {
-      _authStateController.add(null);
-    }
-  }
-
-  bool _signedIn;
-  final StreamController<User?> _authStateController;
-
-  @override
-  Stream<User?> authStateChanges() => _authStateController.stream;
-
+// Custom mock for wrong password
+class WrongPasswordAuth extends MockFirebaseAuth {
+  WrongPasswordAuth({required super.mockUser, super.signedIn});
   @override
   Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
     if (email == 'test@example.com' && password == 'wrong-password') {
       throw FirebaseAuthException(code: 'wrong-password');
     }
+    return super.signInWithEmailAndPassword(email: email, password: password);
+  }
+}
+
+// Custom mock for user-not-found
+class UserNotFoundAuth extends MockFirebaseAuth {
+  UserNotFoundAuth({required super.mockUser, super.signedIn});
+  @override
+  Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
     if (email == 'nouser@example.com') {
       throw FirebaseAuthException(code: 'user-not-found');
     }
-    // Simulate successful sign-in
-    _signedIn = true;
-    if (_mockUser != null) {
-      _authStateController.add(_mockUser);
-    }
     return super.signInWithEmailAndPassword(email: email, password: password);
   }
+}
 
-  @override
-  Future<void> signOut() async {
-    _signedIn = false;
-    _authStateController.add(null);
-    return super.signOut();
+// Utility function to pump the widget tree until a condition is met or a timeout occurs
+Future<void> pumpUntilFound(WidgetTester tester, Finder finder, {Duration timeout = const Duration(seconds: 5)}) async {
+  final end = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isNotEmpty) return;
   }
+  // One last check
+  await tester.pumpAndSettle();
 }

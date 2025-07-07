@@ -2,9 +2,8 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
@@ -97,7 +96,7 @@ class _AddFriendState extends State<AddFriend> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        context.pop();
                       },
                     ),
                   ),
@@ -352,13 +351,7 @@ class _AddFriendState extends State<AddFriend> {
                                           ),
                                         );
 
-                                        navigatorKey.currentState!.pushReplacement(
-                                          MaterialPageRoute(builder: (context) {
-                                            return Navigation(
-                                              tabId: 'friends',
-                                            );
-                                          }),
-                                        );
+                                        context.go('/friends');
                                       },
                                     ).onError((error, stackTrace) {
                                       ScaffoldMessenger.of(context).showSnackBar(

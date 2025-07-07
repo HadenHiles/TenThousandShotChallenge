@@ -16,7 +16,6 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -24,6 +23,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -860,11 +860,9 @@ class _ProfileState extends State<Profile> {
                                 ],
                                 onSelected: (value) {
                                   if (value == 'edit') {
-                                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                                      return const EditProfile();
-                                    }));
+                                    context.push('/editProfile');
                                   } else if (value == 'qr_code') {
-                                    showQRCode(user);
+                                    showQRCode(context, user);
                                   }
                                 },
                               ),
@@ -878,10 +876,7 @@ class _ProfileState extends State<Profile> {
                                 child: GestureDetector(
                                   onLongPress: () {
                                     Feedback.forLongPress(context);
-
-                                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                                      return const EditProfile();
-                                    }));
+                                    context.push('/editProfile');
                                   },
                                   onTap: () {
                                     Feedback.forTap(context);

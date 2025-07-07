@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -38,27 +39,7 @@ class _ShotsState extends State<Shots> {
   @override
   void initState() {
     super.initState();
-    _loadTargetDate();
-  }
-
-  Future<Null> _loadTargetDate() async {
-    final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-    if (user == null) return;
-    await Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get().then((iSnap) {
-      if (iSnap.docs.isNotEmpty) {
-        Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
-        setState(() {
-          _targetDate = i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-          currentIteration = i;
-        });
-        _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-      } else {
-        setState(() {
-          _targetDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
-        });
-        _targetDateController.text = DateFormat('MMMM d, y').format(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-      }
-    });
+    // _loadTargetDate(); // No longer needed, StreamBuilder handles updates
   }
 
   void _editTargetDate() {
@@ -69,6 +50,7 @@ class _ShotsState extends State<Shots> {
       maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
       onChanged: (date) {},
       onConfirm: (date) async {
+        if (!mounted) return;
         setState(() {
           _targetDate = date;
         });
@@ -79,13 +61,13 @@ class _ShotsState extends State<Shots> {
           if (iSnap.docs.isNotEmpty) {
             DocumentReference ref = iSnap.docs[0].reference;
             Iteration i = Iteration.fromSnapshot(iSnap.docs[0]);
+            if (!mounted) return;
             setState(() {
               currentIteration = i;
             });
             Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
-            await ref.update(updated.toMap()).then((_) async {
-              _loadTargetDate();
-            });
+            await ref.update(updated.toMap());
+            // No need to call _loadTargetDate(); StreamBuilder will update UI
           }
         });
       },
@@ -902,7 +884,7 @@ class _ShotsState extends State<Shots> {
                                                         }
                                                       });
 
-                                                      navigatorKey.currentState!.pop();
+                                                      context.pop();
                                                     },
                                                   ),
                                                 );

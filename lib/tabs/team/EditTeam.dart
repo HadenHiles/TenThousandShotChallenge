@@ -2,6 +2,7 @@ import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
@@ -155,11 +156,7 @@ class _EditTeamState extends State<EditTeam> {
                               Provider.of<FirebaseAuth>(context, listen: false),
                               Provider.of<FirebaseFirestore>(context, listen: false),
                             ).then((success) {
-                              navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (context) {
-                                return Navigation(
-                                  tabId: 'team',
-                                );
-                              }));
+                              context.go('/team');
                             });
                           }
                         });

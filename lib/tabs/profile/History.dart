@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -45,14 +46,8 @@ class _HistoryState extends State<History> {
 
   Future<void> _loadFirstLastSession(String? iterationId) async {
     if (iterationId == null) return;
-    final snap = await Provider.of<FirebaseFirestore>(context, listen: false)
-        .collection('iterations')
-        .doc(user!.uid)
-        .collection('iterations')
-        .doc(iterationId)
-        .collection('sessions')
-        .orderBy('date', descending: false)
-        .get();
+    final snap =
+        await Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).get();
     if (snap.docs.isNotEmpty) {
       ShootingSession first = ShootingSession.fromSnapshot(snap.docs.first);
       ShootingSession latest = ShootingSession.fromSnapshot(snap.docs.last);
@@ -137,7 +132,7 @@ class _HistoryState extends State<History> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        context.pop();
                       },
                     ),
                   ),
@@ -164,12 +159,7 @@ class _HistoryState extends State<History> {
               children: [
                 // Attempts dropdown (realtime)
                 StreamBuilder<QuerySnapshot>(
-                  stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                      .collection('iterations')
-                      .doc(user!.uid)
-                      .collection('iterations')
-                      .orderBy('start_date', descending: false)
-                      .snapshots(),
+                  stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').orderBy('start_date', descending: false).snapshots(),
                   builder: (context, snapshot) {
                     List<DropdownMenuItem<String>> items = [];
                     if (snapshot.hasData) {
@@ -232,12 +222,7 @@ class _HistoryState extends State<History> {
                   child: _selectedIterationId == null
                       ? Container()
                       : StreamBuilder<DocumentSnapshot>(
-                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                              .collection('iterations')
-                              .doc(user!.uid)
-                              .collection('iterations')
-                              .doc(_selectedIterationId)
-                              .snapshots(),
+                          stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.hasData && snapshot.data!.exists) {
                               Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
@@ -261,11 +246,9 @@ class _HistoryState extends State<History> {
                                   int daysBeforeAfterTarget = i.targetDate!.difference(i.endDate!).inDays;
 
                                   if (daysBeforeAfterTarget > 0) {
-                                    goalDescription +=
-                                        " ${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} before goal";
+                                    goalDescription += " ${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} before goal";
                                   } else if (daysBeforeAfterTarget < 0) {
-                                    goalDescription +=
-                                        " ${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} after goal";
+                                    goalDescription += " ${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} after goal";
                                   }
 
                                   goalDescription += " ($targetDate)";
@@ -280,8 +263,7 @@ class _HistoryState extends State<History> {
                                 String? iterationDescription;
                                 String goalDescription = "";
                                 int remainingShots = 10000 - i.total!;
-                                String fRemainingShots =
-                                    remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
+                                String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
                                 String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
 
                                 if (daysSoFar <= 1 && daysSoFar != 0) {
@@ -297,11 +279,9 @@ class _HistoryState extends State<History> {
                                   }
 
                                   if (daysBeforeAfterTarget > 0) {
-                                    goalDescription +=
-                                        "${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} left to take $fRemainingShots shots";
+                                    goalDescription += "${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} left to take $fRemainingShots shots";
                                   } else if (daysBeforeAfterTarget < 0) {
-                                    goalDescription +=
-                                        "${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} past goal";
+                                    goalDescription += "${daysBeforeAfterTarget.abs()} day${daysBeforeAfterTarget.abs() == 1 ? '' : 's'} past goal";
                                   } else {
                                     goalDescription += "1 day left to take $fRemainingShots shots";
                                   }
@@ -319,12 +299,7 @@ class _HistoryState extends State<History> {
                   child: _selectedIterationId == null
                       ? Container()
                       : StreamBuilder<DocumentSnapshot>(
-                          stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                              .collection('iterations')
-                              .doc(user!.uid)
-                              .collection('iterations')
-                              .doc(_selectedIterationId)
-                              .snapshots(),
+                          stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
                           builder: (context, iterationSnapshot) {
                             final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
                             return StreamBuilder<QuerySnapshot>(
@@ -363,8 +338,7 @@ class _HistoryState extends State<History> {
                                     padding: EdgeInsets.only(
                                       top: 0,
                                       right: 0,
-                                      bottom:
-                                          !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                                      bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
                                       left: 0,
                                     ),
                                     itemCount: sessions.length,
@@ -445,20 +419,10 @@ class _HistoryState extends State<History> {
                 clipBehavior: Clip.none,
                 children: [
                   Icon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary),
-                  Positioned(
-                      left: -6, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(
-                      left: -5,
-                      bottom: -5,
-                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(
-                      right: -4,
-                      top: -6,
-                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(
-                      right: -4,
-                      bottom: -8,
-                      child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(left: -6, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(left: -5, bottom: -5, child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(right: -4, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(right: -4, bottom: -8, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
                 ],
               ),
               const SizedBox(width: 8),
