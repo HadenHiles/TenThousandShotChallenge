@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -15,13 +16,10 @@ import 'package:tenthousandshotchallenge/tabs/Profile.dart';
 import 'package:tenthousandshotchallenge/tabs/Friends.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
-import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
-import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/testing.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
@@ -74,17 +72,18 @@ class _NavigationState extends State<Navigation> {
       actions: [
         Container(
           margin: const EdgeInsets.only(top: 10),
-          child: IconButton(
-            icon: Icon(
-              Icons.add,
-              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-              size: 28,
+          child: Builder(
+            builder: (context) => IconButton(
+              icon: Icon(
+                Icons.add,
+                color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                size: 28,
+              ),
+              onPressed: () {
+                // Ensure context is from a builder, not from the class field initializer
+                context.push('/addFriend');
+              },
             ),
-            onPressed: () {
-              navigatorKey.currentState?.push(MaterialPageRoute(builder: (BuildContext context) {
-                return const AddFriend();
-              }));
-            },
           ),
         ),
       ],
@@ -145,7 +144,7 @@ class _NavigationState extends State<Navigation> {
                 onPressed: () async {
                   await showTeamQRCode(context).then((hasTeam) async {
                     if (!hasTeam) {
-                      final barcodeScanRes = await navigatorKey.currentState!.push(
+                      final barcodeScanRes = await Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
                         ),
@@ -156,12 +155,7 @@ class _NavigationState extends State<Navigation> {
                         Provider.of<FirebaseAuth>(context, listen: false),
                         Provider.of<FirebaseFirestore>(context, listen: false),
                       ).then((success) {
-                        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
-                          builder: (context) {
-                            return const Navigation(selectedIndex: 2);
-                          },
-                          maintainState: false,
-                        ));
+                        context.go('/navigation?selectedIndex=2');
                       });
                     }
                   });
@@ -201,7 +195,7 @@ class _NavigationState extends State<Navigation> {
             ),
             onPressed: () {
               final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-              showQRCode(user);
+              showQRCode(context, user);
             },
           ),
         ),
@@ -209,17 +203,17 @@ class _NavigationState extends State<Navigation> {
       actions: [
         Container(
           margin: const EdgeInsets.only(top: 10),
-          child: IconButton(
-            icon: Icon(
-              Icons.settings,
-              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-              size: 28,
+          child: Builder(
+            builder: (context) => IconButton(
+              icon: Icon(
+                Icons.settings,
+                color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                size: 28,
+              ),
+              onPressed: () {
+                context.push('/profileSettings');
+              },
             ),
-            onPressed: () {
-              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                return const ProfileSettings();
-              }));
-            },
           ),
         ),
       ],
@@ -337,9 +331,7 @@ class _NavigationState extends State<Navigation> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
-                                  return const EditTeam();
-                                }));
+                                context.push('/editTeam');
                               },
                             ),
                           ),
@@ -354,21 +346,14 @@ class _NavigationState extends State<Navigation> {
                         onPressed: () async {
                           await showTeamQRCode(context).then((hasTeam) async {
                             if (!hasTeam) {
-                              final barcodeScanRes = await navigatorKey.currentState!.push(
+                              final barcodeScanRes = await Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
                                 ),
                               );
 
                               joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
-                                navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
-                                  builder: (context) {
-                                    return Navigation(
-                                      selectedIndex: _tabs.indexWhere((tab) => tab.id == 'team'),
-                                    );
-                                  },
-                                  maintainState: false,
-                                ));
+                                context.go('/navigation?selectedIndex=2');
                               });
                             }
                           });

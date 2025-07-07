@@ -2,15 +2,13 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
-import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
@@ -46,13 +44,7 @@ class _FriendsState extends State<Friends> {
       _inviteDates = [];
     });
 
-    await FirebaseFirestore.instance
-        .collection('invites')
-        .doc(user!.uid)
-        .collection('invites')
-        .orderBy('date', descending: true)
-        .get()
-        .then((snapshot) async {
+    await FirebaseFirestore.instance.collection('invites').doc(user!.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -91,13 +83,7 @@ class _FriendsState extends State<Friends> {
       _friends = [];
     });
 
-    await FirebaseFirestore.instance
-        .collection('teammates')
-        .doc(user!.uid)
-        .collection('teammates')
-        .orderBy('display_name', descending: false)
-        .get()
-        .then((snapshot) async {
+    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -217,9 +203,7 @@ class _FriendsState extends State<Friends> {
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                                return const AddFriend();
-                                              }));
+                                              context.push('/add-friend');
                                             },
                                             iconSize: 40,
                                             icon: Icon(
@@ -294,8 +278,7 @@ class _FriendsState extends State<Friends> {
                                 itemBuilder: (_, int index) {
                                   if (index < _invites.length) {
                                     final DocumentSnapshot document = _invites[index];
-                                    return _buildFriendInviteItem(
-                                        UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
+                                    return _buildFriendInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
                                   }
 
                                   return !_isLoadingInvites
@@ -335,9 +318,7 @@ class _FriendsState extends State<Friends> {
       onTap: () {
         Feedback.forTap(context);
 
-        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-          return Player(uid: friend.reference!.id);
-        }));
+        context.push('/player/${friend.reference!.id}');
       },
       child: Container(
         decoration: BoxDecoration(
@@ -394,11 +375,7 @@ class _FriendsState extends State<Friends> {
                     SizedBox(
                       width: 135,
                       child: StreamBuilder(
-                          stream: FirebaseFirestore.instance
-                              .collection('iterations')
-                              .doc(friend.reference!.id)
-                              .collection('iterations')
-                              .snapshots(),
+                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return const Center(
@@ -428,11 +405,7 @@ class _FriendsState extends State<Friends> {
                           }),
                     ),
                     StreamBuilder(
-                        stream: FirebaseFirestore.instance
-                            .collection('iterations')
-                            .doc(friend.reference!.id)
-                            .collection('iterations')
-                            .snapshots(),
+                        stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                           if (!snapshot.hasData) {
                             return const Center(
@@ -618,9 +591,7 @@ class _FriendsState extends State<Friends> {
                     child: GestureDetector(
                       onTap: () {
                         Feedback.forTap(context);
-                        navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) {
-                          return Player(uid: friend.reference!.id);
-                        }));
+                        context.push('/player/${friend.reference!.id}');
                       },
                       child: UserAvatar(
                         user: friend,

@@ -6,14 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:rotating_icon_button/rotating_icon_button.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:word_generator/word_generator.dart';
 
-void showQRCode(User? user) {
+void showQRCode(BuildContext context, User? user) {
   showDialog(
-    context: navigatorKey.currentContext!,
+    context: context,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text(
@@ -68,7 +67,7 @@ Future<bool> showTeamQRCode(BuildContext context) async {
           Team team = Team.fromSnapshot(tDoc.docs[0]);
 
           showDialog(
-            context: navigatorKey.currentContext!,
+            context: context,
             builder: (BuildContext context) {
               Team t = team;
               return StatefulBuilder(
@@ -134,9 +133,7 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                                 : RotatingIconButton(
                                     onTap: () async {
                                       final wordGenerator = WordGenerator();
-                                      String newCode = wordGenerator.randomNoun().toUpperCase() +
-                                          wordGenerator.randomVerb().toUpperCase() +
-                                          Random().nextInt(9999).toString().padLeft(4, '0');
+                                      String newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
 
                                       await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode}).then((_) {
                                         setState(() {

@@ -2,7 +2,6 @@ import 'package:the_apple_sign_in/scope.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -321,25 +320,8 @@ class _LoginState extends State<Login> {
                                                             _signInEmail.text,
                                                             _signInPass.text,
                                                           ), (error) async {
-                                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                          SnackBar(
-                                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                                            content: Text(
-                                                              error,
-                                                              style: TextStyle(
-                                                                color: Theme.of(context).colorScheme.onPrimary,
-                                                              ),
-                                                            ),
-                                                            duration: const Duration(seconds: 10),
-                                                            action: SnackBarAction(
-                                                              label: "Dismiss",
-                                                              onPressed: () {
-                                                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                              },
-                                                            ),
-                                                          ),
-                                                        );
+                                                        // Use root context for SnackBar
+                                                        await errorWithRootContext(context, error);
                                                       });
                                                     }
                                                   },
@@ -422,8 +404,8 @@ class _LoginState extends State<Login> {
                                                                             FirebaseAuth.instance.sendPasswordResetEmail(email: _forgotPasswordEmail.text.toString()).then((value) {
                                                                               _forgotPasswordEmail.text = "";
 
-                                                                              navigatorKey.currentState?.pop();
-                                                                              navigatorKey.currentState?.pop();
+                                                                              Navigator.of(context, rootNavigator: true).pop('dialog');
+                                                                              Navigator.of(context, rootNavigator: true).pop('dialog');
 
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                                 SnackBar(
@@ -772,18 +754,41 @@ class _LoginState extends State<Login> {
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         print(e.toString());
-        await error('No user found for that email');
+        await errorWithRootContext(context, 'No user found for that email');
       } else if (e.code == 'wrong-password') {
         print(e.toString());
-        await error('Wrong password');
+        await errorWithRootContext(context, 'Wrong password');
       } else {
         print(e.toString());
-        await error('There was an error signing in');
+        await errorWithRootContext(context, 'There was an error signing in');
       }
     } catch (e) {
       print(e.toString());
-      await error('There was an error signing in');
+      await errorWithRootContext(context, 'There was an error signing in');
     }
+  }
+
+  // Helper to show SnackBar in root context
+  Future<void> errorWithRootContext(BuildContext rootContext, String error) async {
+    ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
+    ScaffoldMessenger.of(rootContext).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(rootContext).cardTheme.color,
+        content: Text(
+          error,
+          style: TextStyle(
+            color: Theme.of(rootContext).colorScheme.onPrimary,
+          ),
+        ),
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: "Dismiss",
+          onPressed: () {
+            ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 
   socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {

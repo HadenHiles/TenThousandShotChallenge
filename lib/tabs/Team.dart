@@ -8,23 +8,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // For QRCodeDialog
+import 'package:rxdart/rxdart.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart'; // For the generic dialog function
-import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
-import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
-import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart'; // Assuming wristShotColor is here
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
-import '../main.dart'; // For preferences and navigatorKey
-import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
+import 'package:go_router/go_router.dart';
 
 const TEAM_HEADER_HEIGHT = 65.0;
 
@@ -329,7 +326,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final bool isDarkMode = preferences?.darkMode ?? false;
+    final preferences = Provider.of<Preferences>(context, listen: true);
+    final bool isDarkMode = preferences.darkMode ?? false;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _getUserProfileStream(),
@@ -481,7 +479,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
                               textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                               decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                              child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: const BoxDecoration(color: wristShotColor)),
+                              child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: Theme.of(context).primaryColor)),
                             ),
                           ]),
                         ),
@@ -547,9 +545,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     iconSize: 40,
                     icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
                     onPressed: () {
-                      if (navigatorKey.currentState != null) {
-                        navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const CreateTeam()));
-                      }
+                      context.push('/create-team');
                     })),
           ),
           const Divider(height: 30),
@@ -560,9 +556,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 color: Theme.of(context).cardTheme.color,
                 child: Text("Join Team".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
                 onPressed: () {
-                  if (navigatorKey.currentState != null) {
-                    navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => const JoinTeam()));
-                  }
+                  context.push('/join-team');
                 }),
           ),
         ],
@@ -649,8 +643,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     return GestureDetector(
       onTap: () {
         Feedback.forTap(context);
-        if (playerUid.isNotEmpty && navigatorKey.currentState != null) {
-          navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) => Player(uid: playerUid)));
+        if (playerUid.isNotEmpty) {
+          context.push('/player/$playerUid');
         }
       },
       child: (isCurrentUserOwner && user?.uid != playerUid && playerUid.isNotEmpty)
@@ -700,9 +694,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       width: MediaQuery.of(context).size.width,
       child: TextButton(
         onPressed: () {
-          if (navigatorKey.currentState != null) {
-            navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) => EditTeam()));
-          }
+          context.push('/edit-team');
         },
         style: TextButton.styleFrom(
             foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),

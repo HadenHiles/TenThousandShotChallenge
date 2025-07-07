@@ -5,9 +5,6 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:tenthousandshotchallenge/IntroScreen.dart';
-import 'package:tenthousandshotchallenge/Login.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
@@ -22,9 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:global_configuration/global_configuration.dart';
-
-// Setup a navigation key so that we can navigate without context
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+import 'router.dart';
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
@@ -35,8 +30,14 @@ const Color snapShotColor = Color(0xff2296F3);
 const Color backhandShotColor = Color(0xff4050B5);
 const Color slapShotColor = Color(0xff009688);
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock device orientation to portrait mode
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Initialize the connection to our firebase project
   await Firebase.initializeApp(
@@ -60,6 +61,10 @@ void main() async {
     prefs.getString('fcm_token'),
   );
 
+  // Load intro_shown synchronously before building the app
+  final introShown = prefs.getBool('intro_shown') ?? false;
+  final introShownNotifier = IntroShownNotifier.withValue(introShown);
+
   /**
    * Firebase messaging setup
    */
@@ -75,7 +80,7 @@ void main() async {
     provisional: false,
     sound: true,
   );
-  print('User granted permission: ${settings.authorizationStatus}');
+  print('User granted permission: \\${settings.authorizationStatus}');
 
   // Get the user's FCM token
   firebaseMessaging.getToken().then((token) {
@@ -110,8 +115,9 @@ void main() async {
             isTesting: false, // Always false in production
           ),
         ),
+        ChangeNotifierProvider<IntroShownNotifier>.value(value: introShownNotifier),
       ],
-      child: const Home(),
+      child: Home(introShownNotifier: introShownNotifier),
     ),
   );
 }
@@ -153,52 +159,45 @@ Future<CustomerInfo?> getCustomerInfo() async {
   }
 }
 
-class Home extends StatelessWidget {
-  const Home({super.key});
+class Home extends StatefulWidget {
+  final IntroShownNotifier introShownNotifier;
+  const Home({super.key, required this.introShownNotifier});
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  late Future<bool> _introShownFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _introShownFuture = getIntroShown();
+  }
 
   Future<bool> getIntroShown() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('intro_shown') ?? false;
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // Lock device orientation to portrait mode
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-    final analytics = Provider.of<FirebaseAnalytics>(context);
-    final auth = Provider.of<FirebaseAuth>(context);
-    final user = auth.currentUser;
-
     return FutureBuilder<bool>(
-      future: getIntroShown(),
+      future: _introShownFuture,
       builder: (context, snapshot) {
-        final introShown = snapshot.data ?? false;
+        // final introShown = snapshot.data ?? false; // Unused with go_router
         return Consumer<PreferencesStateNotifier>(
           builder: (context, settingsState, child) {
             preferences = settingsState.preferences;
 
-            return MaterialApp(
+            return MaterialApp.router(
               title: '10,000 Shot Challenge',
-              navigatorKey: navigatorKey,
+              routerConfig: createAppRouter(Provider.of<FirebaseAnalytics>(context)),
               debugShowCheckedModeBanner: false,
               theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
               darkTheme: HomeTheme.darkTheme,
               themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
-              navigatorObservers: [
-                FirebaseAnalyticsObserver(analytics: analytics),
-              ],
-              home: !introShown
-                  ? const IntroScreen()
-                  : (user != null
-                      ? const Navigation(
-                          tabId: 'start',
-                        )
-                      : const Login()),
             );
           },
         );

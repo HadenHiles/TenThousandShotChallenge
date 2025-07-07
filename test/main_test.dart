@@ -21,6 +21,7 @@ import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tenthousandshotchallenge/router.dart';
 import 'main_test.mocks.dart';
 
 // Mock classes
@@ -121,7 +122,7 @@ void main() {
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),
         ],
-        child: const Home(),
+        child: Home(introShownNotifier: IntroShownNotifier.withValue(false)),
       ),
     );
     await tester.pumpAndSettle();
@@ -177,7 +178,7 @@ void main() {
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),
         ],
-        child: const Home(),
+        child: Home(introShownNotifier: IntroShownNotifier.withValue(true)),
       ),
     );
     await tester.pumpAndSettle();
@@ -246,7 +247,7 @@ void main() {
           Provider<CustomerInfo?>.value(value: mockCustomerInfo),
           Provider<NetworkStatusService>.value(value: mockNetworkStatus),
         ],
-        child: const Home(),
+        child: Home(introShownNotifier: IntroShownNotifier.withValue(true)),
       ),
     );
     await tester.pump(); // allow first frame

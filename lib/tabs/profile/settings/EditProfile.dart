@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -68,7 +69,7 @@ class _EditProfileState extends State<EditProfile> {
       textColor: Theme.of(context).colorScheme.onPrimary,
       fontSize: 16.0,
     );
-    navigatorKey.currentState!.pop();
+    context.pop();
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -96,7 +97,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        context.pop();
                       },
                     ),
                   ),
@@ -155,7 +156,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                                 ),
                               );
                             }
-                            navigatorKey.currentState!.pop();
+                            context.pop();
                           }
                         },
                       ),

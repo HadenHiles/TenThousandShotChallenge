@@ -2,13 +2,11 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
@@ -95,7 +93,7 @@ class _JoinTeamState extends State<JoinTeam> {
                             size: 28,
                           ),
                           onPressed: () {
-                            navigatorKey.currentState!.pop();
+                            context.pop();
                           },
                         ),
                       ),
@@ -132,11 +130,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                         });
                                         searchFieldController.text = "";
 
-                                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
-                                          return const Navigation(
-                                            tabId: 'team',
-                                          );
-                                        }));
+                                        context.go('/team'); // Replace with your desired route
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
@@ -336,14 +330,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                             ),
                                           );
 
-                                          Navigator.of(context).pushReplacement(MaterialPageRoute(
-                                            builder: (context) {
-                                              return const Navigation(
-                                                tabId: 'team',
-                                              );
-                                            },
-                                            maintainState: false,
-                                          ));
+                                          context.go('/team'); // Replace with your desired route
                                         }).onError((error, stackTrace) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -416,9 +403,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                           margin: const EdgeInsets.only(top: 5),
                                           child: IconButton(
                                             onPressed: () {
-                                              navigatorKey.currentState!.push(MaterialPageRoute(builder: (BuildContext context) {
-                                                return const CreateTeam();
-                                              }));
+                                              context.push('/create-team'); // Replace with your desired route
                                             },
                                             icon: Icon(
                                               Icons.add_circle_outline_rounded,

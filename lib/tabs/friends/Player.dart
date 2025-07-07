@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -16,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
+import 'package:go_router/go_router.dart';
 
 class Player extends StatefulWidget {
   const Player({super.key, this.uid});
@@ -156,7 +156,7 @@ class _PlayerState extends State<Player> {
                         size: 28,
                       ),
                       onPressed: () {
-                        navigatorKey.currentState!.pop();
+                        context.pop();
                       },
                     ),
                   ),
@@ -279,13 +279,8 @@ class _PlayerState extends State<Player> {
                                         },
                                         "Continue",
                                         () {
-                                          navigatorKey.currentState!.pushReplacement(
-                                            MaterialPageRoute(builder: (context) {
-                                              return Navigation(
-                                                tabId: 'friends',
-                                              );
-                                            }),
-                                          );
+                                          // Use go_router for navigation instead of pushReplacement
+                                          context.go('/friends');
 
                                           removePlayerFromFriends(
                                             _userPlayer!.reference!.id,
