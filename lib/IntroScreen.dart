@@ -32,7 +32,16 @@ class _IntroScreenState extends State<IntroScreen> {
   Future<void> _onIntroEnd(dynamic context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('intro_shown', true);
-
+    // Save all intro preferences at once
+    prefs.setBool('dark_mode', _darkMode ?? false);
+    prefs.setInt('puck_count', int.tryParse(_puckCountTextFieldController.text) ?? 25);
+    prefs.setString('target_date', DateFormat('yyyy-MM-dd').format(_targetDate ?? DateTime.now().add(const Duration(days: 100))));
+    preferences?.darkMode = _darkMode;
+    preferences?.puckCount = int.tryParse(_puckCountTextFieldController.text) ?? 25;
+    preferences?.targetDate = _targetDate;
+    if (context.mounted) {
+      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) {
         return user != null
@@ -119,14 +128,6 @@ class _IntroScreenState extends State<IntroScreen> {
                               setState(() {
                                 _darkMode = false;
                               });
-
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              prefs.setBool('dark_mode', false);
-                              preferences?.darkMode = false;
-
-                              if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
-                              }
                             },
                             style: ButtonStyle(
                               backgroundColor: WidgetStateProperty.all(Colors.white),
@@ -148,14 +149,6 @@ class _IntroScreenState extends State<IntroScreen> {
                               setState(() {
                                 _darkMode = true;
                               });
-
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              prefs.setBool('dark_mode', true);
-                              preferences?.darkMode = true;
-
-                              if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
-                              }
                             },
                             style: ButtonStyle(
                               backgroundColor: WidgetStateProperty.all(const Color(0xff1A1A1A)),
@@ -215,13 +208,7 @@ class _IntroScreenState extends State<IntroScreen> {
                       ),
                       textAlign: TextAlign.center,
                       onChanged: (value) async {
-                        SharedPreferences prefs = await SharedPreferences.getInstance();
-                        prefs.setInt('puck_count', int.parse(value));
-                        preferences?.puckCount = int.parse(value);
-
-                        if (context.mounted) {
-                          Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
-                        }
+                        setState(() {}); // Just update local state
                       },
                     ),
                     const SizedBox(
@@ -342,15 +329,8 @@ class _IntroScreenState extends State<IntroScreen> {
                             setState(() {
                               _targetDate = date;
                             });
-
                             _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
-
-                            SharedPreferences prefs = await SharedPreferences.getInstance();
-                            prefs.setString('target_date', DateFormat('yyyy-MM-dd').format(date));
-                            preferences?.targetDate = date;
-
                             int daysRemaining = date.difference(DateTime.now()).inDays;
-
                             if (daysRemaining <= 1) {
                               setState(() {
                                 _shotsPerDay = 10000;
@@ -359,10 +339,6 @@ class _IntroScreenState extends State<IntroScreen> {
                               setState(() {
                                 _shotsPerDay = (10000 / daysRemaining).round();
                               });
-                            }
-
-                            if (context.mounted) {
-                              Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
                             }
                           },
                           currentTime: _targetDate,
