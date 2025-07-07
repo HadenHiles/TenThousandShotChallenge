@@ -7,8 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/Login.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
@@ -42,15 +40,15 @@ class _IntroScreenState extends State<IntroScreen> {
     if (context.mounted) {
       Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     }
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) {
-        return user != null
-            ? const Navigation(
-                tabId: 'team',
-              )
-            : const Login();
-      }),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        if (user != null) {
+          context.go('/start');
+        } else {
+          context.go('/login');
+        }
+      }
+    });
   }
 
   Widget _buildImage(String assetName, [double width = 350]) {
