@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:go_router/go_router.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -183,7 +184,7 @@ class _IntroScreenState extends State<IntroScreen> {
           image: Icon(
             Icons.brightness_4,
             size: MediaQuery.of(context).size.width * 0.5,
-            color: preferences!.darkMode! ? Colors.black : Colors.white,
+            color: _darkMode! ? Colors.black : Colors.white,
           ),
           decoration: pageDecoration,
         ),
@@ -391,7 +392,12 @@ class _IntroScreenState extends State<IntroScreen> {
           decoration: pageDecoration,
         ),
       ],
-      onDone: () => _onIntroEnd(context),
+      onDone: () async {
+        await _onIntroEnd(context);
+        if (context.mounted) {
+          context.go('/app'); // Go to main app
+        }
+      },
       //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
       showSkipButton: true,
       skipOrBackFlex: 0,
