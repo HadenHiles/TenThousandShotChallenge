@@ -351,7 +351,7 @@ class _AddFriendState extends State<AddFriend> {
                                           ),
                                         );
 
-                                        context.go('/friends');
+                                        context.go('/tabs/friends'); // Update all navigation to match folder structure
                                       },
                                     ).onError((error, stackTrace) {
                                       ScaffoldMessenger.of(context).showSnackBar(
