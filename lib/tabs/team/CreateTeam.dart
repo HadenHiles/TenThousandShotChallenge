@@ -108,7 +108,7 @@ class _CreateTeamState extends State<CreateTeam> {
           }).onError((error, stackTrace) => false);
         });
 
-        context.go("/team");
+        context.go('/tabs/team'); // Update all navigation to match folder structure
       }).onError((error, stackTrace) {
         Fluttertoast.showToast(
           msg: 'There was an error creating team "${team!.name}" :('.toLowerCase(),
