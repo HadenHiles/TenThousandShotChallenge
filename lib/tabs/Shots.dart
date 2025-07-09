@@ -36,9 +36,16 @@ class _ShotsState extends State<Shots> {
   bool _showShotsPerDay = true;
   Iteration? currentIteration;
 
+  // Move streams to instance variables to avoid recreating in build
+  late final Stream<QuerySnapshot> _activeIterationsStream;
+  late final Stream<QuerySnapshot> _userIterationsStream;
+
   @override
   void initState() {
     super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    _activeIterationsStream = user != null ? FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots() : const Stream.empty();
+    _userIterationsStream = user != null ? FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots() : const Stream.empty();
     // _loadTargetDate(); // No longer needed, StreamBuilder handles updates
   }
 
@@ -87,191 +94,190 @@ class _ShotsState extends State<Shots> {
           children: [
             Column(
               children: [
-                _targetDate == null
-                    ? Container(
-                        margin: const EdgeInsets.only(top: 10),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.only(top: 5, bottom: 0),
-                        margin: const EdgeInsets.only(
-                          bottom: 10,
-                          top: 15,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Goal".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 26,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                            Stack(
-                              children: [
-                                SizedBox(
-                                  width: 150,
-                                  child: user == null
-                                      ? Container()
-                                      : Builder(
-                                          builder: (context) => StreamBuilder<QuerySnapshot>(
-                                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                                            builder: (context, snapshot) {
-                                              if (!snapshot.hasData) {
-                                                return CircularProgressIndicator(
-                                                  color: Theme.of(context).primaryColor,
-                                                );
-                                              } else if (snapshot.data!.docs.isNotEmpty) {
-                                                Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                                _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-                                                return AutoSizeTextField(
-                                                  controller: _targetDateController,
-                                                  style: const TextStyle(fontSize: 20),
-                                                  maxLines: 1,
-                                                  maxFontSize: 20,
-                                                  decoration: InputDecoration(
-                                                    labelText: "10,000 Shots By:".toLowerCase(),
-                                                    labelStyle: TextStyle(
-                                                      color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                      fontFamily: "NovecentoSans",
-                                                    ),
-                                                    focusColor: Theme.of(context).colorScheme.primary,
-                                                    border: null,
-                                                    disabledBorder: InputBorder.none,
-                                                    enabledBorder: InputBorder.none,
-                                                    contentPadding: const EdgeInsets.all(2),
-                                                    fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                                  ),
-                                                  readOnly: true,
-                                                  onTap: () {
-                                                    _editTargetDate();
-                                                  },
-                                                );
-                                              } else {
-                                                return Container();
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                ),
-                                Positioned(
-                                  top: -8,
-                                  right: 0,
-                                  child: InkWell(
-                                    enableFeedback: true,
-                                    focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                    onTap: _editTargetDate,
-                                    borderRadius: BorderRadius.circular(30),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(10),
-                                      child: Icon(
-                                        Icons.edit,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                SizedBox(
-                                  width: 80,
-                                  child: user == null
-                                      ? Container()
-                                      : StreamBuilder<QuerySnapshot>(
-                                          stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
-                                          builder: (context, snapshot) {
-                                            if (!snapshot.hasData) {
-                                              return Center(
-                                                child: CircularProgressIndicator(
-                                                  color: Theme.of(context).primaryColor,
-                                                ),
-                                              );
-                                            } else if (snapshot.data!.docs.isNotEmpty) {
-                                              Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                              int? total = i.total! >= 10000 ? 10000 : i.total;
-                                              int shotsRemaining = 10000 - total!;
-                                              int daysRemaining = _targetDate!.difference(DateTime.now()).inDays;
-                                              double weeksRemaining = double.parse((daysRemaining / 7).toStringAsFixed(4));
-                                              int shotsPerDay = 0;
-                                              if (daysRemaining <= 1) {
-                                                shotsPerDay = shotsRemaining;
-                                              } else {
-                                                shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                              }
-                                              int shotsPerWeek = 0;
-                                              if (weeksRemaining <= 1) {
-                                                shotsPerWeek = shotsRemaining;
-                                              } else {
-                                                shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                              }
-                                              String shotsPerDayText = shotsRemaining < 1
-                                                  ? "Done!".toLowerCase()
-                                                  : shotsPerDay <= 999
-                                                      ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                                      : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
-                                              String shotsPerWeekText = shotsRemaining < 1
-                                                  ? "Done!".toLowerCase()
-                                                  : shotsPerWeek <= 999
-                                                      ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                                      : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
-                                              if (_targetDate!.compareTo(DateTime.now()) < 0) {
-                                                daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
-                                                shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                                shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                              }
-                                              return GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    _showShotsPerDay = !_showShotsPerDay;
-                                                  });
-                                                },
-                                                child: AutoSizeText(
-                                                  _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                                  maxFontSize: 26,
-                                                  maxLines: 1,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontFamily: "NovecentoSans",
-                                                    fontSize: 26,
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              return Container();
-                                            }
-                                          },
-                                        ),
-                                ),
-                                InkWell(
-                                  enableFeedback: true,
-                                  focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                  onTap: () {
-                                    setState(() {
-                                      _showShotsPerDay = !_showShotsPerDay;
-                                    });
-                                  },
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: Icon(
-                                      Icons.swap_vert,
-                                      size: 18,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                // Always render the target date section, show a progress indicator if stream data is not yet available
+                Container(
+                  padding: const EdgeInsets.only(top: 5, bottom: 0),
+                  margin: const EdgeInsets.only(
+                    bottom: 10,
+                    top: 15,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Goal".toUpperCase(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 26,
+                          fontFamily: 'NovecentoSans',
                         ),
                       ),
+                      Stack(
+                        children: [
+                          SizedBox(
+                            width: 150,
+                            child: user == null
+                                ? Container()
+                                : Builder(
+                                    builder: (context) => StreamBuilder<QuerySnapshot>(
+                                      stream: _activeIterationsStream,
+                                      builder: (context, snapshot) {
+                                        if (!snapshot.hasData) {
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          );
+                                        } else if (snapshot.data!.docs.isNotEmpty) {
+                                          Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                                          _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                                          return AutoSizeTextField(
+                                            controller: _targetDateController,
+                                            style: const TextStyle(fontSize: 20),
+                                            maxLines: 1,
+                                            maxFontSize: 20,
+                                            decoration: InputDecoration(
+                                              labelText: "10,000 Shots By:".toLowerCase(),
+                                              labelStyle: TextStyle(
+                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                fontFamily: "NovecentoSans",
+                                              ),
+                                              focusColor: Theme.of(context).colorScheme.primary,
+                                              border: null,
+                                              disabledBorder: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              contentPadding: const EdgeInsets.all(2),
+                                              fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                            ),
+                                            readOnly: true,
+                                            onTap: () {
+                                              _editTargetDate();
+                                            },
+                                          );
+                                        } else {
+                                          return Container();
+                                        }
+                                      },
+                                    ),
+                                  ),
+                          ),
+                          Positioned(
+                            top: -8,
+                            right: 0,
+                            child: InkWell(
+                              enableFeedback: true,
+                              focusColor: Theme.of(context).colorScheme.primaryContainer,
+                              onTap: _editTargetDate,
+                              borderRadius: BorderRadius.circular(30),
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.edit,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          SizedBox(
+                            width: 80,
+                            child: user == null
+                                ? Container()
+                                : StreamBuilder<QuerySnapshot>(
+                                    stream: _activeIterationsStream,
+                                    builder: (context, snapshot) {
+                                      if (!snapshot.hasData) {
+                                        return Center(
+                                          child: CircularProgressIndicator(
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        );
+                                      } else if (snapshot.data!.docs.isNotEmpty) {
+                                        Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                                        int? total = i.total! >= 10000 ? 10000 : i.total;
+                                        int shotsRemaining = 10000 - total!;
+                                        int daysRemaining = _targetDate != null ? _targetDate!.difference(DateTime.now()).inDays : 0;
+                                        double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
+                                        int shotsPerDay = 0;
+                                        if (daysRemaining <= 1) {
+                                          shotsPerDay = shotsRemaining;
+                                        } else {
+                                          shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                        }
+                                        int shotsPerWeek = 0;
+                                        if (weeksRemaining <= 1) {
+                                          shotsPerWeek = shotsRemaining;
+                                        } else {
+                                          shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                        }
+                                        String shotsPerDayText = shotsRemaining < 1
+                                            ? "Done!".toLowerCase()
+                                            : shotsPerDay <= 999
+                                                ? shotsPerDay.toString() + " / Day".toLowerCase()
+                                                : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
+                                        String shotsPerWeekText = shotsRemaining < 1
+                                            ? "Done!".toLowerCase()
+                                            : shotsPerWeek <= 999
+                                                ? shotsPerWeek.toString() + " / Week".toLowerCase()
+                                                : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
+                                        if (_targetDate != null && _targetDate!.compareTo(DateTime.now()) < 0) {
+                                          daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
+                                          shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                          shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                        }
+                                        return GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _showShotsPerDay = !_showShotsPerDay;
+                                            });
+                                          },
+                                          child: AutoSizeText(
+                                            _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                            maxFontSize: 26,
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 26,
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        return Container();
+                                      }
+                                    },
+                                  ),
+                          ),
+                          InkWell(
+                            enableFeedback: true,
+                            focusColor: Theme.of(context).colorScheme.primaryContainer,
+                            onTap: () {
+                              setState(() {
+                                _showShotsPerDay = !_showShotsPerDay;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(30),
+                            child: const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Icon(
+                                Icons.swap_vert,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -289,7 +295,7 @@ class _ShotsState extends State<Shots> {
                   height: 5,
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                  stream: _activeIterationsStream,
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(
@@ -445,7 +451,7 @@ class _ShotsState extends State<Shots> {
                   height: 5,
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                  stream: _activeIterationsStream,
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Column(
@@ -819,7 +825,7 @@ class _ShotsState extends State<Shots> {
                           child: Column(
                             children: [
                               StreamBuilder<QuerySnapshot>(
-                                stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots(),
+                                stream: _activeIterationsStream,
                                 builder: (context, snapshot) {
                                   if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                                     Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
