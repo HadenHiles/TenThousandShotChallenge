@@ -8,8 +8,8 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/router.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
-import 'package:go_router/go_router.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -31,6 +31,7 @@ class _IntroScreenState extends State<IntroScreen> {
   Future<void> _onIntroEnd(dynamic context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('intro_shown', true);
+    introShownNotifier.setIntroShown(true); // Notify listeners immediately
     // Save all intro preferences at once
     prefs.setBool('dark_mode', _darkMode ?? false);
     prefs.setInt('puck_count', int.tryParse(_puckCountTextFieldController.text) ?? 25);
@@ -40,16 +41,8 @@ class _IntroScreenState extends State<IntroScreen> {
     preferences?.targetDate = _targetDate;
     if (context.mounted) {
       Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+      context.go('/app'); // Move navigation here
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        if (user != null) {
-          context.go('/start');
-        } else {
-          context.go('/login');
-        }
-      }
-    });
   }
 
   Widget _buildImage(String assetName, [double width = 350]) {
@@ -394,9 +387,6 @@ class _IntroScreenState extends State<IntroScreen> {
       ],
       onDone: () async {
         await _onIntroEnd(context);
-        if (context.mounted) {
-          context.go('/app'); // Go to main app
-        }
       },
       //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
       showSkipButton: true,
