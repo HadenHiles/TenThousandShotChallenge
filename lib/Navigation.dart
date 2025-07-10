@@ -55,171 +55,210 @@ class _NavigationState extends State<Navigation> {
   Team? team;
   UserProfile? userProfile;
 
-  final List<NavigationTab> _tabs = [
-    NavigationTab(
-      id: 'start',
-      title: Container(
-        height: 40,
-        padding: const EdgeInsets.only(top: 6),
-        child: Image.asset('assets/images/logo-text-only.png'), // Use the correct logo asset
+  // Remove the field initializer for _tabs
+  late List<NavigationTab> _tabs;
+
+  // Add this method to handle the Team QR code join logic
+  Future<void> _handleJoinTeamQRCode(BuildContext context) async {
+    await showTeamQRCode(context).then((hasTeam) async {
+      if (!hasTeam) {
+        final barcodeScanRes = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
+          ),
+        );
+
+        joinTeam(
+          barcodeScanRes,
+          Provider.of<FirebaseAuth>(context, listen: false),
+          Provider.of<FirebaseFirestore>(context, listen: false),
+        ).then((success) {
+          if (success == true && mounted) {
+            setState(() {
+              _selectedIndex = 2;
+              _leading = _tabs[2].leading;
+              _actions = widget.actions ?? _tabs[2].actions;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    try {
+      versionCheck(context);
+    } catch (e) {
+      print(e);
+    }
+
+    _loadPreferences();
+
+    _tabs = [
+      NavigationTab(
+        id: 'start',
+        title: Container(
+          height: 40,
+          padding: const EdgeInsets.only(top: 6),
+          child: Image.asset('assets/images/logo-text-only.png'), // Use the correct logo asset
+        ),
+        actions: const [],
+        body: Shots(sessionPanelController: sessionPanelController),
       ),
-      actions: const [],
-      body: Shots(sessionPanelController: sessionPanelController),
-    ),
-    NavigationTab(
-      id: 'friends',
-      title: NavigationTitle(title: "Friends".toUpperCase()),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(top: 10),
-          child: Builder(
-            builder: (context) => IconButton(
-              icon: Icon(
-                Icons.add,
-                color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                size: 28,
+      NavigationTab(
+        id: 'friends',
+        title: NavigationTitle(title: "Friends".toUpperCase()),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            child: Builder(
+              builder: (context) => IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                  size: 28,
+                ),
+                onPressed: () {
+                  // Ensure context is from a builder, not from the class field initializer
+                  context.push('/tabs/friends/addFriend');
+                },
               ),
-              onPressed: () {
-                // Ensure context is from a builder, not from the class field initializer
-                context.push('/tabs/friends/addFriend');
-              },
             ),
           ),
-        ),
-      ],
-      body: const Friends(),
-    ),
-    NavigationTab(
-      id: 'team',
-      title: Builder(
-        builder: (context) {
-          return Builder(
-            builder: (context) {
-              final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-              if (user == null) {
-                return NavigationTitle(title: "Team");
-              }
-              final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
-              return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                stream: userProfileStream,
-                builder: (context, userSnapshot) {
-                  if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                    return NavigationTitle(title: "Team");
-                  }
-                  final userProfile = userSnapshot.data!.data();
-                  final teamId = userProfile != null ? userProfile['team_id'] as String? : null;
-                  if (teamId == null || teamId.isEmpty) {
-                    return NavigationTitle(title: "Team");
-                  }
-                  final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
-                  return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                    stream: teamStream,
-                    builder: (context, teamSnapshot) {
-                      if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
-                        return NavigationTitle(title: "Team");
-                      }
-                      final teamData = teamSnapshot.data!.data();
-                      final teamName = teamData != null && teamData['name'] != null ? teamData['name'] as String : "Team";
-                      return NavigationTitle(title: teamName);
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
+        ],
+        body: const Friends(),
       ),
-      body: const TeamPage(),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(top: 10),
-          child: Builder(
-            builder: (context) => Builder(
+      NavigationTab(
+        id: 'team',
+        title: Builder(
+          builder: (context) {
+            return Builder(
+              builder: (context) {
+                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+                if (user == null) {
+                  return NavigationTitle(title: "Team");
+                }
+                final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
+                return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: userProfileStream,
+                  builder: (context, userSnapshot) {
+                    if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+                      return NavigationTitle(title: "Team");
+                    }
+                    final userProfile = userSnapshot.data!.data();
+                    final teamId = userProfile != null ? userProfile['team_id'] as String? : null;
+                    if (teamId == null || teamId.isEmpty) {
+                      return NavigationTitle(title: "Team");
+                    }
+                    final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
+                    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: teamStream,
+                      builder: (context, teamSnapshot) {
+                        if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
+                          return NavigationTitle(title: "Team");
+                        }
+                        final teamData = teamSnapshot.data!.data();
+                        final teamName = teamData != null && teamData['name'] != null ? teamData['name'] as String : "Team";
+                        return NavigationTitle(title: teamName);
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+        body: const TeamPage(),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            child: Builder(
               builder: (context) => IconButton(
                 icon: Icon(
                   Icons.qr_code_2_rounded,
                   color: HomeTheme.darkTheme.colorScheme.onPrimary,
                   size: 28,
                 ),
-                onPressed: () async {
-                  await showTeamQRCode(context).then((hasTeam) async {
-                    if (!hasTeam) {
-                      final barcodeScanRes = await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
-                        ),
-                      );
-
-                      joinTeam(
-                        barcodeScanRes,
-                        Provider.of<FirebaseAuth>(context, listen: false),
-                        Provider.of<FirebaseFirestore>(context, listen: false),
-                      ).then((success) {
-                        context.go('/navigation?selectedIndex=2');
-                      });
-                    }
-                  });
-                },
+                onPressed: () => _handleJoinTeamQRCode(context),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-    NavigationTab(
-      id: 'explore',
-      title: null,
-      body: Builder(
-        builder: (context) {
-          final testEnv = Provider.of<TestEnv?>(context, listen: false);
-          final isTesting = testEnv?.isTesting ?? false;
-          if (isTesting) {
-            return const _ExploreTestStub();
-          } else {
-            return const Explore();
-          }
-        },
+        ],
       ),
-    ),
-    NavigationTab(
-      id: 'profile',
-      title: NavigationTitle(title: "Profile".toUpperCase()),
-      leading: Container(
-        margin: const EdgeInsets.only(top: 10),
-        child: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(
-              Icons.qr_code_2_rounded,
-              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-              size: 28,
-            ),
-            onPressed: () {
-              final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-              showQRCode(context, user);
-            },
-          ),
+      NavigationTab(
+        id: 'explore',
+        title: null,
+        body: Builder(
+          builder: (context) {
+            final testEnv = Provider.of<TestEnv?>(context, listen: false);
+            final isTesting = testEnv?.isTesting ?? false;
+            if (isTesting) {
+              return const _ExploreTestStub();
+            } else {
+              return const Explore();
+            }
+          },
         ),
       ),
-      actions: [
-        Container(
+      NavigationTab(
+        id: 'profile',
+        title: NavigationTitle(title: "Profile".toUpperCase()),
+        leading: Container(
           margin: const EdgeInsets.only(top: 10),
           child: Builder(
             builder: (context) => IconButton(
               icon: Icon(
-                Icons.settings,
+                Icons.qr_code_2_rounded,
                 color: HomeTheme.darkTheme.colorScheme.onPrimary,
                 size: 28,
               ),
               onPressed: () {
-                context.push('/profile/settings/settings');
+                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+                showQRCode(context, user);
               },
             ),
           ),
         ),
-      ],
-      body: const Profile(),
-    ),
-  ];
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            child: Builder(
+              builder: (context) => IconButton(
+                icon: Icon(
+                  Icons.settings,
+                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                  size: 28,
+                ),
+                onPressed: () {
+                  context.push('/profile/settings/settings');
+                },
+              ),
+            ),
+          ),
+        ],
+        body: const Profile(),
+      ),
+    ];
+
+    int initialIndex = 0;
+    if (widget.tabId != null) {
+      final idx = _tabs.indexWhere((tab) => tab.id == widget.tabId);
+      if (idx != -1) initialIndex = idx;
+    } else if (widget.selectedIndex != null) {
+      initialIndex = widget.selectedIndex!;
+    }
+
+    setState(() {
+      _leading = Container();
+      _actions = widget.actions ?? _tabs[initialIndex].actions;
+      _selectedIndex = initialIndex;
+    });
+
+    _onItemTapped(initialIndex);
+
+    super.initState();
+  }
 
   // Helper to select a tab by id
   void selectTabById(String id) {
@@ -246,35 +285,6 @@ class _NavigationState extends State<Navigation> {
         });
       }
     }
-  }
-
-  @override
-  void initState() {
-    try {
-      versionCheck(context);
-    } catch (e) {
-      print(e);
-    }
-
-    _loadPreferences();
-
-    int initialIndex = 0;
-    if (widget.tabId != null) {
-      final idx = _tabs.indexWhere((tab) => tab.id == widget.tabId);
-      if (idx != -1) initialIndex = idx;
-    } else if (widget.selectedIndex != null) {
-      initialIndex = widget.selectedIndex!;
-    }
-
-    setState(() {
-      _leading = Container();
-      _actions = widget.actions ?? _tabs[initialIndex].actions;
-      _selectedIndex = initialIndex;
-    });
-
-    _onItemTapped(initialIndex);
-
-    super.initState();
   }
 
   // Helper to get FirebaseFirestore from Provider
@@ -353,7 +363,13 @@ class _NavigationState extends State<Navigation> {
                               );
 
                               joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
-                                context.go('/navigation?selectedIndex=2');
+                                if (success == true && mounted) {
+                                  setState(() {
+                                    _selectedIndex = 2;
+                                    _leading = _tabs[2].leading;
+                                    _actions = widget.actions ?? _tabs[2].actions;
+                                  });
+                                }
                               });
                             }
                           });

@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'router.dart';
+import 'package:go_router/go_router.dart';
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
@@ -168,38 +169,28 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  late Future<bool> _introShownFuture;
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
-    _introShownFuture = getIntroShown();
-  }
-
-  Future<bool> getIntroShown() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('intro_shown') ?? false;
+    // Create the GoRouter instance once and reuse it
+    _router = createAppRouter(Provider.of<FirebaseAnalytics>(context, listen: false));
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _introShownFuture,
-      builder: (context, snapshot) {
-        // final introShown = snapshot.data ?? false; // Unused with go_router
-        return Consumer<PreferencesStateNotifier>(
-          builder: (context, settingsState, child) {
-            preferences = settingsState.preferences;
-
-            return MaterialApp.router(
-              title: '10,000 Shot Challenge',
-              routerConfig: createAppRouter(Provider.of<FirebaseAnalytics>(context)),
-              debugShowCheckedModeBanner: false,
-              theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
-              darkTheme: HomeTheme.darkTheme,
-              themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
-            );
-          },
+    // Only rebuild for theme changes, not router
+    return Consumer<PreferencesStateNotifier>(
+      builder: (context, settingsState, child) {
+        preferences = settingsState.preferences;
+        return MaterialApp.router(
+          title: '10,000 Shot Challenge',
+          routerConfig: _router,
+          debugShowCheckedModeBanner: false,
+          theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+          darkTheme: HomeTheme.darkTheme,
+          themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
         );
       },
     );
