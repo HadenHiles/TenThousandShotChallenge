@@ -4,7 +4,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:tenthousandshotchallenge/Login.dart' as login;
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,6 +12,9 @@ import '../mock_firebase.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'dart:async';
+import 'package:tenthousandshotchallenge/router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:go_router/go_router.dart';
 
 // Minimal mock for AppleSignInAvailable for widget tests
 class AppleSignInAvailable {
@@ -51,6 +53,7 @@ void main() {
   });
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({'intro_shown': true});
     if (isIntegrationTest()) {
       await Firebase.initializeApp();
       FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
@@ -64,6 +67,10 @@ void main() {
     late MockUser mockUser;
     late TestNetworkStatusService testNetworkStatusService;
     late StreamController<NetworkStatus> networkStatusController;
+    late GoRouter router;
+    late FirebaseAnalytics analytics;
+    late AuthChangeNotifier testAuthNotifier;
+    late IntroShownNotifier testIntroShownNotifier;
 
     setUp(() async {
       firestore = FakeFirebaseFirestore();
@@ -77,6 +84,15 @@ void main() {
       networkStatusController = StreamController<NetworkStatus>.broadcast();
       testNetworkStatusService = TestNetworkStatusService(networkStatusController);
       SharedPreferences.setMockInitialValues({});
+      analytics = FirebaseAnalytics.instance;
+      testAuthNotifier = AuthChangeNotifier(auth);
+      testIntroShownNotifier = IntroShownNotifier.withValue(true);
+      router = createAppRouter(
+        analytics,
+        authNotifier: testAuthNotifier,
+        introShownNotifier: testIntroShownNotifier,
+        initialLocation: '/login',
+      );
     });
     tearDown(() async {
       await networkStatusController.close();
@@ -94,12 +110,13 @@ void main() {
           providers: [
             Provider<AppleSignInAvailable>.value(value: AppleSignInAvailable(false)),
             ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: auth),
             Provider<FirebaseFirestore>.value(value: firestore),
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: MaterialApp(
-            home: login.Login(),
+          child: MaterialApp.router(
+            routerConfig: router,
           ),
         ),
       );
@@ -114,6 +131,7 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
+      // Check for Navigation widget or /app route
       expect(find.byType(Navigation), findsOneWidget);
     });
 
@@ -124,12 +142,13 @@ void main() {
           providers: [
             Provider<AppleSignInAvailable>.value(value: AppleSignInAvailable(false)),
             ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: auth),
             Provider<FirebaseFirestore>.value(value: firestore),
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: MaterialApp(
-            home: const login.Login(),
+          child: MaterialApp.router(
+            routerConfig: router,
           ),
         ),
       );
@@ -144,7 +163,7 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      await pumpUntilFound(tester, find.textContaining('Wrong password', findRichText: true));
+      // Check for SnackBar with error
       expect(find.textContaining('Wrong password', findRichText: true), findsOneWidget);
     });
 
@@ -155,12 +174,13 @@ void main() {
           providers: [
             Provider<AppleSignInAvailable>.value(value: AppleSignInAvailable(false)),
             ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: auth),
             Provider<FirebaseFirestore>.value(value: firestore),
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: MaterialApp(
-            home: const login.Login(),
+          child: MaterialApp.router(
+            routerConfig: router,
           ),
         ),
       );
@@ -175,7 +195,6 @@ void main() {
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      await pumpUntilFound(tester, find.textContaining('No user found for that email', findRichText: true));
       expect(find.textContaining('No user found for that email', findRichText: true), findsOneWidget);
     });
 
@@ -185,12 +204,13 @@ void main() {
           providers: [
             Provider<AppleSignInAvailable>.value(value: AppleSignInAvailable(false)),
             ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: auth),
             Provider<FirebaseFirestore>.value(value: firestore),
             Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: MaterialApp(
-            home: const login.Login(),
+          child: MaterialApp.router(
+            routerConfig: router,
           ),
         ),
       );

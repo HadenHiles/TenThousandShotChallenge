@@ -41,17 +41,14 @@ class _LoginState extends State<Login> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // State variables
-  bool _signedIn = false;
+  // bool _signedIn = false;
   bool _hidePassword = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Provider.of<FirebaseAuth>(context, listen: false);
-      setState(() {
-        _signedIn = auth.currentUser != null;
-      });
+      setState(() {});
     });
   }
 
@@ -65,8 +62,9 @@ class _LoginState extends State<Login> {
       appleSignInAvailable = AppleSignInAvailable(false);
     }
 
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
     //If user is signed in
-    if (_signedIn) {
+    if (auth.currentUser != null) {
       return const Navigation(tabId: 'start');
     }
 
@@ -667,107 +665,6 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Future<void> signUp(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
-    try {
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-        email: authAttempt.email,
-        password: authAttempt.password,
-      )
-          .then((credential) async {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-
-        // Update/add the user's display name to firestore
-        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
-          'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
-          'display_name': FirebaseAuth.instance.currentUser?.email,
-          'email': FirebaseAuth.instance.currentUser?.email,
-          'photo_url': null,
-          'fcm_token': prefs.getString('fcm_token'),
-        }).then((value) => () {});
-
-        if (context.mounted) {
-          Navigator.of(context, rootNavigator: true).pop('dialog');
-        }
-
-        // Use context directly here, do not wrap in Builder
-        bootstrap(
-          Provider.of<FirebaseAuth>(context, listen: false),
-          Provider.of<FirebaseFirestore>(context, listen: false),
-        );
-
-        setState(() {
-          _signedIn = true;
-        });
-      });
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        print(e.toString());
-        await error('The password provided is too weak');
-      } else if (e.code == 'email-already-in-use') {
-        print(e.toString());
-        await error('The account already exists for that email');
-      } else {
-        print(e.toString());
-        await error('There was an error signing up');
-      }
-    } catch (e) {
-      print(e.toString());
-      await error('There was an error signing up');
-    }
-  }
-
-  Future<void> signIn(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password).then((credential) async {
-        Navigator.of(context, rootNavigator: true).pop('dialog');
-
-        // Update/add the user's display name to firestore
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
-        await uDoc.get().then((u) async {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          if (u.exists) {
-            u.reference.update({
-              'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => null);
-          } else {
-            uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser?.email?.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser?.email,
-              'email': FirebaseAuth.instance.currentUser?.email,
-              'public': true,
-              'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => null);
-          }
-        });
-
-        // Use context directly here, do not wrap in Builder
-        bootstrap(
-          Provider.of<FirebaseAuth>(context, listen: false),
-          Provider.of<FirebaseFirestore>(context, listen: false),
-        );
-
-        setState(() {
-          _signedIn = true;
-        });
-      });
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        print(e.toString());
-        await errorWithRootContext(context, 'No user found for that email');
-      } else if (e.code == 'wrong-password') {
-        print(e.toString());
-        await errorWithRootContext(context, 'Wrong password');
-      } else {
-        print(e.toString());
-        await errorWithRootContext(context, 'There was an error signing in');
-      }
-    } catch (e) {
-      print(e.toString());
-      await errorWithRootContext(context, 'There was an error signing in');
-    }
-  }
-
   // Helper to show SnackBar in root context
   Future<void> errorWithRootContext(BuildContext rootContext, String error) async {
     ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
@@ -791,11 +688,110 @@ class _LoginState extends State<Login> {
     );
   }
 
+  Future<void> signUp(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    try {
+      await auth
+          .createUserWithEmailAndPassword(
+        email: authAttempt.email,
+        password: authAttempt.password,
+      )
+          .then((credential) async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        // Update/add the user's display name to firestore
+        firestore.collection('users').doc(auth.currentUser?.uid).set({
+          'display_name_lowercase': auth.currentUser?.email?.toLowerCase(),
+          'display_name': auth.currentUser?.email,
+          'email': auth.currentUser?.email,
+          'photo_url': null,
+          'fcm_token': prefs.getString('fcm_token'),
+        }).then((value) => () {});
+
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop('dialog');
+        }
+
+        // Use context directly here, do not wrap in Builder
+        bootstrap(
+          auth,
+          firestore,
+        );
+      });
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        print(e.toString());
+        await error('The password provided is too weak');
+      } else if (e.code == 'email-already-in-use') {
+        print(e.toString());
+        await error('The account already exists for that email');
+      } else {
+        print(e.toString());
+        await error('There was an error signing up');
+      }
+    } catch (e) {
+      print(e.toString());
+      await error('There was an error signing up');
+    }
+  }
+
+  Future<void> signIn(BuildContext context, AuthAttempt authAttempt, Future<void> Function(String) error) async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    try {
+      await auth.signInWithEmailAndPassword(email: authAttempt.email, password: authAttempt.password).then((credential) async {
+        Navigator.of(context, rootNavigator: true).pop('dialog');
+
+        // Update/add the user's display name to firestore
+        DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
+        await uDoc.get().then((u) async {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          if (u.exists) {
+            u.reference.update({
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => null);
+          } else {
+            uDoc.set({
+              'display_name_lowercase': auth.currentUser?.email?.toLowerCase(),
+              'display_name': auth.currentUser?.email,
+              'email': auth.currentUser?.email,
+              'public': true,
+              'fcm_token': prefs.getString('fcm_token'),
+            }).then((value) => null);
+          }
+        });
+
+        // Use context directly here, do not wrap in Builder
+        bootstrap(
+          auth,
+          firestore,
+        );
+      });
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        print(e.toString());
+        await errorWithRootContext(context, 'No user found for that email');
+      } else if (e.code == 'wrong-password') {
+        print(e.toString());
+        await errorWithRootContext(context, 'Wrong password');
+      } else {
+        print(e.toString());
+        await errorWithRootContext(context, 'There was an error signing in');
+      }
+    } catch (e) {
+      print(e.toString());
+      await errorWithRootContext(context, 'There was an error signing in');
+    }
+  }
+
   socialSignIn(BuildContext context, String provider, Future<void> Function(String) error) async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     if (provider == 'google') {
       signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
+        DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             u.reference.update({
@@ -803,10 +799,10 @@ class _LoginState extends State<Login> {
             }).then((value) => () {});
           } else {
             uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser?.displayName,
-              'email': FirebaseAuth.instance.currentUser?.email,
-              'photo_url': FirebaseAuth.instance.currentUser?.photoURL,
+              'display_name_lowercase': auth.currentUser?.displayName?.toLowerCase(),
+              'display_name': auth.currentUser?.displayName,
+              'email': auth.currentUser?.email,
+              'photo_url': auth.currentUser?.photoURL,
               'public': true,
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});
@@ -815,28 +811,18 @@ class _LoginState extends State<Login> {
 
         // Use context directly here, do not wrap in Builder
         bootstrap(
-          Provider.of<FirebaseAuth>(context, listen: false),
-          Provider.of<FirebaseFirestore>(context, listen: false),
+          auth,
+          firestore,
         );
-
-        setState(() {
-          _signedIn = true;
-        });
       }).catchError((e) async {
         var message = "There was an error signing in with Google";
-        // if (e.code == "user-disabled") {
-        //   message = "Your account has been disabled by the administrator";
-        // } else if (e.code == "account-exists-with-different-credential") {
-        //   message = "An account already exists with the same email address but different sign-in credentials. Please try signing in a different way";
-        // }
-
         print(e);
         await error(message);
       });
     } else if (provider == 'apple') {
       signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        DocumentReference uDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid);
+        DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
             u.reference.update({
@@ -844,10 +830,10 @@ class _LoginState extends State<Login> {
             }).then((value) => () {});
           } else {
             uDoc.set({
-              'display_name_lowercase': FirebaseAuth.instance.currentUser?.displayName?.toLowerCase(),
-              'display_name': FirebaseAuth.instance.currentUser?.displayName,
-              'email': FirebaseAuth.instance.currentUser?.email,
-              'photo_url': FirebaseAuth.instance.currentUser?.photoURL,
+              'display_name_lowercase': auth.currentUser?.displayName?.toLowerCase(),
+              'display_name': auth.currentUser?.displayName,
+              'email': auth.currentUser?.email,
+              'photo_url': auth.currentUser?.photoURL,
               'public': true,
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});
@@ -856,21 +842,11 @@ class _LoginState extends State<Login> {
 
         // Use context directly here, do not wrap in Builder
         bootstrap(
-          Provider.of<FirebaseAuth>(context, listen: false),
-          Provider.of<FirebaseFirestore>(context, listen: false),
+          auth,
+          firestore,
         );
-
-        setState(() {
-          _signedIn = true;
-        });
       }).catchError((e) async {
         var message = "There was an error signing in with Apple";
-        // if (e.code == "user-disabled") {
-        //   message = "Your account has been disabled by the administrator";
-        // } else if (e.code == "account-exists-with-different-credential") {
-        //   message = "An account already exists with the same email address but different sign-in credentials. Please try signing in a different way";
-        // }
-
         print(e);
         await error(message);
       });

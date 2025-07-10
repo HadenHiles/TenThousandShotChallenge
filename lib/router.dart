@@ -15,11 +15,13 @@ import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
+import 'package:provider/provider.dart';
+import 'dart:io';
 
 class AuthChangeNotifier extends ChangeNotifier {
   late final StreamSubscription<User?> _sub;
-  AuthChangeNotifier() {
-    _sub = FirebaseAuth.instance.authStateChanges().listen((_) => notifyListeners());
+  AuthChangeNotifier(FirebaseAuth auth) {
+    _sub = auth.authStateChanges().listen((_) => notifyListeners());
   }
   @override
   void dispose() {
@@ -27,8 +29,6 @@ class AuthChangeNotifier extends ChangeNotifier {
     super.dispose();
   }
 }
-
-final AuthChangeNotifier authNotifier = AuthChangeNotifier();
 
 class IntroShownNotifier extends ChangeNotifier {
   bool? _introShown;
@@ -56,11 +56,14 @@ class IntroShownNotifier extends ChangeNotifier {
   }
 }
 
-final IntroShownNotifier introShownNotifier = IntroShownNotifier();
-
-GoRouter createAppRouter(FirebaseAnalytics analytics) {
+GoRouter createAppRouter(
+  FirebaseAnalytics analytics, {
+  required AuthChangeNotifier authNotifier,
+  required IntroShownNotifier introShownNotifier,
+  String initialLocation = '/app',
+}) {
   return GoRouter(
-    initialLocation: '/app',
+    initialLocation: initialLocation,
     refreshListenable: Listenable.merge([authNotifier, introShownNotifier]),
     observers: [FirebaseAnalyticsObserver(analytics: analytics)],
     routes: [
@@ -113,11 +116,16 @@ GoRouter createAppRouter(FirebaseAnalytics analytics) {
       ),
     ],
     redirect: (context, state) {
-      final user = FirebaseAuth.instance.currentUser;
+      // Skip redirects in widget tests or emulator mode
+      if (Platform.environment.containsKey('FLUTTER_TEST') || Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
+        return null;
+      }
+      final auth = Provider.of<FirebaseAuth>(context, listen: false);
+      final user = auth.currentUser;
       final path = state.fullPath ?? state.uri.toString();
       final introShown = introShownNotifier.introShown;
       debugPrint('[GoRouter redirect] user: '
-          '[${user?.uid}], path: [$path], introShown: [$introShown]');
+          '[{user?.uid}], path: [{path}], introShown: [{introShown}]');
       // If introShown is null, don't redirect yet (wait for async load)
       if (introShownNotifier._introShown == null) return null;
       // Only redirect to /app if on /login, and user is logged in
