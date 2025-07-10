@@ -483,6 +483,48 @@ class _ProfileState extends State<Profile> {
 
   // 2. TargetAccuracyVisualizers for each shot type, tappable
   Widget _buildShotTypeAccuracyVisualizers(BuildContext context, String? iterationId) {
+    if (_subscriptionLevel != 'pro') {
+      // Always show dummy data for non-pro users
+      final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+      Map<String, double> avgAccuracy = Map<String, double>.from(_dummyAvgAccuracy);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: shotTypes.map((type) {
+          return Column(
+            children: [
+              Text(
+                type.toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 16,
+                  fontFamily: 'NovecentoSans',
+                ),
+              ),
+              SizedBox(height: 4),
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: shotTypeColors[type],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  avgAccuracy[type]!.toStringAsFixed(0) + '%',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontFamily: 'NovecentoSans',
+                  ),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      );
+    }
+
     User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (iterationId == null) return Container();
 
@@ -577,6 +619,59 @@ class _ProfileState extends State<Profile> {
 
   // 3. Scatter chart for accuracy over time for selected shot type
   Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId) {
+    if (_subscriptionLevel != 'pro') {
+      // Always show dummy data for non-pro users
+      final shotType = _selectedAccuracyShotType;
+      final dummyData = {
+        'wrist': [72.0, 74.0, 70.0, 73.0, 72.0],
+        'backhand': [65.0, 67.0, 64.0, 66.0, 65.0],
+        'slap': [80.0, 81.0, 79.0, 80.0, 80.0],
+        'snap': [68.0, 69.0, 67.0, 68.0, 68.0],
+      };
+      final dummyDates = List.generate(5, (i) => DateTime.now().subtract(Duration(days: 4 - i)));
+      return SizedBox(
+        height: 220,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: dummyData[shotType]!.length,
+          itemBuilder: (context, i) {
+            return Container(
+              width: 50,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    height: dummyData[shotType]![i],
+                    width: 30,
+                    color: shotTypeColors[shotType],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '${dummyData[shotType]![i].toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 14,
+                      fontFamily: 'NovecentoSans',
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    '${dummyDates[i].month}/${dummyDates[i].day}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                      fontSize: 12,
+                      fontFamily: 'NovecentoSans',
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
+
     User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (iterationId == null) return Container();
 
