@@ -171,12 +171,18 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   late final GoRouter _router;
+  late final AuthChangeNotifier _authNotifier;
 
   @override
   void initState() {
     super.initState();
+    _authNotifier = AuthChangeNotifier(Provider.of<FirebaseAuth>(context, listen: false));
     // Create the GoRouter instance once and reuse it
-    _router = createAppRouter(Provider.of<FirebaseAnalytics>(context, listen: false));
+    _router = createAppRouter(
+      Provider.of<FirebaseAnalytics>(context, listen: false),
+      authNotifier: _authNotifier,
+      introShownNotifier: widget.introShownNotifier,
+    );
   }
 
   @override

@@ -42,17 +42,21 @@ class _ShotsState extends State<Shots> {
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    final user = auth.currentUser;
     if (user == null) {
-      // Redirect to login if user is null
+      // Always initialize _activeIterationFuture to avoid LateInitializationError
+      _activeIterationFuture = Future.value(FakeQuerySnapshot());
+      // Redirect to login after first build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           GoRouter.of(context).go('/login');
         }
       });
-      return;
+    } else {
+      _activeIterationFuture = firestore.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get();
     }
-    _activeIterationFuture = FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get();
   }
 
   void _editTargetDate() {
@@ -967,4 +971,16 @@ class _ShotsState extends State<Shots> {
       },
     );
   }
+}
+
+// Minimal fake QuerySnapshot for empty state
+class FakeQuerySnapshot implements QuerySnapshot<Map<String, dynamic>> {
+  @override
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> get docs => [];
+  @override
+  List<DocumentChange<Map<String, dynamic>>> get docChanges => [];
+  @override
+  int get size => 0;
+  @override
+  SnapshotMetadata get metadata => throw UnimplementedError();
 }
