@@ -128,9 +128,7 @@ class _EditTeamState extends State<EditTeam> {
                               size: 28,
                             ),
                             onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) {
-                                return const EditTeam();
-                              }));
+                              context.push('/edit-team');
                             },
                           ),
                         ),
@@ -156,7 +154,7 @@ class _EditTeamState extends State<EditTeam> {
                               Provider.of<FirebaseAuth>(context, listen: false),
                               Provider.of<FirebaseFirestore>(context, listen: false),
                             ).then((success) {
-                              context.go('/tabs/team'); // Update all navigation to match folder structure
+                              context.go('/app?tab=team');
                             });
                           }
                         });
