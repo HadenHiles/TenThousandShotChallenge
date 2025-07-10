@@ -37,16 +37,22 @@ class _ShotsState extends State<Shots> {
   Iteration? currentIteration;
 
   // Move streams to instance variables to avoid recreating in build
-  late final Stream<QuerySnapshot> _activeIterationsStream;
-  late final Stream<QuerySnapshot> _userIterationsStream;
+  late final Future<QuerySnapshot> _activeIterationFuture;
 
   @override
   void initState() {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
-    _activeIterationsStream = user != null ? FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots() : const Stream.empty();
-    _userIterationsStream = user != null ? FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').snapshots() : const Stream.empty();
-    // _loadTargetDate(); // No longer needed, StreamBuilder handles updates
+    if (user == null) {
+      // Redirect to login if user is null
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          GoRouter.of(context).go('/login');
+        }
+      });
+      return;
+    }
+    _activeIterationFuture = FirebaseFirestore.instance.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get();
   }
 
   void _editTargetDate() {
@@ -87,196 +93,185 @@ class _ShotsState extends State<Shots> {
   Widget build(BuildContext context) {
     return Builder(
       builder: (context) {
-        final user = Provider.of<FirebaseAuth>(context, listen: true).currentUser;
+        final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
         return Column(
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           children: [
             Column(
               children: [
-                // Always render the target date section, show a progress indicator if stream data is not yet available
-                Container(
-                  padding: const EdgeInsets.only(top: 5, bottom: 0),
-                  margin: const EdgeInsets.only(
-                    bottom: 10,
-                    top: 15,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Goal".toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 26,
-                          fontFamily: 'NovecentoSans',
+                // Always render the target date section, show a progress indicator if data is not yet available
+                FutureBuilder<QuerySnapshot>(
+                  future: _activeIterationFuture,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).primaryColor,
                         ),
-                      ),
-                      Stack(
+                      );
+                    } else if (snapshot.data!.docs.isNotEmpty) {
+                      Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                      _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                      return Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          SizedBox(
-                            width: 150,
-                            child: user == null
-                                ? Container()
-                                : Builder(
-                                    builder: (context) => StreamBuilder<QuerySnapshot>(
-                                      stream: _activeIterationsStream,
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData) {
-                                          return Center(
-                                            child: CircularProgressIndicator(
-                                              color: Theme.of(context).primaryColor,
-                                            ),
-                                          );
-                                        } else if (snapshot.data!.docs.isNotEmpty) {
-                                          Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                          _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-                                          return AutoSizeTextField(
-                                            controller: _targetDateController,
-                                            style: const TextStyle(fontSize: 20),
-                                            maxLines: 1,
-                                            maxFontSize: 20,
-                                            decoration: InputDecoration(
-                                              labelText: "10,000 Shots By:".toLowerCase(),
-                                              labelStyle: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                              ),
-                                              focusColor: Theme.of(context).colorScheme.primary,
-                                              border: null,
-                                              disabledBorder: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              contentPadding: const EdgeInsets.all(2),
-                                              fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                            ),
-                                            readOnly: true,
-                                            onTap: () {
-                                              _editTargetDate();
-                                            },
-                                          );
-                                        } else {
-                                          return Container();
-                                        }
-                                      },
-                                    ),
-                                  ),
+                          Text(
+                            "Goal".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 26,
+                              fontFamily: 'NovecentoSans',
+                            ),
                           ),
-                          Positioned(
-                            top: -8,
-                            right: 0,
-                            child: InkWell(
-                              enableFeedback: true,
-                              focusColor: Theme.of(context).colorScheme.primaryContainer,
-                              onTap: _editTargetDate,
-                              borderRadius: BorderRadius.circular(30),
-                              child: const Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 18,
+                          Stack(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: AutoSizeTextField(
+                                  controller: _targetDateController,
+                                  style: const TextStyle(fontSize: 20),
+                                  maxLines: 1,
+                                  maxFontSize: 20,
+                                  decoration: InputDecoration(
+                                    labelText: "10,000 Shots By:".toLowerCase(),
+                                    labelStyle: TextStyle(
+                                      color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                      fontFamily: "NovecentoSans",
+                                    ),
+                                    focusColor: Theme.of(context).colorScheme.primary,
+                                    border: null,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    contentPadding: const EdgeInsets.all(2),
+                                    fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                  ),
+                                  readOnly: true,
+                                  onTap: () {
+                                    _editTargetDate();
+                                  },
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          SizedBox(
-                            width: 80,
-                            child: user == null
-                                ? Container()
-                                : StreamBuilder<QuerySnapshot>(
-                                    stream: _activeIterationsStream,
-                                    builder: (context, snapshot) {
-                                      if (!snapshot.hasData) {
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                        );
-                                      } else if (snapshot.data!.docs.isNotEmpty) {
-                                        Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                        int? total = i.total! >= 10000 ? 10000 : i.total;
-                                        int shotsRemaining = 10000 - total!;
-                                        int daysRemaining = _targetDate != null ? _targetDate!.difference(DateTime.now()).inDays : 0;
-                                        double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
-                                        int shotsPerDay = 0;
-                                        if (daysRemaining <= 1) {
-                                          shotsPerDay = shotsRemaining;
-                                        } else {
-                                          shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                        }
-                                        int shotsPerWeek = 0;
-                                        if (weeksRemaining <= 1) {
-                                          shotsPerWeek = shotsRemaining;
-                                        } else {
-                                          shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                        }
-                                        String shotsPerDayText = shotsRemaining < 1
-                                            ? "Done!".toLowerCase()
-                                            : shotsPerDay <= 999
-                                                ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                                : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
-                                        String shotsPerWeekText = shotsRemaining < 1
-                                            ? "Done!".toLowerCase()
-                                            : shotsPerWeek <= 999
-                                                ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                                : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
-                                        if (_targetDate != null && _targetDate!.compareTo(DateTime.now()) < 0) {
-                                          daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
-                                          shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                          shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                        }
-                                        return GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _showShotsPerDay = !_showShotsPerDay;
-                                            });
-                                          },
-                                          child: AutoSizeText(
-                                            _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                            maxFontSize: 26,
-                                            maxLines: 1,
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 26,
-                                            ),
-                                          ),
-                                        );
-                                      } else {
-                                        return Container();
-                                      }
-                                    },
+                              Positioned(
+                                top: -8,
+                                right: 0,
+                                child: InkWell(
+                                  enableFeedback: true,
+                                  focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                  onTap: _editTargetDate,
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Icon(
+                                      Icons.edit,
+                                      size: 18,
+                                    ),
                                   ),
-                          ),
-                          InkWell(
-                            enableFeedback: true,
-                            focusColor: Theme.of(context).colorScheme.primaryContainer,
-                            onTap: () {
-                              setState(() {
-                                _showShotsPerDay = !_showShotsPerDay;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(30),
-                            child: const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Icon(
-                                Icons.swap_vert,
-                                size: 18,
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.max,
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: user == null
+                                    ? Container()
+                                    : FutureBuilder<QuerySnapshot>(
+                                        future: _activeIterationFuture,
+                                        builder: (context, snapshot) {
+                                          if (!snapshot.hasData) {
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                            );
+                                          } else if (snapshot.data!.docs.isNotEmpty) {
+                                            Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                                            int? total = i.total! >= 10000 ? 10000 : i.total;
+                                            int shotsRemaining = 10000 - total!;
+                                            int daysRemaining = _targetDate != null ? _targetDate!.difference(DateTime.now()).inDays : 0;
+                                            double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
+                                            int shotsPerDay = 0;
+                                            if (daysRemaining <= 1) {
+                                              shotsPerDay = shotsRemaining;
+                                            } else {
+                                              shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                            }
+                                            int shotsPerWeek = 0;
+                                            if (weeksRemaining <= 1) {
+                                              shotsPerWeek = shotsRemaining;
+                                            } else {
+                                              shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                            }
+                                            String shotsPerDayText = shotsRemaining < 1
+                                                ? "Done!".toLowerCase()
+                                                : shotsPerDay <= 999
+                                                    ? shotsPerDay.toString() + " / Day".toLowerCase()
+                                                    : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
+                                            String shotsPerWeekText = shotsRemaining < 1
+                                                ? "Done!".toLowerCase()
+                                                : shotsPerWeek <= 999
+                                                    ? shotsPerWeek.toString() + " / Week".toLowerCase()
+                                                    : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
+                                            if (_targetDate != null && _targetDate!.compareTo(DateTime.now()) < 0) {
+                                              daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
+                                              shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                              shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                            }
+                                            return GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _showShotsPerDay = !_showShotsPerDay;
+                                                });
+                                              },
+                                              child: AutoSizeText(
+                                                _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                                maxFontSize: 26,
+                                                maxLines: 1,
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                  fontFamily: "NovecentoSans",
+                                                  fontSize: 26,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            return Container();
+                                          }
+                                        },
+                                      ),
+                              ),
+                              InkWell(
+                                enableFeedback: true,
+                                focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                onTap: () {
+                                  setState(() {
+                                    _showShotsPerDay = !_showShotsPerDay;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(30),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: Icon(
+                                    Icons.swap_vert,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
-                  ),
+                      );
+                    } else {
+                      return Container();
+                    }
+                  },
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -294,8 +289,8 @@ class _ShotsState extends State<Shots> {
                 const SizedBox(
                   height: 5,
                 ),
-                StreamBuilder<QuerySnapshot>(
-                  stream: _activeIterationsStream,
+                FutureBuilder<QuerySnapshot>(
+                  future: _activeIterationFuture,
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(
@@ -450,8 +445,8 @@ class _ShotsState extends State<Shots> {
                 const SizedBox(
                   height: 5,
                 ),
-                StreamBuilder<QuerySnapshot>(
-                  stream: _activeIterationsStream,
+                FutureBuilder<QuerySnapshot>(
+                  future: _activeIterationFuture,
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Column(
@@ -807,163 +802,153 @@ class _ShotsState extends State<Shots> {
                 ),
               ],
             ),
+            // Only wrap the session controls in SessionServiceProvider/AnimatedBuilder
             SessionServiceProvider(
               service: sessionService,
               child: AnimatedBuilder(
-                animation: sessionService, // listen to ChangeNotifier
+                animation: sessionService,
                 builder: (context, child) {
-                  return Expanded(
+                  return Container(
+                    padding: EdgeInsets.only(
+                      bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                    ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: EdgeInsets.only(
-                            bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                          ),
-                          child: Column(
-                            children: [
-                              StreamBuilder<QuerySnapshot>(
-                                stream: _activeIterationsStream,
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                                    Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-
-                                    return iteration.total! < 10000
-                                        ? Container()
-                                        : SizedBox(
-                                            width: MediaQuery.of(context).size.width - 30,
-                                            child: TextButton(
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: Colors.white,
-                                                padding: const EdgeInsets.all(10),
-                                                backgroundColor: Theme.of(context).cardTheme.color,
-                                              ),
-                                              onPressed: () {
-                                                dialog(
-                                                  context,
-                                                  ConfirmDialog(
-                                                    "Start a new challenge?",
-                                                    Text(
-                                                      "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onSurface,
-                                                      ),
-                                                    ),
-                                                    "Cancel",
-                                                    () {
-                                                      Navigator.of(context).pop();
-                                                    },
-                                                    "Continue",
-                                                    () {
-                                                      startNewIteration(
-                                                        Provider.of<FirebaseAuth>(context, listen: false),
-                                                        Provider.of<FirebaseFirestore>(context, listen: false),
-                                                      ).then((success) {
-                                                        if (success!) {
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(
-                                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                                              duration: const Duration(milliseconds: 1200),
-                                                              content: Text(
-                                                                'Challenge restarted!',
-                                                                style: TextStyle(
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        } else {
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(
-                                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                                              duration: const Duration(milliseconds: 1200),
-                                                              content: Text(
-                                                                'There was an error restarting the challenge :(',
-                                                                style: TextStyle(
-                                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-                                                      });
-
-                                                      context.pop();
-                                                    },
-                                                  ),
-                                                );
-                                              },
-                                              child: Text(
-                                                'Start New Challenge'.toUpperCase(),
-                                                style: TextStyle(
-                                                  fontFamily: 'NovecentoSans',
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 20,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                  }
-                                  return Container();
-                                },
-                              ),
-                              sessionService.isRunning
+                        FutureBuilder<QuerySnapshot>(
+                          future: _activeIterationFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                              Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                              return iteration.total! < 10000
                                   ? Container()
-                                  : Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 15),
+                                  : SizedBox(
                                       width: MediaQuery.of(context).size.width - 30,
                                       child: TextButton(
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.all(10),
-                                          backgroundColor: Theme.of(context).primaryColor,
+                                          backgroundColor: Theme.of(context).cardTheme.color,
                                         ),
                                         onPressed: () {
-                                          if (!sessionService.isRunning) {
-                                            Feedback.forTap(context);
-                                            sessionService.start();
-                                            widget.sessionPanelController.open();
-                                          } else {
-                                            dialog(
-                                              context,
-                                              ConfirmDialog(
-                                                "Override current session?",
-                                                Text(
-                                                  "Starting a new session will override your existing one.\n\nWould you like to continue?",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onSurface,
-                                                  ),
+                                          dialog(
+                                            context,
+                                            ConfirmDialog(
+                                              "Start a new challenge?",
+                                              Text(
+                                                "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                 ),
-                                                "Cancel",
-                                                () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                "Continue",
-                                                () {
-                                                  Feedback.forTap(context);
-                                                  sessionService.reset();
-                                                  Navigator.of(context).pop();
-                                                  sessionService.start();
-                                                  widget.sessionPanelController.show();
-                                                },
                                               ),
-                                            );
-                                          }
+                                              "Cancel",
+                                              () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              "Continue",
+                                              () {
+                                                startNewIteration(
+                                                  Provider.of<FirebaseAuth>(context, listen: false),
+                                                  Provider.of<FirebaseFirestore>(context, listen: false),
+                                                ).then((success) {
+                                                  if (success!) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        duration: const Duration(milliseconds: 1200),
+                                                        content: Text(
+                                                          'Challenge restarted!',
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                                        duration: const Duration(milliseconds: 1200),
+                                                        content: Text(
+                                                          'There was an error restarting the challenge :(',
+                                                          style: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                });
+                                                context.pop();
+                                              },
+                                            ),
+                                          );
                                         },
                                         child: Text(
-                                          'Start Shooting'.toUpperCase(),
-                                          style: const TextStyle(
+                                          'Start New Challenge'.toUpperCase(),
+                                          style: TextStyle(
                                             fontFamily: 'NovecentoSans',
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                             fontSize: 20,
                                           ),
                                         ),
                                       ),
-                                    ),
-                            ],
-                          ),
+                                    );
+                            }
+                            return Container();
+                          },
                         ),
+                        sessionService.isRunning
+                            ? Container()
+                            : Container(
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                width: MediaQuery.of(context).size.width - 30,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.all(10),
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                  ),
+                                  onPressed: () {
+                                    if (!sessionService.isRunning) {
+                                      Feedback.forTap(context);
+                                      sessionService.start();
+                                      widget.sessionPanelController.open();
+                                    } else {
+                                      dialog(
+                                        context,
+                                        ConfirmDialog(
+                                          "Override current session?",
+                                          Text(
+                                            "Starting a new session will override your existing one.\n\nWould you like to continue?",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          "Cancel",
+                                          () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          "Continue",
+                                          () {
+                                            Feedback.forTap(context);
+                                            sessionService.reset();
+                                            Navigator.of(context).pop();
+                                            sessionService.start();
+                                            widget.sessionPanelController.show();
+                                          },
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                    'Start Shooting'.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ],
                     ),
                   );

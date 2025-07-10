@@ -52,14 +52,10 @@ final IntroShownNotifier introShownNotifier = IntroShownNotifier();
 
 GoRouter createAppRouter(FirebaseAnalytics analytics) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/app',
     refreshListenable: Listenable.merge([authNotifier, introShownNotifier]),
     observers: [FirebaseAnalyticsObserver(analytics: analytics)],
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const _RootRedirect(),
-      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const Login(),
@@ -77,18 +73,15 @@ GoRouter createAppRouter(FirebaseAnalytics analytics) {
       final user = FirebaseAuth.instance.currentUser;
       final path = state.fullPath ?? state.uri.toString();
       final introShown = introShownNotifier.introShown;
+      debugPrint('[GoRouter redirect] user: '
+          '[${user?.uid}], path: [$path], introShown: [$introShown]');
+      // If introShown is null, don't redirect yet (wait for async load)
+      if (introShownNotifier._introShown == null) return null;
+      // Only redirect to /app if on /login, and user is logged in
+      if (user != null && path == '/login') return '/app';
       if (!introShown && path != '/intro') return '/intro';
       if (user == null && path != '/login' && path != '/intro') return '/login';
-      if (user != null && (path == '/login' || path == '/')) return '/app';
       return null;
     },
   );
-}
-
-class _RootRedirect extends StatelessWidget {
-  const _RootRedirect();
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
 }
