@@ -107,6 +107,7 @@ Future<void> main() async {
         ChangeNotifierProvider<PreferencesStateNotifier>(
           create: (_) => PreferencesStateNotifier(),
         ),
+        Provider<Preferences>.value(value: preferences!),
         Provider<FirebaseAuth>.value(value: FirebaseAuth.instance),
         Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
         Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
