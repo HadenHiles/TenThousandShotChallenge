@@ -433,7 +433,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 maxLines: 1,
                                 maxFontSize: 14,
                                 decoration: InputDecoration(
-                                  labelText: "${numberFormat.format(team.goalTotal ?? 0)} Shots By:".toLowerCase(),
+                                  labelText: "${numberFormat.format(safeGoalTotal)} Shots By:".toLowerCase(),
                                   labelStyle: TextStyle(
                                       color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
                                   border: InputBorder.none,
@@ -449,13 +449,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 SizedBox(
                                   width: 110,
                                   child: GestureDetector(
-                                    onTap: () => setState(() => _showShotsPerDay = !_showShotsPerDay),
+                                    onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
                                     child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText,
                                         maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
                                   ),
                                 ),
                                 InkWell(
-                                  onTap: () => setState(() => _showShotsPerDay = !_showShotsPerDay),
+                                  onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
                                   borderRadius: BorderRadius.circular(30),
                                   child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.swap_vert, size: 18)),
                                 ),
@@ -499,7 +499,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               child: AutoSizeText(numberFormat.format(currentTeamTotalShots),
                                   textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                             ),
-                            Text(" / ${numberFormat.format(team.goalTotal ?? 0)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                            Text(" / ${numberFormat.format(safeGoalTotal)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                           ]),
                         ),
                       ]),
@@ -708,12 +708,135 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place) {
-    // Simple placeholder for player list item content
+    final String? photoUrl = plyr.profile?.photoUrl;
+    final String displayName = plyr.profile?.displayName ?? "Player";
+    Widget? badgeWidget;
+    double avatarRadius = 32;
+    double badgeFontSize = 16;
+    double badgePaddingH = 10;
+    double badgePaddingV = 5;
+    Color badgeColor;
+    Color badgeTextColor = Colors.white;
+    List<Shadow> badgeTextShadows = [
+      Shadow(
+        offset: Offset(0, 1),
+        blurRadius: 2,
+        color: Colors.black.withOpacity(0.45),
+      ),
+    ];
+    if (place == 1) {
+      badgeColor = const Color(0xFFFFD700); // Gold
+      badgeTextColor = Colors.black;
+      badgeTextShadows = [
+        Shadow(
+          offset: Offset(0, 1),
+          blurRadius: 2,
+          color: Colors.white.withOpacity(0.7),
+        ),
+      ];
+    } else if (place == 2) {
+      badgeColor = const Color(0xFFC0C0C0); // Silver
+      badgeTextColor = Colors.black87;
+      badgeTextShadows = [
+        Shadow(
+          offset: Offset(0, 1),
+          blurRadius: 2,
+          color: Colors.white.withOpacity(0.7),
+        ),
+      ];
+    } else if (place == 3) {
+      badgeColor = const Color(0xFFCD7F32); // Bronze
+      badgeTextColor = Colors.white;
+      badgeTextShadows = [
+        Shadow(
+          offset: Offset(0, 1),
+          blurRadius: 2,
+          color: Colors.black.withOpacity(0.7),
+        ),
+      ];
+    } else {
+      badgeColor = Theme.of(context).primaryColor;
+    }
+    badgeWidget = Container(
+      padding: EdgeInsets.symmetric(horizontal: badgePaddingH, vertical: badgePaddingV),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.13),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        place.toString(),
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontWeight: FontWeight.bold,
+          fontSize: badgeFontSize,
+          color: badgeTextColor,
+          shadows: badgeTextShadows,
+        ),
+      ),
+    );
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       tileColor: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-      leading: Text(place.toString(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18)),
-      title: Text(plyr.profile?.displayName ?? "Player", style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18)),
-      subtitle: Text("Shots: ${plyr.shots ?? 0}"),
+      leading: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          CircleAvatar(
+            radius: avatarRadius,
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
+            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+            child: (photoUrl == null || photoUrl.isEmpty)
+                ? Text(
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
+                  )
+                : null,
+          ),
+          Positioned(
+            bottom: -4,
+            right: -4,
+            child: badgeWidget,
+          ),
+        ],
+      ),
+      title: Text(displayName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20)),
+      trailing: SizedBox(
+        height: 60,
+        child: Stack(
+          children: [
+            Text(
+              numberFormat.format(plyr.shots ?? 0), // Format with commas
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 26, // Large shot count
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            Positioned(
+              top: 30,
+              right: 0,
+              child: Text(
+                'Shots'.toLowerCase(),
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
