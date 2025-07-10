@@ -7,6 +7,14 @@ import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
+import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 
 class AuthChangeNotifier extends ChangeNotifier {
   late final StreamSubscription<User?> _sub;
@@ -66,7 +74,42 @@ GoRouter createAppRouter(FirebaseAnalytics analytics) {
       ),
       GoRoute(
         path: '/app',
-        builder: (context, state) => const Navigation(tabId: 'start'),
+        builder: (context, state) {
+          final tabId = state.uri.queryParameters['tab'] ?? 'start';
+          return Navigation(tabId: tabId);
+        },
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const ProfileSettings(),
+      ),
+      GoRoute(
+        path: '/edit-profile',
+        builder: (context, state) => const EditProfile(),
+      ),
+      GoRoute(
+        path: '/edit-puck-count',
+        builder: (context, state) => const EditPuckCount(),
+      ),
+      GoRoute(
+        path: '/add-friend',
+        builder: (context, state) => const AddFriend(),
+      ),
+      GoRoute(
+        path: '/create-team',
+        builder: (context, state) => const CreateTeam(),
+      ),
+      GoRoute(
+        path: '/edit-team',
+        builder: (context, state) => const EditTeam(),
+      ),
+      GoRoute(
+        path: '/join-team',
+        builder: (context, state) => const JoinTeam(),
+      ),
+      GoRoute(
+        path: '/history',
+        builder: (context, state) => const History(),
       ),
     ],
     redirect: (context, state) {

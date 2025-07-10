@@ -16,13 +16,13 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:go_router/go_router.dart';
 
 class StartShooting extends StatefulWidget {
   const StartShooting({super.key, required this.sessionPanelController, this.shots});
@@ -278,9 +278,7 @@ class _StartShootingState extends State<StartShooting> {
                           },
                         ),
                         onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => const ProfileSettings(),
-                          ));
+                          context.push('/settings');
                         },
                       ),
                     ),
@@ -380,8 +378,7 @@ class _StartShootingState extends State<StartShooting> {
                                       children: shotTypes.map((type) {
                                         final color = shotTypeColors[type]!;
                                         final isActive = _selectedShotType == type;
-                                        final shotsOfType =
-                                            _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
+                                        final shotsOfType = _shots.where((s) => s.type == type && s.targetsHit != null && s.count != null).toList();
                                         final totalHits = shotsOfType.fold<int>(0, (sum, s) => sum + (s.targetsHit ?? 0));
                                         final totalShots = shotsOfType.fold<int>(0, (sum, s) => sum + (s.count ?? 0));
                                         return GestureDetector(
@@ -527,24 +524,16 @@ class _StartShootingState extends State<StartShooting> {
                                                       LineChartData(
                                                         minY: 0,
                                                         maxY: 100,
-                                                        minX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                                                            ? accuracySpotsByType[_selectedShotType]!.first.x
-                                                            : 0,
-                                                        maxX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
-                                                            ? accuracySpotsByType[_selectedShotType]!.last.x
-                                                            : 1,
+                                                        minX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.first.x : 0,
+                                                        maxX: (accuracySpotsByType[_selectedShotType]!.isNotEmpty) ? accuracySpotsByType[_selectedShotType]!.last.x : 1,
                                                         gridData: FlGridData(
                                                           show: true,
                                                           drawVerticalLine: true,
                                                           horizontalInterval: 20,
-                                                          verticalInterval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty &&
-                                                                  accuracySpotsByType[_selectedShotType]!.last.x >
-                                                                      accuracySpotsByType[_selectedShotType]!.first.x)
-                                                              ? ((accuracySpotsByType[_selectedShotType]!.last.x -
-                                                                          accuracySpotsByType[_selectedShotType]!.first.x) /
-                                                                      5)
-                                                                  .clamp(1, double.infinity)
-                                                              : 1,
+                                                          verticalInterval:
+                                                              (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x)
+                                                                  ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity)
+                                                                  : 1,
                                                           getDrawingHorizontalLine: (value) => FlLine(
                                                             color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                                                             strokeWidth: 1,
@@ -604,8 +593,7 @@ class _StartShootingState extends State<StartShooting> {
                                                               showTitles: true,
                                                               reservedSize: 32,
                                                               getTitlesWidget: (value, meta) {
-                                                                bool show =
-                                                                    accuracySpotsByType[_selectedShotType]!.any((spot) => spot.x == value);
+                                                                bool show = accuracySpotsByType[_selectedShotType]!.any((spot) => spot.x == value);
                                                                 if (show) {
                                                                   return Padding(
                                                                     padding: const EdgeInsets.only(top: 4),
@@ -621,14 +609,10 @@ class _StartShootingState extends State<StartShooting> {
                                                                 }
                                                                 return const SizedBox.shrink();
                                                               },
-                                                              interval: (accuracySpotsByType[_selectedShotType]!.isNotEmpty &&
-                                                                      accuracySpotsByType[_selectedShotType]!.last.x >
-                                                                          accuracySpotsByType[_selectedShotType]!.first.x)
-                                                                  ? ((accuracySpotsByType[_selectedShotType]!.last.x -
-                                                                              accuracySpotsByType[_selectedShotType]!.first.x) /
-                                                                          5)
-                                                                      .clamp(1, double.infinity)
-                                                                  : 1,
+                                                              interval:
+                                                                  (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x)
+                                                                      ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity)
+                                                                      : 1,
                                                             ),
                                                           ),
                                                           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -653,10 +637,8 @@ class _StartShootingState extends State<StartShooting> {
                                                           if (accuracySpotsByType[_selectedShotType]!.isNotEmpty)
                                                             LineChartBarData(
                                                               spots: [
-                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.first.x,
-                                                                    avgAccuracyByType[_selectedShotType]!.roundToDouble()),
-                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.last.x,
-                                                                    avgAccuracyByType[_selectedShotType]!.roundToDouble()),
+                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.first.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
+                                                                FlSpot(accuracySpotsByType[_selectedShotType]!.last.x, avgAccuracyByType[_selectedShotType]!.roundToDouble()),
                                                               ],
                                                               isCurved: false,
                                                               barWidth: 1,
@@ -670,8 +652,7 @@ class _StartShootingState extends State<StartShooting> {
                                                           handleBuiltInTouches: true,
                                                           touchSpotThreshold: 22, // <-- Increase touch area for all dots
                                                           touchTooltipData: LineTouchTooltipData(
-                                                            getTooltipColor: (d) =>
-                                                                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+                                                            getTooltipColor: (d) => Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
                                                             tooltipBorderRadius: BorderRadius.circular(10),
                                                             fitInsideHorizontally: false, // Allow tooltip to overflow horizontally
                                                             fitInsideVertically: false,
@@ -681,8 +662,7 @@ class _StartShootingState extends State<StartShooting> {
                                                               final spots = accuracySpotsByType[_selectedShotType]!;
                                                               return touchedSpots.map((touched) {
                                                                 // Use a small epsilon for floating point comparison
-                                                                final index = spots.indexWhere((spot) =>
-                                                                    (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
+                                                                final index = spots.indexWhere((spot) => (spot.x - touched.x).abs() < 0.01 && (spot.y - touched.y).abs() < 0.01);
                                                                 if (index == -1) {
                                                                   return null; // <-- Return null instead of continue
                                                                 }
@@ -720,13 +700,10 @@ class _StartShootingState extends State<StartShooting> {
                                                             },
                                                           ),
                                                           touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                                                            if (touchResponse != null &&
-                                                                touchResponse.lineBarSpots != null &&
-                                                                touchResponse.lineBarSpots!.isNotEmpty) {
+                                                            if (touchResponse != null && touchResponse.lineBarSpots != null && touchResponse.lineBarSpots!.isNotEmpty) {
                                                               final spot = touchResponse.lineBarSpots!.first;
                                                               final spots = accuracySpotsByType[_selectedShotType]!;
-                                                              final index = spots.indexWhere(
-                                                                  (s) => (s.x - spot.x).abs() < 0.01 && (s.y - spot.y).abs() < 0.01);
+                                                              final index = spots.indexWhere((s) => (s.x - spot.x).abs() < 0.01 && (s.y - spot.y).abs() < 0.01);
                                                               if (index != -1) {
                                                                 setState(() {
                                                                   // _selectedPlotIndex = index;
@@ -1510,8 +1487,7 @@ class _StartShootingState extends State<StartShooting> {
                                                             backgroundColor: WidgetStateProperty.all(
                                                               Theme.of(context).primaryColor,
                                                             ),
-                                                            padding: WidgetStateProperty.all(
-                                                                const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                            padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                           ),
                                                           child: Text(
                                                             "Get yours".toUpperCase(),

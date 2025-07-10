@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
@@ -510,7 +509,7 @@ class _ProfileState extends State<Profile> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  avgAccuracy[type]!.toStringAsFixed(0) + '%',
+                  '${avgAccuracy[type]!.toStringAsFixed(0)}%',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -1823,9 +1822,7 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const History()),
-                        );
+                        context.push('/history');
                       },
                     ),
                   ),
