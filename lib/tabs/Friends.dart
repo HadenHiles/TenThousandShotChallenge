@@ -115,6 +115,7 @@ class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const Key('friends_tab_body'),
       margin: const EdgeInsets.all(0),
       child: DefaultTabController(
         length: 2,

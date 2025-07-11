@@ -218,13 +218,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _checkIfChallengeCompletedOnce() async {
-    await FirebaseFirestore.instance
-        .collection('iterations')
-        .doc(user!.uid)
-        .collection('iterations')
-        .where('complete', isEqualTo: true)
-        .get()
-        .then((snap) async {
+    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
       if (snap.docs.isNotEmpty) {
         setState(() {
           _oneChallengeCompleted = true;
@@ -252,6 +246,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: const Key('explore_tab_body'),
       children: [
         Container(
           height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
@@ -953,8 +948,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                               backgroundColor: WidgetStateProperty.all(
                                                                 Theme.of(context).primaryColor,
                                                               ),
-                                                              padding: WidgetStateProperty.all(
-                                                                  const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
                                                             ),
                                                             child: Text(
                                                               "Get yours".toUpperCase(),
