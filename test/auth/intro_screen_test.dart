@@ -11,8 +11,6 @@ import '../mock_firebase_auth_with_signedin.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 
 class TestIntroShownNotifier extends IntroShownNotifier {
   TestIntroShownNotifier(super.value) : super.withValue();
