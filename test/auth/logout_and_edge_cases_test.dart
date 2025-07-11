@@ -42,6 +42,8 @@ void main() {
     late StreamController<NetworkStatus> networkStatusController;
 
     setUp(() async {
+      NetworkStatusService.isTestingOverride = true;
+
       fakeFirestore = FakeFirebaseFirestore();
       mockUser = TestAuthFactory.defaultUser;
       mockAuth = TestAuthFactory.signedOutAuth;
@@ -127,6 +129,9 @@ void main() {
       final logoutTappable = find.ancestor(of: logoutText, matching: find.byType(InkWell));
       expect(logoutTappable, findsOneWidget);
       await tester.tap(logoutTappable);
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      // Simulate logout for mock auth and notifier (ensure state is updated before navigation)
+      simulateLogout(mockAuth as MockFirebaseAuthWithSignedIn, testAuthNotifier);
       await tester.pumpAndSettle(const Duration(seconds: 1));
       // Should return to Login screen
       expect(find.byType(Login), findsOneWidget);

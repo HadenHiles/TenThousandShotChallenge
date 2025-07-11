@@ -16,7 +16,6 @@ import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 
 class AuthChangeNotifier extends ChangeNotifier {
   late final StreamSubscription<User?> _sub;
@@ -116,16 +115,10 @@ GoRouter createAppRouter(
       ),
     ],
     redirect: (context, state) {
-      // Skip redirects in widget tests or emulator mode
-      if (Platform.environment.containsKey('FLUTTER_TEST') || Platform.environment['USE_FIREBASE_EMULATOR'] == 'true') {
-        return null;
-      }
       final auth = Provider.of<FirebaseAuth>(context, listen: false);
       final user = auth.currentUser;
       final path = state.fullPath ?? state.uri.toString();
       final introShown = introShownNotifier.introShown;
-      debugPrint('[GoRouter redirect] user: '
-          '[${user?.uid}], path: [$path], introShown: [$introShown], ');
       // If introShown is null, don't redirect yet (wait for async load)
       if (introShownNotifier._introShown == null) return null;
       // Only redirect to /app if on /login, and user is logged in
