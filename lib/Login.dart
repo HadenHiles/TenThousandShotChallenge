@@ -784,6 +784,12 @@ class _LoginState extends State<Login> {
       } else if (e.code == 'wrong-password') {
         print(e.toString());
         await errorWithRootContext(context, 'Wrong password');
+      } else if (e.code == 'user-disabled') {
+        print(e.toString());
+        await errorWithRootContext(context, 'This user has been disabled');
+      } else if (e.code == 'network-request-failed') {
+        print(e.toString());
+        await errorWithRootContext(context, 'A network error occurred');
       } else {
         print(e.toString());
         await errorWithRootContext(context, 'There was an error signing in');
