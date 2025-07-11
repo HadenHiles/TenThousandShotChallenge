@@ -4,10 +4,10 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
 import '../mock_firebase.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
@@ -15,6 +15,7 @@ import 'dart:async';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
+import '../mock_firebase_auth_with_signedin.dart';
 
 // Minimal mock for AppleSignInAvailable for widget tests
 class AppleSignInAvailable {
@@ -74,13 +75,8 @@ void main() {
 
     setUp(() async {
       firestore = FakeFirebaseFirestore();
-      mockUser = MockUser(
-        uid: 'test_uid',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        isEmailVerified: true,
-      );
-      auth = MockFirebaseAuth(mockUser: mockUser, signedIn: false);
+      mockUser = TestAuthFactory.defaultUser;
+      auth = TestAuthFactory.signedOutAuth;
       networkStatusController = StreamController<NetworkStatus>.broadcast();
       testNetworkStatusService = TestNetworkStatusService(networkStatusController);
       SharedPreferences.setMockInitialValues({});
@@ -130,8 +126,11 @@ void main() {
       await tester.enterText(fields.at(1), 'any-password');
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
+      // Simulate login
+      (auth as MockFirebaseAuthWithSignedIn).signedIn = true;
+      testAuthNotifier.notifyListeners();
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      // Check for Navigation widget or /app route
+      await pumpUntilFound(tester, find.byType(Navigation), timeout: const Duration(seconds: 5));
       expect(find.byType(Navigation), findsOneWidget);
     });
 

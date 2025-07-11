@@ -696,11 +696,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               Icons.logout,
                               color: Colors.red,
                             ),
-                            onPressed: (BuildContext context) {
-                              signOut();
-
-                              context.pop();
-                              context.push("login");
+                            onPressed: (BuildContext context) async {
+                              await signOut();
+                              // Use absolute route to ensure navigation to login
+                              context.go('/login');
                             },
                           ),
                         ],

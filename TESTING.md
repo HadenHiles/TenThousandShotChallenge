@@ -89,4 +89,19 @@ dart test/scripts/run_complete_test_suite.dart --verbose
 - Use the VS Code test runner for quick feedback on unit/widget tests.
 - For advanced scenarios, see comments in the relevant scripts.
 
+---
+
+## Copilot Rules & Guidelines
+
+1. Use super parameters in constructors wherever possible.
+2. After every code change, perform a post-change assessment for code simplicity. This must include:
+   - Widget structure: Ensure widgets are organized, minimal, and easy to follow.
+   - Separation of concerns: Classes and files should have clear, single responsibilities.
+   - Redundant code: Remove unnecessary variables, functions, and repeated logic.
+   - External packages: Evaluate and use appropriate pub.dev packages to simplify code and avoid reinventing solutions.
+3. Document all refactoring decisions and rationale in code comments or commit messages.
+4. Always centralize and reuse test utilities and mocks for maintainability.
+5. Prefer concise, readable code over clever or complex solutions.
+6. Review and update these guidelines as new best practices emerge.
+
 Happy Testing! 🎯
