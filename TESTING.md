@@ -101,7 +101,8 @@ dart test/scripts/run_complete_test_suite.dart --verbose
    - External packages: Evaluate and use appropriate pub.dev packages to simplify code and avoid reinventing solutions.
 3. Document all refactoring decisions and rationale in code comments or commit messages.
 4. Always centralize and reuse test utilities and mocks for maintainability.
-5. Prefer concise, readable code over clever or complex solutions.
-6. Review and update these guidelines as new best practices emerge.
+5. Always add ToDo's for any debug code to remember to remove
+6. Prefer concise, readable code over clever or complex solutions.
+7. Review and update these guidelines as new best practices emerge.
 
 Happy Testing! 🎯
