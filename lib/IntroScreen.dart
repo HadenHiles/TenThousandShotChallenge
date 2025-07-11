@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:go_router/go_router.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -41,7 +42,8 @@ class _IntroScreenState extends State<IntroScreen> {
     preferences?.targetDate = _targetDate;
     if (context.mounted) {
       Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
-      context.go('/app'); // Move navigation here
+      // Routing to main app after intro
+      GoRouter.of(context).go('/app'); // Use GoRouter for navigation
     }
   }
 
