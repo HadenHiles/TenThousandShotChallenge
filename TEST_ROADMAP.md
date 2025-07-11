@@ -48,9 +48,9 @@ This roadmap lists all major areas to cover with automated tests. For each item,
 
 ### 7. Widgets & Navigation
 
-- [ ] Generate tests for tab navigation and deep linking using our existing test patterns.
-- [ ] Generate tests for widget rendering for all major screens (Profile, Team, Shots, etc.) using our existing test patterns.
-- [ ] Generate tests for responsive layout and error states using our existing test patterns.
+- [x] Generate tests for tab navigation and deep linking using our existing test patterns.
+- [x] Generate tests for widget rendering for all major screens (Profile, Team, Shots, etc.) using our existing test patterns.
+- [x] Generate tests for responsive layout and error states using our existing test patterns.
 
 ### 8. Notifications
 
