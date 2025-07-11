@@ -189,17 +189,7 @@ class _NavigationState extends State<Navigation> {
       NavigationTab(
         id: 'explore',
         title: null,
-        body: Builder(
-          builder: (context) {
-            final testEnv = Provider.of<TestEnv?>(context, listen: false);
-            final isTesting = testEnv?.isTesting ?? false;
-            if (isTesting) {
-              return const _ExploreTestStub();
-            } else {
-              return const Explore();
-            }
-          },
-        ),
+        body: const Explore(),
       ),
       NavigationTab(
         id: 'profile',

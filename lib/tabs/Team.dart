@@ -18,7 +18,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart'; // For the generic dialog function
-import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart'; // Assuming wristShotColor is here
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:go_router/go_router.dart';
@@ -326,206 +326,209 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final preferences = Provider.of<Preferences>(context, listen: true);
-    final bool isDarkMode = preferences.darkMode ?? false;
+    final preferences = context.watch<PreferencesStateNotifier>().preferences;
+    final bool isDarkMode = preferences?.darkMode ?? false;
 
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: _getUserProfileStream(),
-      builder: (context, userProfileSnapshot) {
-        if (userProfileSnapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
-        }
-        if (!userProfileSnapshot.hasData || !userProfileSnapshot.data!.exists) {
-          return const Center(child: Text("Error loading user profile. Please restart the app."));
-        }
+    return Container(
+      key: const Key('team_tab_body'),
+      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: _getUserProfileStream(),
+        builder: (context, userProfileSnapshot) {
+          if (userProfileSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+          }
+          if (!userProfileSnapshot.hasData || !userProfileSnapshot.data!.exists) {
+            return const Center(child: Text("Error loading user profile. Please restart the app."));
+          }
 
-        UserProfile currentUserProfile = UserProfile.fromSnapshot(userProfileSnapshot.data!);
-        final String? teamId = currentUserProfile.teamId;
+          UserProfile currentUserProfile = UserProfile.fromSnapshot(userProfileSnapshot.data!);
+          final String? teamId = currentUserProfile.teamId;
 
-        if (teamId == null) {
-          return _buildNoTeamUI();
-        }
+          if (teamId == null) {
+            return _buildNoTeamUI();
+          }
 
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: _getTeamStream(teamId),
-          builder: (context, teamSnapshot) {
-            if (teamSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
-            }
-            if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
-              return _buildTeamRemovedOrNotFoundUI(null, currentUserProfile.reference);
-            }
+          return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: _getTeamStream(teamId),
+            builder: (context, teamSnapshot) {
+              if (teamSnapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+              }
+              if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
+                return _buildTeamRemovedOrNotFoundUI(null, currentUserProfile.reference);
+              }
 
-            Team team = Team.fromSnapshot(teamSnapshot.data!);
-            bool isCurrentUserOwner = team.ownerId == user?.uid;
-            _targetDateController.text = DateFormat('MMMM d, y').format(team.targetDate ?? DateTime.now().add(const Duration(days: 100)));
+              Team team = Team.fromSnapshot(teamSnapshot.data!);
+              bool isCurrentUserOwner = team.ownerId == user?.uid;
+              _targetDateController.text = DateFormat('MMMM d, y').format(team.targetDate ?? DateTime.now().add(const Duration(days: 100)));
 
-            if (!(team.players?.contains(user?.uid) ?? false)) {
-              return _buildTeamRemovedOrNotFoundUI(team.name, currentUserProfile.reference);
-            }
+              if (!(team.players?.contains(user?.uid) ?? false)) {
+                return _buildTeamRemovedOrNotFoundUI(team.name, currentUserProfile.reference);
+              }
 
-            return StreamBuilder<List<Plyr>>(
-              stream: _getTeamPlayersDataStream(team.players ?? [], team.startDate!, team.targetDate!),
-              builder: (context, playersSnapshot) {
-                if (playersSnapshot.connectionState == ConnectionState.waiting && !(playersSnapshot.hasData && playersSnapshot.data!.isNotEmpty)) {
-                  return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
-                }
-                if (playersSnapshot.hasError) {
-                  return Center(child: Text("Error loading players: ${playersSnapshot.error}."));
-                }
+              return StreamBuilder<List<Plyr>>(
+                stream: _getTeamPlayersDataStream(team.players ?? [], team.startDate!, team.targetDate!),
+                builder: (context, playersSnapshot) {
+                  if (playersSnapshot.connectionState == ConnectionState.waiting && !(playersSnapshot.hasData && playersSnapshot.data!.isNotEmpty)) {
+                    return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));
+                  }
+                  if (playersSnapshot.hasError) {
+                    return Center(child: Text("Error loading players: ${playersSnapshot.error}."));
+                  }
 
-                List<Plyr> currentPlayers = playersSnapshot.data ?? [];
-                int currentTeamTotalShots = currentPlayers.fold(0, (sum, p) => sum + (p.shots ?? 0));
-                int numActivePlayers = currentPlayers.isNotEmpty ? currentPlayers.length : 1;
+                  List<Plyr> currentPlayers = playersSnapshot.data ?? [];
+                  int currentTeamTotalShots = currentPlayers.fold(0, (sum, p) => sum + (p.shots ?? 0));
+                  int numActivePlayers = currentPlayers.isNotEmpty ? currentPlayers.length : 1;
 
-                // Null safety and fallback for team fields
-                final String safeName = team.name ?? 'Team';
-                final DateTime safeStartDate = team.startDate ?? DateTime.now();
-                final DateTime safeTargetDate = team.targetDate ?? DateTime.now().add(const Duration(days: 100));
-                final int safeGoalTotal = team.goalTotal ?? 0;
-                final String safeOwnerId = team.ownerId ?? '';
-                final bool safeOwnerParticipating = team.ownerParticipating ?? false;
-                final bool safePublic = team.public ?? false;
-                final List<String> safePlayers = team.players ?? [];
-                final Team safeTeam = Team(
-                  safeName,
-                  safeStartDate,
-                  safeTargetDate,
-                  safeGoalTotal,
-                  safeOwnerId,
-                  safeOwnerParticipating,
-                  safePublic,
-                  safePlayers,
-                );
+                  // Null safety and fallback for team fields
+                  final String safeName = team.name ?? 'Team';
+                  final DateTime safeStartDate = team.startDate ?? DateTime.now();
+                  final DateTime safeTargetDate = team.targetDate ?? DateTime.now().add(const Duration(days: 100));
+                  final int safeGoalTotal = team.goalTotal ?? 0;
+                  final String safeOwnerId = team.ownerId ?? '';
+                  final bool safeOwnerParticipating = team.ownerParticipating ?? false;
+                  final bool safePublic = team.public ?? false;
+                  final List<String> safePlayers = team.players ?? [];
+                  final Team safeTeam = Team(
+                    safeName,
+                    safeStartDate,
+                    safeTargetDate,
+                    safeGoalTotal,
+                    safeOwnerId,
+                    safeOwnerParticipating,
+                    safePublic,
+                    safePlayers,
+                  );
 
-                final shotTexts = _calculateShotTexts(currentTeamTotalShots, safeTeam, numActivePlayers);
-                String displayShotsPerDayText = shotTexts['shotsPerDayText']!;
-                String displayShotsPerWeekText = shotTexts['shotsPerWeekText']!;
+                  final shotTexts = _calculateShotTexts(currentTeamTotalShots, safeTeam, numActivePlayers);
+                  String displayShotsPerDayText = shotTexts['shotsPerDayText']!;
+                  String displayShotsPerWeekText = shotTexts['shotsPerWeekText']!;
 
-                double totalShotsWidth = 0;
-                double totalShotsPercentage = 0;
-                if (safeGoalTotal > 0) {
-                  totalShotsPercentage = (currentTeamTotalShots / safeGoalTotal.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / safeGoalTotal.toDouble());
-                }
-                totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
-                if (totalShotsWidth < 0) totalShotsWidth = 0;
+                  double totalShotsWidth = 0;
+                  double totalShotsPercentage = 0;
+                  if (safeGoalTotal > 0) {
+                    totalShotsPercentage = (currentTeamTotalShots / safeGoalTotal.toDouble()) > 1 ? 1.0 : (currentTeamTotalShots / safeGoalTotal.toDouble());
+                  }
+                  totalShotsWidth = totalShotsPercentage * (MediaQuery.of(context).size.width - 60);
+                  if (totalShotsWidth < 0) totalShotsWidth = 0;
 
-                return SingleChildScrollView(
-                  physics: const ScrollPhysics(),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.only(top: 5, bottom: 0),
-                        margin: const EdgeInsets.only(bottom: 10, top: 15),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text("Goal".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
-                            SizedBox(
-                              width: 150,
-                              child: AutoSizeTextField(
-                                controller: _targetDateController,
-                                style: const TextStyle(fontSize: 12),
-                                maxLines: 1,
-                                maxFontSize: 14,
-                                decoration: InputDecoration(
-                                  labelText: "${numberFormat.format(safeGoalTotal)} Shots By:".toLowerCase(),
-                                  labelStyle: TextStyle(
-                                      color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  contentPadding: const EdgeInsets.all(2),
-                                ),
-                                readOnly: true,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                SizedBox(
-                                  width: 110,
-                                  child: GestureDetector(
-                                    onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
-                                    child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText,
-                                        maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
+                  return SingleChildScrollView(
+                    physics: const ScrollPhysics(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.only(top: 5, bottom: 0),
+                          margin: const EdgeInsets.only(bottom: 10, top: 15),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("Goal".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
+                              SizedBox(
+                                width: 150,
+                                child: AutoSizeTextField(
+                                  controller: _targetDateController,
+                                  style: const TextStyle(fontSize: 12),
+                                  maxLines: 1,
+                                  maxFontSize: 14,
+                                  decoration: InputDecoration(
+                                    labelText: "${numberFormat.format(safeGoalTotal)} Shots By:".toLowerCase(),
+                                    labelStyle: TextStyle(
+                                        color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    contentPadding: const EdgeInsets.all(2),
                                   ),
+                                  readOnly: true,
                                 ),
-                                InkWell(
-                                  onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.swap_vert, size: 18)),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  SizedBox(
+                                    width: 110,
+                                    child: GestureDetector(
+                                      onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
+                                      child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText,
+                                          maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
+                                    borderRadius: BorderRadius.circular(30),
+                                    child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.swap_vert, size: 18)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
-                      const SizedBox(height: 5),
-                      Column(children: [
-                        Container(
-                          width: (MediaQuery.of(context).size.width),
-                          margin: const EdgeInsets.symmetric(horizontal: 30),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).cardTheme.color),
-                          clipBehavior: Clip.antiAlias,
-                          child: Row(children: [
-                            Tooltip(
-                              message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
-                              textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                              child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: Theme.of(context).primaryColor)),
-                            ),
-                          ]),
-                        ),
-                        Container(
-                          width: (MediaQuery.of(context).size.width - 30),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                          clipBehavior: Clip.antiAlias,
-                          child: Row(children: [
-                            Container(
-                              height: 40,
-                              width: totalShotsWidth < 35
-                                  ? 50
-                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
-                                      ? totalShotsWidth - 175
-                                      : totalShotsWidth,
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                              child: AutoSizeText(numberFormat.format(currentTeamTotalShots),
-                                  textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                            ),
-                            Text(" / ${numberFormat.format(safeGoalTotal)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                          ]),
-                        ),
-                      ]),
-                      const SizedBox(height: 5),
-                      currentPlayers.isEmpty
-                          ? _buildNoPlayersOnTeamUI(team)
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(0),
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: currentPlayers.length,
-                              itemBuilder: (_, int index) {
-                                final Plyr p = currentPlayers[index];
-                                return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner);
-                              },
-                            ),
-                      if (isCurrentUserOwner) _buildEditTeamButton() else _buildLeaveTeamButton(team),
-                      const SizedBox(height: 56),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
+                        const SizedBox(height: 5),
+                        Column(children: [
+                          Container(
+                            width: (MediaQuery.of(context).size.width),
+                            margin: const EdgeInsets.symmetric(horizontal: 30),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).cardTheme.color),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(children: [
+                              Tooltip(
+                                message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: Theme.of(context).primaryColor)),
+                              ),
+                            ]),
+                          ),
+                          Container(
+                            width: (MediaQuery.of(context).size.width - 30),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(children: [
+                              Container(
+                                height: 40,
+                                width: totalShotsWidth < 35
+                                    ? 50
+                                    : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
+                                        ? totalShotsWidth - 175
+                                        : totalShotsWidth,
+                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                child: AutoSizeText(numberFormat.format(currentTeamTotalShots),
+                                    textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                              ),
+                              Text(" / ${numberFormat.format(safeGoalTotal)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                            ]),
+                          ),
+                        ]),
+                        const SizedBox(height: 5),
+                        currentPlayers.isEmpty
+                            ? _buildNoPlayersOnTeamUI(team)
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(0),
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: currentPlayers.length,
+                                itemBuilder: (_, int index) {
+                                  final Plyr p = currentPlayers[index];
+                                  return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner);
+                                },
+                              ),
+                        if (isCurrentUserOwner) _buildEditTeamButton() else _buildLeaveTeamButton(team),
+                        const SizedBox(height: 56),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 

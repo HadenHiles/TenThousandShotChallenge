@@ -18,6 +18,10 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart' as fam;
+import 'package:tenthousandshotchallenge/router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:go_router/go_router.dart';
 
 import '../mock_firebase.dart';
 import 'navigation_test.mocks.dart';
@@ -135,11 +139,34 @@ void main() {
   }
 
   group('Navigation Widget Tests', () {
-    testWidgets('Navigation renders correctly with valid index', (WidgetTester tester) async {
-      await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 0));
-      await tester.pump(); // Let the widget settle
-      await tester.pump(); // Pump again for auth state
-
+    testWidgets('Navigation renders correctly with valid index (go_router)', (WidgetTester tester) async {
+      final analytics = FirebaseAnalytics.instance;
+      final authNotifier = AuthChangeNotifier(mockFirebaseAuth);
+      final introShownNotifier = IntroShownNotifier.withValue(true);
+      final router = createAppRouter(
+        analytics,
+        authNotifier: authNotifier,
+        introShownNotifier: introShownNotifier,
+        initialLocation: '/app',
+      );
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) => MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+              Provider<Preferences>.value(value: Preferences(false, 25, true, DateTime.now().add(Duration(days: 100)), null)),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            child: child!,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
       expect(find.byType(Navigation), findsOneWidget);
       expect(find.byType(NavigationTab), findsOneWidget);
     });
@@ -168,38 +195,51 @@ void main() {
     });
 
     // Test different tab indices that are valid
-    for (int i = 0; i < 5; i++) {
-      testWidgets('Navigation displays tab $i correctly', (WidgetTester tester) async {
+    final tabLabels = ['Shots', 'Friends', 'Team', 'Explore', 'Profile'];
+    final tabWidgetFinders = [
+      find.byKey(const Key('shots_tab_body')),
+      find.byKey(const Key('friends_tab_body')),
+      find.byKey(const Key('team_tab_body')),
+      find.byKey(const Key('explore_tab_body')),
+      find.byKey(const Key('profile_tab_body')),
+    ];
+    for (int i = 0; i < tabLabels.length; i++) {
+      testWidgets('Navigation displays tab $i (${tabLabels[i]}) correctly', (WidgetTester tester) async {
         await tester.pumpWidget(createTestNavigationWidget(selectedIndex: i));
         await tester.pump();
         await tester.pump();
         expect(find.byType(Navigation), findsOneWidget);
+        // Check for tab-specific widget
+        expect(tabWidgetFinders[i], findsOneWidget);
       });
     }
 
-    testWidgets('Navigation selects correct tab with tabId', (WidgetTester tester) async {
-      // Should select the 'team' tab
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MultiProvider(
-            providers: [
-              Provider<TestEnv>.value(value: testEnv),
-              ChangeNotifierProvider<PreferencesStateNotifier>(
-                create: (_) => PreferencesStateNotifier(),
-              ),
-              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
-              Provider<FirebaseFirestore>.value(value: fakeFirestore),
-              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
-            ],
-            child: const Navigation(tabId: 'team'),
+    // Test selecting each tab by tabId
+    final tabIds = ['shots', 'friends', 'team', 'explore', 'profile'];
+    for (int i = 0; i < tabIds.length; i++) {
+      testWidgets('Navigation selects correct tab with tabId (${tabIds[i]})', (WidgetTester tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MultiProvider(
+              providers: [
+                Provider<TestEnv>.value(value: testEnv),
+                ChangeNotifierProvider<PreferencesStateNotifier>(
+                  create: (_) => PreferencesStateNotifier(),
+                ),
+                Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+                Provider<FirebaseFirestore>.value(value: fakeFirestore),
+                Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+              ],
+              child: Navigation(tabId: tabIds[i]),
+            ),
           ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(Navigation), findsOneWidget);
-      // Optionally, check for a widget unique to the Team tab
-    });
+        );
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(Navigation), findsOneWidget);
+        expect(tabWidgetFinders[i], findsOneWidget);
+      });
+    }
   });
 
   group('NavigationTab Widget Tests', () {
@@ -342,4 +382,39 @@ void main() {
       expect(find.byType(Navigation), findsOneWidget);
     });
   });
+}
+
+class TestNavigationHome extends StatefulWidget {
+  final int selectedIndex;
+  final String? tabId;
+  const TestNavigationHome({super.key, this.selectedIndex = 0, this.tabId});
+
+  @override
+  State<TestNavigationHome> createState() => _TestNavigationHomeState();
+}
+
+class _TestNavigationHomeState extends State<TestNavigationHome> {
+  late final GoRouter _router;
+  late final AuthChangeNotifier _authNotifier;
+  late final IntroShownNotifier _introShownNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _authNotifier = AuthChangeNotifier(mockFirebaseAuth);
+    _introShownNotifier = IntroShownNotifier.withValue(true);
+    _router = createAppRouter(
+      FirebaseAnalytics.instance,
+      authNotifier: _authNotifier,
+      introShownNotifier: _introShownNotifier,
+      initialLocation: '/app?tab=${widget.tabId ?? 'start'}',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: _router,
+    );
+  }
 }

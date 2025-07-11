@@ -887,6 +887,7 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const Key('profile_tab_body'),
       padding: const EdgeInsets.only(top: 15),
       child: SingleChildScrollView(
         // <-- Make the whole profile screen scrollable

@@ -99,6 +99,7 @@ class _ShotsState extends State<Shots> {
       builder: (context) {
         final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
         return Column(
+          key: const Key('shots_tab_body'),
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           children: [
