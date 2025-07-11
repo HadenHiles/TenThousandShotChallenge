@@ -305,42 +305,43 @@ void main() async {
     friends[userId] = {'teammates': friendsSubcollection};
   });
 
-  // Explore tab mock data
-  final exploreTab = {
-    'learn_videos': [
-      {
-        'id': 'vid1',
-        'title': 'Test Video',
-        'content': '<p>Test Content</p>',
-        'order': 1,
-        'buttonUrl': '',
-        'buttonText': '',
-      },
-    ],
-    'trainingPrograms': [
-      {
-        'title': 'Test Program',
-        'image': 'https://example.com/image.png',
-        'url': 'https://example.com',
-        'order': 1,
-      },
-    ],
-    'learn_to_play': [
-      {
-        'title': 'Test Learn',
-        'image': 'https://example.com/image.png',
-        'url': 'https://example.com',
-        'order': 1,
-      },
-    ],
-    'merch': [
-      {
-        'title': 'Test Merch',
-        'image': 'https://example.com/image.png',
-        'url': 'https://example.com',
-        'order': 1,
-      },
-    ],
+  // Explore tab mock data (split into separate objects, no top-level collection key)
+  final learnVideos = {
+    'vid1': {
+      'id': 'vid1',
+      'title': 'Test Video',
+      'content': '<p>Test Content</p>',
+      'order': 1,
+      'buttonUrl': '',
+      'buttonText': '',
+    },
+  };
+  final trainingPrograms = {
+    'prog1': {
+      'id': 'prog1',
+      'title': 'Test Program',
+      'image': 'https://example.com/image.png',
+      'url': 'https://example.com',
+      'order': 1,
+    },
+  };
+  final learnToPlay = {
+    'learn1': {
+      'id': 'learn1',
+      'title': 'Test Learn',
+      'image': 'https://example.com/image.png',
+      'url': 'https://example.com',
+      'order': 1,
+    },
+  };
+  final merch = {
+    'merch1': {
+      'id': 'merch1',
+      'title': 'Test Merch',
+      'image': 'https://example.com/image.png',
+      'url': 'https://example.com',
+      'order': 1,
+    },
   };
 
   final scriptDir = File(Platform.script.toFilePath()).parent.parent.path; // project root
@@ -351,7 +352,11 @@ void main() async {
   await File('${testDataDir.path}/iterations.json').writeAsString(JsonEncoder.withIndent('  ').convert(iterations));
   await File('${testDataDir.path}/invites.json').writeAsString(JsonEncoder.withIndent('  ').convert(invites));
   await File('${testDataDir.path}/friends.json').writeAsString(JsonEncoder.withIndent('  ').convert(friends));
-  await File('${testDataDir.path}/explore_tab.json').writeAsString(JsonEncoder.withIndent('  ').convert(exploreTab));
+  // Write each explore tab section to its own file
+  await File('${testDataDir.path}/learn_videos.json').writeAsString(JsonEncoder.withIndent('  ').convert(learnVideos));
+  await File('${testDataDir.path}/training_programs.json').writeAsString(JsonEncoder.withIndent('  ').convert(trainingPrograms));
+  await File('${testDataDir.path}/learn_to_play.json').writeAsString(JsonEncoder.withIndent('  ').convert(learnToPlay));
+  await File('${testDataDir.path}/merch.json').writeAsString(JsonEncoder.withIndent('  ').convert(merch));
 
   print('✅ Test data JSON files generated in test/test_data/');
 }
