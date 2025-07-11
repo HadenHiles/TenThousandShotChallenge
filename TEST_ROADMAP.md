@@ -10,7 +10,7 @@ This roadmap lists all major areas to cover with automated tests. For each item,
 
 - [x] Generate tests for user login/logout (email, Google, Apple, etc.) using our existing test patterns.
 - [x] Generate tests for registration and error handling using our existing test patterns.
-- [ ] Generate tests for intro screen logic (shown only once) using our existing test patterns.
+- [x] Generate tests for intro screen logic (shown when not completed previously) using our existing test patterns.
 
 ### 2. User Profile
 
