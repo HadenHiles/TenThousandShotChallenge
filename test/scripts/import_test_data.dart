@@ -25,8 +25,8 @@ Future<void> importUsers() async {
   final csvFile = File(csvPath);
   final csvSink = csvFile.openWrite();
   csvSink.writeln('email,password,localId,displayName');
-  for (final user in usersData) {
-    csvSink.writeln('${user['email']},testpass123,${user['uid']},${user['display_name']}');
+  for (final user in usersData.values) {
+    csvSink.writeln('${user['email']},testpass123,${user['id']},${user['display_name']}');
   }
   await csvSink.close();
 
