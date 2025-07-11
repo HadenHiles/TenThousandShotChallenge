@@ -9,6 +9,7 @@ import 'package:sign_in_button/sign_in_button.dart';
 import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
+import 'package:go_router/go_router.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -763,10 +764,18 @@ class _LoginState extends State<Login> {
         });
 
         // Use context directly here, do not wrap in Builder
-        bootstrap(
+        await bootstrap(
           auth,
           firestore,
         );
+        // Navigate to main app after successful login
+        if (mounted) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+          // ignore: use_build_context_synchronously
+          GoRouter.of(context).go('/app');
+        }
       });
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {

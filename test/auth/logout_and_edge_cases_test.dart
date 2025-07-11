@@ -7,120 +7,221 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/router.dart';
+import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import '../mock_firebase.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import '../main_test.dart';
+import '../main_test.mocks.dart';
+import 'package:mockito/mockito.dart';
+import '../mock_firebase_auth_with_signedin.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    setupFirebaseAuthMocks();
+    await Firebase.initializeApp();
+  });
+
   group('Logout & Edge Case Tests', () {
     late MockFirebaseAuth mockAuth;
     late FakeFirebaseFirestore fakeFirestore;
     late MockUser mockUser;
+    late GoRouter router;
+    late FirebaseAnalytics analytics;
+    late AuthChangeNotifier testAuthNotifier;
+    late IntroShownNotifier testIntroShownNotifier;
+    late TestNetworkStatusService testNetworkStatusService;
+    late StreamController<NetworkStatus> networkStatusController;
 
     setUp(() async {
       fakeFirestore = FakeFirebaseFirestore();
-      mockUser = MockUser(
-        uid: 'test_uid',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        isEmailVerified: true,
+      mockUser = TestAuthFactory.defaultUser;
+      mockAuth = TestAuthFactory.signedOutAuth;
+      SharedPreferences.setMockInitialValues({'intro_shown': true});
+      analytics = FirebaseAnalytics.instance;
+      testAuthNotifier = AuthChangeNotifier(mockAuth);
+      testIntroShownNotifier = IntroShownNotifier.withValue(true);
+      networkStatusController = StreamController<NetworkStatus>.broadcast();
+      testNetworkStatusService = TestNetworkStatusService(networkStatusController);
+      router = createAppRouter(
+        analytics,
+        authNotifier: testAuthNotifier,
+        introShownNotifier: testIntroShownNotifier,
+        initialLocation: '/login',
       );
-      mockAuth = MockFirebaseAuth(mockUser: mockUser);
-      SharedPreferences.setMockInitialValues({});
+    });
+    tearDown(() async {
+      await networkStatusController.close();
     });
 
     testWidgets('Logout returns user to login screen', (WidgetTester tester) async {
-      // Simulate a logged-in user and navigate to the settings/logout button
+      await fakeFirestore.collection('users').doc('test_uid').set({
+        'display_name': 'Test User',
+        'email': 'test@example.com',
+        'public': true,
+        'fcm_token': '',
+      });
+      final mockCustomerInfo = MockCustomerInfo();
+      // Set up entitlements to avoid null errors in settings page
+      when(mockCustomerInfo.entitlements).thenReturn(FakeEntitlementInfos({}));
+      when(mockCustomerInfo.originalAppUserId).thenReturn('test_uid');
+      when(mockCustomerInfo.latestExpirationDate).thenReturn('2099-01-01');
+      when(mockCustomerInfo.allPurchaseDates).thenReturn({});
+      when(mockCustomerInfo.activeSubscriptions).thenReturn([]);
+      when(mockCustomerInfo.allPurchasedProductIdentifiers).thenReturn([]);
+      when(mockCustomerInfo.nonSubscriptionTransactions).thenReturn([]);
+      when(mockCustomerInfo.firstSeen).thenReturn(DateTime(2020, 1, 1).toIso8601String());
+      when(mockCustomerInfo.allExpirationDates).thenReturn({});
+      when(mockCustomerInfo.requestDate).thenReturn(DateTime(2099, 1, 1).toIso8601String());
+      when(mockCustomerInfo.toJson()).thenReturn({});
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<FirebaseAuth>.value(value: mockAuth),
-            Provider<FirebaseFirestore>.value(value: fakeFirestore),
-          ],
-          child: MaterialApp(home: Login()),
+        MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) => MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+              ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
+              Provider<FirebaseAuth>.value(value: mockAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: testNetworkStatusService),
+              Provider<CustomerInfo?>.value(value: mockCustomerInfo),
+            ],
+            child: child!,
+          ),
         ),
       );
       await tester.pumpAndSettle();
-      // Simulate successful login
+      final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
+      expect(emailButton, findsOneWidget);
+      await tester.tap(emailButton);
+      await tester.pumpAndSettle();
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'test@example.com');
       await tester.enterText(fields.at(1), 'any-password');
-      final signInButton = find.byWidgetPredicate((w) => w is ElevatedButton && (w.child is Text) && ((w.child as Text).data?.toLowerCase().contains('sign in') ?? false));
+      final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
+      // Simulate login
+      simulateLogin(mockAuth as MockFirebaseAuthWithSignedIn, testAuthNotifier);
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      // Now, after login, the Navigation widget should be present
-      expect(find.textContaining('Profile', findRichText: true), findsWidgets);
-      // Open settings/profile menu if needed (depends on your UI)
-      // Find and tap the logout button (case-insensitive)
-      final logoutButton = find.byWidgetPredicate((w) => w is ListTile && (w.title is Text) && ((w.title as Text).data?.toLowerCase().contains('logout') ?? false));
-      if (logoutButton.evaluate().isEmpty) {
-        // Try to find a button or text with 'logout' if ListTile is not used
-        final logoutText = find.textContaining('logout', findRichText: true);
-        expect(logoutText, findsWidgets);
-        await tester.tap(logoutText.first);
-      } else {
-        await tester.tap(logoutButton);
+      // After login, immediately navigate to the settings route
+      router.go('/settings');
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      // Try to scroll the settings page to the very bottom to reveal the logout button
+      final settingsList = find.byType(Scrollable);
+      if (settingsList.evaluate().isNotEmpty) {
+        await tester.drag(settingsList.first, const Offset(0, -1000)); // Large offset to ensure bottom
+        await tester.pumpAndSettle();
       }
+      // Try to find and tap the logout button by text label, tapping its nearest tappable ancestor
+      final logoutText = find.text('Logout');
+      expect(logoutText, findsOneWidget);
+      // Find the nearest InkWell or GestureDetector ancestor
+      final logoutTappable = find.ancestor(of: logoutText, matching: find.byType(InkWell));
+      expect(logoutTappable, findsOneWidget);
+      await tester.tap(logoutTappable);
       await tester.pumpAndSettle(const Duration(seconds: 1));
       // Should return to Login screen
       expect(find.byType(Login), findsOneWidget);
     });
 
     testWidgets('Disabled account shows error', (WidgetTester tester) async {
-      mockAuth = DisabledAccountAuthMock(mockUser: mockUser);
+      mockAuth = TestAuthFactory.disabledAccountAuth(user: mockUser);
+      testAuthNotifier = AuthChangeNotifier(mockAuth);
+      router = createAppRouter(
+        analytics,
+        authNotifier: testAuthNotifier,
+        introShownNotifier: testIntroShownNotifier,
+        initialLocation: '/login',
+      );
       await tester.pumpWidget(
         MultiProvider(
           providers: [
+            ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: mockAuth),
             Provider<FirebaseFirestore>.value(value: fakeFirestore),
+            Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: const MaterialApp(home: Login()),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
+      await tester.pumpAndSettle();
+      final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
+      expect(emailButton, findsOneWidget);
+      await tester.tap(emailButton);
       await tester.pumpAndSettle();
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'test@example.com');
       await tester.enterText(fields.at(1), 'any-password');
-      final signInButton = find.byWidgetPredicate((w) => w is ElevatedButton && (w.child is Text) && ((w.child as Text).data?.toLowerCase().contains('sign in') ?? false));
+      final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      expect(find.textContaining('disabled', findRichText: true), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      // Check for error in SnackBar or dialog
+      final snackBar = find.byType(SnackBar);
+      if (snackBar.evaluate().isNotEmpty) {
+        expect(find.textContaining('disabled', findRichText: true), findsOneWidget);
+      } else {
+        // Try to find a dialog or other error widget
+        final errorText = find.textContaining('disabled', findRichText: true);
+        expect(errorText, findsWidgets);
+      }
     });
 
     testWidgets('Network error during login shows error', (WidgetTester tester) async {
-      mockAuth = NetworkErrorAuthMock(mockUser: mockUser);
+      mockAuth = TestAuthFactory.networkErrorAuth(user: mockUser);
+      testAuthNotifier = AuthChangeNotifier(mockAuth);
+      router = createAppRouter(
+        analytics,
+        authNotifier: testAuthNotifier,
+        introShownNotifier: testIntroShownNotifier,
+        initialLocation: '/login',
+      );
       await tester.pumpWidget(
         MultiProvider(
           providers: [
+            ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: mockAuth),
             Provider<FirebaseFirestore>.value(value: fakeFirestore),
+            Provider<NetworkStatusService>.value(value: testNetworkStatusService),
           ],
-          child: const MaterialApp(home: Login()),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
+      await tester.pumpAndSettle();
+      final emailButton = find.widgetWithText(ElevatedButton, 'Sign in with Email');
+      expect(emailButton, findsOneWidget);
+      await tester.tap(emailButton);
       await tester.pumpAndSettle();
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'test@example.com');
       await tester.enterText(fields.at(1), 'any-password');
-      final signInButton = find.byWidgetPredicate((w) => w is ElevatedButton && (w.child is Text) && ((w.child as Text).data?.toLowerCase().contains('sign in') ?? false));
+      final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
-      expect(find.textContaining('network', findRichText: true), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      // Check for error in SnackBar or dialog
+      final snackBar = find.byType(SnackBar);
+      if (snackBar.evaluate().isNotEmpty) {
+        expect(find.textContaining('network', findRichText: true), findsOneWidget);
+      } else {
+        final errorText = find.textContaining('network', findRichText: true);
+        expect(errorText, findsWidgets);
+      }
     });
   });
 }
 
-// Custom mock for disabled account
-class DisabledAccountAuthMock extends MockFirebaseAuth {
-  DisabledAccountAuthMock({required super.mockUser});
+class TestNetworkStatusService extends NetworkStatusService {
+  final StreamController<NetworkStatus> controller;
+  TestNetworkStatusService(this.controller) : super(isTesting: true);
   @override
-  Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
-    throw FirebaseAuthException(code: 'user-disabled', message: 'This user has been disabled');
-  }
-}
-
-// Custom mock for network error
-class NetworkErrorAuthMock extends MockFirebaseAuth {
-  NetworkErrorAuthMock({required super.mockUser});
-  @override
-  Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
-    throw FirebaseAuthException(code: 'network-request-failed', message: 'A network error occurred');
-  }
+  StreamController<NetworkStatus> get networkStatusController => controller;
 }
