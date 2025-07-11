@@ -220,7 +220,7 @@ class _NavigationState extends State<Navigation> {
                   size: 28,
                 ),
                 onPressed: () {
-                  context.push('/profile/settings/settings');
+                  context.push('/settings');
                 },
               ),
             ),

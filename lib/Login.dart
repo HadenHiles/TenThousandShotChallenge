@@ -44,6 +44,7 @@ class _LoginState extends State<Login> {
   // State variables
   // bool _signedIn = false;
   bool _hidePassword = true;
+  String _signUpDialogError = '';
 
   @override
   void initState() {
@@ -478,177 +479,179 @@ class _LoginState extends State<Login> {
                             setState(() {
                               _hidePassword = true;
                             });
-
                             showDialog(
                               context: context,
                               builder: (context) {
-                                return SimpleDialog(
-                                  contentPadding: const EdgeInsets.all(25),
-                                  children: [
-                                    SingleChildScrollView(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          Wrap(
-                                            alignment: WrapAlignment.spaceBetween,
-                                            crossAxisAlignment: WrapCrossAlignment.center,
-                                            spacing: 8.0,
+                                return StatefulBuilder(
+                                  builder: (context, setDialogState) {
+                                    return SimpleDialog(
+                                      contentPadding: const EdgeInsets.all(25),
+                                      children: [
+                                        SingleChildScrollView(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.start,
                                             children: [
-                                              SizedBox(
-                                                height: 50,
-                                                child: Image.asset(
-                                                  'assets/images/logo-small-red.png',
-                                                  width: 120,
-                                                ),
+                                              Wrap(
+                                                alignment: WrapAlignment.spaceBetween,
+                                                crossAxisAlignment: WrapCrossAlignment.center,
+                                                spacing: 8.0,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 50,
+                                                    child: Image.asset(
+                                                      'assets/images/logo-small-red.png',
+                                                      width: 120,
+                                                    ),
+                                                  ),
+                                                  const Text(
+                                                    'SIGN UP',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
                                               ),
-                                              const Text(
-                                                'SIGN UP',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
+                                              Form(
+                                                key: _signUpFormKey,
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: <Widget>[
+                                                    Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: TextFormField(
+                                                        controller: _signUpEmail,
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Email',
+                                                          labelStyle: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                          hintText: 'Enter your email',
+                                                          hintStyle: TextStyle(
+                                                            color: Theme.of(context).cardTheme.color,
+                                                          ),
+                                                        ),
+                                                        keyboardType: TextInputType.emailAddress,
+                                                        validator: (String? value) {
+                                                          if (value!.isEmpty) {
+                                                            return 'Please enter your email';
+                                                          }
+                                                          if (!validEmail(value)) {
+                                                            return 'Invalid email address';
+                                                          }
+
+                                                          return null;
+                                                        },
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: TextFormField(
+                                                        controller: _signUpPass,
+                                                        obscureText: _hidePassword,
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Password',
+                                                          labelStyle: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                          hintText: 'Enter your password',
+                                                          hintStyle: TextStyle(
+                                                            color: Theme.of(context).cardTheme.color,
+                                                          ),
+                                                        ),
+                                                        keyboardType: TextInputType.visiblePassword,
+                                                        validator: (String? value) {
+                                                          if (value!.isEmpty) {
+                                                            return 'Please enter a password';
+                                                          } else if (!validPassword(value)) {
+                                                            return 'Please enter a stronger password';
+                                                          }
+
+                                                          return null;
+                                                        },
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: TextFormField(
+                                                        controller: _signUpConfirmPass,
+                                                        obscureText: _hidePassword,
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Confirm Password',
+                                                          labelStyle: TextStyle(
+                                                            color: Theme.of(context).colorScheme.onPrimary,
+                                                          ),
+                                                          hintText: 'Confirm your password',
+                                                          hintStyle: TextStyle(
+                                                            color: Theme.of(context).cardTheme.color,
+                                                          ),
+                                                        ),
+                                                        keyboardType: TextInputType.visiblePassword,
+                                                        validator: (String? value) {
+                                                          if (value!.isEmpty) {
+                                                            return 'Please confirm your password';
+                                                          } else if (value != _signUpPass.text) {
+                                                            return 'Passwords do not match';
+                                                          }
+
+                                                          return null;
+                                                        },
+                                                      ),
+                                                    ),
+                                                    if (_signUpDialogError.isNotEmpty)
+                                                      Padding(
+                                                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                                        child: Text(
+                                                          _signUpDialogError,
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                          textAlign: TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: SizedBox(
+                                                        width: double.infinity,
+                                                        child: ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: Theme.of(context).primaryColor,
+                                                            foregroundColor: Colors.white,
+                                                          ),
+                                                          child: const Text("Sign up"),
+                                                          onPressed: () async {
+                                                            if (_signUpFormKey.currentState!.validate()) {
+                                                              _signUpFormKey.currentState!.save();
+                                                              signUp(
+                                                                context,
+                                                                AuthAttempt(
+                                                                  _signUpEmail.text,
+                                                                  _signUpPass.text,
+                                                                ),
+                                                                (error) async {
+                                                                  setDialogState(() {
+                                                                    setState(() {
+                                                                      _signUpDialogError = error;
+                                                                    });
+                                                                  });
+                                                                },
+                                                              );
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
-                                          Form(
-                                            key: _signUpFormKey,
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: <Widget>[
-                                                Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: TextFormField(
-                                                    controller: _signUpEmail,
-                                                    decoration: InputDecoration(
-                                                      labelText: 'Email',
-                                                      labelStyle: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                      hintText: 'Enter your email',
-                                                      hintStyle: TextStyle(
-                                                        color: Theme.of(context).cardTheme.color,
-                                                      ),
-                                                    ),
-                                                    keyboardType: TextInputType.emailAddress,
-                                                    validator: (String? value) {
-                                                      if (value!.isEmpty) {
-                                                        return 'Please enter your email';
-                                                      }
-                                                      if (!validEmail(value)) {
-                                                        return 'Invalid email address';
-                                                      }
-
-                                                      return null;
-                                                    },
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: TextFormField(
-                                                    controller: _signUpPass,
-                                                    obscureText: _hidePassword,
-                                                    decoration: InputDecoration(
-                                                      labelText: 'Password',
-                                                      labelStyle: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                      hintText: 'Enter your password',
-                                                      hintStyle: TextStyle(
-                                                        color: Theme.of(context).cardTheme.color,
-                                                      ),
-                                                    ),
-                                                    keyboardType: TextInputType.visiblePassword,
-                                                    validator: (String? value) {
-                                                      if (value!.isEmpty) {
-                                                        return 'Please enter a password';
-                                                      } else if (!validPassword(value)) {
-                                                        return 'Please enter a stronger password';
-                                                      }
-
-                                                      return null;
-                                                    },
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: TextFormField(
-                                                    controller: _signUpConfirmPass,
-                                                    obscureText: _hidePassword,
-                                                    decoration: InputDecoration(
-                                                      labelText: 'Confirm Password',
-                                                      labelStyle: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                      hintText: 'Confirm your password',
-                                                      hintStyle: TextStyle(
-                                                        color: Theme.of(context).cardTheme.color,
-                                                      ),
-                                                    ),
-                                                    keyboardType: TextInputType.visiblePassword,
-                                                    validator: (String? value) {
-                                                      if (value!.isEmpty) {
-                                                        return 'Please confirm your password';
-                                                      } else if (value != _signUpPass.text) {
-                                                        return 'Passwords do not match';
-                                                      }
-
-                                                      return null;
-                                                    },
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: SizedBox(
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Theme.of(context).primaryColor,
-                                                        foregroundColor: Colors.white,
-                                                      ),
-                                                      child: const Text("Sign up"),
-                                                      onPressed: () async {
-                                                        if (_signUpFormKey.currentState!.validate()) {
-                                                          _signUpFormKey.currentState!.save();
-
-                                                          signUp(
-                                                              context,
-                                                              AuthAttempt(
-                                                                _signUpEmail.text,
-                                                                _signUpPass.text,
-                                                              ), (error) async {
-                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                              SnackBar(
-                                                                backgroundColor: Theme.of(context).cardTheme.color,
-                                                                content: Text(
-                                                                  error,
-                                                                  style: TextStyle(
-                                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                                  ),
-                                                                ),
-                                                                duration: const Duration(seconds: 10),
-                                                                action: SnackBarAction(
-                                                                  label: "Dismiss",
-                                                                  onPressed: () {
-                                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                                  },
-                                                                ),
-                                                              ),
-                                                            );
-                                                          });
-                                                        }
-                                                      },
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             );
