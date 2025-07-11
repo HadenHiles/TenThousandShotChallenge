@@ -305,6 +305,44 @@ void main() async {
     friends[userId] = {'teammates': friendsSubcollection};
   });
 
+  // Explore tab mock data
+  final exploreTab = {
+    'learn_videos': [
+      {
+        'id': 'vid1',
+        'title': 'Test Video',
+        'content': '<p>Test Content</p>',
+        'order': 1,
+        'buttonUrl': '',
+        'buttonText': '',
+      },
+    ],
+    'trainingPrograms': [
+      {
+        'title': 'Test Program',
+        'image': 'https://example.com/image.png',
+        'url': 'https://example.com',
+        'order': 1,
+      },
+    ],
+    'learn_to_play': [
+      {
+        'title': 'Test Learn',
+        'image': 'https://example.com/image.png',
+        'url': 'https://example.com',
+        'order': 1,
+      },
+    ],
+    'merch': [
+      {
+        'title': 'Test Merch',
+        'image': 'https://example.com/image.png',
+        'url': 'https://example.com',
+        'order': 1,
+      },
+    ],
+  };
+
   final scriptDir = File(Platform.script.toFilePath()).parent.parent.path; // project root
   final testDataDir = Directory('$scriptDir/test/test_data');
   await testDataDir.create(recursive: true);
@@ -313,6 +351,7 @@ void main() async {
   await File('${testDataDir.path}/iterations.json').writeAsString(JsonEncoder.withIndent('  ').convert(iterations));
   await File('${testDataDir.path}/invites.json').writeAsString(JsonEncoder.withIndent('  ').convert(invites));
   await File('${testDataDir.path}/friends.json').writeAsString(JsonEncoder.withIndent('  ').convert(friends));
+  await File('${testDataDir.path}/explore_tab.json').writeAsString(JsonEncoder.withIndent('  ').convert(exploreTab));
 
   print('✅ Test data JSON files generated in test/test_data/');
 }

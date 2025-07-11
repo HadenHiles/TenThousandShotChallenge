@@ -20,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
-import 'package:tenthousandshotchallenge/testing.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -649,14 +648,5 @@ class _NavigationState extends State<Navigation> {
         ),
       ),
     );
-  }
-}
-
-// Stub for Explore tab in widget tests
-class _ExploreTestStub extends StatelessWidget {
-  const _ExploreTestStub();
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text('Explore (Test Stub)'));
   }
 }
