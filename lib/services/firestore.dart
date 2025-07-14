@@ -76,15 +76,74 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
 
   try {
     final snapshot = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get();
+    bool result = false;
+    DocumentReference? iterationRef;
     if (snapshot.docs.isNotEmpty) {
       iteration = Iteration.fromSnapshot(snapshot.docs[0]);
-      final result = await saveSessionData(shootingSession, snapshot.docs[0].reference, shots, firestore);
-      return result;
+      iterationRef = snapshot.docs[0].reference;
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
     } else {
       final i = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap());
-      final result = await saveSessionData(shootingSession, i, shots, firestore);
-      return result;
+      iterationRef = i;
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
     }
+
+    // --- Update summary stats after saving session ---
+    // Get all sessions in current iteration (season)
+    final sessionsSnap = await iterationRef.collection('sessions').orderBy('date', descending: true).get();
+    List<Map<String, dynamic>> recentSessions = [];
+    int seasonTotalShots = 0;
+    int seasonTargetsHit = 0;
+    Map<String, int> seasonShotTypeTotals = {"wrist": 0, "snap": 0, "slap": 0, "backhand": 0};
+    Map<String, int> seasonTargetsHitType = {"wrist": 0, "snap": 0, "slap": 0, "backhand": 0};
+    Map<String, double> seasonAccuracyType = {"wrist": 0.0, "snap": 0.0, "slap": 0.0, "backhand": 0.0};
+
+    int sessionCount = 0;
+    for (var sessionDoc in sessionsSnap.docs) {
+      final s = sessionDoc.data();
+      if (sessionCount < 10) {
+        recentSessions.add({
+          "date": s["date"],
+          "shots": {"wrist": s["total_wrist"] ?? 0, "snap": s["total_snap"] ?? 0, "slap": s["total_slap"] ?? 0, "backhand": s["total_backhand"] ?? 0},
+          "targetsHit": {"wrist": s["wrist_targets_hit"] ?? 0, "snap": s["snap_targets_hit"] ?? 0, "slap": s["slap_targets_hit"] ?? 0, "backhand": s["backhand_targets_hit"] ?? 0}
+        });
+      }
+      sessionCount++;
+      seasonTotalShots += s["total"] is num ? (s["total"] as num).toInt() : 0;
+      seasonShotTypeTotals["wrist"] = (seasonShotTypeTotals["wrist"] ?? 0) + (s["total_wrist"] is num ? (s["total_wrist"] as num).toInt() : 0);
+      seasonShotTypeTotals["snap"] = (seasonShotTypeTotals["snap"] ?? 0) + (s["total_snap"] is num ? (s["total_snap"] as num).toInt() : 0);
+      seasonShotTypeTotals["slap"] = (seasonShotTypeTotals["slap"] ?? 0) + (s["total_slap"] is num ? (s["total_slap"] as num).toInt() : 0);
+      seasonShotTypeTotals["backhand"] = (seasonShotTypeTotals["backhand"] ?? 0) + (s["total_backhand"] is num ? (s["total_backhand"] as num).toInt() : 0);
+      seasonTargetsHitType["wrist"] = (seasonTargetsHitType["wrist"] ?? 0) + (s["wrist_targets_hit"] is num ? (s["wrist_targets_hit"] as num).toInt() : 0);
+      seasonTargetsHitType["snap"] = (seasonTargetsHitType["snap"] ?? 0) + (s["snap_targets_hit"] is num ? (s["snap_targets_hit"] as num).toInt() : 0);
+      seasonTargetsHitType["slap"] = (seasonTargetsHitType["slap"] ?? 0) + (s["slap_targets_hit"] is num ? (s["slap_targets_hit"] as num).toInt() : 0);
+      seasonTargetsHitType["backhand"] = (seasonTargetsHitType["backhand"] ?? 0) + (s["backhand_targets_hit"] is num ? (s["backhand_targets_hit"] as num).toInt() : 0);
+    }
+
+    seasonTargetsHit = seasonTargetsHitType.values.reduce((a, b) => a + b);
+    // Calculate accuracy per shot type
+    for (var type in seasonShotTypeTotals.keys) {
+      int shots = seasonShotTypeTotals[type]!;
+      int hits = seasonTargetsHitType[type]!;
+      seasonAccuracyType[type] = shots > 0 ? (hits / shots) * 100.0 : 0.0;
+    }
+    double seasonAccuracy = seasonTotalShots > 0 ? (seasonTargetsHit / seasonTotalShots) * 100.0 : 0.0;
+
+    // Write summary stats to /users/{userId}/stats/weekly
+    final statsRef = firestore.collection('users').doc(auth.currentUser!.uid).collection('stats').doc('weekly');
+    await statsRef.set({
+      "weekStart": DateTime.now(),
+      "totalSessions": sessionsSnap.docs.length,
+      "totalShots": seasonShotTypeTotals,
+      "targetsHit": seasonTargetsHitType,
+      "accuracy": seasonAccuracyType,
+      "season_total_shots": seasonTotalShots,
+      "season_targets_hit": seasonTargetsHit,
+      "season_accuracy": seasonAccuracy,
+      "sessions": recentSessions
+    });
+
+    return result;
   } catch (e) {
     print(e);
     return false;
