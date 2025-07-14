@@ -18,6 +18,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
@@ -98,6 +99,8 @@ class _ShotsState extends State<Shots> {
       locale: LocaleType.en,
     );
   }
+
+  bool _achievementsCollapsed = true;
 
   @override
   Widget build(BuildContext context) {
@@ -293,9 +296,6 @@ class _ShotsState extends State<Shots> {
                         ),
                       ],
                     ),
-                    const SizedBox(
-                      height: 5,
-                    ),
                     FutureBuilder<QuerySnapshot>(
                       future: _activeIterationFuture,
                       builder: (context, snapshot) {
@@ -448,9 +448,67 @@ class _ShotsState extends State<Shots> {
                         }
                       },
                     ),
-                    const SizedBox(
-                      height: 5,
+
+                    // Weekly Achievements collapsible section below progress bar
+                    Card(
+                      color: Theme.of(context).cardTheme.color,
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Column(
+                        children: [
+                          InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              setState(() {
+                                _achievementsCollapsed = !_achievementsCollapsed;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.emoji_events, color: Theme.of(context).primaryColor, size: 28),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Weekly Achievements',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).primaryColor,
+                                          fontFamily: 'NovecentoSans',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Icon(
+                                    _achievementsCollapsed ? Icons.expand_more : Icons.expand_less,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 28,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          AnimatedCrossFade(
+                            duration: const Duration(milliseconds: 250),
+                            crossFadeState: _achievementsCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                            firstChild: Container(),
+                            secondChild: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              child: SizedBox(
+                                height: 180,
+                                child: WeeklyAchievementsWidget(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    SizedBox(height: 10),
                     FutureBuilder<QuerySnapshot>(
                       future: _activeIterationFuture,
                       builder: (context, snapshot) {

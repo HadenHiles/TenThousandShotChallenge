@@ -16,8 +16,8 @@
   "dependencies": {
     "@types/request-promise": "^4.1.47",
     "@types/request-promise-native": "^1.0.17",
-    "firebase-admin": "^12.1.1",
-    "firebase-functions": "^3.11.0",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.3.2",
     "googleapis": "^140.0.0",
     "https": "^1.0.0",
     "request": "^2.88.2",

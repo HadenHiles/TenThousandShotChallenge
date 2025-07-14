@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart' show RevenueCatUI;
 
-void presentPaywallIfNeeded() async {
+Future<void> presentPaywallIfNeeded() async {
   final paywallResult = await RevenueCatUI.presentPaywallIfNeeded("pro");
   log('Paywall result: $paywallResult');
 }

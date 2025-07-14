@@ -48,10 +48,19 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   }
 
   _loadSubscriptionLevel() async {
-    subscriptionLevel(context).then((level) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    subscriptionLevel(context).then((level) async {
       setState(() {
         _subscriptionLevel = level;
       });
+      // If just upgraded, reload app and navigate to settings
+      if (prefs.getBool('just_upgraded_to_pro') == true) {
+        prefs.setBool('just_upgraded_to_pro', false);
+        // Reload app and navigate to settings
+        Future.microtask(() {
+          GoRouter.of(context).go('/settings');
+        });
+      }
     }).catchError((error) {
       print("Error loading subscription level: $error");
     });
@@ -203,7 +212,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
                                   content: SizedBox(
-                                    height: 215,
+                                    height: 220,
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +298,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         ),
                                         const SizedBox(height: 13),
                                         SelectableText(
-                                          "ID: ${Provider.of<CustomerInfo>(context, listen: false).originalAppUserId}",
+                                          "ID: ${user?.uid ?? 'N/A'}",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                             fontSize: 11,
@@ -338,9 +347,12 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                     if (_subscriptionLevel != "pro")
                                       ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           Navigator.of(context).pop();
-                                          presentPaywallIfNeeded();
+                                          await presentPaywallIfNeeded();
+                                          // After upgrade, set shared pref and reload app
+                                          GoRouter.of(context).replace("/profile");
+                                          GoRouter.of(context).push("/settings");
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
