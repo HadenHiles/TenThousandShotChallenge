@@ -120,7 +120,7 @@ class _NavigationState extends State<Navigation> {
                 ),
                 onPressed: () {
                   // Ensure context is from a builder, not from the class field initializer
-                  context.push('/tabs/friends/addFriend');
+                  context.push('/add-friend');
                 },
               ),
             ),

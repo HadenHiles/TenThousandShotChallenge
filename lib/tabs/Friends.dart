@@ -126,31 +126,88 @@ class _FriendsState extends State<Friends> {
               decoration: BoxDecoration(
                 color: HomeTheme.darkTheme.colorScheme.primaryContainer,
               ),
-              child: TabBar(
-                indicatorColor: Theme.of(context).primaryColor,
-                unselectedLabelColor: Colors.white70,
-                labelColor: Colors.white70,
-                labelStyle: const TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 18,
-                ),
-                labelPadding: const EdgeInsets.all(0),
-                tabs: [
-                  Tab(
-                    icon: const Icon(
-                      Icons.people,
-                      color: Colors.white70,
+              child: Column(
+                children: [
+                  TabBar(
+                    indicatorColor: Theme.of(context).primaryColor,
+                    unselectedLabelColor: Colors.white70,
+                    labelColor: Colors.white70,
+                    labelStyle: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 18,
                     ),
-                    iconMargin: const EdgeInsets.all(0),
-                    text: "Friends".toUpperCase(),
+                    labelPadding: const EdgeInsets.all(0),
+                    tabs: [
+                      Tab(
+                        icon: const Icon(
+                          Icons.people,
+                          color: Colors.white70,
+                        ),
+                        iconMargin: const EdgeInsets.all(0),
+                        text: "Friends".toUpperCase(),
+                      ),
+                      Tab(
+                        icon: const Icon(
+                          Icons.person_add,
+                          color: Colors.white70,
+                        ),
+                        iconMargin: const EdgeInsets.all(0),
+                        text: "Invites".toUpperCase(),
+                      ),
+                    ],
                   ),
-                  Tab(
-                    icon: const Icon(
-                      Icons.person_add,
-                      color: Colors.white70,
-                    ),
-                    iconMargin: const EdgeInsets.all(0),
-                    text: "Invites".toUpperCase(),
+                  // Accept All button for Invites tab
+                  Builder(
+                    builder: (context) {
+                      final tabController = DefaultTabController.of(context);
+                      return AnimatedBuilder(
+                        animation: tabController,
+                        builder: (context, child) {
+                          if (tabController.index == 1 && _invites.isNotEmpty) {
+                            return Container(
+                              alignment: Alignment.centerRight,
+                              margin: const EdgeInsets.only(right: 16, top: 8, bottom: 4),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onPressed: () async {
+                                  for (int i = 0; i < _invites.length; i++) {
+                                    final UserProfile friend = UserProfile.fromSnapshot(_invites[i]);
+                                    await acceptInvite(
+                                      Invite(friend.reference!.id, DateTime.now()),
+                                      Provider.of<FirebaseAuth>(context, listen: false),
+                                      Provider.of<FirebaseFirestore>(context, listen: false),
+                                    );
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                      content: const Text(
+                                        "All invites accepted!",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      duration: const Duration(milliseconds: 2000),
+                                    ),
+                                  );
+                                  _loadFriends();
+                                  _loadInvites();
+                                },
+                                child: const Text(
+                                  "Accept All",
+                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16),
+                                ),
+                              ),
+                            );
+                          } else {
+                            return const SizedBox.shrink();
+                          }
+                        },
+                      );
+                    },
                   ),
                 ],
               ),

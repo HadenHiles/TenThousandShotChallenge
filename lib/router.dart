@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
@@ -96,6 +97,13 @@ GoRouter createAppRouter(
       GoRoute(
         path: '/add-friend',
         builder: (context, state) => const AddFriend(),
+      ),
+      GoRoute(
+        path: '/player/:id',
+        builder: (context, state) {
+          final playerId = state.pathParameters['id'];
+          return Player(uid: playerId);
+        },
       ),
       GoRoute(
         path: '/create-team',
