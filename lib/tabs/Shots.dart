@@ -84,7 +84,13 @@ class _ShotsState extends State<Shots> {
             });
             Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
             await ref.update(updated.toMap());
-            // No need to call _loadTargetDate(); StreamBuilder will update UI
+            // Update the text field and state immediately so UI reflects the new date
+            setState(() {
+              _targetDate = date;
+              _targetDateController.text = DateFormat('MMMM d, y').format(date);
+            });
+            // Force rebuild to update shots/day and week calculation
+            setState(() {});
           }
         });
       },
@@ -107,7 +113,7 @@ class _ShotsState extends State<Shots> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Always render the target date section, show a progress indicator if data is not yet available
+                    SizedBox(height: 10),
                     FutureBuilder<QuerySnapshot>(
                       future: _activeIterationFuture,
                       builder: (context, snapshot) {
@@ -119,7 +125,11 @@ class _ShotsState extends State<Shots> {
                           );
                         } else if (snapshot.data!.docs.isNotEmpty) {
                           Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                          _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                          // Only update _targetDate and controller if they are null (first load)
+                          if (_targetDate == null) {
+                            _targetDate = i.targetDate;
+                            _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
+                          }
                           return Row(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -189,68 +199,58 @@ class _ShotsState extends State<Shots> {
                                     width: 80,
                                     child: user == null
                                         ? Container()
-                                        : FutureBuilder<QuerySnapshot>(
-                                            future: _activeIterationFuture,
-                                            builder: (context, snapshot) {
-                                              if (!snapshot.hasData) {
-                                                return Center(
-                                                  child: CircularProgressIndicator(
-                                                    color: Theme.of(context).primaryColor,
-                                                  ),
-                                                );
-                                              } else if (snapshot.data!.docs.isNotEmpty) {
-                                                Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                                int? total = i.total! >= 10000 ? 10000 : i.total;
-                                                int shotsRemaining = 10000 - total!;
-                                                int daysRemaining = _targetDate != null ? _targetDate!.difference(DateTime.now()).inDays : 0;
-                                                double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
-                                                int shotsPerDay = 0;
-                                                if (daysRemaining <= 1) {
-                                                  shotsPerDay = shotsRemaining;
-                                                } else {
-                                                  shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                                }
-                                                int shotsPerWeek = 0;
-                                                if (weeksRemaining <= 1) {
-                                                  shotsPerWeek = shotsRemaining;
-                                                } else {
-                                                  shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                                }
-                                                String shotsPerDayText = shotsRemaining < 1
-                                                    ? "Done!".toLowerCase()
-                                                    : shotsPerDay <= 999
-                                                        ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                                        : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
-                                                String shotsPerWeekText = shotsRemaining < 1
-                                                    ? "Done!".toLowerCase()
-                                                    : shotsPerWeek <= 999
-                                                        ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                                        : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
-                                                if (_targetDate != null && _targetDate!.compareTo(DateTime.now()) < 0) {
-                                                  daysRemaining = DateTime.now().difference(i.targetDate!).inDays * -1;
-                                                  shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                                  shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                                }
-                                                return GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      _showShotsPerDay = !_showShotsPerDay;
-                                                    });
-                                                  },
-                                                  child: AutoSizeText(
-                                                    _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                                    maxFontSize: 26,
-                                                    maxLines: 1,
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                      fontFamily: "NovecentoSans",
-                                                      fontSize: 26,
-                                                    ),
-                                                  ),
-                                                );
+                                        : Builder(
+                                            builder: (context) {
+                                              int? total = i.total! >= 10000 ? 10000 : i.total;
+                                              int shotsRemaining = 10000 - total!;
+                                              // Use _targetDate if set, otherwise fallback to i.targetDate
+                                              DateTime? targetDate = _targetDate ?? i.targetDate;
+                                              int daysRemaining = targetDate != null ? targetDate.difference(DateTime.now()).inDays : 0;
+                                              double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
+                                              int shotsPerDay = 0;
+                                              if (daysRemaining <= 1) {
+                                                shotsPerDay = shotsRemaining;
                                               } else {
-                                                return Container();
+                                                shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
                                               }
+                                              int shotsPerWeek = 0;
+                                              if (weeksRemaining <= 1) {
+                                                shotsPerWeek = shotsRemaining;
+                                              } else {
+                                                shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                              }
+                                              String shotsPerDayText = shotsRemaining < 1
+                                                  ? "Done!".toLowerCase()
+                                                  : shotsPerDay <= 999
+                                                      ? shotsPerDay.toString() + " / Day".toLowerCase()
+                                                      : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
+                                              String shotsPerWeekText = shotsRemaining < 1
+                                                  ? "Done!".toLowerCase()
+                                                  : shotsPerWeek <= 999
+                                                      ? shotsPerWeek.toString() + " / Week".toLowerCase()
+                                                      : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
+                                              if (targetDate != null && targetDate.compareTo(DateTime.now()) < 0) {
+                                                daysRemaining = DateTime.now().difference(targetDate).inDays * -1;
+                                                shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                                shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
+                                              }
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _showShotsPerDay = !_showShotsPerDay;
+                                                  });
+                                                },
+                                                child: AutoSizeText(
+                                                  _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                                  maxFontSize: 26,
+                                                  maxLines: 1,
+                                                  style: TextStyle(
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                    fontFamily: "NovecentoSans",
+                                                    fontSize: 26,
+                                                  ),
+                                                ),
+                                              );
                                             },
                                           ),
                                   ),
