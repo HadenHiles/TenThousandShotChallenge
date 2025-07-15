@@ -105,7 +105,7 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
         recentSessions.add({
           "date": s["date"],
           "shots": {"wrist": s["total_wrist"] ?? 0, "snap": s["total_snap"] ?? 0, "slap": s["total_slap"] ?? 0, "backhand": s["total_backhand"] ?? 0},
-          "targetsHit": {"wrist": s["wrist_targets_hit"] ?? 0, "snap": s["snap_targets_hit"] ?? 0, "slap": s["slap_targets_hit"] ?? 0, "backhand": s["backhand_targets_hit"] ?? 0}
+          "targets_hit": {"wrist": s["wrist_targets_hit"] ?? 0, "snap": s["snap_targets_hit"] ?? 0, "slap": s["slap_targets_hit"] ?? 0, "backhand": s["backhand_targets_hit"] ?? 0}
         });
       }
       sessionCount++;
@@ -132,10 +132,10 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
     // Write summary stats to /users/{userId}/stats/weekly
     final statsRef = firestore.collection('users').doc(auth.currentUser!.uid).collection('stats').doc('weekly');
     await statsRef.set({
-      "weekStart": DateTime.now(),
-      "totalSessions": sessionsSnap.docs.length,
-      "totalShots": seasonShotTypeTotals,
-      "targetsHit": seasonTargetsHitType,
+      "week_start": getWeekStart(),
+      "total_sessions": sessionsSnap.docs.length,
+      "total_shots": seasonShotTypeTotals,
+      "targets_hit": seasonTargetsHitType,
       "accuracy": seasonAccuracyType,
       "season_total_shots": seasonTotalShots,
       "season_targets_hit": seasonTargetsHit,
@@ -148,6 +148,16 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
     print(e);
     return false;
   }
+}
+
+DateTime getWeekStart() {
+  final now = DateTime.now();
+  // Monday = 1, Sunday = 7
+  final int currentWeekday = now.weekday;
+  // Calculate how many days to subtract to get to Monday
+  final int daysToSubtract = currentWeekday - DateTime.monday;
+  final weekStart = DateTime(now.year, now.month, now.day - daysToSubtract);
+  return DateTime(weekStart.year, weekStart.month, weekStart.day, 0, 0, 0, 0, 0);
 }
 
 Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots, FirebaseFirestore firestore) async {

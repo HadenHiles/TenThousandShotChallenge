@@ -1,3 +1,4 @@
+import { onRequest } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
@@ -366,248 +367,515 @@ function getWeekStartEST(): Date {
 // Main scheduled function
 export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York' }, async (event) => {
     const weekStart = getWeekStartEST();
-    const usersSnap = await db.collection('users').get();
-    for (const userDoc of usersSnap.docs) {
-        const userId = userDoc.id;
-        // TODO: Remove this line for production
-        if (userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
-        const userData = userDoc.data();
-        const playerAge = userData.age || 18;
+    try {
+        const usersSnap = await db.collection('users').get();
+        for (const userDoc of usersSnap.docs) {
+            const userId = userDoc.id;
+            // TODO: Remove this line for production
+            if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
+            const userData = userDoc.data();
+            const playerAge = userData.age || 18;
 
-        // --- Delete incomplete achievements from previous week ---
-        const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('timeFrame', '==', 'week').get();
-        const deletePromises: Promise<any>[] = [];
-        achievementsSnap.forEach(doc => {
-            deletePromises.push(doc.ref.delete());
-        });
-        await Promise.all(deletePromises);
-
-        // --- Use summary stats from /users/{userId}/stats/weekly ---
-        const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
-        if (!statsDoc.exists) continue;
-        const stats = statsDoc.data() || {};
-        const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
-        const shotCounts: { [key: string]: number } = stats.totalShots || { wrist: 0, snap: 0, slap: 0, backhand: 0 };
-        const sessionMeta: { date: any }[] = (stats.sessions || []).map((s: any) => ({ date: s.date }));
-        const sessionShotCounts: { [key: string]: number[] } = {};
-        const sessionAccuracies: { [key: string]: number[] } = {};
-        for (const type of shotTypes) {
-            sessionShotCounts[type] = (stats.sessions || []).map((s: any) => s.shots?.[type] ?? 0);
-            sessionAccuracies[type] = (stats.sessions || []).map((s: any) => {
-                const shots = s.shots?.[type] ?? 0;
-                const hits = s.targetsHit?.[type] ?? 0;
-                return shots > 0 ? (hits / shots) * 100 : 0;
+            // --- Delete incomplete achievements from previous week ---
+            const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('time_frame', '==', 'week').get();
+            const deletePromises: Promise<any>[] = [];
+            achievementsSnap.forEach(doc => {
+                deletePromises.push(doc.ref.delete());
             });
-        }
+            await Promise.all(deletePromises);
 
-        // --- RevenueCat Firestore Extension: Check if user is pro (new field structure) ---
-        let isPro = false;
-        try {
-            // Extension now writes entitlements directly to user document
-            // Check for entitlements.pro and valid expiry
-            const entitlements = userData.entitlements || {};
-            const pro = entitlements.pro || {};
-            if (pro && typeof pro.expires_date === 'string') {
-                const expires = new Date(pro.expires_date);
-                if (expires > new Date()) {
-                    isPro = true;
-                }
+            // --- Use summary stats from /users/{userId}/stats/weekly ---
+            const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+            if (!statsDoc.exists) continue;
+            const stats = statsDoc.data() || {};
+            const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+            const shotCounts: { [key: string]: number } = stats.total_shots || { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+            const sessionMeta: { date: any }[] = (stats.sessions || []).map((s: any) => ({ date: s.date }));
+            const sessionShotCounts: { [key: string]: number[] } = {};
+            const sessionAccuracies: { [key: string]: number[] } = {};
+            for (const type of shotTypes) {
+                sessionShotCounts[type] = (stats.sessions || []).map((s: any) => s.shots?.[type] ?? 0);
+                sessionAccuracies[type] = (stats.sessions || []).map((s: any) => {
+                    const shots = s.shots?.[type] ?? 0;
+                    const hits = s.targets_hit?.[type] ?? 0;
+                    return shots > 0 ? (hits / shots) * 100 : 0;
+                });
             }
-        } catch (e) {
-            isPro = false;
-        }
 
-        // --- Assignment Logic Ported from Dart ---
-        // Difficulty mapping for each age group
-        const difficultyMap: { [key: string]: string[] } = {
-            u7: ['Easy', 'Medium', 'Hard'],
-            u9: ['Easy', 'Medium', 'Hard'],
-            u11: ['Easy', 'Medium', 'Hard'],
-            u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
-            u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
-            u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
-            adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
-        };
-
-        // Age group logic
-        let ageGroup = 'adult';
-        if (playerAge < 7) ageGroup = 'u7';
-        else if (playerAge < 9) ageGroup = 'u9';
-        else if (playerAge < 11) ageGroup = 'u11';
-        else if (playerAge < 13) ageGroup = 'u13';
-        else if (playerAge < 15) ageGroup = 'u15';
-        else if (playerAge < 18) ageGroup = 'u18';
-
-        // Tunable variables for hockey age groups
-        const maxShotsPerSession: { [key: string]: number } = {
-            u7: 15, u9: 20, u11: 25, u13: 30, u15: 40, u18: 50, adult: 60
-        };
-
-        // Achievement templates (full migration from Dart)
-        const templates: any[] = [
-            // --- Quantity based ---
-            { id: 'qty_wrist_easy', style: 'quantity', title: 'Wrist Shot Week', description: 'Take 30 wrist shots this week. You can spread them out over any sessions!', shotType: 'wrist', goalType: 'count', goalValue: 30, difficulty: 'Easy', proLevel: false, isBonus: false },
-            { id: 'qty_snap_hard', style: 'quantity', title: 'Snap Shot Challenge', description: 'Take 60 snap shots this week. You can do it in any session(s)!', shotType: 'snap', goalType: 'count', goalValue: 60, difficulty: 'Hard', proLevel: false, isBonus: false },
-            { id: 'qty_backhand_hardest', style: 'quantity', title: 'Backhand Mastery', description: 'Take 100 backhands this week. You can split them up however you want!', shotType: 'backhand', goalType: 'count', goalValue: 100, difficulty: 'Hardest', proLevel: false, isBonus: false },
-            { id: 'qty_slap_impossible', style: 'quantity', title: 'Slap Shot Marathon', description: 'Take 200 slap shots this week. Spread them out over the week!', shotType: 'slap', goalType: 'count', goalValue: 200, difficulty: 'Impossible', proLevel: false, isBonus: true },
-            // --- n shots for x sessions in a row ---
-            { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row this week. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
-            { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row this week. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
-            { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row this week. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
-            // --- Creative/Generic ---
-            { id: 'chip_shot_king', style: 'fun', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire shooting session. Try to keep the number of snap and backhand shots within 1 of each other!', shotType: 'mixed', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-            { id: 'variety_master', style: 'fun', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session this week.', shotType: 'all', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: true },
-            // --- More Fun Templates ---
-            { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session this week!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-            { id: 'fun_coach_hard', style: 'fun', title: 'Coach’s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-            { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-            { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-            { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-            // --- Accuracy based (pro) ---
-            { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row this week. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false },
-            { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row this week. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false },
-            { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row this week. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false },
-            { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row this week. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: true },
-            // --- Ratio based ---
-            { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
-            { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
-            // --- Consistency ---
-            { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day this week, but if you miss a day, just start your streak again! Stay motivated!', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Easy', proLevel: false, isBonus: false },
-            { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions this week. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
-            // --- Progress ---
-            { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5% this week. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
-            { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10% this week. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
-            // --- Creative/Fun ---
-            { id: 'fun_trickshot_easy', style: 'fun', title: 'Trick Shot Time', description: 'Attempt to master a trick shot in your next session.', shotType: '', goalType: 'attempt', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
-            { id: 'fun_friend_hard', style: 'fun', title: 'Bring a Friend', description: 'Invite a friend to join your next shooting session.', shotType: '', goalType: 'invite', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
-        ];
-
-        // Difficulty mapping for templates
-        const allowed = difficultyMap[ageGroup] || ['Easy'];
-        // Map 'Impossible' and 'Hardest' for younger groups
-        function mapDifficulty(template: any) {
-            let mapped = template.difficulty;
-            if (['u7', 'u9', 'u11'].includes(ageGroup) && (template.difficulty === 'Hardest' || template.difficulty === 'Impossible')) {
-                mapped = 'Hard';
-            } else if (['u13', 'u15'].includes(ageGroup) && template.difficulty === 'Impossible') {
-                mapped = 'Hardest';
-            }
-            return mapped;
-        }
-
-        // Prioritize under-practiced shot types
-        const shotsThreshold = maxShotsPerSession[ageGroup] || 30;
-        const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
-
-        // Filter eligible templates
-        let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? t.proLevel === true : t.proLevel !== true));
-
-        // Shuffle eligible
-        eligible = eligible.sort(() => Math.random() - 0.5);
-
-        // Assign up to 3 achievements, prioritizing under-practiced types and session-based logic
-        const assigned: any[] = [];
-        const usedStyles = new Set<string>();
-        for (const template of eligible) {
-            if (assigned.length >= 3) break;
-            // Session-based logic for count_per_session, accuracy, streak, etc.
-            let meetsCriteria = false;
-            if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
-                // Find streaks of sessions meeting count
-                const counts = sessionShotCounts[template.shotType] || [];
-                let streak = 0;
-                for (const c of counts) {
-                    if (c >= template.goalValue) streak++;
-                    else streak = 0;
-                    if (streak >= template.sessions) { meetsCriteria = true; break; }
-                }
-            } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
-                // Find streaks of sessions meeting accuracy
-                const accs = sessionAccuracies[template.shotType] || [];
-                let streak = 0;
-                for (const a of accs) {
-                    if (a >= template.targetAccuracy) streak++;
-                    else streak = 0;
-                    if (streak >= template.sessions) { meetsCriteria = true; break; }
-                }
-            } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
-                // At least goalValue of each shot type in a single session
-                for (let i = 0; i < sessionMeta.length; i++) {
-                    let allMet = true;
-                    for (const type of shotTypes) {
-                        if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
+            // --- RevenueCat Firestore Extension: Check if user is pro (new field structure) ---
+            let isPro = false;
+            try {
+                // Extension now writes entitlements directly to user document
+                // Check for entitlements.pro and valid expiry
+                const entitlements = userData.entitlements || {};
+                const pro = entitlements.pro || {};
+                if (pro && typeof pro.expires_date === 'string') {
+                    const expires = new Date(pro.expires_date);
+                    if (expires > new Date()) {
+                        isPro = true;
                     }
-                    if (allMet) { meetsCriteria = true; break; }
                 }
-            } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
-                // Total count for shot type
-                if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
-            } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
-                // Ratio of shot types
-                // Use secondaryType if present, else default to 'wrist'
-                const secondaryType = (template as any).secondaryType || 'wrist';
-                const primary = shotCounts[template.shotType] || 0;
-                const secondary = shotCounts[secondaryType] || 0;
-                if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
-            } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
-                // Sessions on consecutive days
-                let streak = 1;
-                let lastDate: number | null = null;
-                for (const doc of sessionMeta) {
-                    const data = doc;
-                    let dateObj = data['date'];
-                    if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
-                    const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
-                    if (!date) continue;
-                    if (!lastDate) { lastDate = date; continue; }
-                    const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
-                    if (diff === 1) streak++;
-                    else streak = 1;
-                    lastDate = date;
-                    if (streak >= template.goalValue) { meetsCriteria = true; break; }
-                }
-            } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
-                // Number of sessions in the week
-                if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
-            } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
-                // Compare first and last session accuracy
-                const accs = sessionAccuracies[template.shotType] || [];
-                if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
-            } else {
-                // Fun/creative goals: always eligible
-                meetsCriteria = true;
+            } catch (e) {
+                isPro = false;
             }
-            // Only assign if criteria met
-            if (meetsCriteria) {
-                if (underPracticed.length && underPracticed.includes(template.shotType)) {
-                    assigned.push(template);
-                    usedStyles.add(template.goalType);
-                } else if (usedStyles.size < 3 && !usedStyles.has(template.goalType)) {
-                    assigned.push(template);
-                    usedStyles.add(template.goalType);
+
+            // --- Assignment Logic Ported from Dart ---
+            // Difficulty mapping for each age group
+            const difficultyMap: { [key: string]: string[] } = {
+                u7: ['Easy', 'Medium', 'Hard'],
+                u9: ['Easy', 'Medium', 'Hard'],
+                u11: ['Easy', 'Medium', 'Hard'],
+                u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
+                u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
+                u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+                adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+            };
+
+            // Age group logic
+            let ageGroup = 'adult';
+            if (playerAge < 7) ageGroup = 'u7';
+            else if (playerAge < 9) ageGroup = 'u9';
+            else if (playerAge < 11) ageGroup = 'u11';
+            else if (playerAge < 13) ageGroup = 'u13';
+            else if (playerAge < 15) ageGroup = 'u15';
+            else if (playerAge < 18) ageGroup = 'u18';
+
+            // Tunable variables for hockey age groups
+            const maxShotsPerSession: { [key: string]: number } = {
+                u7: 15, u9: 20, u11: 25, u13: 30, u15: 40, u18: 50, adult: 60
+            };
+
+            // Achievement templates (full migration from Dart)
+            const templates: any[] = [
+                // --- Quantity based ---
+                { id: 'qty_wrist_easy', style: 'quantity', title: 'Wrist Shot Week', description: 'Take 30 wrist shots this week. You can spread them out over any sessions!', shotType: 'wrist', goalType: 'count', goalValue: 30, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'qty_snap_hard', style: 'quantity', title: 'Snap Shot Challenge', description: 'Take 60 snap shots this week. You can do it in any session(s)!', shotType: 'snap', goalType: 'count', goalValue: 60, difficulty: 'Hard', proLevel: false, isBonus: false },
+                { id: 'qty_backhand_hardest', style: 'quantity', title: 'Backhand Mastery', description: 'Take 100 backhands this week. You can split them up however you want!', shotType: 'backhand', goalType: 'count', goalValue: 100, difficulty: 'Hardest', proLevel: false, isBonus: false },
+                { id: 'qty_slap_impossible', style: 'quantity', title: 'Slap Shot Marathon', description: 'Take 200 slap shots this week. Spread them out over the week!', shotType: 'slap', goalType: 'count', goalValue: 200, difficulty: 'Impossible', proLevel: false, isBonus: true },
+                // --- n shots for x sessions in a row ---
+                { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row this week. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
+                { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row this week. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row this week. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Creative/Generic ---
+                { id: 'chip_shot_king', style: 'fun', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire shooting session. Try to keep the number of snap and backhand shots within 1 of each other!', shotType: 'mixed', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'variety_master', style: 'fun', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session this week.', shotType: 'all', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: true },
+                // --- More Fun Templates ---
+                { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session this week!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'fun_coach_hard', style: 'fun', title: 'Coach’s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+                { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                // --- Accuracy based (pro) ---
+                { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row this week. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false },
+                { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row this week. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false },
+                { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row this week. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false },
+                { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row this week. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: true },
+                // --- Ratio based ---
+                { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Consistency ---
+                { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day this week, but if you miss a day, just start your streak again! Stay motivated!', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions this week. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Progress ---
+                { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5% this week. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
+                { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10% this week. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
+                // --- Creative/Fun ---
+                { id: 'fun_trickshot_easy', style: 'fun', title: 'Trick Shot Time', description: 'Attempt to master a trick shot in your next session.', shotType: '', goalType: 'attempt', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'fun_friend_hard', style: 'fun', title: 'Bring a Friend', description: 'Invite a friend to join your next shooting session.', shotType: '', goalType: 'invite', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
+            ];
+
+            // Difficulty mapping for templates
+            const allowed = difficultyMap[ageGroup] || ['Easy'];
+            // Map 'Impossible' and 'Hardest' for younger groups
+            function mapDifficulty(template: any) {
+                let mapped = template.difficulty;
+                if (['u7', 'u9', 'u11'].includes(ageGroup) && (template.difficulty === 'Hardest' || template.difficulty === 'Impossible')) {
+                    mapped = 'Hard';
+                } else if (['u13', 'u15'].includes(ageGroup) && template.difficulty === 'Impossible') {
+                    mapped = 'Hardest';
                 }
+                return mapped;
+            }
+
+            // Prioritize under-practiced shot types
+            const shotsThreshold = maxShotsPerSession[ageGroup] || 30;
+            const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
+
+            // Filter eligible templates
+            let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? t.proLevel === true : t.proLevel !== true));
+
+            // Shuffle eligible
+            eligible = eligible.sort(() => Math.random() - 0.5);
+
+            // Assign up to 3 achievements, prioritizing under-practiced types and session-based logic
+            const assigned: any[] = [];
+            const usedStyles = new Set<string>();
+            for (const template of eligible) {
+                if (assigned.length >= 3) break;
+                // Session-based logic for count_per_session, accuracy, streak, etc.
+                let meetsCriteria = false;
+                if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
+                    // Find streaks of sessions meeting count
+                    const counts = sessionShotCounts[template.shotType] || [];
+                    let streak = 0;
+                    for (const c of counts) {
+                        if (c >= template.goalValue) streak++;
+                        else streak = 0;
+                        if (streak >= template.sessions) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
+                    // Find streaks of sessions meeting accuracy
+                    const accs = sessionAccuracies[template.shotType] || [];
+                    let streak = 0;
+                    for (const a of accs) {
+                        if (a >= template.targetAccuracy) streak++;
+                        else streak = 0;
+                        if (streak >= template.sessions) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
+                    // At least goalValue of each shot type in a single session
+                    for (let i = 0; i < sessionMeta.length; i++) {
+                        let allMet = true;
+                        for (const type of shotTypes) {
+                            if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
+                        }
+                        if (allMet) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
+                    // Total count for shot type
+                    if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
+                } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
+                    // Ratio of shot types
+                    // Use secondaryType if present, else default to 'wrist'
+                    const secondaryType = (template as any).secondaryType || 'wrist';
+                    const primary = shotCounts[template.shotType] || 0;
+                    const secondary = shotCounts[secondaryType] || 0;
+                    if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
+                } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
+                    // Sessions on consecutive days
+                    let streak = 1;
+                    let lastDate: number | null = null;
+                    for (const doc of sessionMeta) {
+                        const data = doc;
+                        let dateObj = data['date'];
+                        if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
+                        const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
+                        if (!date) continue;
+                        if (!lastDate) { lastDate = date; continue; }
+                        const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
+                        if (diff === 1) streak++;
+                        else streak = 1;
+                        lastDate = date;
+                        if (streak >= template.goalValue) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
+                    // Number of sessions in the week
+                    if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
+                } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
+                    // Compare first and last session accuracy
+                    const accs = sessionAccuracies[template.shotType] || [];
+                    if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
+                } else {
+                    // Fun/creative goals: always eligible
+                    meetsCriteria = true;
+                }
+                // Only assign if criteria met
+                if (meetsCriteria) {
+                    if (underPracticed.length && underPracticed.includes(template.shotType)) {
+                        assigned.push(template);
+                        usedStyles.add(template.goalType);
+                    } else if (usedStyles.size < 3 && !usedStyles.has(template.goalType)) {
+                        assigned.push(template);
+                        usedStyles.add(template.goalType);
+                    }
+                }
+            }
+            // Fallback: fill with random eligible if not enough, but ensure unique styles
+            while (assigned.length < 3 && eligible.length) {
+                const next = eligible.pop();
+                if (next && !usedStyles.has(next.style)) {
+                    assigned.push(next);
+                    usedStyles.add(next.style);
+                }
+            }
+
+            // Format for Firestore
+            const achievements = assigned.map(t => ({
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                completed: false,
+                dateAssigned: Timestamp.fromDate(weekStart),
+                dateCompleted: null,
+                time_frame: 'week',
+                userId,
+            }));
+            // Write achievements to Firestore
+            for (const achievement of achievements) {
+                await db.collection('users').doc(userId).collection('achievements').add(achievement);
             }
         }
-        // Fallback: fill with random eligible if not enough
-        while (assigned.length < 3 && eligible.length) {
-            assigned.push(eligible.pop());
+    } catch (error) {
+        logger.error('Error assigning weekly achievements:', error);
+    }
+});
+
+// HTTP-triggered version for live testing
+export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
+    const weekStart = getWeekStartEST();
+    try {
+        const usersSnap = await db.collection('users').get();
+        for (const userDoc of usersSnap.docs) {
+            const userId = userDoc.id;
+            // TODO: Remove this line for production
+            if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
+            const userData = userDoc.data();
+            const playerAge = userData.age || 18;
+
+            // --- Delete incomplete achievements from previous week ---
+            const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('time_frame', '==', 'week').get();
+            const deletePromises: Promise<any>[] = [];
+            achievementsSnap.forEach(doc => {
+                deletePromises.push(doc.ref.delete());
+            });
+            await Promise.all(deletePromises);
+
+            // --- Use summary stats from /users/{userId}/stats/weekly ---
+            const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+            if (!statsDoc.exists) continue;
+            const stats = statsDoc.data() || {};
+            const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+            const shotCounts: { [key: string]: number } = stats.total_shots || { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+            const sessionMeta: { date: any }[] = (stats.sessions || []).map((s: any) => ({ date: s.date }));
+            const sessionShotCounts: { [key: string]: number[] } = {};
+            const sessionAccuracies: { [key: string]: number[] } = {};
+            for (const type of shotTypes) {
+                sessionShotCounts[type] = (stats.sessions || []).map((s: any) => s.shots?.[type] ?? 0);
+                sessionAccuracies[type] = (stats.sessions || []).map((s: any) => {
+                    const shots = s.shots?.[type] ?? 0;
+                    const hits = s.targets_hit?.[type] ?? 0;
+                    return shots > 0 ? (hits / shots) * 100 : 0;
+                });
+            }
+
+            // --- RevenueCat Firestore Extension: Check if user is pro (new field structure) ---
+            let isPro = false;
+            try {
+                // Extension now writes entitlements directly to user document
+                // Check for entitlements.pro and valid expiry
+                const entitlements = userData.entitlements || {};
+                const pro = entitlements.pro || {};
+                if (pro && typeof pro.expires_date === 'string') {
+                    const expires = new Date(pro.expires_date);
+                    if (expires > new Date()) {
+                        isPro = true;
+                    }
+                }
+            } catch (e) {
+                isPro = false;
+            }
+
+            // --- Assignment Logic Ported from Dart ---
+            // Difficulty mapping for each age group
+            const difficultyMap: { [key: string]: string[] } = {
+                u7: ['Easy', 'Medium', 'Hard'],
+                u9: ['Easy', 'Medium', 'Hard'],
+                u11: ['Easy', 'Medium', 'Hard'],
+                u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
+                u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
+                u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+                adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+            };
+
+            // Age group logic
+            let ageGroup = 'adult';
+            if (playerAge < 7) ageGroup = 'u7';
+            else if (playerAge < 9) ageGroup = 'u9';
+            else if (playerAge < 11) ageGroup = 'u11';
+            else if (playerAge < 13) ageGroup = 'u13';
+            else if (playerAge < 15) ageGroup = 'u15';
+            else if (playerAge < 18) ageGroup = 'u18';
+
+            // Tunable variables for hockey age groups
+            const maxShotsPerSession: { [key: string]: number } = {
+                u7: 15, u9: 20, u11: 25, u13: 30, u15: 40, u18: 50, adult: 60
+            };
+
+            // Achievement templates (full migration from Dart)
+            const templates: any[] = [
+                // --- Quantity based ---
+                { id: 'qty_wrist_easy', style: 'quantity', title: 'Wrist Shot Week', description: 'Take 30 wrist shots this week. You can spread them out over any sessions!', shotType: 'wrist', goalType: 'count', goalValue: 30, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'qty_snap_hard', style: 'quantity', title: 'Snap Shot Challenge', description: 'Take 60 snap shots this week. You can do it in any session(s)!', shotType: 'snap', goalType: 'count', goalValue: 60, difficulty: 'Hard', proLevel: false, isBonus: false },
+                { id: 'qty_backhand_hardest', style: 'quantity', title: 'Backhand Mastery', description: 'Take 100 backhands this week. You can split them up however you want!', shotType: 'backhand', goalType: 'count', goalValue: 100, difficulty: 'Hardest', proLevel: false, isBonus: false },
+                { id: 'qty_slap_impossible', style: 'quantity', title: 'Slap Shot Marathon', description: 'Take 200 slap shots this week. Spread them out over the week!', shotType: 'slap', goalType: 'count', goalValue: 200, difficulty: 'Impossible', proLevel: false, isBonus: true },
+                // --- n shots for x sessions in a row ---
+                { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row this week. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
+                { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row this week. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row this week. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Creative/Generic ---
+                { id: 'chip_shot_king', style: 'fun', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire shooting session. Try to keep the number of snap and backhand shots within 1 of each other!', shotType: 'mixed', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'variety_master', style: 'fun', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session this week.', shotType: 'all', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: true },
+                // --- More Fun Templates ---
+                { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session this week!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'fun_coach_hard', style: 'fun', title: 'Coach’s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+                { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                // --- Accuracy based (pro) ---
+                { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row this week. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false },
+                { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row this week. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false },
+                { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row this week. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false },
+                { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row this week. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: true },
+                // --- Ratio based ---
+                { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take this week.', shotType: 'backhand', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Consistency ---
+                { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day this week, but if you miss a day, just start your streak again! Stay motivated!', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions this week. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
+                // --- Progress ---
+                { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5% this week. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
+                { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10% this week. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
+                // --- Creative/Fun ---
+                { id: 'fun_trickshot_easy', style: 'fun', title: 'Trick Shot Time', description: 'Attempt to master a trick shot in your next session.', shotType: '', goalType: 'attempt', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'fun_friend_hard', style: 'fun', title: 'Bring a Friend', description: 'Invite a friend to join your next shooting session.', shotType: '', goalType: 'invite', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
+            ];
+
+            // Difficulty mapping for templates
+            const allowed = difficultyMap[ageGroup] || ['Easy'];
+            // Map 'Impossible' and 'Hardest' for younger groups
+            function mapDifficulty(template: any) {
+                let mapped = template.difficulty;
+                if (['u7', 'u9', 'u11'].includes(ageGroup) && (template.difficulty === 'Hardest' || template.difficulty === 'Impossible')) {
+                    mapped = 'Hard';
+                } else if (['u13', 'u15'].includes(ageGroup) && template.difficulty === 'Impossible') {
+                    mapped = 'Hardest';
+                }
+                return mapped;
+            }
+
+            // Prioritize under-practiced shot types
+            const shotsThreshold = maxShotsPerSession[ageGroup] || 30;
+            const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
+
+            // Filter eligible templates
+            let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? t.proLevel === true : t.proLevel !== true));
+
+            // Shuffle eligible
+            eligible = eligible.sort(() => Math.random() - 0.5);
+
+            // Assign up to 3 achievements, prioritizing under-practiced types and session-based logic
+            const assigned: any[] = [];
+            const usedStyles = new Set<string>();
+            for (const template of eligible) {
+                if (assigned.length >= 3) break;
+                // Session-based logic for count_per_session, accuracy, streak, etc.
+                let meetsCriteria = false;
+                if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
+                    // Find streaks of sessions meeting count
+                    const counts = sessionShotCounts[template.shotType] || [];
+                    let streak = 0;
+                    for (const c of counts) {
+                        if (c >= template.goalValue) streak++;
+                        else streak = 0;
+                        if (streak >= template.sessions) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
+                    // Find streaks of sessions meeting accuracy
+                    const accs = sessionAccuracies[template.shotType] || [];
+                    let streak = 0;
+                    for (const a of accs) {
+                        if (a >= template.targetAccuracy) streak++;
+                        else streak = 0;
+                        if (streak >= template.sessions) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
+                    // At least goalValue of each shot type in a single session
+                    for (let i = 0; i < sessionMeta.length; i++) {
+                        let allMet = true;
+                        for (const type of shotTypes) {
+                            if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
+                        }
+                        if (allMet) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
+                    // Total count for shot type
+                    if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
+                } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
+                    // Ratio of shot types
+                    // Use secondaryType if present, else default to 'wrist'
+                    const secondaryType = (template as any).secondaryType || 'wrist';
+                    const primary = shotCounts[template.shotType] || 0;
+                    const secondary = shotCounts[secondaryType] || 0;
+                    if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
+                } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
+                    // Sessions on consecutive days
+                    let streak = 1;
+                    let lastDate: number | null = null;
+                    for (const doc of sessionMeta) {
+                        const data = doc;
+                        let dateObj = data['date'];
+                        if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
+                        const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
+                        if (!date) continue;
+                        if (!lastDate) { lastDate = date; continue; }
+                        const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
+                        if (diff === 1) streak++;
+                        else streak = 1;
+                        lastDate = date;
+                        if (streak >= template.goalValue) { meetsCriteria = true; break; }
+                    }
+                } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
+                    // Number of sessions in the week
+                    if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
+                } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
+                    // Compare first and last session accuracy
+                    const accs = sessionAccuracies[template.shotType] || [];
+                    if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
+                } else {
+                    // Fun/creative goals: always eligible
+                    meetsCriteria = true;
+                }
+                // Only assign if criteria met
+                if (meetsCriteria) {
+                    if (underPracticed.length && underPracticed.includes(template.shotType)) {
+                        assigned.push(template);
+                        usedStyles.add(template.goalType);
+                    } else if (usedStyles.size < 3 && !usedStyles.has(template.goalType)) {
+                        assigned.push(template);
+                        usedStyles.add(template.goalType);
+                    }
+                }
+            }
+            // Fallback: fill with random eligible if not enough, but ensure unique styles
+            while (assigned.length < 3 && eligible.length) {
+                const next = eligible.pop();
+                if (next && !usedStyles.has(next.style)) {
+                    assigned.push(next);
+                    usedStyles.add(next.style);
+                }
+            }
+
+            // Format for Firestore
+            const achievements = assigned.map(t => ({
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                completed: false,
+                dateAssigned: Timestamp.fromDate(weekStart),
+                dateCompleted: null,
+                time_frame: 'week',
+                userId,
+            }));
+            // Write achievements to Firestore
+            for (const achievement of achievements) {
+                await db.collection('users').doc(userId).collection('achievements').add(achievement);
+            }
         }
 
-        // Format for Firestore
-        const achievements = assigned.map(t => ({
-            id: t.id,
-            title: t.title,
-            description: t.description,
-            completed: false,
-            dateAssigned: Timestamp.fromDate(weekStart),
-            dateCompleted: null,
-            timeFrame: 'week',
-            userId,
-        }));
-        // Write achievements to Firestore
-        for (const achievement of achievements) {
-            await db.collection('users').doc(userId).collection('achievements').add(achievement);
-        }
+        res.status(200).send('assignWeeklyAchievements executed successfully');
+    } catch (error) {
+        logger.error('Error assigning weekly achievements:', error);
+        const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
+        res.status(200).send('assignWeeklyAchievements failed: ' + errorMessage);
     }
-    // No return needed for v2 scheduled functions
 });
