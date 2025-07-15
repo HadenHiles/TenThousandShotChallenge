@@ -25,7 +25,7 @@
 
 - Display current weekly achievements in the Start tab.
 - Show progress (e.g., shots taken, accuracy, sessions completed).
-- Achievements are automatically checked off when the user completes the required actions; there is no manual check-off option.
+- Achievements are automatically checked off when the user completes the required actions; there is no manual check-off option except for fun style achievements
 - Provide feedback and rewards (badges, points, etc.) for completion.
 - Show the user's achievement streak in their profile, along with a running count of how many achievements they've completed in their lifetime, including a badge on their profile image with the number of consecutive weeks they've completed every achievement.
 

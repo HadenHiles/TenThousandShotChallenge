@@ -489,10 +489,10 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row this week. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'slap_15_three_sessions', style: 'quantity', title: 'Slap Shot Consistency', description: 'Take at least 15 slap shots for any 3 sessions in a row this week.', shotType: 'slap', goalType: 'count_per_session', goalValue: 15, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
                 // --- Creative/Generic ---
-                { id: 'chip_shot_king', style: 'fun', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire shooting session. Try to keep the number of snap and backhand shots within 1 of each other!', shotType: 'mixed', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'chip_shot_king', style: 'fun', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire session!', shotType: 'mixed', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 { id: 'variety_master', style: 'fun', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session this week.', shotType: 'all', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: true },
                 { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session this week!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'fun_coach_hard', style: 'fun', title: 'Coach’s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'fun_coach_hard', style: 'fun', title: 'Coach\'s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
                 { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
@@ -535,7 +535,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             }
 
             // Prioritize under-practiced shot types
-            const shotsThreshold = maxShotsPerSession[ageGroup] || 30;
+            const shotsThreshold = maxShotsPerSession[ageGroup] || 80;
             const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
 
             // Filter eligible templates
@@ -546,100 +546,119 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             // Shuffle eligible
             eligible = eligible.sort(() => Math.random() - 0.5);
 
-            // Assign up to 3 achievements, prioritizing under-practiced types and session-based logic
+            // --- New logic: Always include one 'fun' style template, and 3 others (total 4), allowing template reuse for different shot types ---
             const assigned: any[] = [];
-            const usedStyles = new Set<string>();
-            for (const template of eligible) {
-                if (assigned.length >= 3) break;
-                // Session-based logic for count_per_session, accuracy, streak, etc.
-                let meetsCriteria = false;
-                if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
-                    // Find streaks of sessions meeting count
-                    const counts = sessionShotCounts[template.shotType] || [];
-                    let streak = 0;
-                    for (const c of counts) {
-                        if (c >= template.goalValue) streak++;
-                        else streak = 0;
-                        if (streak >= template.sessions) { meetsCriteria = true; break; }
-                    }
-                } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
-                    // Find streaks of sessions meeting accuracy
-                    const accs = sessionAccuracies[template.shotType] || [];
-                    let streak = 0;
-                    for (const a of accs) {
-                        if (a >= template.targetAccuracy) streak++;
-                        else streak = 0;
-                        if (streak >= template.sessions) { meetsCriteria = true; break; }
-                    }
-                } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
-                    // At least goalValue of each shot type in a single session
-                    for (let i = 0; i < sessionMeta.length; i++) {
-                        let allMet = true;
-                        for (const type of shotTypes) {
-                            if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
+            const usedFunIds = new Set();
+            const usedTemplates = new Set();
+            const usedShotTypeCombos = new Set();
+
+            // 1. Always include one 'fun' style template
+            const funTemplates = eligible.filter(t => t.style === 'fun');
+            if (funTemplates.length > 0) {
+                // Pick a random fun template
+                const fun = funTemplates[Math.floor(Math.random() * funTemplates.length)];
+                assigned.push(fun);
+                usedFunIds.add(fun.id);
+                usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
+                usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
+            }
+
+
+            // 2. Assign 3 other templates, prioritizing underPracticed shot types (lowest first)
+            const nonFunTemplates = eligible.filter(t => t.style !== 'fun');
+            // Sort underPracticed by lowest count first
+            const prioritizedShotTypes = [...underPracticed];
+            let nonFunPool = [...nonFunTemplates];
+            // Try to assign templates for each underPracticed shot type in order
+            for (const shotType of prioritizedShotTypes) {
+                if (assigned.length >= 4) break;
+                // Find all templates for this shotType
+                const candidates = nonFunPool.filter(t => t.shotType === shotType || t.shotType === 'all' || t.shotType === 'any');
+                for (const template of candidates) {
+                    if (assigned.length >= 4) break;
+                    const comboKey = template.id + '|' + (template.shotType || 'any');
+                    if (usedTemplates.has(comboKey)) continue;
+                    // Session-based logic for count_per_session, accuracy, streak, etc.
+                    let meetsCriteria = false;
+                    if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
+                        const counts = sessionShotCounts[template.shotType] || [];
+                        let streak = 0;
+                        for (const c of counts) {
+                            if (c >= template.goalValue) streak++;
+                            else streak = 0;
+                            if (streak >= template.sessions) { meetsCriteria = true; break; }
                         }
-                        if (allMet) { meetsCriteria = true; break; }
+                    } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
+                        const accs = sessionAccuracies[template.shotType] || [];
+                        let streak = 0;
+                        for (const a of accs) {
+                            if (a >= template.targetAccuracy) streak++;
+                            else streak = 0;
+                            if (streak >= template.sessions) { meetsCriteria = true; break; }
+                        }
+                    } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
+                        for (let i = 0; i < sessionMeta.length; i++) {
+                            let allMet = true;
+                            for (const type of shotTypes) {
+                                if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
+                            }
+                            if (allMet) { meetsCriteria = true; break; }
+                        }
+                    } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
+                        if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
+                    } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
+                        const secondaryType = (template as any).secondaryType || 'wrist';
+                        const primary = shotCounts[template.shotType] || 0;
+                        const secondary = shotCounts[secondaryType] || 0;
+                        if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
+                    } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
+                        let streak = 1;
+                        let lastDate: number | null = null;
+                        for (const doc of sessionMeta) {
+                            const data = doc;
+                            let dateObj = data['date'];
+                            if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
+                            const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
+                            if (!date) continue;
+                            if (!lastDate) { lastDate = date; continue; }
+                            const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
+                            if (diff === 1) streak++;
+                            else streak = 1;
+                            lastDate = date;
+                            if (streak >= template.goalValue) { meetsCriteria = true; break; }
+                        }
+                    } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
+                        if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
+                    } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
+                        const accs = sessionAccuracies[template.shotType] || [];
+                        if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
+                    } else {
+                        meetsCriteria = true;
                     }
-                } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
-                    // Total count for shot type
-                    if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
-                } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
-                    // Ratio of shot types
-                    // Use secondaryType if present, else default to 'wrist'
-                    const secondaryType = (template as any).secondaryType || 'wrist';
-                    const primary = shotCounts[template.shotType] || 0;
-                    const secondary = shotCounts[secondaryType] || 0;
-                    if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
-                } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
-                    // Sessions on consecutive days
-                    let streak = 1;
-                    let lastDate: number | null = null;
-                    for (const doc of sessionMeta) {
-                        const data = doc;
-                        let dateObj = data['date'];
-                        if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
-                        const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
-                        if (!date) continue;
-                        if (!lastDate) { lastDate = date; continue; }
-                        const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
-                        if (diff === 1) streak++;
-                        else streak = 1;
-                        lastDate = date;
-                        if (streak >= template.goalValue) { meetsCriteria = true; break; }
-                    }
-                } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
-                    // Number of sessions in the week
-                    if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
-                } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
-                    // Compare first and last session accuracy
-                    const accs = sessionAccuracies[template.shotType] || [];
-                    if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
-                } else {
-                    // Fun/creative goals: always eligible
-                    meetsCriteria = true;
-                }
-                // Only assign if criteria met
-                if (meetsCriteria) {
-                    if (underPracticed.length && underPracticed.includes(template.shotType)) {
+                    if (meetsCriteria) {
                         assigned.push(template);
-                        usedStyles.add(template.goalType);
-                    } else if (usedStyles.size < 3 && !usedStyles.has(template.goalType)) {
-                        assigned.push(template);
-                        usedStyles.add(template.goalType);
+                        usedTemplates.add(comboKey);
+                        usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
+                        break; // Only one per shotType per pass
                     }
                 }
             }
-            // Fallback: fill with random eligible if not enough, but ensure unique styles
-            while (assigned.length < 3 && eligible.length) {
-                const next = eligible.pop();
-                if (next && !usedStyles.has(next.style)) {
+
+            // Fallback: fill with random eligible if not enough (allowing reuse for different shot types)
+            let fallbackPool = [...nonFunTemplates];
+            while (assigned.length < 4 && fallbackPool.length) {
+                const next = fallbackPool.pop();
+                if (!next) break;
+                const comboKey = next.id + '|' + (next.shotType || 'any');
+                if (!usedTemplates.has(comboKey)) {
                     assigned.push(next);
-                    usedStyles.add(next.style);
+                    usedTemplates.add(comboKey);
+                    usedShotTypeCombos.add(next.style + '|' + (next.shotType || 'any'));
                 }
             }
 
             // Format for Firestore
-            const achievements = assigned.map(t => ({
+            const achievements = assigned.slice(0, 4).map(t => ({
                 id: t.id,
                 title: t.title,
                 description: t.description,
