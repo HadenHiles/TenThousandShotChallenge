@@ -373,6 +373,15 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
         if (userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
         const userData = userDoc.data();
         const playerAge = userData.age || 18;
+
+        // --- Delete incomplete achievements from previous week ---
+        const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('timeFrame', '==', 'week').get();
+        const deletePromises: Promise<any>[] = [];
+        achievementsSnap.forEach(doc => {
+            deletePromises.push(doc.ref.delete());
+        });
+        await Promise.all(deletePromises);
+
         // --- Use summary stats from /users/{userId}/stats/weekly ---
         const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
         if (!statsDoc.exists) continue;
@@ -591,6 +600,7 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
             description: t.description,
             completed: false,
             dateAssigned: Timestamp.fromDate(weekStart),
+            dateCompleted: null,
             timeFrame: 'week',
             userId,
         }));
