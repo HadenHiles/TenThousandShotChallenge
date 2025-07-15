@@ -46,8 +46,7 @@ Future<void> main() async {
   );
   final appleSignInAvailable = await AppleSignInAvailable.check();
 
-  // Initialize RevenueCat
-  await initRevenueCat();
+  // RevenueCat will be initialized after user login
 
   // Load global app configurations
   await GlobalConfiguration().loadFromAsset("youtube_settings");
@@ -135,7 +134,7 @@ Future<void> _messageClickHandler(RemoteMessage message) async {
   print('Background message clicked!');
 }
 
-Future<void> initRevenueCat() async {
+Future<void> initRevenueCat(String? appUserID) async {
   await Purchases.setLogLevel(LogLevel.debug);
 
   PurchasesConfiguration? configuration;
@@ -147,7 +146,8 @@ Future<void> initRevenueCat() async {
   }
 
   if (configuration != null) {
-    await Purchases.configure(configuration..appUserID = FirebaseAuth.instance.currentUser?.uid);
+    configuration.appUserID = appUserID;
+    await Purchases.configure(configuration);
   }
 }
 
@@ -172,6 +172,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late final GoRouter _router;
   late final AuthChangeNotifier _authNotifier;
+  User? _lastUser;
+  late final VoidCallback _authListener;
 
   @override
   void initState() {
@@ -183,9 +185,25 @@ class _HomeState extends State<Home> {
       authNotifier: _authNotifier,
       introShownNotifier: widget.introShownNotifier,
     );
+
+    // Listen for auth changes via _authNotifier and initialize RevenueCat when user is available
+    _authListener = () async {
+      final user = _authNotifier.user;
+      if (user != null && user.uid != _lastUser?.uid) {
+        await initRevenueCat(user.uid);
+        _lastUser = user;
+      }
+    };
+    _authNotifier.addListener(_authListener);
   }
 
   @override
+  @override
+  void dispose() {
+    _authNotifier.removeListener(_authListener);
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     // Only rebuild for theme changes, not router
     return Consumer<PreferencesStateNotifier>(

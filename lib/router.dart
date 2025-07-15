@@ -20,9 +20,12 @@ import 'package:provider/provider.dart';
 
 class AuthChangeNotifier extends ChangeNotifier {
   late final StreamSubscription<User?> _sub;
-  AuthChangeNotifier(FirebaseAuth auth) {
-    _sub = auth.authStateChanges().listen((_) => notifyListeners());
+  final FirebaseAuth _auth;
+  AuthChangeNotifier(FirebaseAuth auth) : _auth = auth {
+    _sub = _auth.authStateChanges().listen((_) => notifyListeners());
   }
+
+  User? get user => _auth.currentUser;
   @override
   void dispose() {
     _sub.cancel();
