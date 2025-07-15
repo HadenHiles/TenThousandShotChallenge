@@ -500,7 +500,7 @@ class _ShotsState extends State<Shots> {
                             secondChild: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                               child: SizedBox(
-                                height: 180,
+                                height: 210,
                                 child: WeeklyAchievementsWidget(),
                               ),
                             ),
