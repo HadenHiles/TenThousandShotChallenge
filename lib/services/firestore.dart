@@ -93,6 +93,7 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
     final sessionsSnap = await iterationRef.collection('sessions').orderBy('date', descending: true).get();
     List<Map<String, dynamic>> recentSessions = [];
     int seasonTotalShots = 0;
+    int seasonTotalShotsWithAccuracy = 0;
     int seasonTargetsHit = 0;
     Map<String, int> seasonShotTypeTotals = {"wrist": 0, "snap": 0, "slap": 0, "backhand": 0};
     Map<String, int> seasonTargetsHitType = {"wrist": 0, "snap": 0, "slap": 0, "backhand": 0};
@@ -114,20 +115,37 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
       seasonShotTypeTotals["snap"] = (seasonShotTypeTotals["snap"] ?? 0) + (s["total_snap"] is num ? (s["total_snap"] as num).toInt() : 0);
       seasonShotTypeTotals["slap"] = (seasonShotTypeTotals["slap"] ?? 0) + (s["total_slap"] is num ? (s["total_slap"] as num).toInt() : 0);
       seasonShotTypeTotals["backhand"] = (seasonShotTypeTotals["backhand"] ?? 0) + (s["total_backhand"] is num ? (s["total_backhand"] as num).toInt() : 0);
-      seasonTargetsHitType["wrist"] = (seasonTargetsHitType["wrist"] ?? 0) + (s["wrist_targets_hit"] is num ? (s["wrist_targets_hit"] as num).toInt() : 0);
-      seasonTargetsHitType["snap"] = (seasonTargetsHitType["snap"] ?? 0) + (s["snap_targets_hit"] is num ? (s["snap_targets_hit"] as num).toInt() : 0);
-      seasonTargetsHitType["slap"] = (seasonTargetsHitType["slap"] ?? 0) + (s["slap_targets_hit"] is num ? (s["slap_targets_hit"] as num).toInt() : 0);
-      seasonTargetsHitType["backhand"] = (seasonTargetsHitType["backhand"] ?? 0) + (s["backhand_targets_hit"] is num ? (s["backhand_targets_hit"] as num).toInt() : 0);
+
+      // Only include sessions with any targets_hit for accuracy stats
+      bool hasAccuracy = ((s["wrist_targets_hit"] ?? 0) > 0) || ((s["snap_targets_hit"] ?? 0) > 0) || ((s["slap_targets_hit"] ?? 0) > 0) || ((s["backhand_targets_hit"] ?? 0) > 0);
+      if (hasAccuracy) {
+        seasonTotalShotsWithAccuracy += s["total"] is num ? (s["total"] as num).toInt() : 0;
+        seasonTargetsHitType["wrist"] = (seasonTargetsHitType["wrist"] ?? 0) + (s["wrist_targets_hit"] is num ? (s["wrist_targets_hit"] as num).toInt() : 0);
+        seasonTargetsHitType["snap"] = (seasonTargetsHitType["snap"] ?? 0) + (s["snap_targets_hit"] is num ? (s["snap_targets_hit"] as num).toInt() : 0);
+        seasonTargetsHitType["slap"] = (seasonTargetsHitType["slap"] ?? 0) + (s["slap_targets_hit"] is num ? (s["slap_targets_hit"] as num).toInt() : 0);
+        seasonTargetsHitType["backhand"] = (seasonTargetsHitType["backhand"] ?? 0) + (s["backhand_targets_hit"] is num ? (s["backhand_targets_hit"] as num).toInt() : 0);
+      }
     }
 
     seasonTargetsHit = seasonTargetsHitType.values.reduce((a, b) => a + b);
-    // Calculate accuracy per shot type
+    // Calculate accuracy per shot type (only for sessions with accuracy)
     for (var type in seasonShotTypeTotals.keys) {
-      int shots = seasonShotTypeTotals[type]!;
+      int shots = 0;
       int hits = seasonTargetsHitType[type]!;
+      // Sum shots for this type only from sessions with accuracy
+      for (var sessionDoc in sessionsSnap.docs) {
+        final s = sessionDoc.data();
+        bool hasAccuracy = ((s["wrist_targets_hit"] ?? 0) > 0) || ((s["snap_targets_hit"] ?? 0) > 0) || ((s["slap_targets_hit"] ?? 0) > 0) || ((s["backhand_targets_hit"] ?? 0) > 0);
+        if (hasAccuracy) {
+          if (type == "wrist") shots += s["total_wrist"] is num ? (s["total_wrist"] as num).toInt() : 0;
+          if (type == "snap") shots += s["total_snap"] is num ? (s["total_snap"] as num).toInt() : 0;
+          if (type == "slap") shots += s["total_slap"] is num ? (s["total_slap"] as num).toInt() : 0;
+          if (type == "backhand") shots += s["total_backhand"] is num ? (s["total_backhand"] as num).toInt() : 0;
+        }
+      }
       seasonAccuracyType[type] = shots > 0 ? (hits / shots) * 100.0 : 0.0;
     }
-    double seasonAccuracy = seasonTotalShots > 0 ? (seasonTargetsHit / seasonTotalShots) * 100.0 : 0.0;
+    double seasonAccuracy = seasonTotalShotsWithAccuracy > 0 ? (seasonTargetsHit / seasonTotalShotsWithAccuracy) * 100.0 : 0.0;
 
     // Write summary stats to /users/{userId}/stats/weekly
     final statsRef = firestore.collection('users').doc(auth.currentUser!.uid).collection('stats').doc('weekly');
@@ -138,6 +156,7 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
       "targets_hit": seasonTargetsHitType,
       "accuracy": seasonAccuracyType,
       "season_total_shots": seasonTotalShots,
+      "season_total_shots_with_accuracy": seasonTotalShotsWithAccuracy,
       "season_targets_hit": seasonTargetsHit,
       "season_accuracy": seasonAccuracy,
       "sessions": recentSessions
