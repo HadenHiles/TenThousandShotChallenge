@@ -352,7 +352,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                           await presentPaywallIfNeeded();
                                           // After upgrade, set shared pref and reload app
                                           GoRouter.of(context).replace("/profile");
-                                          GoRouter.of(context).push("/settings");
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
