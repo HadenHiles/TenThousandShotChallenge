@@ -350,8 +350,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         onPressed: () async {
                                           Navigator.of(context).pop();
                                           await presentPaywallIfNeeded();
-                                          // After upgrade, set shared pref and reload app
-                                          GoRouter.of(context).replace("/app?tab=profile");
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
