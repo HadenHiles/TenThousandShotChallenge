@@ -365,10 +365,14 @@ function getWeekStartEST(): Date {
 }
 
 // Main scheduled function
-export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York' }, async (event) => {
+export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York', timeoutSeconds: 1200 }, async (event) => {
     const weekStart = getWeekStartEST();
     try {
-        const usersSnap = await db.collection('users').get();
+        const now = new Date();
+        const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+        const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
+        const fifteenDaysAgoISO = fifteenDaysAgo.toISOString();
+        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgoISO).get();
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
             // TODO: Remove this line for production
@@ -389,8 +393,6 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
             if (!statsDoc.exists) continue;
             const stats = statsDoc.data() || {};
             const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
-            const shotCounts: { [key: string]: number } = stats.total_shots || { wrist: 0, snap: 0, slap: 0, backhand: 0 };
-            const sessionMeta: { date: any }[] = (stats.sessions || []).map((s: any) => ({ date: s.date }));
             const sessionShotCounts: { [key: string]: number[] } = {};
             const sessionAccuracies: { [key: string]: number[] } = {};
             for (const type of shotTypes) {
@@ -450,10 +452,6 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
             else if (playerAge < 15) ageGroup = 'u15';
             else if (playerAge < 18) ageGroup = 'u18';
 
-            const maxShotsPerSession: { [key: string]: number } = {
-                u7: 50, u9: 75, u11: 100, u13: 150, u15: 180, u18: 225, adult: 200
-            };
-
             // Achievement templates (full migration from Dart)
             const templates: any[] = [
                 // --- Quantity based ---
@@ -477,6 +475,9 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
                 { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
                 { id: 'fun_music_easy', style: 'fun', title: 'Music Motivation', description: 'Create a playlist and shoot to your favorite songs this week.', shotType: '', goalType: 'music', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'social_share_easy', style: 'fun', title: 'Share the Love', description: 'Share your progress on social media or with a friend this week.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'social_challenge_medium', style: 'fun', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest this week.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+                { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Complete a team shooting drill with at least 2 teammates this week.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 // --- Accuracy based (pro) ---
                 { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row this week. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false },
                 { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row this week. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false },
@@ -495,10 +496,6 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
                 { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5% this week. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
                 { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10% this week. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
                 { id: 'progress_backhand_improve_medium', style: 'progress', title: 'Backhand Progress', description: 'Improve your backhand accuracy by 7% this week.', shotType: 'backhand', goalType: 'improvement', improvement: 7, difficulty: 'Medium', proLevel: true, isBonus: true },
-                // --- Social/Community ---
-                { id: 'social_share_easy', style: 'social', title: 'Share the Love', description: 'Share your progress on social media or with a friend this week.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'social_challenge_medium', style: 'social', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest this week.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-                { id: 'social_teamwork_hard', style: 'social', title: 'Teamwork Triumph', description: 'Complete a team shooting drill with at least 2 teammates this week.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
             ];
 
             // Difficulty mapping for templates
@@ -514,10 +511,6 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
                 return mapped;
             }
 
-            // Prioritize under-practiced shot types
-            const shotsThreshold = maxShotsPerSession[ageGroup] || 80;
-            const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
-
             // Filter eligible templates
             // Pro users: eligible for all templates (proLevel true or false)
             // Non-pro users: only eligible for templates where proLevel !== true
@@ -526,109 +519,46 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
             // Shuffle eligible
             eligible = eligible.sort(() => Math.random() - 0.5);
 
-            // --- New logic: Always include one 'fun' style template, and 3 others (total 4), allowing template reuse for different shot types ---
+
+            // --- New logic: Assign a variety of difficulties if possible ---
             const assigned: any[] = [];
-            const usedFunIds = new Set();
             const usedTemplates = new Set();
             const usedShotTypeCombos = new Set();
 
-            // 1. Always include one 'fun' style template
+            // 1. Always include one 'fun' style template if available
             const funTemplates = eligible.filter(t => t.style === 'fun');
             if (funTemplates.length > 0) {
-                // Pick a random fun template
                 const fun = funTemplates[Math.floor(Math.random() * funTemplates.length)];
                 assigned.push(fun);
-                usedFunIds.add(fun.id);
                 usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
                 usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
             }
 
-
-            // 2. Assign 3 other templates, prioritizing underPracticed shot types (lowest first)
+            // 2. Try to assign templates of different difficulties
+            const difficulties = ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'];
+            const alreadyAssignedDifficulties = new Set(assigned.map(t => t.difficulty));
+            // Exclude fun/social for this pass
             const nonFunTemplates = eligible.filter(t => t.style !== 'fun');
-            // Sort underPracticed by lowest count first
-            const prioritizedShotTypes = [...underPracticed];
-            let nonFunPool = [...nonFunTemplates];
-            // Try to assign templates for each underPracticed shot type in order
-            for (const shotType of prioritizedShotTypes) {
+            for (const diff of difficulties) {
                 if (assigned.length >= 4) break;
-                // Find all templates for this shotType
-                const candidates = nonFunPool.filter(t => t.shotType === shotType || t.shotType === 'all' || t.shotType === 'any');
-                for (const template of candidates) {
-                    if (assigned.length >= 4) break;
+                const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
+                if (candidates.length > 0) {
+                    // Pick a random candidate of this difficulty
+                    const template = candidates[Math.floor(Math.random() * candidates.length)];
                     const comboKey = template.id + '|' + (template.shotType || 'any');
-                    if (usedTemplates.has(comboKey)) continue;
-                    // Session-based logic for count_per_session, accuracy, streak, etc.
-                    let meetsCriteria = false;
-                    if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
-                        const counts = sessionShotCounts[template.shotType] || [];
-                        let streak = 0;
-                        for (const c of counts) {
-                            if (c >= template.goalValue) streak++;
-                            else streak = 0;
-                            if (streak >= template.sessions) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
-                        const accs = sessionAccuracies[template.shotType] || [];
-                        let streak = 0;
-                        for (const a of accs) {
-                            if (a >= template.targetAccuracy) streak++;
-                            else streak = 0;
-                            if (streak >= template.sessions) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
-                        for (let i = 0; i < sessionMeta.length; i++) {
-                            let allMet = true;
-                            for (const type of shotTypes) {
-                                if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
-                            }
-                            if (allMet) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
-                        if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
-                    } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
-                        const secondaryType = (template as any).secondaryType || 'wrist';
-                        const primary = shotCounts[template.shotType] || 0;
-                        const secondary = shotCounts[secondaryType] || 0;
-                        if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
-                    } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
-                        let streak = 1;
-                        let lastDate: number | null = null;
-                        for (const doc of sessionMeta) {
-                            const data = doc;
-                            let dateObj = data['date'];
-                            if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
-                            const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
-                            if (!date) continue;
-                            if (!lastDate) { lastDate = date; continue; }
-                            const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
-                            if (diff === 1) streak++;
-                            else streak = 1;
-                            lastDate = date;
-                            if (streak >= template.goalValue) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
-                        if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
-                    } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
-                        const accs = sessionAccuracies[template.shotType] || [];
-                        if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
-                    } else {
-                        meetsCriteria = true;
-                    }
-                    if (meetsCriteria) {
+                    if (!usedTemplates.has(comboKey)) {
                         assigned.push(template);
                         usedTemplates.add(comboKey);
                         usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
-                        break; // Only one per shotType per pass
+                        alreadyAssignedDifficulties.add(diff);
                     }
                 }
             }
 
-            // Fallback: fill with random eligible if not enough (allowing reuse for different shot types)
+            // 3. If not enough, fill with random eligible (excluding fun/social already assigned)
             let fallbackPool = [...nonFunTemplates];
             while (assigned.length < 4 && fallbackPool.length) {
                 const next = fallbackPool.pop();
-                if (!next) break;
                 const comboKey = next.id + '|' + (next.shotType || 'any');
                 if (!usedTemplates.has(comboKey)) {
                     assigned.push(next);
@@ -662,21 +592,17 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
 export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
     const weekStart = getWeekStartEST();
     try {
-        // const debugResults: any[] = [];
-        const usersSnap = await db.collection('users').get();
+        const now = new Date();
+        const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+        const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
+        const fifteenDaysAgoISO = fifteenDaysAgo.toISOString();
+        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgoISO).get();
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
             // TODO: Remove this line for production
             if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
-
-            // debugResults.push({
-            //     step: 'user_start',
-            //     userId,
-            //     playerAge,
-            //     userData
-            // });
 
             // --- Delete incomplete achievements from previous week ---
             const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('time_frame', '==', 'week').get();
@@ -691,8 +617,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             if (!statsDoc.exists) continue;
             const stats = statsDoc.data() || {};
             const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
-            const shotCounts: { [key: string]: number } = stats.total_shots || { wrist: 0, snap: 0, slap: 0, backhand: 0 };
-            const sessionMeta: { date: any }[] = (stats.sessions || []).map((s: any) => ({ date: s.date }));
             const sessionShotCounts: { [key: string]: number[] } = {};
             const sessionAccuracies: { [key: string]: number[] } = {};
             for (const type of shotTypes) {
@@ -733,13 +657,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 isPro = false;
             }
 
-            // const entitlements = userData.entitlements || {};
-            // debugResults.push({
-            //     step: 'user_entitlements',
-            //     entitlements,
-            //     isPro
-            // });
-
             // --- Assignment Logic Ported from Dart ---
             const difficultyMap: { [key: string]: string[] } = {
                 u7: ['Easy', 'Medium', 'Hard'],
@@ -758,10 +675,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             else if (playerAge < 13) ageGroup = 'u13';
             else if (playerAge < 15) ageGroup = 'u15';
             else if (playerAge < 18) ageGroup = 'u18';
-
-            const maxShotsPerSession: { [key: string]: number } = {
-                u7: 50, u9: 75, u11: 100, u13: 150, u15: 180, u18: 225, adult: 200
-            };
 
             // Achievement templates (full migration from Dart)
             const templates: any[] = [
@@ -786,6 +699,9 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session this week.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting this week.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
                 { id: 'fun_music_easy', style: 'fun', title: 'Music Motivation', description: 'Create a playlist and shoot to your favorite songs this week.', shotType: '', goalType: 'music', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'social_share_easy', style: 'fun', title: 'Share the Love', description: 'Share your progress on social media or with a friend this week.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+                { id: 'social_challenge_medium', style: 'fun', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest this week.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+                { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Complete a team shooting drill with at least 2 teammates this week.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 // --- Accuracy based (pro) ---
                 { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row this week. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false },
                 { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row this week. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false },
@@ -804,10 +720,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5% this week. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
                 { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10% this week. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
                 { id: 'progress_backhand_improve_medium', style: 'progress', title: 'Backhand Progress', description: 'Improve your backhand accuracy by 7% this week.', shotType: 'backhand', goalType: 'improvement', improvement: 7, difficulty: 'Medium', proLevel: true, isBonus: true },
-                // --- Social/Community ---
-                { id: 'social_share_easy', style: 'social', title: 'Share the Love', description: 'Share your progress on social media or with a friend this week.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'social_challenge_medium', style: 'social', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest this week.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-                { id: 'social_teamwork_hard', style: 'social', title: 'Teamwork Triumph', description: 'Complete a team shooting drill with at least 2 teammates this week.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
             ];
 
             // Difficulty mapping for templates
@@ -823,10 +735,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 return mapped;
             }
 
-            // Prioritize under-practiced shot types
-            const shotsThreshold = maxShotsPerSession[ageGroup] || 80;
-            const underPracticed = Object.keys(shotCounts).filter(key => shotCounts[key] < shotsThreshold);
-
             // Filter eligible templates
             // Pro users: eligible for all templates (proLevel true or false)
             // Non-pro users: only eligible for templates where proLevel !== true
@@ -835,109 +743,46 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             // Shuffle eligible
             eligible = eligible.sort(() => Math.random() - 0.5);
 
-            // --- New logic: Always include one 'fun' style template, and 3 others (total 4), allowing template reuse for different shot types ---
+
+            // --- New logic: Assign a variety of difficulties if possible ---
             const assigned: any[] = [];
-            const usedFunIds = new Set();
             const usedTemplates = new Set();
             const usedShotTypeCombos = new Set();
 
-            // 1. Always include one 'fun' style template
+            // 1. Always include one 'fun' style template if available
             const funTemplates = eligible.filter(t => t.style === 'fun');
             if (funTemplates.length > 0) {
-                // Pick a random fun template
                 const fun = funTemplates[Math.floor(Math.random() * funTemplates.length)];
                 assigned.push(fun);
-                usedFunIds.add(fun.id);
                 usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
                 usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
             }
 
-
-            // 2. Assign 3 other templates, prioritizing underPracticed shot types (lowest first)
+            // 2. Try to assign templates of different difficulties
+            const difficulties = ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'];
+            const alreadyAssignedDifficulties = new Set(assigned.map(t => t.difficulty));
+            // Exclude fun/social for this pass
             const nonFunTemplates = eligible.filter(t => t.style !== 'fun');
-            // Sort underPracticed by lowest count first
-            const prioritizedShotTypes = [...underPracticed];
-            let nonFunPool = [...nonFunTemplates];
-            // Try to assign templates for each underPracticed shot type in order
-            for (const shotType of prioritizedShotTypes) {
+            for (const diff of difficulties) {
                 if (assigned.length >= 4) break;
-                // Find all templates for this shotType
-                const candidates = nonFunPool.filter(t => t.shotType === shotType || t.shotType === 'all' || t.shotType === 'any');
-                for (const template of candidates) {
-                    if (assigned.length >= 4) break;
+                const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
+                if (candidates.length > 0) {
+                    // Pick a random candidate of this difficulty
+                    const template = candidates[Math.floor(Math.random() * candidates.length)];
                     const comboKey = template.id + '|' + (template.shotType || 'any');
-                    if (usedTemplates.has(comboKey)) continue;
-                    // Session-based logic for count_per_session, accuracy, streak, etc.
-                    let meetsCriteria = false;
-                    if (template.goalType === 'count_per_session' && typeof template.sessions === 'number' && typeof template.goalValue === 'number') {
-                        const counts = sessionShotCounts[template.shotType] || [];
-                        let streak = 0;
-                        for (const c of counts) {
-                            if (c >= template.goalValue) streak++;
-                            else streak = 0;
-                            if (streak >= template.sessions) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'accuracy' && typeof template.sessions === 'number' && typeof template.targetAccuracy === 'number') {
-                        const accs = sessionAccuracies[template.shotType] || [];
-                        let streak = 0;
-                        for (const a of accs) {
-                            if (a >= template.targetAccuracy) streak++;
-                            else streak = 0;
-                            if (streak >= template.sessions) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'variety' && typeof template.goalValue === 'number') {
-                        for (let i = 0; i < sessionMeta.length; i++) {
-                            let allMet = true;
-                            for (const type of shotTypes) {
-                                if ((sessionShotCounts[type][i] || 0) < template.goalValue) { allMet = false; break; }
-                            }
-                            if (allMet) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'count' && typeof template.goalValue === 'number') {
-                        if (shotCounts[template.shotType] >= template.goalValue) meetsCriteria = true;
-                    } else if (template.goalType === 'ratio' && typeof template.goalValue === 'number' && typeof template.secondaryValue === 'number') {
-                        const secondaryType = (template as any).secondaryType || 'wrist';
-                        const primary = shotCounts[template.shotType] || 0;
-                        const secondary = shotCounts[secondaryType] || 0;
-                        if (secondary > 0 && (primary / secondary) >= (template.goalValue / template.secondaryValue)) meetsCriteria = true;
-                    } else if (template.goalType === 'streak' && typeof template.goalValue === 'number') {
-                        let streak = 1;
-                        let lastDate: number | null = null;
-                        for (const doc of sessionMeta) {
-                            const data = doc;
-                            let dateObj = data['date'];
-                            if (dateObj && typeof dateObj.toDate === 'function') dateObj = dateObj.toDate();
-                            const date = dateObj instanceof Date ? dateObj.getTime() : (typeof dateObj === 'number' ? dateObj : null);
-                            if (!date) continue;
-                            if (!lastDate) { lastDate = date; continue; }
-                            const diff = Math.abs((lastDate - date) / (1000 * 60 * 60 * 24));
-                            if (diff === 1) streak++;
-                            else streak = 1;
-                            lastDate = date;
-                            if (streak >= template.goalValue) { meetsCriteria = true; break; }
-                        }
-                    } else if (template.goalType === 'sessions' && typeof template.goalValue === 'number') {
-                        if (sessionMeta.length >= template.goalValue) meetsCriteria = true;
-                    } else if (template.goalType === 'improvement' && typeof template.improvement === 'number') {
-                        const accs = sessionAccuracies[template.shotType] || [];
-                        if (accs.length >= 2 && (accs[accs.length - 1] - accs[0]) >= template.improvement) meetsCriteria = true;
-                    } else {
-                        meetsCriteria = true;
-                    }
-                    if (meetsCriteria) {
+                    if (!usedTemplates.has(comboKey)) {
                         assigned.push(template);
                         usedTemplates.add(comboKey);
                         usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
-                        break; // Only one per shotType per pass
+                        alreadyAssignedDifficulties.add(diff);
                     }
                 }
             }
 
-            // Fallback: fill with random eligible if not enough (allowing reuse for different shot types)
+            // 3. If not enough, fill with random eligible (excluding fun/social already assigned)
             let fallbackPool = [...nonFunTemplates];
             while (assigned.length < 4 && fallbackPool.length) {
                 const next = fallbackPool.pop();
-                if (!next) break;
                 const comboKey = next.id + '|' + (next.shotType || 'any');
                 if (!usedTemplates.has(comboKey)) {
                     assigned.push(next);
@@ -964,7 +809,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
         }
 
         res.status(200).send('assignWeeklyAchievements executed successfully:');
-        // res.status(200).send('assignWeeklyAchievements executed successfully: ' + JSON.stringify(debugResults));
     } catch (error) {
         logger.error('Error assigning weekly achievements:', error);
         const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
