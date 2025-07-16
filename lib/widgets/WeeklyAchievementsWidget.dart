@@ -40,143 +40,143 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       children: [
         // Countdown timer
         _WeeklyResetCountdown(nextMonday: _nextMondayEST()),
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: achievementsRef.snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text('No achievements assigned this week.'));
-              }
-              // Sort so bonus achievement is always last
-              final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
-              achievements.sort((a, b) {
-                final aData = a.data() as Map<String, dynamic>;
-                final bData = b.data() as Map<String, dynamic>;
-                final aIsBonus = aData['isBonus'] ?? (aData['id'] ?? '').toString().startsWith('fun_') || (aData['id'] ?? '').toString().startsWith('social_');
-                final bIsBonus = bData['isBonus'] ?? (bData['id'] ?? '').toString().startsWith('fun_') || (bData['id'] ?? '').toString().startsWith('social_');
-                if (aIsBonus == bIsBonus) return 0;
-                return aIsBonus ? 1 : -1;
-              });
-              // Ensure _expanded is the correct length
-              if (_expanded.length != achievements.length) {
-                _expanded = List.filled(achievements.length, false);
-              }
-              return ListView.separated(
-                scrollDirection: Axis.vertical,
-                itemCount: achievements.length,
-                separatorBuilder: (context, idx) => const SizedBox(height: 12),
-                itemBuilder: (context, idx) {
-                  final data = achievements[idx].data() as Map<String, dynamic>;
-                  final id = data['id'] ?? '';
-                  final completed = data['completed'] == true;
-                  final description = data['description'] ?? '';
-                  final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
+        StreamBuilder<QuerySnapshot>(
+          stream: achievementsRef.snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(child: Text('No achievements assigned this week.'));
+            }
+            // Sort so bonus achievement is always last
+            final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
+            achievements.sort((a, b) {
+              final aData = a.data() as Map<String, dynamic>;
+              final bData = b.data() as Map<String, dynamic>;
+              final aIsBonus = aData['isBonus'] ?? (aData['id'] ?? '').toString().startsWith('fun_') || (aData['id'] ?? '').toString().startsWith('social_');
+              final bIsBonus = bData['isBonus'] ?? (bData['id'] ?? '').toString().startsWith('fun_') || (bData['id'] ?? '').toString().startsWith('social_');
+              if (aIsBonus == bIsBonus) return 0;
+              return aIsBonus ? 1 : -1;
+            });
+            // Ensure _expanded is the correct length
+            if (_expanded.length != achievements.length) {
+              _expanded = List.filled(achievements.length, false);
+            }
+            return ListView.separated(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: achievements.length,
+              separatorBuilder: (context, idx) => const SizedBox(height: 12),
+              itemBuilder: (context, idx) {
+                final data = achievements[idx].data() as Map<String, dynamic>;
+                final id = data['id'] ?? '';
+                final completed = data['completed'] == true;
+                final description = data['description'] ?? '';
+                final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
 
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isBonus ? const Color(0xFFFFD700) : (completed ? Colors.green : Theme.of(context).primaryColor),
-                            width: 2.5,
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            isBonus
-                                ? GestureDetector(
-                                    onTap: () async {
-                                      await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                    },
-                                    child: Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: completed
-                                              ? Colors.green
-                                              : (isBonus)
-                                                  ? const Color(0xFFFFD700)
-                                                  : Theme.of(context).primaryColor,
-                                          width: 2.2,
-                                        ),
-                                        color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                      ),
-                                      child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
-                                    ),
-                                  )
-                                : Container(),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        description,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: Theme.of(context).colorScheme.onSurface,
-                                          fontFamily: 'NovecentoSans',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isBonus ? const Color(0xFFFFD700) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                          width: 2.5,
                         ),
                       ),
-                      if (isBonus)
-                        Positioned(
-                          top: -7,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.9),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          isBonus
+                              ? GestureDetector(
+                                  onTap: () async {
+                                    await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                  },
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: completed
+                                            ? Colors.green
+                                            : (isBonus)
+                                                ? const Color(0xFFFFD700)
+                                                : Theme.of(context).primaryColor,
+                                        width: 2.2,
+                                      ),
+                                      color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                    ),
+                                    child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                  ),
+                                )
+                              : Container(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      description,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontFamily: 'NovecentoSans',
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            child: Text(
-                              'BONUS',
-                              style: TextStyle(
-                                color: Colors.black.withOpacity(0.9),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                                fontFamily: 'NovecentoSans',
-                                letterSpacing: 1.2,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isBonus)
+                      Positioned(
+                        top: -7,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFD700).withOpacity(0.9),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
+                            ],
+                          ),
+                          child: Text(
+                            'BONUS',
+                            style: TextStyle(
+                              color: Colors.black.withOpacity(0.9),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              fontFamily: 'NovecentoSans',
+                              letterSpacing: 1.2,
                             ),
                           ),
                         ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                      ),
+                  ],
+                );
+              },
+            );
+          },
         ),
       ],
     );
