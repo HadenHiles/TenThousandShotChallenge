@@ -13,5 +13,6 @@ Future<void> presentPaywallIfNeeded() async {
 Future<String> subscriptionLevel(BuildContext context) async {
   final customerInfo = Provider.of<CustomerInfo?>(context, listen: false);
   bool isPro = customerInfo?.entitlements.active.isNotEmpty ?? false;
-  return isPro ? "pro" : "free";
+  // return isPro ? "pro" : "free";
+  return "pro"; // For testing purposes, always return "pro" TODO: Remove this line in production
 }
