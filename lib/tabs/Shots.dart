@@ -498,9 +498,9 @@ class _ShotsState extends State<Shots> {
                             crossFadeState: _achievementsCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
                             firstChild: Container(),
                             secondChild: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              padding: const EdgeInsets.only(left: 8, right: 8, top: 0, bottom: 10),
                               child: SizedBox(
-                                height: 210,
+                                height: 345,
                                 child: WeeklyAchievementsWidget(),
                               ),
                             ),
