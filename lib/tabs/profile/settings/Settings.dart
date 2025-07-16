@@ -48,19 +48,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   }
 
   _loadSubscriptionLevel() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     subscriptionLevel(context).then((level) async {
       setState(() {
         _subscriptionLevel = level;
       });
-      // If just upgraded, reload app and navigate to settings
-      if (prefs.getBool('just_upgraded_to_pro') == true) {
-        prefs.setBool('just_upgraded_to_pro', false);
-        // Reload app and navigate to settings
-        Future.microtask(() {
-          GoRouter.of(context).go('/settings');
-        });
-      }
     }).catchError((error) {
       print("Error loading subscription level: $error");
     });
