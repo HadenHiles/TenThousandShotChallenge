@@ -550,7 +550,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                       return false;
                                                     }).toList();
                                                     Map<String, double> progressMap = {};
-                                                    double progressSum = 0.0;
                                                     for (final t in shotTypes) {
                                                       double count = 0.0;
                                                       for (final session in sessions) {
@@ -560,9 +559,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                       }
                                                       final prog = (count / goalValue).clamp(0.0, 1.0);
                                                       progressMap[t] = prog;
-                                                      progressSum += prog;
                                                     }
-                                                    final overallProgress = progressSum / shotTypes.length;
                                                     return Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
