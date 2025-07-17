@@ -28,6 +28,35 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
 
   late List<bool> _expanded = [];
 
+  // Placeholder progress functions for each style
+  double _getAchievementProgress(Map<String, dynamic> data) {
+    final style = data['style'] ?? '';
+    switch (style) {
+      case 'quantity':
+        return _dummyProgress(data);
+      case 'accuracy':
+        return _dummyProgress(data);
+      case 'ratio':
+        return _dummyProgress(data);
+      case 'consistency':
+        return _dummyProgress(data);
+      case 'progress':
+        return _dummyProgress(data);
+      default:
+        return 0.0;
+    }
+  }
+
+  double _dummyProgress(Map<String, dynamic> data) {
+    // TODO: Replace with real logic later
+    // For demo, return a random-ish value based on id hash
+    final id = data['id'] ?? '';
+    if (id is String && id.isNotEmpty) {
+      return ((id.codeUnitAt(0) % 100) / 100).clamp(0.1, 0.95);
+    }
+    return 0.5;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_user == null) {
@@ -76,11 +105,13 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                 final description = data['description'] ?? '';
                 final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
 
+                final style = data['style'] ?? '';
+                final showProgress = ['quantity', 'accuracy', 'consistency', 'progress'].contains(style);
+                final progress = showProgress ? _getAchievementProgress(data) : 0.0;
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
                         color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
@@ -90,51 +121,71 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           width: 2.5,
                         ),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      child: Stack(
                         children: [
-                          isBonus
-                              ? GestureDetector(
-                                  onTap: () async {
-                                    await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                  },
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: completed
-                                            ? Colors.green
-                                            : (isBonus)
-                                                ? const Color(0xFFFFD700)
-                                                : Theme.of(context).primaryColor,
-                                        width: 2.2,
-                                      ),
-                                      color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                    ),
-                                    child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                          if (showProgress)
+                            Positioned.fill(
+                              child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: progress.clamp(0.0, 1.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.22),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                )
-                              : Container(),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
+                                ),
+                              ),
+                            ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      description,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                        fontFamily: 'NovecentoSans',
+                                isBonus
+                                    ? GestureDetector(
+                                        onTap: () async {
+                                          await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                        },
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: completed
+                                                  ? Colors.green
+                                                  : (isBonus)
+                                                      ? const Color(0xFFFFD700)
+                                                      : Theme.of(context).primaryColor,
+                                              width: 2.2,
+                                            ),
+                                            color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                          ),
+                                          child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                        ),
+                                      )
+                                    : Container(),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            description,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontFamily: 'NovecentoSans',
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
