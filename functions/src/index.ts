@@ -269,11 +269,98 @@ export const sessionUpdated = onDocumentUpdated({ document: "iterations/{userId}
 // Update the iteration timestamp for caching purposes any time a session is deleted
 export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}" }, async (event) => {
     const context = event;
-    // Retrieve the user who will be receiving the notification
-    await db.collection(`iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({ 'updated_at': new Date(Date.now()) }).then((_) => true).catch((err) => {
+    // Update the iteration timestamp
+    await db.collection(`iterations/${context.params.userId}/iterations`).doc(`${context.params.iterationId}`).update({ 'updated_at': new Date(Date.now()) }).catch((err) => {
         logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
+
+    // --- Recalculate and write summary stats to /users/{userId}/stats/weekly ---
+    try {
+        const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
+        let recentSessions = [];
+        let seasonTotalShots = 0;
+        let seasonTotalShotsWithAccuracy = 0;
+        let seasonTargetsHit = 0;
+        let shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+        let seasonShotTypeTotals = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+        let seasonTargetsHitType = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+        let seasonAccuracyType = { wrist: 0.0, snap: 0.0, slap: 0.0, backhand: 0.0 };
+
+        let sessionCount = 0;
+        for (const sessionDoc of sessionsSnap.docs) {
+            const s = sessionDoc.data();
+            if (sessionCount < 10) {
+                recentSessions.push({
+                    date: s.date,
+                    shots: {
+                        wrist: s.total_wrist || 0,
+                        snap: s.total_snap || 0,
+                        slap: s.total_slap || 0,
+                        backhand: s.total_backhand || 0
+                    },
+                    targets_hit: {
+                        wrist: s.wrist_targets_hit || 0,
+                        snap: s.snap_targets_hit || 0,
+                        slap: s.slap_targets_hit || 0,
+                        backhand: s.backhand_targets_hit || 0
+                    }
+                });
+            }
+            sessionCount++;
+            seasonTotalShots += typeof s.total === 'number' ? s.total : 0;
+            seasonShotTypeTotals.wrist += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
+            seasonShotTypeTotals.snap += typeof s.total_snap === 'number' ? s.total_snap : 0;
+            seasonShotTypeTotals.slap += typeof s.total_slap === 'number' ? s.total_slap : 0;
+            seasonShotTypeTotals.backhand += typeof s.total_backhand === 'number' ? s.total_backhand : 0;
+
+            // Only include sessions with any targets_hit for accuracy stats
+            const hasAccuracy = (s.wrist_targets_hit || 0) > 0 || (s.snap_targets_hit || 0) > 0 || (s.slap_targets_hit || 0) > 0 || (s.backhand_targets_hit || 0) > 0;
+            if (hasAccuracy) {
+                seasonTotalShotsWithAccuracy += typeof s.total === 'number' ? s.total : 0;
+                seasonTargetsHitType.wrist += typeof s.wrist_targets_hit === 'number' ? s.wrist_targets_hit : 0;
+                seasonTargetsHitType.snap += typeof s.snap_targets_hit === 'number' ? s.snap_targets_hit : 0;
+                seasonTargetsHitType.slap += typeof s.slap_targets_hit === 'number' ? s.slap_targets_hit : 0;
+                seasonTargetsHitType.backhand += typeof s.backhand_targets_hit === 'number' ? s.backhand_targets_hit : 0;
+            }
+        }
+
+        seasonTargetsHit = Object.values(seasonTargetsHitType).reduce((a, b) => a + b, 0);
+        // Calculate accuracy per shot type (only for sessions with accuracy)
+        for (const type of shotTypes) {
+            let shots = 0;
+            let hits = seasonTargetsHitType[type as keyof typeof seasonTargetsHitType];
+            for (const sessionDoc of sessionsSnap.docs) {
+                const s = sessionDoc.data();
+                const hasAccuracy = (s.wrist_targets_hit || 0) > 0 || (s.snap_targets_hit || 0) > 0 || (s.slap_targets_hit || 0) > 0 || (s.backhand_targets_hit || 0) > 0;
+                if (hasAccuracy) {
+                    if (type === 'wrist') shots += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
+                    if (type === 'snap') shots += typeof s.total_snap === 'number' ? s.total_snap : 0;
+                    if (type === 'slap') shots += typeof s.total_slap === 'number' ? s.total_slap : 0;
+                    if (type === 'backhand') shots += typeof s.total_backhand === 'number' ? s.total_backhand : 0;
+                }
+            }
+            seasonAccuracyType[type as keyof typeof seasonAccuracyType] = shots > 0 ? (hits / shots) * 100.0 : 0.0;
+        }
+        const seasonAccuracy = seasonTotalShotsWithAccuracy > 0 ? (seasonTargetsHit / seasonTotalShotsWithAccuracy) * 100.0 : 0.0;
+
+        // Write summary stats to /users/{userId}/stats/weekly
+        const statsRef = db.collection('users').doc(context.params.userId).collection('stats').doc('weekly');
+        await statsRef.set({
+            week_start: new Date(), // Optionally use getWeekStartEST()
+            total_sessions: sessionsSnap.docs.length,
+            total_shots: seasonShotTypeTotals,
+            targets_hit: seasonTargetsHitType,
+            accuracy: seasonAccuracyType,
+            season_total_shots: seasonTotalShots,
+            season_total_shots_with_accuracy: seasonTotalShotsWithAccuracy,
+            season_targets_hit: seasonTargetsHit,
+            season_accuracy: seasonAccuracy,
+            sessions: recentSessions
+        });
+    } catch (e) {
+        logger.error('Error updating weekly stats after session deletion:', e);
+    }
 });
 
 function getFriendNotificationMessage(playerName: string, teammateName: string): string {

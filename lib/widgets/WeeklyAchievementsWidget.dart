@@ -145,28 +145,31 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     return (seasonAccuracy / improvement).clamp(0.0, 1.0);
   }
 
-  // Dummy ratio progress and feedback for demo
-  double _getRatioValue(Map<String, dynamic> data) {
-    // TODO: Replace with real logic
-    // For demo, return a value between 0.0 and 1.0
-    final id = data['id'] ?? '';
-    if (id is String && id.isNotEmpty) {
-      return ((id.codeUnitAt(0) % 100) / 100).clamp(0.0, 1.0);
-    }
-    return 0.5;
-  }
-
   String _getRatioFeedback(Map<String, dynamic> data, double ratioValue, double sweetSpot) {
-    // Show feedback based on how close the user is to the sweet spot
-    final diff = (ratioValue - sweetSpot).abs();
-    if (diff < 0.08) {
-      return 'Right on the money!';
-    } else if (diff < 0.18) {
-      return 'Crushing it!';
-    } else if (ratioValue < sweetSpot) {
-      return 'Keep taking more of the first shot!';
+    final primaryType = data['shotType'] ?? data['primaryType'] ?? 'wrist';
+    final secondaryType = data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
+    final isOneToOne = (data['goalValue']?.toDouble() ?? 1.0) == 1.0 && (data['secondaryValue']?.toDouble() ?? 1.0) == 1.0;
+    if (isOneToOne) {
+      final diff = (ratioValue - sweetSpot).abs();
+      if (diff < 0.09) {
+        return 'Right on the money!';
+      } else if (ratioValue > sweetSpot) {
+        return 'A little heavy on $primaryType shots. Try a few more $secondaryType shots for perfect balance!';
+      } else {
+        return 'A little heavy on $secondaryType shots. Try a few more $primaryType shots for perfect balance!';
+      }
     } else {
-      return 'Try to balance your shots!';
+      if (ratioValue >= sweetSpot) {
+        if ((ratioValue - sweetSpot) < 0.09) {
+          return 'Right on the money!';
+        } else {
+          return 'Crushing it! You exceeded the minimum ratio for $primaryType shots.';
+        }
+      } else if ((sweetSpot - ratioValue) < 0.09) {
+        return 'Almost there! Keep taking more $primaryType shots than $secondaryType shots!';
+      } else {
+        return 'Keep going!';
+      }
     }
   }
 
@@ -238,12 +241,46 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
 
                     final style = data['style'] ?? '';
                     if (style == 'ratio') {
-                      // Ratio achievement: show a custom sliding scale (leave as dummy for now)
+                      // Calculate ratio using shotType and shotTypeComparison (with fallback to primaryType/secondaryType)
                       final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
                       final secondaryValue = (data['secondaryValue'] is num) ? data['secondaryValue'].toDouble() : 1.0;
                       final sweetSpot = goalValue / (goalValue + secondaryValue);
-                      final ratioValue = _getRatioValue(data);
-                      final feedback = _getRatioFeedback(data, ratioValue, sweetSpot);
+                      final primaryType = data['shotType'] ?? data['primaryType'] ?? 'wrist';
+                      final secondaryType = data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
+                      // Use filtered weekly sessions from stats
+                      final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      double primaryCount = 0.0;
+                      double secondaryCount = 0.0;
+                      for (final session in rawSessions) {
+                        if (session.containsKey('shots') && session['shots'] is Map) {
+                          final shots = session['shots'] as Map;
+                          if (primaryType.contains('+')) {
+                            for (final t in primaryType.split('+')) {
+                              if (shots[t] is num) primaryCount += (shots[t] as num).toDouble();
+                            }
+                          } else if (shots[primaryType] is num) {
+                            primaryCount += (shots[primaryType] as num).toDouble();
+                          }
+                          if (secondaryType.contains('+')) {
+                            for (final t in secondaryType.split('+')) {
+                              if (shots[t] is num) secondaryCount += (shots[t] as num).toDouble();
+                            }
+                          } else if (shots[secondaryType] is num) {
+                            secondaryCount += (shots[secondaryType] as num).toDouble();
+                          }
+                        }
+                      }
+                      final total = primaryCount + secondaryCount;
+                      final ratioValue = total > 0 ? (primaryCount / total) : 0.0;
+                      final feedback = _getRatioFeedback(
+                        {
+                          ...data,
+                          'primaryType': primaryType,
+                          'secondaryType': secondaryType,
+                        },
+                        ratioValue,
+                        sweetSpot,
+                      );
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -364,6 +401,14 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 fontSize: 11,
                                                 color: Colors.green[900],
                                                 fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            // Show actual ratio numbers for clarity
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 2.0),
+                                              child: Text(
+                                                'Your ratio:  ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
+                                                style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                                               ),
                                             ),
                                           ],
