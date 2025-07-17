@@ -73,9 +73,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return false;
     }).toList();
     if (shotType == 'all') {
-      // For 'all', require each type to reach goalValue
+      // For 'all', progress is the average of the four shot type progresses
       final types = ['wrist', 'snap', 'slap', 'backhand'];
-      double minProgress = 1.0;
+      double progressSum = 0.0;
       for (final t in types) {
         double count = 0.0;
         for (final session in sessions) {
@@ -84,9 +84,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
           }
         }
         final progress = (count / goalValue).clamp(0.0, 1.0);
-        if (progress < minProgress) minProgress = progress;
+        progressSum += progress;
       }
-      return minProgress;
+      return progressSum / types.length;
     } else if (shotType == 'any') {
       // Sum all types
       double sum = 0.0;
@@ -530,6 +530,115 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                   fontFamily: 'NovecentoSans',
                                                 ),
                                               ),
+                                              if (data['style'] == 'quantity' && data['shotType'] == 'all')
+                                                Builder(
+                                                  builder: (context) {
+                                                    // Calculate per-type and overall progress for this achievement
+                                                    final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+                                                    final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+                                                    final prevMonday = _previousMondayEST();
+                                                    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                                                    final sessions = rawSessions.where((session) {
+                                                      if (session.containsKey('date')) {
+                                                        final date = session['date'];
+                                                        if (date is Timestamp) {
+                                                          return date.toDate().isAfter(prevMonday) || date.toDate().isAtSameMomentAs(prevMonday);
+                                                        } else if (date is DateTime) {
+                                                          return date.isAfter(prevMonday) || date.isAtSameMomentAs(prevMonday);
+                                                        }
+                                                      }
+                                                      return false;
+                                                    }).toList();
+                                                    Map<String, double> progressMap = {};
+                                                    double progressSum = 0.0;
+                                                    for (final t in shotTypes) {
+                                                      double count = 0.0;
+                                                      for (final session in sessions) {
+                                                        if (session.containsKey('shots') && session['shots'] is Map && session['shots'][t] is num) {
+                                                          count += (session['shots'][t] as num).toDouble();
+                                                        }
+                                                      }
+                                                      final prog = (count / goalValue).clamp(0.0, 1.0);
+                                                      progressMap[t] = prog;
+                                                      progressSum += prog;
+                                                    }
+                                                    final overallProgress = progressSum / shotTypes.length;
+                                                    return Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const SizedBox(height: 8),
+                                                        ...shotTypes.map((t) {
+                                                          final prog = progressMap[t] ?? 0.0;
+                                                          Color barColor;
+                                                          switch (t) {
+                                                            case 'wrist':
+                                                              barColor = Colors.cyan;
+                                                              break;
+                                                            case 'snap':
+                                                              barColor = Colors.blue;
+                                                              break;
+                                                            case 'backhand':
+                                                              barColor = Colors.indigo;
+                                                              break;
+                                                            case 'slap':
+                                                              barColor = Colors.teal;
+                                                              break;
+                                                            default:
+                                                              barColor = Colors.green;
+                                                          }
+                                                          // Calculate shot count for this type
+                                                          double count = 0.0;
+                                                          for (final session in sessions) {
+                                                            if (session.containsKey('shots') && session['shots'] is Map && session['shots'][t] is num) {
+                                                              count += (session['shots'][t] as num).toDouble();
+                                                            }
+                                                          }
+                                                          final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+                                                          return Padding(
+                                                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                                            child: Row(
+                                                              children: [
+                                                                SizedBox(
+                                                                  width: 60,
+                                                                  child: Text(
+                                                                    t[0].toUpperCase() + t.substring(1),
+                                                                    style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                                                                  ),
+                                                                ),
+                                                                Expanded(
+                                                                  child: Stack(
+                                                                    children: [
+                                                                      Container(
+                                                                        height: 10,
+                                                                        decoration: BoxDecoration(
+                                                                          color: Colors.grey.withOpacity(0.18),
+                                                                          borderRadius: BorderRadius.circular(6),
+                                                                        ),
+                                                                      ),
+                                                                      FractionallySizedBox(
+                                                                        alignment: Alignment.centerLeft,
+                                                                        widthFactor: prog,
+                                                                        child: Container(
+                                                                          height: 10,
+                                                                          decoration: BoxDecoration(
+                                                                            color: barColor,
+                                                                            borderRadius: BorderRadius.circular(6),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(width: 8),
+                                                                Text('${count.toStringAsFixed(0)}/${goalValue.toStringAsFixed(0)}', style: TextStyle(fontSize: 11, color: Colors.green[900])),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        }),
+                                                      ],
+                                                    );
+                                                  },
+                                                ),
                                             ],
                                           ),
                                         ],
