@@ -11,6 +11,15 @@ class WeeklyAchievementsWidget extends StatefulWidget {
 }
 
 class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
+  // Returns the previous Monday at 12am EST (UTC-5)
+  DateTime _previousMondayEST() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: -5)); // Convert to EST
+    int daysToSubtract = (now.weekday - 1) % 7;
+    final prevMonday = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+    // Set to 12am EST, then convert back to UTC
+    return DateTime(prevMonday.year, prevMonday.month, prevMonday.day, 0, 0, 0).toUtc().add(const Duration(hours: 5));
+  }
+
   User? _user;
 
   @override
@@ -28,33 +37,112 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
 
   late List<bool> _expanded = [];
 
-  // Placeholder progress functions for each style
-  double _getAchievementProgress(Map<String, dynamic> data) {
+  // Progress calculation for each style using stats
+  double _getAchievementProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
     final style = data['style'] ?? '';
     switch (style) {
       case 'quantity':
-        return _dummyProgress(data);
+        return _quantityProgress(data, stats);
       case 'accuracy':
-        return _dummyProgress(data);
-      case 'ratio':
-        return _dummyProgress(data);
+        return _accuracyProgress(data, stats);
       case 'consistency':
-        return _dummyProgress(data);
+        return _consistencyProgress(data, stats);
       case 'progress':
-        return _dummyProgress(data);
+        return _progressStyleProgress(data, stats);
       default:
         return 0.0;
     }
   }
 
-  double _dummyProgress(Map<String, dynamic> data) {
-    // TODO: Replace with real logic later
-    // For demo, return a random-ish value based on id hash
-    final id = data['id'] ?? '';
-    if (id is String && id.isNotEmpty) {
-      return ((id.codeUnitAt(0) % 100) / 100).clamp(0.1, 0.95);
+  double _quantityProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+    // e.g. goalType: 'count', 'count_time', 'count_each_hand', etc.
+    final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+    final shotType = data['shotType'] ?? 'any';
+    final prevMonday = _previousMondayEST();
+    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    // Filter sessions to only those after previous Monday 12am EST
+    final sessions = rawSessions.where((session) {
+      if (session.containsKey('date')) {
+        final date = session['date'];
+        if (date is Timestamp) {
+          return date.toDate().isAfter(prevMonday) || date.toDate().isAtSameMomentAs(prevMonday);
+        } else if (date is DateTime) {
+          return date.isAfter(prevMonday) || date.isAtSameMomentAs(prevMonday);
+        }
+      }
+      return false;
+    }).toList();
+    if (shotType == 'all') {
+      // For 'all', require each type to reach goalValue
+      final types = ['wrist', 'snap', 'slap', 'backhand'];
+      double minProgress = 1.0;
+      for (final t in types) {
+        double count = 0.0;
+        for (final session in sessions) {
+          if (session.containsKey('shots') && session['shots'] is Map && session['shots'][t] is num) {
+            count += (session['shots'][t] as num).toDouble();
+          }
+        }
+        final progress = (count / goalValue).clamp(0.0, 1.0);
+        if (progress < minProgress) minProgress = progress;
+      }
+      return minProgress;
+    } else if (shotType == 'any') {
+      // Sum all types
+      double sum = 0.0;
+      for (final session in sessions) {
+        if (session.containsKey('shots') && session['shots'] is Map) {
+          for (final v in (session['shots'] as Map).values) {
+            if (v is num) sum += v.toDouble();
+          }
+        }
+      }
+      return (sum / goalValue).clamp(0.0, 1.0);
+    } else {
+      // Specific shot type
+      double count = 0.0;
+      for (final session in sessions) {
+        if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+          count += (session['shots'][shotType] as num).toDouble();
+        }
+      }
+      return (count / goalValue).clamp(0.0, 1.0);
     }
-    return 0.5;
+  }
+
+  double _accuracyProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+    final targetAccuracy = (data['targetAccuracy'] is num) ? data['targetAccuracy'].toDouble() : 100.0;
+    final shotType = data['shotType'] ?? 'any';
+    final accuracy = stats['accuracy'] ?? {};
+    if (accuracy is Map && accuracy.containsKey(shotType)) {
+      final acc = (accuracy[shotType] is num) ? accuracy[shotType].toDouble() : 0.0;
+      return (acc / targetAccuracy).clamp(0.0, 1.0);
+    } else if (shotType == 'all' && accuracy is Map) {
+      // For 'all', require each type to reach targetAccuracy
+      final types = ['wrist', 'snap', 'slap', 'backhand'];
+      double minProgress = 1.0;
+      for (final t in types) {
+        final acc = (accuracy[t] is num) ? accuracy[t].toDouble() : 0.0;
+        minProgress = minProgress < (acc / targetAccuracy).clamp(0.0, 1.0) ? minProgress : (acc / targetAccuracy).clamp(0.0, 1.0);
+      }
+      return minProgress;
+    }
+    return 0.0;
+  }
+
+  double _consistencyProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+    // e.g. goalType: 'sessions', 'streak', etc.
+    final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+    final totalSessions = (stats['total_sessions'] is num) ? stats['total_sessions'].toDouble() : 0.0;
+    return (totalSessions / goalValue).clamp(0.0, 1.0);
+  }
+
+  double _progressStyleProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+    // e.g. improvement: 5 (improve accuracy by 5%)
+    final improvement = (data['improvement'] is num) ? data['improvement'].toDouble() : 1.0;
+    // For demo, just use overall season_accuracy
+    final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
+    return (seasonAccuracy / improvement).clamp(0.0, 1.0);
   }
 
   // Dummy ratio progress and feedback for demo
@@ -88,298 +176,198 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return const Center(child: Text('Sign in to view achievements'));
     }
     final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').limit(4);
+    final statsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('stats').doc('weekly');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Countdown timer
         _WeeklyResetCountdown(nextMonday: _nextMondayEST()),
-        StreamBuilder<QuerySnapshot>(
-          stream: achievementsRef.snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text('No achievements assigned this week.'));
-            }
-            // Sort so bonus achievement is always last
-            final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
-            achievements.sort((a, b) {
-              final aData = a.data() as Map<String, dynamic>;
-              final bData = b.data() as Map<String, dynamic>;
-              final aIsBonus = aData['isBonus'] ?? (aData['id'] ?? '').toString().startsWith('fun_') || (aData['id'] ?? '').toString().startsWith('social_');
-              final bIsBonus = bData['isBonus'] ?? (bData['id'] ?? '').toString().startsWith('fun_') || (bData['id'] ?? '').toString().startsWith('social_');
-              if (aIsBonus == bIsBonus) return 0;
-              return aIsBonus ? 1 : -1;
-            });
-            // Ensure _expanded is the correct length
-            if (_expanded.length != achievements.length) {
-              _expanded = List.filled(achievements.length, false);
-            }
-            return ListView.separated(
-              scrollDirection: Axis.vertical,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: achievements.length,
-              separatorBuilder: (context, idx) => const SizedBox(height: 12),
-              itemBuilder: (context, idx) {
-                final data = achievements[idx].data() as Map<String, dynamic>;
-                final id = data['id'] ?? '';
-                final completed = data['completed'] == true;
-                final description = data['description'] ?? '';
-                final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
+        StreamBuilder<DocumentSnapshot>(
+          stream: statsRef.snapshots(),
+          builder: (context, statsSnapshot) {
+            final statsRaw = (statsSnapshot.data?.data() as Map<String, dynamic>?) ?? {};
+            // Filter sessions to only those after previous Monday 12am EST
+            final prevMonday = _previousMondayEST();
+            List<dynamic> sessions = (statsRaw['sessions'] is List) ? List.from(statsRaw['sessions']) : [];
+            sessions = sessions.where((s) {
+              if (s is Map && s.containsKey('date')) {
+                final date = s['date'];
+                if (date is Timestamp) {
+                  return date.toDate().isAfter(prevMonday) || date.toDate().isAtSameMomentAs(prevMonday);
+                } else if (date is DateTime) {
+                  return date.isAfter(prevMonday) || date.isAtSameMomentAs(prevMonday);
+                }
+              }
+              return false;
+            }).toList();
+            // Copy statsRaw and replace sessions with filtered list
+            final stats = Map<String, dynamic>.from(statsRaw);
+            return StreamBuilder<QuerySnapshot>(
+              stream: achievementsRef.snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text('No achievements assigned this week.'));
+                }
+                final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
+                achievements.sort((a, b) {
+                  final aData = a.data() as Map<String, dynamic>;
+                  final bData = b.data() as Map<String, dynamic>;
+                  final aIsBonus = aData['isBonus'] ?? (aData['id'] ?? '').toString().startsWith('fun_') || (aData['id'] ?? '').toString().startsWith('social_');
+                  final bIsBonus = bData['isBonus'] ?? (bData['id'] ?? '').toString().startsWith('fun_') || (bData['id'] ?? '').toString().startsWith('social_');
+                  if (aIsBonus == bIsBonus) return 0;
+                  return aIsBonus ? 1 : -1;
+                });
+                if (_expanded.length != achievements.length) {
+                  _expanded = List.filled(achievements.length, false);
+                }
+                return ListView.separated(
+                  scrollDirection: Axis.vertical,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: achievements.length,
+                  separatorBuilder: (context, idx) => const SizedBox(height: 12),
+                  itemBuilder: (context, idx) {
+                    final data = achievements[idx].data() as Map<String, dynamic>;
+                    final id = data['id'] ?? '';
+                    final completed = data['completed'] == true;
+                    final description = data['description'] ?? '';
+                    final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
 
-                final style = data['style'] ?? '';
-                if (style == 'ratio') {
-                  // Ratio achievement: show a custom sliding scale
-                  final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
-                  final secondaryValue = (data['secondaryValue'] is num) ? data['secondaryValue'].toDouble() : 1.0;
-                  final sweetSpot = goalValue / (goalValue + secondaryValue);
-                  final ratioValue = _getRatioValue(data);
-                  final feedback = _getRatioFeedback(data, ratioValue, sweetSpot);
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isBonus ? const Color(0xFFFFD700) : (completed ? Colors.green : Theme.of(context).primaryColor),
-                            width: 2.5,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  isBonus
-                                      ? GestureDetector(
-                                          onTap: () async {
-                                            await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                          },
-                                          child: Container(
-                                            width: 28,
-                                            height: 28,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: completed
-                                                    ? Colors.green
-                                                    : (isBonus)
-                                                        ? const Color(0xFFFFD700)
-                                                        : Theme.of(context).primaryColor,
-                                                width: 2.2,
+                    final style = data['style'] ?? '';
+                    if (style == 'ratio') {
+                      // Ratio achievement: show a custom sliding scale (leave as dummy for now)
+                      final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+                      final secondaryValue = (data['secondaryValue'] is num) ? data['secondaryValue'].toDouble() : 1.0;
+                      final sweetSpot = goalValue / (goalValue + secondaryValue);
+                      final ratioValue = _getRatioValue(data);
+                      final feedback = _getRatioFeedback(data, ratioValue, sweetSpot);
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                                width: 2.5,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      isBonus
+                                          ? GestureDetector(
+                                              onTap: () async {
+                                                await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                              },
+                                              child: Container(
+                                                width: 28,
+                                                height: 28,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: completed
+                                                        ? Colors.green
+                                                        : (isBonus)
+                                                            ? const Color(0xFFFFD700)
+                                                            : Theme.of(context).primaryColor,
+                                                    width: 2.2,
+                                                  ),
+                                                  color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                                ),
+                                                child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
                                               ),
-                                              color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                            ),
-                                            child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
-                                          ),
-                                        )
-                                      : Container(),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          description,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: Theme.of(context).colorScheme.onSurface,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        // Sliding scale
-                                        Stack(
-                                          alignment: Alignment.centerLeft,
+                                            )
+                                          : Container(),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
                                           children: [
-                                            Container(
-                                              height: 18,
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.withOpacity(0.13),
-                                                borderRadius: BorderRadius.circular(8),
+                                            Text(
+                                              description,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                                fontFamily: 'NovecentoSans',
                                               ),
                                             ),
-                                            Positioned(
-                                              left: 0,
-                                              right: 0,
-                                              child: FractionallySizedBox(
-                                                alignment: Alignment.centerLeft,
-                                                widthFactor: sweetSpot,
-                                                child: Container(
+                                            const SizedBox(height: 8),
+                                            // Sliding scale
+                                            Stack(
+                                              alignment: Alignment.centerLeft,
+                                              children: [
+                                                Container(
                                                   height: 18,
                                                   decoration: BoxDecoration(
-                                                    color: Colors.green.withOpacity(0.28),
+                                                    color: Colors.green.withOpacity(0.13),
                                                     borderRadius: BorderRadius.circular(8),
                                                   ),
                                                 ),
-                                              ),
-                                            ),
-                                            // User's current ratio indicator
-                                            Positioned(
-                                              left: (ratioValue * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
-                                              child: Container(
-                                                width: 18,
-                                                height: 18,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 2),
+                                                Positioned(
+                                                  left: 0,
+                                                  right: 0,
+                                                  child: FractionallySizedBox(
+                                                    alignment: Alignment.centerLeft,
+                                                    widthFactor: sweetSpot,
+                                                    child: Container(
+                                                      height: 18,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green.withOpacity(0.28),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                            // Sweet spot indicator
-                                            Positioned(
-                                              left: (sweetSpot * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
-                                              child: Container(
-                                                width: 10,
-                                                height: 10,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.yellow,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.black, width: 1),
+                                                // User's current ratio indicator
+                                                Positioned(
+                                                  left: (ratioValue * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                  child: Container(
+                                                    width: 18,
+                                                    height: 18,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.white, width: 2),
+                                                    ),
+                                                  ),
                                                 ),
+                                                // Sweet spot indicator
+                                                Positioned(
+                                                  left: (sweetSpot * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                  child: Container(
+                                                    width: 10,
+                                                    height: 10,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.yellow,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.black, width: 1),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              feedback,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.green[900],
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          feedback,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.green[900],
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isBonus)
-                        Positioned(
-                          top: -7,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.9),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              'BONUS',
-                              style: TextStyle(
-                                color: Colors.black.withOpacity(0.9),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                                fontFamily: 'NovecentoSans',
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                }
-                // Default: all other styles
-                final showProgress = ['quantity', 'accuracy', 'consistency', 'progress'].contains(style);
-                final progress = showProgress ? _getAchievementProgress(data) : 0.0;
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isBonus ? const Color(0xFFFFD700) : (completed ? Colors.green : Theme.of(context).primaryColor),
-                          width: 2.5,
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          if (showProgress)
-                            Positioned.fill(
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: progress.clamp(0.0, 1.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.22),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                isBonus
-                                    ? GestureDetector(
-                                        onTap: () async {
-                                          await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                        },
-                                        child: Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: completed
-                                                  ? Colors.green
-                                                  : (isBonus)
-                                                      ? const Color(0xFFFFD700)
-                                                      : Theme.of(context).primaryColor,
-                                              width: 2.2,
-                                            ),
-                                            color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                          ),
-                                          child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
-                                        ),
-                                      )
-                                    : Container(),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            description,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                              fontFamily: 'NovecentoSans',
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                     ],
                                   ),
@@ -387,40 +375,160 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               ],
                             ),
                           ),
+                          if (isBonus)
+                            Positioned(
+                              top: -7,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFD700),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.9),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'BONUS',
+                                  style: TextStyle(
+                                    color: Colors.black.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                    fontFamily: 'NovecentoSans',
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
-                      ),
-                    ),
-                    if (isBonus)
-                      Positioned(
-                        top: -7,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                      );
+                    }
+                    // Default: all other styles
+                    final showProgress = ['quantity', 'accuracy', 'consistency', 'progress'].contains(style);
+                    final progress = showProgress ? _getAchievementProgress(data, stats) : 0.0;
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFD700),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFFD700).withOpacity(0.9),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                            color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                              width: 2.5,
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              if (showProgress)
+                                Positioned.fill(
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: progress.clamp(0.0, 1.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.22),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    isBonus
+                                        ? GestureDetector(
+                                            onTap: () async {
+                                              await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                            },
+                                            child: Container(
+                                              width: 28,
+                                              height: 28,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: completed
+                                                      ? Colors.green
+                                                      : (isBonus)
+                                                          ? const Color(0xFFFFD700)
+                                                          : Theme.of(context).primaryColor,
+                                                  width: 2.2,
+                                                ),
+                                                color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                              ),
+                                              child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                            ),
+                                          )
+                                        : Container(),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                description,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                          child: Text(
-                            'BONUS',
-                            style: TextStyle(
-                              color: Colors.black.withOpacity(0.9),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                              fontFamily: 'NovecentoSans',
-                              letterSpacing: 1.2,
+                        ),
+                        if (isBonus)
+                          Positioned(
+                            top: -7,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD700),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD700).withOpacity(0.9),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'BONUS',
+                                style: TextStyle(
+                                  color: Colors.black.withOpacity(0.9),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                  fontFamily: 'NovecentoSans',
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 );
               },
             );
