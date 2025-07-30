@@ -160,9 +160,12 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   double _quantityProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    // e.g. goalType: 'count', 'count_time', 'count_each_hand', etc.
+    // e.g. goalType: 'count', 'count_time', 'count_each_hand', 'count_per_session', 'count_evening', etc.
     final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
     final shotType = data['shotType'] ?? 'any';
+    final goalType = data['goalType'] ?? 'count';
+    final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+    // Removed unused timeLimit variable
     // Use dateAssigned if present, else week_start from stats
     final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
     DateTime? cutoff;
@@ -184,7 +187,67 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       }
       return false;
     }).toList();
-    if (shotType == 'all') {
+
+    if (goalType == 'count_each_hand') {
+      // Must take goalValue shots with each hand in one session
+      for (final session in sessions) {
+        if (session.containsKey('shots') && session['shots'] is Map) {
+          final shots = session['shots'] as Map;
+          double left = (shots['left'] is num) ? (shots['left'] as num).toDouble() : 0.0;
+          double right = (shots['right'] is num) ? (shots['right'] as num).toDouble() : 0.0;
+          if (left >= goalValue && right >= goalValue) {
+            return 1.0;
+          }
+        }
+      }
+      return 0.0;
+    } else if (goalType == 'count_per_session') {
+      // Must take at least goalValue shots in requiredSessions consecutive sessions
+      List<int> metList = [];
+      for (final session in sessions) {
+        if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+          double count = (session['shots'][shotType] as num).toDouble();
+          metList.add(count >= goalValue ? 1 : 0);
+        } else {
+          metList.add(0);
+        }
+      }
+      // Find max streak
+      int streak = 0;
+      int maxStreak = 0;
+      for (int i = 0; i < metList.length; i++) {
+        if (metList[i] == 1) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+          if (streak >= requiredSessions) {
+            return 1.0;
+          }
+        } else {
+          streak = 0;
+        }
+      }
+      return (maxStreak / requiredSessions).clamp(0.0, 1.0);
+    } else if (goalType == 'count_evening') {
+      // Must take goalValue shots after 7pm in a single session
+      for (final session in sessions) {
+        if (session.containsKey('shots') && session['shots'] is Map && session.containsKey('date')) {
+          final date = session['date'];
+          DateTime? dt;
+          if (date is Timestamp) dt = date.toDate();
+          if (date is DateTime) dt = date;
+          if (dt != null && dt.hour >= 19) {
+            double sum = 0.0;
+            for (final v in (session['shots'] as Map).values) {
+              if (v is num) sum += v.toDouble();
+            }
+            if (sum >= goalValue) {
+              return 1.0;
+            }
+          }
+        }
+      }
+      return 0.0;
+    } else if (shotType == 'all') {
       // For 'all', progress is the average of the four shot type progresses
       final types = ['wrist', 'snap', 'slap', 'backhand'];
       double progressSum = 0.0;
@@ -319,13 +382,15 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         }
       }
       // For achievements requiring N sessions in a row (streak)
-      if (data['description'] != null && data['description'].toString().contains('in a row')) {
+      if (requiredSessions > 1) {
+        // Streak logic: find max streak of sessions with accuracy >= targetAccuracy
         int streak = 0;
+        int maxStreak = 0;
         for (int i = 0; i < sessionAccuracies.length; i++) {
           if (sessionAccuracies[i] >= targetAccuracy) {
             streak++;
+            if (streak > maxStreak) maxStreak = streak;
             if (streak >= requiredSessions) {
-              // Found a streak of requiredSessions
               return 1.0;
             }
           } else {
@@ -333,7 +398,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
           }
         }
         // If not found, return partial progress
-        return (streak / requiredSessions).clamp(0.0, 1.0);
+        return (maxStreak / requiredSessions).clamp(0.0, 1.0);
       } else {
         // For achievements requiring N sessions (not necessarily in a row)
         int metCount = sessionAccuracies.where((v) => v >= targetAccuracy).length;
@@ -455,11 +520,91 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   double _progressStyleProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    // e.g. improvement: 5 (improve accuracy by 5%)
     final improvement = (data['improvement'] is num) ? data['improvement'].toDouble() : 1.0;
-    // For demo, just use overall season_accuracy
-    final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
-    return (seasonAccuracy / improvement).clamp(0.0, 1.0);
+    final goalType = data['goalType'] ?? 'improvement';
+    final shotType = data['shotType'] ?? 'any';
+    final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+    final days = (data['days'] is num) ? data['days'].toInt() : 0;
+    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    // improvement: overall season_accuracy
+    if (goalType == 'improvement') {
+      final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
+      return (seasonAccuracy / improvement).clamp(0.0, 1.0);
+    } else if (goalType == 'improvement_variety') {
+      // Improve accuracy by X% on all shot types
+      final types = ['wrist', 'snap', 'slap', 'backhand'];
+      double metTypes = 0.0;
+      for (final t in types) {
+        final acc = (stats['season_accuracy_$t'] is num) ? stats['season_accuracy_$t'].toDouble() : 0.0;
+        if (acc >= improvement) metTypes += 1.0;
+      }
+      return (metTypes / types.length).clamp(0.0, 1.0);
+    } else if (goalType == 'improvement_streak') {
+      // Improve accuracy for N days in a row
+      // For demo, use session accuracy improvement streak
+      List<double> improvements = [];
+      for (final session in rawSessions) {
+        if (session.containsKey('accuracy') && session['accuracy'] is Map) {
+          final accMap = session['accuracy'] as Map;
+          double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+          improvements.add(acc >= improvement ? 1.0 : 0.0);
+        }
+      }
+      // Find max streak
+      int streak = 0;
+      int maxStreak = 0;
+      for (final met in improvements) {
+        if (met == 1.0) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+        } else {
+          streak = 0;
+        }
+      }
+      if (days > 0) {
+        return (maxStreak / days).clamp(0.0, 1.0);
+      } else {
+        return (maxStreak / requiredSessions).clamp(0.0, 1.0);
+      }
+    } else if (goalType == 'improvement_evening') {
+      // Improve accuracy in evening sessions (after 7pm)
+      int metCount = 0;
+      int total = 0;
+      for (final session in rawSessions) {
+        if (session.containsKey('date')) {
+          final date = session['date'];
+          DateTime? dt;
+          if (date is Timestamp) dt = date.toDate();
+          if (date is DateTime) dt = date;
+          if (dt != null && dt.hour >= 19 && session.containsKey('accuracy') && session['accuracy'] is Map) {
+            final accMap = session['accuracy'] as Map;
+            double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+            if (acc >= improvement) metCount++;
+            total++;
+          }
+        }
+      }
+      return total > 0 ? (metCount / total).clamp(0.0, 1.0) : 0.0;
+    } else if (goalType == 'target_hits_increase') {
+      // Hit X targets
+      final hits = (stats['target_hits'] is num) ? stats['target_hits'].toDouble() : 0.0;
+      return (hits / improvement).clamp(0.0, 1.0);
+    } else if (goalType == 'improvement_sessions') {
+      // Improve accuracy in at least N sessions
+      int metCount = 0;
+      for (final session in rawSessions) {
+        if (session.containsKey('accuracy') && session['accuracy'] is Map) {
+          final accMap = session['accuracy'] as Map;
+          double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+          if (acc >= improvement) metCount++;
+        }
+      }
+      return (metCount / requiredSessions).clamp(0.0, 1.0);
+    } else {
+      // Default: overall season_accuracy
+      final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
+      return (seasonAccuracy / improvement).clamp(0.0, 1.0);
+    }
   }
 
   String _getRatioFeedback(Map<String, dynamic> data, double ratioValue, double sweetSpot) {
@@ -652,6 +797,132 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                     ),
                                   ],
                                 ),
+                              ),
+                            ),
+                            if (isBonus)
+                              Positioned(
+                                top: -7,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFD700),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD700).withOpacity(0.9),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'BONUS',
+                                    style: TextStyle(
+                                      color: Colors.black.withOpacity(0.9),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                      fontFamily: 'NovecentoSans',
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      }
+                      // Handle variety master (at least N of each shot type in a session)
+                      if (data['goalType'] == 'variety') {
+                        final types = ['wrist', 'snap', 'slap', 'backhand'];
+                        bool met = false;
+                        for (final session in sessions) {
+                          if (session.containsKey('shots') && session['shots'] is Map) {
+                            final shots = session['shots'] as Map;
+                            bool allMet = true;
+                            for (final t in types) {
+                              final count = (shots[t] is num) ? (shots[t] as num).toDouble() : 0.0;
+                              if (count < (data['goalValue'] is num ? data['goalValue'].toDouble() : 1.0)) {
+                                allMet = false;
+                                break;
+                              }
+                            }
+                            if (allMet) {
+                              met = true;
+                              break;
+                            }
+                          }
+                        }
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                                  width: 2.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        isBonus
+                                            ? GestureDetector(
+                                                onTap: () async {
+                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                },
+                                                child: Container(
+                                                  width: 28,
+                                                  height: 28,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: completed
+                                                          ? Colors.green
+                                                          : (isBonus)
+                                                              ? const Color(0xFFFFD700)
+                                                              : Theme.of(context).primaryColor,
+                                                      width: 2.2,
+                                                    ),
+                                                    color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                                  ),
+                                                  child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                                ),
+                                              )
+                                            : Container(),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                description,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                met ? 'You completed at least ${data['goalValue']} of each shot type in a single session!' : 'You need at least ${data['goalValue']} of each shot type in one session.',
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             if (isBonus)
@@ -901,20 +1172,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       final shotType = data['shotType'] ?? 'any';
                       final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
                       final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
-                      DateTime? cutoff;
-                      final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
-                      if (cutoffDate is Timestamp) {
-                        cutoff = cutoffDate.toDate();
-                      } else if (cutoffDate is DateTime) {
-                        cutoff = cutoffDate;
+                      DateTime? weekStart;
+                      final weekStartRaw = stats['week_start'];
+                      if (weekStartRaw is Timestamp) {
+                        weekStart = weekStartRaw.toDate();
+                      } else if (weekStartRaw is DateTime) {
+                        weekStart = weekStartRaw;
                       }
+                      // Only include sessions from the current week
                       final sessions = rawSessions.where((session) {
-                        if (session.containsKey('date') && cutoff != null) {
+                        if (session.containsKey('date') && weekStart != null) {
                           final date = session['date'];
                           if (date is Timestamp) {
-                            return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+                            return date.toDate().isAfter(weekStart) || date.toDate().isAtSameMomentAs(weekStart);
                           } else if (date is DateTime) {
-                            return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
+                            return date.isAfter(weekStart) || date.isAtSameMomentAs(weekStart);
                           }
                         }
                         return false;
@@ -930,14 +1202,22 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       List<double> sessionAccuracies = [];
                       List<DateTime?> sessionDates = [];
                       for (final session in sessions) {
-                        if (session.containsKey('accuracy') && session['accuracy'] is Map) {
-                          final accMap = session['accuracy'] as Map;
-                          double acc = (accMap[shotType] is num) ? accMap[shotType].toDouble() : 0.0;
-                          sessionAccuracies.add(acc);
-                          sessionDates.add(getSessionTime(session));
+                        // Calculate accuracy from shots and targets_hit
+                        double acc = 0.0;
+                        if (session.containsKey('shots') && session.containsKey('targets_hit')) {
+                          final shotsMap = session['shots'] as Map?;
+                          final hitsMap = session['targets_hit'] as Map?;
+                          final shots = (shotsMap != null && shotsMap[shotType] is num) ? (shotsMap[shotType] as num).toDouble() : 0.0;
+                          final hits = (hitsMap != null && hitsMap[shotType] is num) ? (hitsMap[shotType] as num).toDouble() : 0.0;
+                          if (shots > 0) {
+                            acc = (hits / shots) * 100.0;
+                          }
                         }
+                        sessionAccuracies.add(acc);
+                        sessionDates.add(getSessionTime(session));
                       }
-                      // For streak achievements (sessions in a row)
+                      // Use isStreak property for streak/non-streak logic
+                      final isStreak = data['isStreak'] == true;
                       int streak = 0;
                       int maxStreak = 0;
                       for (final acc in sessionAccuracies) {
@@ -948,31 +1228,75 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           streak = 0;
                         }
                       }
-                      int metCount = sessionAccuracies.where((v) => v >= targetAccuracy).length;
                       // Build session checkboxes
                       accuracyIndicators = Row(
-                        children: List.generate(requiredSessions, (i) {
-                          bool met = false;
-                          String label = '';
-                          if (data['description'] != null && data['description'].toString().contains('in a row')) {
-                            met = i < maxStreak;
+                        children: () {
+                          // Find all sessions with >= n% accuracy for shotType
+                          List<int> metSessionIndices = [];
+                          for (int i = 0; i < sessionAccuracies.length; i++) {
+                            if (sessionAccuracies[i] >= targetAccuracy) {
+                              metSessionIndices.add(i);
+                            }
+                          }
+
+                          // If isStreak, only count the most recent consecutive streak
+                          if (isStreak) {
+                            int streakLength = 0;
+                            // Start from the end, count backwards
+                            for (int i = sessionAccuracies.length - 1; i >= 0; i--) {
+                              if (sessionAccuracies[i] >= targetAccuracy) {
+                                streakLength++;
+                              } else {
+                                break;
+                              }
+                            }
+                            // Only show checkboxes for the most recent streak
+                            List<Widget> streakBoxes = [];
+                            for (int i = 0; i < requiredSessions; i++) {
+                              int sessionIdx = sessionAccuracies.length - streakLength + i;
+                              bool isChecked = (i < streakLength) && (sessionIdx < sessionAccuracies.length) && (sessionAccuracies[sessionIdx] >= targetAccuracy);
+                              String label = '';
+                              if (isChecked && sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
+                                final dt = sessionDates[sessionIdx]!;
+                                label = '${dt.month}/${dt.day}: ${sessionAccuracies[sessionIdx].toStringAsFixed(1)}%';
+                              }
+                              streakBoxes.add(Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                child: Column(
+                                  children: [
+                                    _buildCheckboxCircle(isChecked),
+                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)),
+                                  ],
+                                ),
+                              ));
+                            }
+                            return streakBoxes;
                           } else {
-                            met = i < metCount;
+                            // Non-streak: show checkboxes for each met session
+                            List<Widget> metBoxes = [];
+                            for (int i = 0; i < requiredSessions; i++) {
+                              bool isChecked = i < metSessionIndices.length && sessionAccuracies[metSessionIndices[i]] >= targetAccuracy;
+                              String label = '';
+                              if (isChecked) {
+                                int sessionIdx = metSessionIndices[i];
+                                if (sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
+                                  final dt = sessionDates[sessionIdx]!;
+                                  label = '${dt.month}/${dt.day}: ${sessionAccuracies[sessionIdx].toStringAsFixed(1)}%';
+                                }
+                              }
+                              metBoxes.add(Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                child: Column(
+                                  children: [
+                                    _buildCheckboxCircle(isChecked),
+                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)),
+                                  ],
+                                ),
+                              ));
+                            }
+                            return metBoxes;
                           }
-                          if (i < sessionAccuracies.length && sessionDates[i] != null) {
-                            final dt = sessionDates[i]!;
-                            label = '${dt.month}/${dt.day}: ${sessionAccuracies[i].toStringAsFixed(1)}%';
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                            child: Column(
-                              children: [
-                                _buildCheckboxCircle(met),
-                                if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)),
-                              ],
-                            ),
-                          );
-                        }),
+                        }(),
                       );
                     }
                     Widget? consistencyIndicators;
