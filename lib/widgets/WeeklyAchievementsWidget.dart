@@ -1258,14 +1258,18 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               String label = '';
                               if (isChecked && sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
                                 final dt = sessionDates[sessionIdx]!;
-                                label = '${dt.month}/${dt.day}: ${sessionAccuracies[sessionIdx].toStringAsFixed(1)}%';
+                                final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
+                                final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+                                final minute = dt.minute.toString().padLeft(2, '0');
+                                final ampm = dt.hour >= 12 ? 'pm' : 'am';
+                                label = '$weekday $hour:$minute$ampm';
                               }
                               streakBoxes.add(Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 2.0),
                                 child: Column(
                                   children: [
                                     _buildCheckboxCircle(isChecked),
-                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)),
+                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
                                   ],
                                 ),
                               ));
@@ -1281,7 +1285,11 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 int sessionIdx = metSessionIndices[i];
                                 if (sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
                                   final dt = sessionDates[sessionIdx]!;
-                                  label = '${dt.month}/${dt.day}: ${sessionAccuracies[sessionIdx].toStringAsFixed(1)}%';
+                                  final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
+                                  final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+                                  final minute = dt.minute.toString().padLeft(2, '0');
+                                  final ampm = dt.hour >= 12 ? 'pm' : 'am';
+                                  label = '$weekday $hour:$minute$ampm';
                                 }
                               }
                               metBoxes.add(Padding(
@@ -1289,7 +1297,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 child: Column(
                                   children: [
                                     _buildCheckboxCircle(isChecked),
-                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)),
+                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
                                   ],
                                 ),
                               ));
