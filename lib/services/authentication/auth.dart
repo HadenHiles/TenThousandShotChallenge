@@ -7,20 +7,25 @@ import 'package:password_strength/password_strength.dart';
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 Future<UserCredential> signInWithGoogle() async {
-  // Trigger the authentication flow
-  final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-  // Obtain the auth details from the request
-  final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-
-  // Create a new credential
+  // Use the singleton instance
+  final GoogleSignIn signIn = GoogleSignIn.instance;
+  await signIn.initialize();
+  final GoogleSignInAccount googleUser = await signIn.authenticate();
+  // Request authorization for basic profile and email scopes
+  final authorization = await googleUser.authorizationClient.authorizationForScopes([
+    'email',
+    'profile',
+    'openid',
+  ]);
+  final googleAuth = googleUser.authentication;
+  if (authorization == null) {
+    throw PlatformException(code: 'ERROR_AUTHORIZATION_FAILED', message: 'Failed to retrieve Google tokens');
+  }
   final OAuthCredential credential = GoogleAuthProvider.credential(
-    accessToken: googleAuth?.accessToken,
-    idToken: googleAuth?.idToken,
+    accessToken: authorization.accessToken,
+    idToken: googleAuth.idToken,
   );
-
-  // Once signed in, return the UserCredential
-  return await auth.signInWithCredential(credential as AuthCredential);
+  return await auth.signInWithCredential(credential);
 }
 
 Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
