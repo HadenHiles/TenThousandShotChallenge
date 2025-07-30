@@ -347,7 +347,7 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
         // Write summary stats to /users/{userId}/stats/weekly
         const statsRef = db.collection('users').doc(context.params.userId).collection('stats').doc('weekly');
         await statsRef.set({
-            week_start: new Date(), // Optionally use getWeekStartEST()
+            week_start: getWeekStartEST(),
             total_sessions: sessionsSnap.docs.length,
             total_shots: seasonShotTypeTotals,
             targets_hit: seasonTargetsHitType,
@@ -463,7 +463,7 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
             // TODO: Remove this line for production
-            // if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
+            if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
@@ -589,7 +589,6 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
                 { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take.', shotType: 'backhand', shotTypeComparison: 'wrist', primaryType: 'backhand', secondaryType: 'wrist', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
                 { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take.', shotType: 'backhand', shotTypeComparison: 'snap', primaryType: 'backhand', secondaryType: 'snap', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'ratio_slap_snap_medium', style: 'ratio', title: 'Slap vs Snap', description: 'Take 2 slap shots for every 1 snap shot you take.', shotType: 'slap', shotTypeComparison: 'snap', primaryType: 'slap', secondaryType: 'snap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'chip_shot_king', style: 'ratio', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire session!', shotType: 'snap', shotTypeComparison: 'backhand', primaryType: 'snap', secondaryType: 'backhand', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'variety_master', style: 'ratio', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session.', shotType: 'all', shotTypeComparison: '', primaryType: 'all', secondaryType: '', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: false },
                 // --- Consistency ---
                 { id: 'consistency_earlybird', style: 'consistency', title: 'Early Bird', description: 'Complete a shooting session before 7am three times.', shotType: '', goalType: 'early_sessions', goalValue: 3, difficulty: 'Hard', proLevel: false, isBonus: false },
@@ -839,7 +838,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take.', shotType: 'backhand', shotTypeComparison: 'wrist', primaryType: 'backhand', secondaryType: 'wrist', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
                 { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take.', shotType: 'backhand', shotTypeComparison: 'snap', primaryType: 'backhand', secondaryType: 'snap', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'ratio_slap_snap_medium', style: 'ratio', title: 'Slap vs Snap', description: 'Take 2 slap shots for every 1 snap shot you take.', shotType: 'slap', shotTypeComparison: 'snap', primaryType: 'slap', secondaryType: 'snap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'chip_shot_king', style: 'ratio', title: 'Chip Shot King', description: 'Alternate forehand (snap) and backhand shots for an entire session!', shotType: 'snap', shotTypeComparison: 'backhand', primaryType: 'snap', secondaryType: 'backhand', goalType: 'alternate', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'variety_master', style: 'ratio', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session.', shotType: 'all', shotTypeComparison: '', primaryType: 'all', secondaryType: '', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: false },
                 // --- Consistency ---
                 { id: 'consistency_earlybird', style: 'consistency', title: 'Early Bird', description: 'Complete a shooting session before 7am three times.', shotType: '', goalType: 'early_sessions', goalValue: 3, difficulty: 'Hard', proLevel: false, isBonus: false },

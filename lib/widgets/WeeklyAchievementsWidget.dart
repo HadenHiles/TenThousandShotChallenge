@@ -58,16 +58,23 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     // e.g. goalType: 'count', 'count_time', 'count_each_hand', etc.
     final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
     final shotType = data['shotType'] ?? 'any';
-    final prevMonday = _previousMondayEST();
+    // Use dateAssigned if present, else week_start from stats
+    final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+    DateTime? cutoff;
+    if (cutoffDate is Timestamp) {
+      cutoff = cutoffDate.toDate();
+    } else if (cutoffDate is DateTime) {
+      cutoff = cutoffDate;
+    }
     final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
-    // Filter sessions to only those after previous Monday 12am EST
+    // Filter sessions to only those after cutoff
     final sessions = rawSessions.where((session) {
-      if (session.containsKey('date')) {
+      if (session.containsKey('date') && cutoff != null) {
         final date = session['date'];
         if (date is Timestamp) {
-          return date.toDate().isAfter(prevMonday) || date.toDate().isAtSameMomentAs(prevMonday);
+          return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
         } else if (date is DateTime) {
-          return date.isAfter(prevMonday) || date.isAtSameMomentAs(prevMonday);
+          return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
         }
       }
       return false;
@@ -247,11 +254,30 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       final sweetSpot = goalValue / (goalValue + secondaryValue);
                       final primaryType = data['shotType'] ?? data['primaryType'] ?? 'wrist';
                       final secondaryType = data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
-                      // Use filtered weekly sessions from stats
+                      // Use dateAssigned if present, else week_start from stats
+                      final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+                      DateTime? cutoff;
+                      if (cutoffDate is Timestamp) {
+                        cutoff = cutoffDate.toDate();
+                      } else if (cutoffDate is DateTime) {
+                        cutoff = cutoffDate;
+                      }
                       final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      // Filter sessions to only those after cutoff
+                      final sessions = rawSessions.where((session) {
+                        if (session.containsKey('date') && cutoff != null) {
+                          final date = session['date'];
+                          if (date is Timestamp) {
+                            return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+                          } else if (date is DateTime) {
+                            return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
+                          }
+                        }
+                        return false;
+                      }).toList();
                       double primaryCount = 0.0;
                       double secondaryCount = 0.0;
-                      for (final session in rawSessions) {
+                      for (final session in sessions) {
                         if (session.containsKey('shots') && session['shots'] is Map) {
                           final shots = session['shots'] as Map;
                           if (primaryType.contains('+')) {
