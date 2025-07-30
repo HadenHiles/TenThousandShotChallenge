@@ -83,7 +83,6 @@ void main() {
       when(mockCustomerInfo.firstSeen).thenReturn(DateTime(2020, 1, 1).toIso8601String());
       when(mockCustomerInfo.allExpirationDates).thenReturn({});
       when(mockCustomerInfo.requestDate).thenReturn(DateTime(2099, 1, 1).toIso8601String());
-      when(mockCustomerInfo.toJson()).thenReturn({});
       await tester.pumpWidget(
         MaterialApp.router(
           routerConfig: router,
