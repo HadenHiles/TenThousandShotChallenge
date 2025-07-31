@@ -44,6 +44,39 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
+  // Update last_seen in Firestore if not already set to today
+  Future<void> updateLastSeenIfNeeded(BuildContext context) async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    final user = auth.currentUser;
+    if (user == null) return;
+    final docRef = firestore.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (doc.exists) {
+      final lastSeen = doc.data()?['last_seen'];
+      if (lastSeen != null) {
+        DateTime lastSeenDate;
+        if (lastSeen is Timestamp) {
+          lastSeenDate = lastSeen.toDate();
+        } else if (lastSeen is DateTime) {
+          lastSeenDate = lastSeen;
+        } else {
+          lastSeenDate = DateTime.tryParse(lastSeen.toString()) ?? DateTime(2000);
+        }
+        final lastSeenDay = DateTime(lastSeenDate.year, lastSeenDate.month, lastSeenDate.day);
+        if (lastSeenDay == today) {
+          return; // Already updated today
+        }
+      }
+    }
+    await docRef.update({'last_seen': now}).catchError((_) async {
+      // If doc doesn't exist, create it
+      await docRef.set({'last_seen': now}, SetOptions(merge: true));
+    });
+  }
+
   // State variables
   Widget? _leading;
   List<Widget>? _actions;
@@ -91,6 +124,10 @@ class _NavigationState extends State<Navigation> {
     } catch (e) {
       print(e);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      updateLastSeenIfNeeded(context);
+    });
 
     _loadPreferences();
 
