@@ -1255,24 +1255,29 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             for (int i = 0; i < requiredSessions; i++) {
                               int sessionIdx = sessionAccuracies.length - streakLength + i;
                               bool isChecked = (i < streakLength) && (sessionIdx < sessionAccuracies.length) && (sessionAccuracies[sessionIdx] >= targetAccuracy);
-                              String label = '';
-                              if (isChecked && sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
-                                final dt = sessionDates[sessionIdx]!;
-                                final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
-                                final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-                                final minute = dt.minute.toString().padLeft(2, '0');
-                                final ampm = dt.hour >= 12 ? 'pm' : 'am';
-                                label = '$weekday $hour:$minute$ampm';
-                              }
-                              streakBoxes.add(Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                                child: Column(
-                                  children: [
-                                    _buildCheckboxCircle(isChecked),
-                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
-                                  ],
+                              // String label = '';
+                              // if (isChecked && sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
+                              //   final dt = sessionDates[sessionIdx]!;
+                              //   final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
+                              //   final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+                              //   final minute = dt.minute.toString().padLeft(2, '0');
+                              //   final ampm = dt.hour >= 12 ? 'pm' : 'am';
+                              //   label = '$weekday $hour:$minute$ampm';
+                              // }
+                              streakBoxes.add(
+                                SizedBox(
+                                  width: 40,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                    child: Column(
+                                      children: [
+                                        _buildCheckboxCircle(isChecked),
+                                        // if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10), textAlign: TextAlign.center) else SizedBox(height: 14),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ));
+                              );
                             }
                             return streakBoxes;
                           } else {
@@ -1280,24 +1285,24 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             List<Widget> metBoxes = [];
                             for (int i = 0; i < requiredSessions; i++) {
                               bool isChecked = i < metSessionIndices.length && sessionAccuracies[metSessionIndices[i]] >= targetAccuracy;
-                              String label = '';
-                              if (isChecked) {
-                                int sessionIdx = metSessionIndices[i];
-                                if (sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
-                                  final dt = sessionDates[sessionIdx]!;
-                                  final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
-                                  final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-                                  final minute = dt.minute.toString().padLeft(2, '0');
-                                  final ampm = dt.hour >= 12 ? 'pm' : 'am';
-                                  label = '$weekday $hour:$minute$ampm';
-                                }
-                              }
+                              // String label = '';
+                              // if (isChecked) {
+                              //   int sessionIdx = metSessionIndices[i];
+                              //   if (sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
+                              //     final dt = sessionDates[sessionIdx]!;
+                              //     final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
+                              //     final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+                              //     final minute = dt.minute.toString().padLeft(2, '0');
+                              //     final ampm = dt.hour >= 12 ? 'pm' : 'am';
+                              //     label = '$weekday $hour:$minute$ampm';
+                              //   }
+                              // }
                               metBoxes.add(Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 2.0),
                                 child: Column(
                                   children: [
                                     _buildCheckboxCircle(isChecked),
-                                    if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
+                                    // if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
                                   ],
                                 ),
                               ));
@@ -1422,7 +1427,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                             ),
                                           )
                                         : Container(),
-                                    const SizedBox(width: 10),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1431,12 +1435,15 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                description,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                  fontFamily: 'NovecentoSans',
+                                              Padding(
+                                                padding: isBonus ? const EdgeInsets.only(left: 8) : EdgeInsets.zero,
+                                                child: Text(
+                                                  description,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    fontFamily: 'NovecentoSans',
+                                                  ),
                                                 ),
                                               ),
                                               if (consistencyIndicators != null) ...[
