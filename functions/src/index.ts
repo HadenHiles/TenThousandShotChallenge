@@ -546,8 +546,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
         const now = new Date();
         const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
         const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
-        const fifteenDaysAgoISO = fifteenDaysAgo.toISOString();
-        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgoISO).get();
+        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
             // TODO: Remove this line for production
@@ -770,7 +769,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 // --- Quantity ---
                 if (t.style === 'quantity' && t.shotType && t.goalValue) {
                     // Only substitute for wrist, snap, backhand, slap
-                    if (['wrist', 'snap', 'backhand', 'slap'].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
+                    if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
                         t.shotType = laggingType;
                         t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
                     }
@@ -779,7 +778,22 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     let bump = Math.ceil(avg * percent);
                     let maxBump = 100;
                     t.goalValue = Math.max(t.goalValue, Math.min(Math.ceil(avg + bump), Math.ceil(avg + maxBump)));
-                    t.description = `Take ${t.goalValue} ${t.shotType} shots${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
+                    // Dynamically set sessions based on user's avgShotsPerSession
+                    if (!t.sessions) {
+                        let avg = avgShotsPerSession[t.shotType] || 0;
+                        if (avg > 0) {
+                            t.sessions = Math.max(1, Math.ceil(t.goalValue / avg));
+                        } else {
+                            // fallback if no avg available
+                            if (t.goalValue >= 250) t.sessions = 5;
+                            else if (t.goalValue >= 120) t.sessions = 3;
+                            else if (t.goalValue >= 100) t.sessions = 2;
+                            else t.sessions = 1;
+                        }
+                    }
+                    // Omit shot type for 'any' or 'all'
+                    let shotTypeStr = (t.shotType === 'any' || t.shotType === 'all') ? '' : `${t.shotType} `;
+                    t.description = `Take ${t.goalValue} ${shotTypeStr}shots in ${t.sessions} session${t.sessions > 1 ? 's' : ''}.`;
                 }
                 // --- Quantity per session streak ---
                 if (t.style === 'quantity' && t.goalType === 'count_per_session' && t.shotType && t.goalValue) {
