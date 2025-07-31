@@ -28,6 +28,39 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  // Update last_seen in Firestore if not already set to today
+  Future<void> updateLastSeenIfNeeded() async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    final user = auth.currentUser;
+    if (user == null) return;
+    final docRef = firestore.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (doc.exists) {
+      final lastSeen = doc.data()?['last_seen'];
+      if (lastSeen != null) {
+        DateTime lastSeenDate;
+        if (lastSeen is Timestamp) {
+          lastSeenDate = lastSeen.toDate();
+        } else if (lastSeen is DateTime) {
+          lastSeenDate = lastSeen;
+        } else {
+          lastSeenDate = DateTime.tryParse(lastSeen.toString()) ?? DateTime(2000);
+        }
+        final lastSeenDay = DateTime(lastSeenDate.year, lastSeenDate.month, lastSeenDate.day);
+        if (lastSeenDay == today) {
+          return; // Already updated today
+        }
+      }
+    }
+    await docRef.update({'last_seen': now}).catchError((_) async {
+      // If doc doesn't exist, create it
+      await docRef.set({'last_seen': now}, SetOptions(merge: true));
+    });
+  }
+
   // Remove direct singleton usage
   // static variables
   final GlobalKey<FormState> _signInFormKey = GlobalKey<FormState>();
@@ -65,8 +98,12 @@ class _LoginState extends State<Login> {
     }
 
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
-    //If user is signed in
+    // If user is signed in, update last_seen if needed and show main navigation
     if (auth.currentUser != null) {
+      // Update last_seen only once per build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        updateLastSeenIfNeeded();
+      });
       return const Navigation(tabId: 'start');
     }
 
