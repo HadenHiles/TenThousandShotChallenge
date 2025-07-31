@@ -168,92 +168,175 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
 export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}/iterations/{iterationId}/sessions/{sessionId}" }, async (event) => {
     const context = event;
     // Update the according iteration timestamp (updated_at)
-    await db.collection(`iterations/${context.params.userId}/iterations`).doc(context.params.iterationId).update({ 'updated_at': new Date(Date.now()) }).then(async (_) => {
-        // Send friends notifications
-        let user: any;
-        let session: any;
-        let teammates: any[];
+    await db.collection(`iterations/${context.params.userId}/iterations`).doc(context.params.iterationId).update({ 'updated_at': new Date(Date.now()) });
 
-        // Retrieve the user who will be receiving the notification
-        await db.collection("users").doc(context.params.userId).get().then(async (doc) => {
-            user = doc.data();
+    // --- Recalculate and write summary stats to /users/{userId}/stats/weekly ---
+    try {
+        const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
+        let recentSessions = [];
+        let seasonTotalShots = 0;
+        let seasonTotalShotsWithAccuracy = 0;
+        let seasonTargetsHit = 0;
+        let shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+        let seasonShotTypeTotals = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+        let seasonTargetsHitType = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
+        let seasonAccuracyType = { wrist: 0.0, snap: 0.0, slap: 0.0, backhand: 0.0 };
 
-            await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
-                session = sDoc.data();
-                let data: any;
+        let sessionCount = 0;
+        for (const sessionDoc of sessionsSnap.docs) {
+            const s = sessionDoc.data();
+            if (sessionCount < 10) {
+                recentSessions.push({
+                    date: s.date,
+                    shots: {
+                        wrist: s.total_wrist || 0,
+                        snap: s.total_snap || 0,
+                        slap: s.total_slap || 0,
+                        backhand: s.total_backhand || 0
+                    },
+                    targets_hit: {
+                        wrist: s.wrist_targets_hit || 0,
+                        snap: s.snap_targets_hit || 0,
+                        slap: s.slap_targets_hit || 0,
+                        backhand: s.backhand_targets_hit || 0
+                    }
+                });
+            }
+            sessionCount++;
+            seasonTotalShots += typeof s.total === 'number' ? s.total : 0;
+            seasonShotTypeTotals.wrist += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
+            seasonShotTypeTotals.snap += typeof s.total_snap === 'number' ? s.total_snap : 0;
+            seasonShotTypeTotals.slap += typeof s.total_slap === 'number' ? s.total_slap : 0;
+            seasonShotTypeTotals.backhand += typeof s.total_backhand === 'number' ? s.total_backhand : 0;
 
-                if (session != null) {
-                    data = {
-                        "message": {
-                            "data": {
-                                "body": `${user.display_name} just finished shooting!`,
-                                "title": `${user.display_name} just took ${session.total} shots!`,
-                                "click_action": "FLUTTER_NOTIFICATION_CLICK"
-                            }
-                        },
-                    };
-                } else {
-                    data = {
-                        "message": {
-                            "data": {
-                                "body": `${user.display_name} just finished shooting`,
-                                "title": `Look out! ${user.display_name} is a shooting machine!`,
-                                "click_action": "FLUTTER_NOTIFICATION_CLICK"
-                            }
-                        },
-                    };
+            // Only include sessions with any targets_hit for accuracy stats
+            const hasAccuracy = (s.wrist_targets_hit || 0) > 0 || (s.snap_targets_hit || 0) > 0 || (s.slap_targets_hit || 0) > 0 || (s.backhand_targets_hit || 0) > 0;
+            if (hasAccuracy) {
+                seasonTotalShotsWithAccuracy += typeof s.total === 'number' ? s.total : 0;
+                seasonTargetsHitType.wrist += typeof s.wrist_targets_hit === 'number' ? s.wrist_targets_hit : 0;
+                seasonTargetsHitType.snap += typeof s.snap_targets_hit === 'number' ? s.snap_targets_hit : 0;
+                seasonTargetsHitType.slap += typeof s.slap_targets_hit === 'number' ? s.slap_targets_hit : 0;
+                seasonTargetsHitType.backhand += typeof s.backhand_targets_hit === 'number' ? s.backhand_targets_hit : 0;
+            }
+        }
+
+        seasonTargetsHit = Object.values(seasonTargetsHitType).reduce((a, b) => a + b, 0);
+        // Calculate accuracy per shot type (only for sessions with accuracy)
+        for (const type of shotTypes) {
+            let shots = 0;
+            let hits = seasonTargetsHitType[type as keyof typeof seasonTargetsHitType];
+            for (const sessionDoc of sessionsSnap.docs) {
+                const s = sessionDoc.data();
+                const hasAccuracy = (s.wrist_targets_hit || 0) > 0 || (s.snap_targets_hit || 0) > 0 || (s.slap_targets_hit || 0) > 0 || (s.backhand_targets_hit || 0) > 0;
+                if (hasAccuracy) {
+                    if (type === 'wrist') shots += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
+                    if (type === 'snap') shots += typeof s.total_snap === 'number' ? s.total_snap : 0;
+                    if (type === 'slap') shots += typeof s.total_slap === 'number' ? s.total_slap : 0;
+                    if (type === 'backhand') shots += typeof s.total_backhand === 'number' ? s.total_backhand : 0;
                 }
+            }
+            seasonAccuracyType[type as keyof typeof seasonAccuracyType] = shots > 0 ? (hits / shots) * 100.0 : 0.0;
+        }
+        const seasonAccuracy = seasonTotalShotsWithAccuracy > 0 ? (seasonTargetsHit / seasonTotalShotsWithAccuracy) * 100.0 : 0.0;
 
-                if (user! != null && user.friend_notifications == true) {
-                    // Retrieve the teammate who accepted the invite
-                    await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
-                        // Get the players teammates
-                        teammates = tDoc.docs;
+        // Write summary stats to /users/{userId}/stats/weekly
+        const statsRef = db.collection('users').doc(context.params.userId).collection('stats').doc('weekly');
+        await statsRef.set({
+            week_start: getWeekStartEST(),
+            total_sessions: sessionsSnap.docs.length,
+            total_shots: seasonShotTypeTotals,
+            targets_hit: seasonTargetsHitType,
+            accuracy: seasonAccuracyType,
+            season_total_shots: seasonTotalShots,
+            season_total_shots_with_accuracy: seasonTotalShotsWithAccuracy,
+            season_targets_hit: seasonTargetsHit,
+            season_accuracy: seasonAccuracy,
+            sessions: recentSessions
+        });
+    } catch (e) {
+        logger.error('Error updating weekly stats after session creation:', e);
+    }
 
-                        teammates.forEach(async (t) => {
-                            let teammate = t.data();
-                            await db.collection("users").doc(t.id).get().then(async (tmDoc) => {
-                                let friend = tmDoc.data();
-                                let friendNotifications = friend!.friend_notifications != undefined ? friend!.friend_notifications : false;
-                                let fcmToken = teammate.fcm_token != undefined ? teammate.fcm_token : null;
-                                //functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
+    // ...existing code for sending notifications to friends...
+    // Send friends notifications
+    let user: any;
+    let session: any;
+    let teammates: any[];
 
-                                if (friendNotifications && fcmToken != null) {
-                                    data.notification.body = getFriendNotificationMessage(user!.display_name, teammate.display_name);
-                                    data.message.token = fcmToken;
+    // Retrieve the user who will be receiving the notification
+    await db.collection("users").doc(context.params.userId).get().then(async (doc) => {
+        user = doc.data();
 
-                                    logger.debug("Sending notification with data: " + JSON.stringify(data));
+        await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
+            session = sDoc.data();
+            let data: any;
 
-                                    sendFcmMessage(data);
-                                }
-                            });
+            if (session != null) {
+                data = {
+                    "message": {
+                        "data": {
+                            "body": `${user.display_name} just finished shooting!`,
+                            "title": `${user.display_name} just took ${session.total} shots!`,
+                            "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                        }
+                    },
+                };
+            } else {
+                data = {
+                    "message": {
+                        "data": {
+                            "body": `${user.display_name} just finished shooting`,
+                            "title": `Look out! ${user.display_name} is a shooting machine!`,
+                            "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                        }
+                    },
+                };
+            }
+
+            if (user! != null && user.friend_notifications == true) {
+                // Retrieve the teammate who accepted the invite
+                await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
+                    // Get the players teammates
+                    teammates = tDoc.docs;
+
+                    teammates.forEach(async (t) => {
+                        let teammate = t.data();
+                        await db.collection("users").doc(t.id).get().then(async (tmDoc) => {
+                            let friend = tmDoc.data();
+                            let friendNotifications = friend!.friend_notifications != undefined ? friend!.friend_notifications : false;
+                            let fcmToken = teammate.fcm_token != undefined ? teammate.fcm_token : null;
+                            //functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
+
+                            if (friendNotifications && fcmToken != null) {
+                                data.notification.body = getFriendNotificationMessage(user!.display_name, teammate.display_name);
+                                data.message.token = fcmToken;
+
+                                logger.debug("Sending notification with data: " + JSON.stringify(data));
+
+                                sendFcmMessage(data);
+                            }
                         });
-
-                        return true;
-                    }).catch((err) => {
-                        logger.error("Error fetching teammate collection: " + err);
-                        return null;
                     });
 
                     return true;
-                } else {
-                    logger.warn("fcm_token not found");
+                }).catch((err) => {
+                    logger.error("Error fetching teammate collection: " + err);
                     return null;
-                }
-            }).catch((err) => {
-                logger.error("Error fetching shooting session: " + err);
+                });
+
+                return true;
+            } else {
+                logger.warn("fcm_token not found");
                 return null;
-            });
+            }
         }).catch((err) => {
-            logger.error("Error fetching user: " + err);
+            logger.error("Error fetching shooting session: " + err);
             return null;
         });
     }).catch((err) => {
-        logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
+        logger.error("Error fetching user: " + err);
         return null;
     });
-
-
 });
 
 // Update the iteration timestamp for caching purposes any time a session is updated
@@ -554,10 +637,9 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'qty_mixed_medium', style: 'quantity', title: 'Mix It Up', description: 'Take at least 20 shots of each type (wrist, snap, backhand, slap).', shotType: 'all', goalType: 'count', goalValue: 20, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'qty_lefty_easy', style: 'quantity', title: 'Lefty Challenge', description: 'Take 25 shots with your non-dominant hand.', shotType: 'any', goalType: 'count', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
                 { id: 'qty_speed_50', style: 'quantity', title: 'Speed Demon', description: 'Take 50 shots in under 10 minutes in a single session.', shotType: 'any', goalType: 'count_time', goalValue: 50, timeLimit: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_ambidextrous_30', style: 'quantity', title: 'Ambidextrous Ace', description: 'Take 15 shots with each hand in one session.', shotType: 'any', goalType: 'count_each_hand', goalValue: 15, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'qty_rapidfire_20', style: 'quantity', title: 'Rapid Fire', description: 'Take 20 shots in 60 seconds or less.', shotType: 'any', goalType: 'count_time', goalValue: 20, timeLimit: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'qty_balanced_40', style: 'quantity', title: 'Balanced Attack', description: 'Take 10 wrist, 10 snap, 10 backhand, and 10 slap shots.', shotType: 'all', goalType: 'count', goalValue: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_evening_25', style: 'quantity', title: 'Evening Shooter', description: 'Take 25 shots after 7pm in a single session.', shotType: 'any', goalType: 'count_evening', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
+                { id: 'qty_evening_25', style: 'quantity', title: 'Evening Shooter', description: 'Take 25 shots after 5pm in a single session.', shotType: 'any', goalType: 'count_evening', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
                 // --- n shots for x sessions in a row ---
                 { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
@@ -639,6 +721,19 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             }
 
             // Helper: substitute values in a template
+            // Helper for correct shot type phrasing
+            function getShotTypePhrase(type: string, plural: boolean = true): string {
+                switch (type) {
+                    case 'wrist': return plural ? 'wrist shots' : 'wrist shot';
+                    case 'snap': return plural ? 'snap shots' : 'snap shot';
+                    case 'backhand': return plural ? 'backhands' : 'backhand';
+                    case 'slap': return plural ? 'slap shots' : 'slap shot';
+                    case 'all': return plural ? 'all shot types' : 'all shot type';
+                    case 'any': return plural ? 'shots' : 'shot';
+                    default: return plural ? `${type} shots` : `${type} shot`;
+                }
+            }
+
             function substituteTemplate(tmpl: any): any {
                 let t = { ...tmpl };
                 // --- Find weakest/lagging shot type ---
@@ -682,7 +777,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     let bump = (t.sessions && t.sessions > 1) ? 2.5 : 5.0;
                     let newTarget = Math.round((avg + bump) * 10) / 10;
                     t.targetAccuracy = Math.max(t.targetAccuracy, Math.min(newTarget, 100));
-                    t.description = `Achieve ${t.targetAccuracy}% accuracy on ${t.shotType} shots${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
+                    t.description = `Achieve ${t.targetAccuracy}% accuracy on ${getShotTypePhrase(t.shotType)}${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
                 }
                 // --- Quantity ---
                 if (t.style === 'quantity' && t.shotType && t.goalValue) {
@@ -696,7 +791,8 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     let bump = Math.ceil(avg * percent);
                     let maxBump = 100;
                     t.goalValue = Math.max(t.goalValue, Math.min(Math.ceil(avg + bump), Math.ceil(avg + maxBump)));
-                    t.description = `Take ${t.goalValue} ${t.shotType} shots${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
+                    const plural = t.goalValue > 1;
+                    t.description = `Take ${t.goalValue} ${getShotTypePhrase(t.shotType, plural)}${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
                 }
                 // --- Quantity per session streak ---
                 if (t.style === 'quantity' && t.goalType === 'count_per_session' && t.shotType && t.goalValue) {
@@ -708,7 +804,8 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     let avg = avgShotsPerSession[t.shotType] || 0;
                     let bump = Math.ceil(avg * 0.10);
                     t.goalValue = Math.max(t.goalValue, Math.ceil(avg + bump));
-                    t.description = `Take at least ${t.goalValue} ${t.shotType} shots for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
+                    const plural = t.goalValue > 1;
+                    t.description = `Take at least ${t.goalValue} ${getShotTypePhrase(t.shotType, plural)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
                 }
                 // --- Ratio ---
                 if (t.style === 'ratio' && t.primaryType && t.secondaryType && t.goalValue && t.secondaryValue) {
@@ -725,14 +822,17 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                         t.goalValue = Math.max(t.goalValue, 2);
                         t.secondaryValue = Math.max(t.secondaryValue, 1);
                     }
-                    t.description = `Take ${t.goalValue} ${t.primaryType} shots for every ${t.secondaryValue} ${t.secondaryType} shot.`;
+                    // Pluralize based on values
+                    const primaryPlural = t.goalValue > 1;
+                    const secondaryPlural = t.secondaryValue > 1;
+                    t.description = `Take ${t.goalValue} ${getShotTypePhrase(t.primaryType, primaryPlural)} for every ${t.secondaryValue} ${getShotTypePhrase(t.secondaryType, secondaryPlural)}.`;
                 }
                 // --- Progress ---
                 if (t.style === 'progress' && t.shotType && t.improvement) {
                     let bump = t.improvement;
                     t.description = t.goalType === 'improvement_variety'
                         ? `Improve your accuracy by at least ${bump}% on all shot types.`
-                        : `Improve your ${t.shotType} accuracy by ${bump}%. Progress counts, even if it takes a few tries!`;
+                        : `Improve your ${getShotTypePhrase(t.shotType, false)} accuracy by ${bump}%. Progress counts, even if it takes a few tries!`;
                 }
                 // --- Consistency ---
                 if (t.style === 'consistency' && t.goalType && t.goalValue) {
@@ -744,7 +844,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     } else if (t.goalType === 'early_sessions') {
                         t.description = `Complete a shooting session before 7am ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
                     } else if (t.goalType === 'late_sessions') {
-                        t.description = `Complete a shooting session after 9pm ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
+                        t.description = `Complete a shooting session after 5pm ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
                     } else if (t.goalType === 'double_sessions') {
                         t.description = `Complete two shooting sessions in one day, ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
                     } else if (t.goalType === 'weekend_sessions') {
@@ -783,6 +883,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             const assigned: any[] = [];
             const usedTemplates = new Set();
             const usedShotTypeCombos = new Set();
+            const usedShotTypes = new Set();
 
             // 1. Always include one 'fun' style template if available
             const funTemplates = eligible.filter(t => t.style === 'fun');
@@ -791,6 +892,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 assigned.push(fun);
                 usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
                 usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
+                if (fun.shotType) usedShotTypes.add(fun.shotType);
             }
 
             // 2. Try to assign templates of different difficulties
@@ -800,15 +902,33 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             for (const diff of difficulties) {
                 if (assigned.length >= 4) break;
                 const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
-                if (candidates.length > 0) {
-                    const template = substituteTemplate(candidates[Math.floor(Math.random() * candidates.length)]);
-                    const comboKey = template.id + '|' + (template.shotType || 'any');
-                    if (!usedTemplates.has(comboKey)) {
-                        assigned.push(template);
-                        usedTemplates.add(comboKey);
-                        usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
-                        alreadyAssignedDifficulties.add(diff);
+                for (const candidate of candidates) {
+                    // Avoid duplicate achievement types unless targeting a new shot type
+                    let comboKey = candidate.style + '|' + (candidate.shotType || 'any');
+                    let shotTypeKey = candidate.shotType || 'any';
+                    // If this style+shotType combo already assigned, skip
+                    if (usedShotTypeCombos.has(comboKey) && usedShotTypes.has(shotTypeKey)) continue;
+                    // If this template id+shotType already assigned, skip
+                    let idKey = candidate.id + '|' + (candidate.shotType || 'any');
+                    if (usedTemplates.has(idKey)) continue;
+                    // If this is a quantity/accuracy/ratio achievement and shotType already used, try next weakest shot type
+                    let t = substituteTemplate(candidate);
+                    if ((t.style === 'quantity' || t.style === 'accuracy' || t.style === 'ratio') && usedShotTypes.has(t.shotType)) {
+                        // Find next weakest shot type not used
+                        let availableTypes = shotTypes.filter(st => !usedShotTypes.has(st));
+                        if (availableTypes.length > 0) {
+                            t.shotType = availableTypes[0];
+                            t.title = `${t.shotType.charAt(0).toUpperCase() + t.shotType.slice(1)} ${t.style.charAt(0).toUpperCase() + t.style.slice(1)}`;
+                        } else {
+                            continue; // No available shot type, skip
+                        }
                     }
+                    assigned.push(t);
+                    usedTemplates.add(idKey);
+                    usedShotTypeCombos.add(comboKey);
+                    if (t.shotType) usedShotTypes.add(t.shotType);
+                    alreadyAssignedDifficulties.add(diff);
+                    break;
                 }
             }
 
@@ -816,12 +936,24 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
             let fallbackPool = [...nonFunTemplates];
             while (assigned.length < 4 && fallbackPool.length) {
                 const next = substituteTemplate(fallbackPool.pop());
-                const comboKey = next.id + '|' + (next.shotType || 'any');
-                if (!usedTemplates.has(comboKey)) {
-                    assigned.push(next);
-                    usedTemplates.add(comboKey);
-                    usedShotTypeCombos.add(next.style + '|' + (next.shotType || 'any'));
+                let comboKey = next.style + '|' + (next.shotType || 'any');
+                let shotTypeKey = next.shotType || 'any';
+                let idKey = next.id + '|' + (next.shotType || 'any');
+                if (usedShotTypeCombos.has(comboKey) && usedShotTypes.has(shotTypeKey)) continue;
+                if (usedTemplates.has(idKey)) continue;
+                if ((next.style === 'quantity' || next.style === 'accuracy' || next.style === 'ratio') && usedShotTypes.has(next.shotType)) {
+                    let availableTypes = shotTypes.filter(st => !usedShotTypes.has(st));
+                    if (availableTypes.length > 0) {
+                        next.shotType = availableTypes[0];
+                        next.title = `${next.shotType.charAt(0).toUpperCase() + next.shotType.slice(1)} ${next.style.charAt(0).toUpperCase() + next.style.slice(1)}`;
+                    } else {
+                        continue;
+                    }
                 }
+                assigned.push(next);
+                usedTemplates.add(idKey);
+                usedShotTypeCombos.add(comboKey);
+                if (next.shotType) usedShotTypes.add(next.shotType);
             }
 
             // Format for Firestore: include all template fields
@@ -837,11 +969,9 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 await db.collection('users').doc(userId).collection('achievements').add(achievement);
             }
         }
-        logger.info('assignWeeklyAchievements executed successfully.');
-        res.status(200).send('assignWeeklyAchievements executed successfully:');
-    } catch (error) {
-        logger.error('Error assigning weekly achievements:', error);
-        const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
-        res.status(200).send('assignWeeklyAchievements failed: ' + errorMessage);
+        res.sendStatus(200);
+    } catch (e) {
+        logger.error('Error in testAssignWeeklyAchievements:', e);
+        res.sendStatus(500);
     }
 });

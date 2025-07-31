@@ -16,6 +16,8 @@ class Achievement {
   final bool proLevel;
   final bool isBonus;
 
+  final int? improvement;
+
   Achievement({
     required this.id,
     required this.title,
@@ -31,6 +33,7 @@ class Achievement {
     required this.userId,
     required this.proLevel,
     required this.isBonus,
+    this.improvement,
   });
 
   factory Achievement.fromFirestore(DocumentSnapshot doc) {
@@ -50,6 +53,7 @@ class Achievement {
       userId: data['user_id'] ?? '',
       proLevel: data['pro_level'] ?? false,
       isBonus: data['is_bonus'] ?? false,
+      improvement: (data.containsKey('improvement') && data['improvement'] is int) ? data['improvement'] as int : null,
     );
   }
 
