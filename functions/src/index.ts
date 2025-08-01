@@ -582,16 +582,7 @@ async function checkAchievementCompletion(userId: string, session: any, achievem
     }
     // QUANTITY
     if (style === 'quantity') {
-        if (goalType === 'count_each_hand') {
-            // Must take goalValue shots with each hand in one session
-            for (const s of sessions) {
-                const shots = s.shots || {};
-                if ((shots.left || 0) >= goalValue && (shots.right || 0) >= goalValue) {
-                    return true;
-                }
-            }
-            return false;
-        } else if (goalType === 'count_per_session') {
+        if (goalType === 'count_per_session') {
             // At least goalValue shots in requiredSessions consecutive sessions
             let metList = sessions.map((s: any) => (s.shots?.[shotType] || 0) >= goalValue ? 1 : 0);
             let streak = 0;
@@ -1004,7 +995,6 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'qty_mixed_medium', style: 'quantity', title: 'Mix It Up', description: 'Take at least 20 shots of each type (wrist, snap, backhand, slap).', shotType: 'all', goalType: 'count', goalValue: 20, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'qty_lefty_easy', style: 'quantity', title: 'Lefty Challenge', description: 'Take 25 shots with your non-dominant hand.', shotType: 'any', goalType: 'count', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
                 { id: 'qty_speed_50', style: 'quantity', title: 'Speed Demon', description: 'Take 50 shots in under 10 minutes in a single session.', shotType: 'any', goalType: 'count_time', goalValue: 50, timeLimit: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_ambidextrous_30', style: 'quantity', title: 'Ambidextrous Ace', description: 'Take 15 shots with each hand in one session.', shotType: 'any', goalType: 'count_each_hand', goalValue: 15, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'qty_rapidfire_20', style: 'quantity', title: 'Rapid Fire', description: 'Take 20 shots in 60 seconds or less.', shotType: 'any', goalType: 'count_time', goalValue: 20, timeLimit: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'qty_balanced_40', style: 'quantity', title: 'Balanced Attack', description: 'Take 10 wrist, 10 snap, 10 backhand, and 10 slap shots.', shotType: 'all', goalType: 'count', goalValue: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'qty_evening_25', style: 'quantity', title: 'Evening Shooter', description: 'Take 25 shots after 7pm in a single session.', shotType: 'any', goalType: 'count_evening', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
