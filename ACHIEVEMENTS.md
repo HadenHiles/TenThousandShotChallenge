@@ -64,7 +64,7 @@
 - Award badges, points, or other incentives for completing achievements.
 - Track achievement streaks for consecutive weeks in which the user completes every assigned achievement.
 - Show achievement streak and achievement history in the profile tab.
-- Impossible bonus achievements do not affect the user's streak if not completed, but provide extra rewards if achieved.
+- Bonus achievements do not affect the user's streak if not completed
 
 ### 6. Achievement Swap Feature
 

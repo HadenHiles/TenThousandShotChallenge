@@ -536,7 +536,7 @@ function getWeekStartEST(): Date {
 
 // Main scheduled function
 export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York', timeoutSeconds: 1200 }, async (event) => {
-    // TODO: copy code from onRequest version once all dev is complete
+    // TODO: Copy request version here when ready
 });
 
 // HTTP-triggered version for live testing
@@ -660,13 +660,11 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'acc_snap_80', style: 'accuracy', title: 'Snap Supreme', description: 'Achieve 80% accuracy on snap shots in a single session.', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 1, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: false },
                 { id: 'acc_backhand_60', style: 'accuracy', title: 'Backhand Bull', description: 'Achieve 60% accuracy on backhands in any 2 sessions.', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: false },
                 { id: 'acc_slap_75', style: 'accuracy', title: 'Slap Shot Specialist', description: 'Achieve 55% accuracy on slap shots in any 2 sessions.', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 55.0, sessions: 2, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_variety_60', style: 'accuracy', title: 'Variety Accuracy', description: 'Achieve at least 60% accuracy on all shot types in a single session.', shotType: 'all', goalType: 'accuracy_variety', targetAccuracy: 60.0, sessions: 1, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: false },
                 { id: 'acc_morning_ace', style: 'accuracy', title: 'Morning Ace', description: 'Achieve 65% accuracy in a morning session (before 10am).', shotType: 'any', goalType: 'accuracy_morning', targetAccuracy: 65.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
                 { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: true },
                 { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: true },
                 { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false, isStreak: true },
                 { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: false, isStreak: true },
-                { id: 'acc_variety_medium', style: 'accuracy', title: 'All-Around Sniper', description: 'Achieve at least 50% accuracy on all shot types in a single session.', shotType: 'all', goalType: 'accuracy_variety', targetAccuracy: 50.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
                 // --- Ratio based ---
                 { id: 'ratio_snap_slap_2to1', style: 'ratio', title: 'Snap to Slap', description: 'Take 2 snap shots for every 1 slap shot.', shotType: 'snap', shotTypeComparison: 'slap', primaryType: 'snap', secondaryType: 'slap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'ratio_even_steven', style: 'ratio', title: 'Even Steven', description: 'Take an equal number of wrist and backhand shots.', shotType: 'wrist', shotTypeComparison: 'backhand', primaryType: 'wrist', secondaryType: 'backhand', goalType: 'ratio_equal', goalValue: 1, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
@@ -686,13 +684,9 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 // --- Progress ---
                 { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5%. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
                 { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10%. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
-                { id: 'progress_backhand_improve_medium', style: 'progress', title: 'Backhand Progress', description: 'Improve your backhand accuracy by 7%.', shotType: 'backhand', goalType: 'improvement', improvement: 7, difficulty: 'Medium', proLevel: true, isBonus: false },
-                { id: 'progress_slap_improve_medium', style: 'progress', title: 'Slap Shot Progress', description: 'Improve your slap shot accuracy by 8%.', shotType: 'slap', goalType: 'improvement', improvement: 8, difficulty: 'Medium', proLevel: true, isBonus: false },
                 { id: 'progress_variety_improve_hard', style: 'progress', title: 'All-Around Progress', description: 'Improve your accuracy by at least 5% on all shot types.', shotType: 'all', goalType: 'improvement_variety', improvement: 5, difficulty: 'Hard', proLevel: true, isBonus: false },
-                { id: 'progress_streak_3days', style: 'progress', title: 'Three Day Streak', description: 'Improve your accuracy on any shot type for 3 days in a row.', shotType: 'any', goalType: 'improvement_streak', improvement: 1, days: 3, difficulty: 'Medium', proLevel: true, isBonus: false },
                 { id: 'progress_evening_improve', style: 'progress', title: 'Evening Improver', description: 'Improve your overall accuracy by 6%.', shotType: 'any', goalType: 'improvement_evening', improvement: 6, difficulty: 'Medium', proLevel: true, isBonus: false },
                 { id: 'progress_target_hits', style: 'progress', title: 'Target Hitter', description: 'Hit 100 targets.', shotType: 'any', goalType: 'target_hits_increase', improvement: 100, difficulty: 'Easy', proLevel: true, isBonus: false },
-                { id: 'progress_consistency_sessions', style: 'progress', title: 'Consistent Improver', description: 'Improve your accuracy in at least 4 different sessions.', shotType: 'any', goalType: 'improvement_sessions', improvement: 1, sessions: 4, difficulty: 'Hard', proLevel: true, isBonus: false },
             ];
 
             // Difficulty mapping for templates
@@ -744,7 +738,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 // --- Accuracy ---
                 if (t.style === 'accuracy' && t.shotType && t.targetAccuracy) {
                     // Only substitute for wrist, snap, backhand, slap
-                    if (['wrist', 'snap', 'backhand', 'slap'].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
+                    if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
                         t.shotType = weakestType;
                         t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Accuracy Focus`;
                     }
@@ -762,9 +756,38 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     // Use average or bump for target
                     let avg = sessionAccuracies.length ? sessionAccuracies.reduce((a, b) => a + b, 0) / sessionAccuracies.length : 0;
                     let bump = (t.sessions && t.sessions > 1) ? 2.5 : 5.0;
-                    let newTarget = Math.round((avg + bump) * 10) / 10;
-                    t.targetAccuracy = Math.max(t.targetAccuracy, Math.min(newTarget, 100));
-                    t.description = `Achieve ${t.targetAccuracy}% accuracy on ${t.shotType} shots${t.sessions ? ` in ${t.sessions} session${t.sessions > 1 ? 's' : ''}` : ''}.`;
+                    let reasonableMin = 25; // never assign below 25%
+                    let templateDefault = t.targetAccuracy;
+                    // Calculate new target and round to nearest 2% increment
+                    let rawTarget = avg + bump;
+                    let roundedTarget = Math.round(rawTarget / 2) * 2; // nearest 2%
+                    // If user is below template default, assign (avg + bump) but never below reasonableMin
+                    // If user is above template default, assign template default or (avg + bump) if that's higher
+                    if (rawTarget < templateDefault) {
+                        t.targetAccuracy = Math.max(reasonableMin, Math.min(roundedTarget, templateDefault));
+                    } else {
+                        t.targetAccuracy = Math.min(Math.max(templateDefault, roundedTarget), 100);
+                    }
+                    // Fix: description should include 'in a row' only if isStreak is true
+                    let sessionPhrase = '';
+                    if (t.sessions) {
+                        if (t.isStreak === true) {
+                            sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row`;
+                        } else {
+                            sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''}`;
+                        }
+                    }
+                    // Determine proper shot type phrase
+                    let shotTypePhrase = '';
+                    if (t.shotType === 'all' || t.shotType === 'any') {
+                        shotTypePhrase = `${t.shotType} shots`;
+                    } else if (t.shotType === 'backhand') {
+                        shotTypePhrase = 'backhands';
+                    } else {
+                        // e.g. 'wrist shot(s)', 'snap shots', 'slap shots'
+                        shotTypePhrase = `${t.shotType} shots`;
+                    }
+                    t.description = `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
                 }
                 // --- Quantity ---
                 if (t.style === 'quantity' && t.shotType && t.goalValue) {
@@ -774,7 +797,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                         t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
                     }
                     let avg = avgShotsPerSession[t.shotType] || 0;
-                    let percent = avg < 20 ? 0.20 : avg < 50 ? 0.10 : 0.05;
+                    let percent = avg < 20 ? 0.50 : avg < 100 ? 0.25 : 0.20;
                     let bump = Math.ceil(avg * percent);
                     let maxBump = 100;
                     t.goalValue = Math.max(t.goalValue, Math.min(Math.ceil(avg + bump), Math.ceil(avg + maxBump)));
@@ -816,6 +839,25 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     if (['wrist', 'snap', 'backhand', 'slap'].includes(t.secondaryType) && weakestType && t.secondaryType !== weakestType) {
                         t.secondaryType = weakestType;
                     }
+                    // Ensure primaryType and secondaryType are not the same after substitution
+                    if (t.primaryType === t.secondaryType) {
+                        // Pick a different secondaryType: choose the next weakest type that isn't primaryType
+                        const shotTypes = ['wrist', 'snap', 'backhand', 'slap'];
+                        let altWeakest = null;
+                        let altLowestAcc = Infinity;
+                        for (const type of shotTypes) {
+                            if (type !== t.primaryType && avgAccuracies[type] > 0 && avgAccuracies[type] < altLowestAcc) {
+                                altLowestAcc = avgAccuracies[type];
+                                altWeakest = type;
+                            }
+                        }
+                        if (altWeakest) {
+                            t.secondaryType = altWeakest;
+                        } else {
+                            // fallback: pick any different type
+                            t.secondaryType = shotTypes.find(type => type !== t.primaryType) || t.secondaryType;
+                        }
+                    }
                     let primaryAvg = avgShotsPerSession[t.primaryType] || 0;
                     let secondaryAvg = avgShotsPerSession[t.secondaryType] || 0;
                     if (secondaryAvg < primaryAvg * 0.5) {
@@ -826,17 +868,50 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 }
                 // --- Progress ---
                 if (t.style === 'progress' && t.shotType && t.improvement) {
+                    // Skill-based substitution for progress
+                    // Only substitute for wrist, snap, backhand, slap
+                    if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
+                        t.shotType = weakestType;
+                        t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Progress`;
+                    }
+                    // Personalize improvement value based on user's average accuracy
+                    let avg = avgAccuracies[t.shotType] || 0;
                     let bump = t.improvement;
+                    // If user is below 40% accuracy, set a lower improvement target, else use template or a small bump
+                    if (avg > 0 && avg < 40) {
+                        bump = Math.max(2, Math.round((40 - avg) / 4));
+                    } else if (avg >= 40 && avg < 60) {
+                        bump = Math.max(t.improvement, 3);
+                    } else if (avg >= 60) {
+                        bump = Math.max(t.improvement, 2);
+                    }
+                    t.improvement = bump;
                     t.description = t.goalType === 'improvement_variety'
                         ? `Improve your accuracy by at least ${bump}% on all shot types.`
                         : `Improve your ${t.shotType} accuracy by ${bump}%. Progress counts, even if it takes a few tries!`;
                 }
                 // --- Consistency ---
                 if (t.style === 'consistency' && t.goalType && t.goalValue) {
-                    // For streaks, sessions, etc.
+                    // Skill-based substitution for consistency
+                    // Only substitute for wrist, snap, backhand, slap if shotType is present
+                    if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
+                        t.shotType = laggingType;
+                        t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Consistency`;
+                    }
+                    // Personalize goalValue based on user's average sessions or shots
+                    let avgSessions = stats.sessions ? stats.sessions.length : 0;
+                    // For streaks, set goalValue to at least 2 or 3 if user is active, else use template
                     if (t.goalType === 'streak') {
+                        if (avgSessions >= 5) {
+                            t.goalValue = Math.max(t.goalValue, 5);
+                        } else if (avgSessions >= 3) {
+                            t.goalValue = Math.max(t.goalValue, 3);
+                        }
                         t.description = `Complete a streak of ${t.goalValue} days in a row with at least one session each day.`;
                     } else if (t.goalType === 'sessions') {
+                        if (avgSessions > 0) {
+                            t.goalValue = Math.max(t.goalValue, Math.ceil(avgSessions * 1.2));
+                        }
                         t.description = `Complete ${t.goalValue} shooting sessions. If you miss a day, you can still finish strong!`;
                     } else if (t.goalType === 'early_sessions') {
                         t.description = `Complete a shooting session before 7am ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
