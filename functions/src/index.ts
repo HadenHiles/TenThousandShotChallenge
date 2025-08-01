@@ -257,7 +257,21 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
         logger.error('Error updating weekly stats after session creation:', e);
     }
 
-    // ...existing code for sending notifications to friends...
+    // Call achievement logic after stats/weekly is updated
+    let createdSession: any = null;
+    try {
+        createdSession = (await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get()).data();
+    } catch (err) {
+        logger.error('Error loading session for achievement update:', err);
+    }
+    if (createdSession) {
+        try {
+            await updateAchievementsAfterSessionChange(context.params.userId, createdSession);
+        } catch (err) {
+            logger.error('Error updating achievements after session creation:', err);
+        }
+    }
+
     // Send friends notifications
     let user: any;
     let session: any;
@@ -347,6 +361,21 @@ export const sessionUpdated = onDocumentUpdated({ document: "iterations/{userId}
         logger.log(`Error updating cache timestamp for iteration: ${context.params.iterationId}` + err);
         return null;
     });
+
+    // Call achievement logic after stats/weekly is updated
+    let session: any = null;
+    try {
+        session = (await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get()).data();
+    } catch (e) {
+        logger.error('Error fetching session after update:', e);
+    }
+    if (session) {
+        try {
+            await updateAchievementsAfterSessionChange(context.params.userId, session);
+        } catch (err) {
+            logger.error('Error updating achievements after session update:', err);
+        }
+    }
 });
 
 // Update the iteration timestamp for caching purposes any time a session is deleted
@@ -444,6 +473,13 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
     } catch (e) {
         logger.error('Error updating weekly stats after session deletion:', e);
     }
+
+    // Call achievement logic after stats/weekly is updated
+    try {
+        await updateAchievementsAfterSessionDelete(context.params.userId);
+    } catch (err) {
+        logger.error('Error updating achievements after session deletion:', err);
+    }
 });
 
 function getFriendNotificationMessage(playerName: string, teammateName: string): string {
@@ -518,6 +554,338 @@ const friendlyMessages = [
     "Looks like someone's got a case of the \"shotgun blues\" and they're taking it out on the nets! Get out there and show them some fancy stickwork, ${teammateName}!",
     "Is ${playerName} channeling their inner superhero? All they need is a cape to complete the look! Get out there and show them your own moves, ${teammateName}!"
 ];
+
+// Helper: Check if achievement is completed based on session and achievement criteria, using stats/weekly
+async function checkAchievementCompletion(userId: string, session: any, achievement: any, stats?: any): Promise<boolean> {
+    // If stats not provided, fetch it
+    let statsData = stats;
+    if (!statsData) {
+        const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+        statsData = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
+    }
+    const sessions: any[] = Array.isArray(statsData.sessions) ? statsData.sessions : [];
+    const style = achievement.style;
+    const goalType = achievement.goalType;
+    const shotType = achievement.shotType || achievement.primaryType || 'any';
+    const secondaryType = achievement.shotTypeComparison || achievement.secondaryType || '';
+    const goalValue = typeof achievement.goalValue === 'number' ? achievement.goalValue : 1;
+    const secondaryValue = typeof achievement.secondaryValue === 'number' ? achievement.secondaryValue : 1;
+    const requiredSessions = typeof achievement.sessions === 'number' ? achievement.sessions : 1;
+    const targetAccuracy = typeof achievement.targetAccuracy === 'number' ? achievement.targetAccuracy : 100.0;
+    const improvement = typeof achievement.improvement === 'number' ? achievement.improvement : 1.0;
+    // Helper: get session time
+    function getSessionTime(s: any) {
+        if (!s || !s.date) return null;
+        if (s.date.toDate) return s.date.toDate();
+        if (s.date instanceof Date) return s.date;
+        return null;
+    }
+    // QUANTITY
+    if (style === 'quantity') {
+        if (goalType === 'count_each_hand') {
+            // Must take goalValue shots with each hand in one session
+            for (const s of sessions) {
+                const shots = s.shots || {};
+                if ((shots.left || 0) >= goalValue && (shots.right || 0) >= goalValue) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (goalType === 'count_per_session') {
+            // At least goalValue shots in requiredSessions consecutive sessions
+            let metList = sessions.map((s: any) => (s.shots?.[shotType] || 0) >= goalValue ? 1 : 0);
+            let streak = 0;
+            for (let i = 0; i < metList.length; i++) {
+                if (metList[i] === 1) {
+                    streak++;
+                    if (streak >= requiredSessions) return true;
+                } else {
+                    streak = 0;
+                }
+            }
+            return false;
+        } else if (goalType === 'count_evening') {
+            // Must take goalValue shots after 7pm in a single session
+            for (const s of sessions) {
+                const dt = getSessionTime(s);
+                if (dt && dt.getHours() >= 19) {
+                    let sum = 0;
+                    for (const v of Object.values(s.shots || {})) {
+                        if (typeof v === 'number') sum += v;
+                    }
+                    if (sum >= goalValue) return true;
+                }
+            }
+            return false;
+        } else if (goalType === 'count_time') {
+            // Take goalValue shots in under timeLimit (minutes) in a single session
+            const timeLimit = achievement.timeLimit || 10;
+            for (const s of sessions) {
+                if (typeof s.duration === 'number' && s.duration <= timeLimit) {
+                    let sum = 0;
+                    for (const v of Object.values(s.shots || {})) {
+                        if (typeof v === 'number') sum += v;
+                    }
+                    if (sum >= goalValue) return true;
+                }
+            }
+            return false;
+        } else if (shotType === 'all') {
+            // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand)
+            const types = ['wrist', 'snap', 'slap', 'backhand'];
+            for (const s of sessions) {
+                const shots = s.shots || {};
+                if (types.every(t => (shots[t] || 0) >= goalValue)) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (shotType === 'any') {
+            // Sum all types
+            let sum = 0;
+            for (const s of sessions) {
+                for (const v of Object.values(s.shots || {})) {
+                    if (typeof v === 'number') sum += v;
+                }
+            }
+            return sum >= goalValue;
+        } else {
+            // Specific shot type
+            let count = 0;
+            for (const s of sessions) {
+                count += s.shots?.[shotType] || 0;
+            }
+            return count >= goalValue;
+        }
+    }
+    // ACCURACY
+    if (style === 'accuracy') {
+        const isStreak = achievement.isStreak === true;
+        let sessionAccuracies = [];
+        for (const s of sessions) {
+            const accMap = s.accuracy || {};
+            let acc = 0;
+            if (goalType === 'accuracy_morning') {
+                const dt = getSessionTime(s);
+                if (dt && dt.getHours() < 10) {
+                    if (shotType === 'any') {
+                        const types = ['wrist', 'snap', 'slap', 'backhand'];
+                        let sum = 0, count = 0;
+                        for (const t of types) {
+                            if (typeof accMap[t] === 'number') { sum += accMap[t]; count++; }
+                        }
+                        acc = count > 0 ? sum / count : 0;
+                    } else {
+                        acc = typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
+                    }
+                    sessionAccuracies.push(acc);
+                }
+            } else if (goalType === 'accuracy_variety') {
+                const types = ['wrist', 'snap', 'slap', 'backhand'];
+                if (types.every(t => typeof accMap[t] === 'number' && accMap[t] >= targetAccuracy)) {
+                    return true;
+                }
+            } else {
+                acc = typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
+                sessionAccuracies.push(acc);
+            }
+        }
+        if (goalType === 'accuracy_variety') return false;
+        if (isStreak) {
+            // Streak logic: find max streak of sessions with accuracy >= targetAccuracy
+            let streak = 0;
+            for (let i = 0; i < sessionAccuracies.length; i++) {
+                if (sessionAccuracies[i] >= targetAccuracy) {
+                    streak++;
+                    if (streak >= requiredSessions) return true;
+                } else {
+                    streak = 0;
+                }
+            }
+            return false;
+        } else {
+            // For achievements requiring N sessions (not necessarily in a row)
+            let metCount = sessionAccuracies.filter(v => v >= targetAccuracy).length;
+            return metCount >= requiredSessions;
+        }
+    }
+    // CONSISTENCY
+    if (style === 'consistency') {
+        if (goalType === 'early_sessions') {
+            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() < 7; }).length;
+            return count >= goalValue;
+        } else if (goalType === 'late_sessions') {
+            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() >= 21; }).length;
+            return count >= goalValue;
+        } else if (goalType === 'double_sessions') {
+            let dayCounts: { [key: string]: number } = {};
+            for (const s of sessions) {
+                const dt = getSessionTime(s);
+                if (dt) {
+                    const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+                    dayCounts[key] = (dayCounts[key] || 0) + 1;
+                }
+            }
+            let doubleDays = Object.values(dayCounts).filter((v: number) => v >= 2).length;
+            return doubleDays >= goalValue;
+        } else if (goalType === 'weekend_sessions') {
+            let days = new Set<number>(sessions.map((s: any) => { const dt = getSessionTime(s); return dt ? dt.getDay() : null; }).filter((d: number | null) => d !== null) as number[]);
+            let count = (days.has(6) ? 1 : 0) + (days.has(0) ? 1 : 0); // Saturday=6, Sunday=0
+            return count >= goalValue;
+        } else if (goalType === 'streak') {
+            let uniqueDays = Array.from(new Set<number>(sessions.map((s: any) => { const dt = getSessionTime(s); return dt ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime() : null; }).filter((d: number | null) => d !== null) as number[])).sort((a, b) => a - b);
+            let longestStreak = 0, currentStreak = 0, prevDay: number | null = null;
+            for (const day of uniqueDays) {
+                if (prevDay === null || day - prevDay === 86400000) { // 1 day in ms
+                    currentStreak++;
+                    if (currentStreak > longestStreak) longestStreak = currentStreak;
+                } else {
+                    currentStreak = 1;
+                }
+                prevDay = day;
+            }
+            return longestStreak >= goalValue;
+        } else if (goalType === 'morning_sessions') {
+            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() < 10; }).length;
+            return count >= goalValue;
+        } else {
+            // Total sessions
+            return sessions.length >= goalValue;
+        }
+    }
+    // PROGRESS
+    if (style === 'progress') {
+        if (goalType === 'improvement') {
+            const seasonAccuracy = typeof statsData.season_accuracy === 'number' ? statsData.season_accuracy : 0;
+            return seasonAccuracy >= improvement;
+        } else if (goalType === 'improvement_variety') {
+            const types = ['wrist', 'snap', 'slap', 'backhand'];
+            let metTypes = 0;
+            for (const t of types) {
+                const acc = typeof statsData[`season_accuracy_${t}`] === 'number' ? statsData[`season_accuracy_${t}`] : 0;
+                if (acc >= improvement) metTypes++;
+            }
+            return metTypes === types.length;
+        } else if (goalType === 'improvement_evening') {
+            let metCount = 0, total = 0;
+            for (const s of sessions) {
+                const dt = getSessionTime(s);
+                if (dt && dt.getHours() >= 19 && s.accuracy) {
+                    let acc = 0;
+                    if (shotType === 'any') {
+                        const values = Object.values(s.accuracy).filter((v: any) => typeof v === 'number') as number[];
+                        acc = values.reduce((a: number, b: number) => a + b, 0) / (values.length || 1);
+                    } else {
+                        acc = typeof s.accuracy[shotType] === 'number' ? s.accuracy[shotType] : 0;
+                    }
+                    if (acc >= improvement) metCount++;
+                    total++;
+                }
+            }
+            return total > 0 && metCount === total;
+        } else if (goalType === 'target_hits_increase') {
+            const hits = typeof statsData.season_targets_hit === 'number' ? statsData.season_targets_hit : 0;
+            return hits >= improvement;
+        } else {
+            // Default: overall season_accuracy
+            const seasonAccuracy = typeof statsData.season_accuracy === 'number' ? statsData.season_accuracy : 0;
+            return seasonAccuracy >= improvement;
+        }
+    }
+    // RATIO
+    if (style === 'ratio') {
+        if (goalType === 'variety') {
+            // At least goalValue of each shot type in a single session
+            const types = ['wrist', 'snap', 'slap', 'backhand'];
+            for (const s of sessions) {
+                const shots = s.shots || {};
+                if (types.every(t => (shots[t] || 0) >= goalValue)) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (goalType === 'ratio' || goalType === 'ratio_equal') {
+            // Calculate ratio of primaryType to secondaryType
+            let primaryCount = 0, secondaryCount = 0;
+            for (const s of sessions) {
+                const shots = s.shots || {};
+                if (shotType.includes('+')) {
+                    for (const t of shotType.split('+')) {
+                        primaryCount += shots[t] || 0;
+                    }
+                } else {
+                    primaryCount += shots[shotType] || 0;
+                }
+                if (secondaryType.includes('+')) {
+                    for (const t of secondaryType.split('+')) {
+                        secondaryCount += shots[t] || 0;
+                    }
+                } else {
+                    secondaryCount += shots[secondaryType] || 0;
+                }
+            }
+            if (goalType === 'ratio_equal') {
+                return primaryCount === secondaryCount && primaryCount > 0;
+            } else {
+                // e.g. 2:1 means primary/secondary >= 2
+                return secondaryCount > 0 && (primaryCount / secondaryCount) >= (goalValue / secondaryValue);
+            }
+        }
+    }
+    // FUN/SOCIAL/OTHER: always return false (manual completion)
+    if (style === 'fun' || style === 'social') {
+        return false;
+    }
+    return false;
+}
+
+
+
+// Achievement logic as regular functions
+async function updateAchievementsAfterSessionChange(userId: string, session: any) {
+    // Get all weekly achievements for user
+    const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').get();
+    const batch = db.batch();
+    const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+    const stats = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
+    for (const doc of achievementsSnap.docs) {
+        const achievement = doc.data();
+        if (!achievement.completed) {
+            const completed = await checkAchievementCompletion(userId, session, achievement, stats);
+            if (completed) {
+                batch.update(doc.ref, { completed: true, completed_at: require('firebase-admin').firestore.FieldValue.serverTimestamp() });
+            }
+        }
+    }
+    await batch.commit();
+}
+
+async function updateAchievementsAfterSessionDelete(userId: string) {
+    // On delete, re-check all achievements (could un-complete if needed)
+    const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').get();
+    // Use the sessions array from stats/weekly
+    const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+    const stats = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
+    const sessions = Array.isArray((stats as any).sessions) ? (stats as any).sessions : [];
+    const batch = db.batch();
+    for (const doc of achievementsSnap.docs) {
+        const achievement = doc.data();
+        if (achievement.completed) {
+            // Re-check if achievement is still completed
+            let stillCompleted = false;
+            for (const session of sessions) {
+                if (await checkAchievementCompletion(userId, session, achievement, stats)) {
+                    stillCompleted = true;
+                    break;
+                }
+            }
+            if (!stillCompleted) {
+                batch.update(doc.ref, { completed: false, completed_at: null });
+            }
+        }
+    }
+    await batch.commit();
+}
 
 // Helper: Get start of current week (Monday 12am EST)
 function getWeekStartEST(): Date {
@@ -677,7 +1045,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 { id: 'consistency_nightowl', style: 'consistency', title: 'Night Owl', description: 'Complete a shooting session after 5pm two times.', shotType: '', goalType: 'late_sessions', goalValue: 2, difficulty: 'Medium', proLevel: false, isBonus: false },
                 { id: 'consistency_doubleheader', style: 'consistency', title: 'Double Header', description: 'Complete two shooting sessions in one day.', shotType: '', goalType: 'double_sessions', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'consistency_weekendwarrior', style: 'consistency', title: 'Weekend Warrior', description: 'Complete a session on both Saturday and Sunday.', shotType: '', goalType: 'weekend_sessions', goalValue: 2, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'consistency_streak_five', style: 'consistency', title: 'Five Alive', description: 'Complete a streak of 5 days in a row with at least one session each day.', shotType: '', goalType: 'streak', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
+                { id: 'consistency_streak_five', style: 'consistency', title: 'Five Alive', description: 'Shoot pucks at least 5 days this week.', shotType: '', goalType: 'streak', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day.', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
                 { id: 'consistency_morning_medium', style: 'consistency', title: 'Morning Warrior', description: 'Complete 3 morning shooting sessions (before 10am).', shotType: '', goalType: 'morning_sessions', goalValue: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
@@ -761,6 +1129,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                     // Calculate new target and round to nearest 2% increment
                     let rawTarget = avg + bump;
                     let roundedTarget = Math.round(rawTarget / 2) * 2; // nearest 2%
+
                     // If user is below template default, assign (avg + bump) but never below reasonableMin
                     // If user is above template default, assign template default or (avg + bump) if that's higher
                     if (rawTarget < templateDefault) {
