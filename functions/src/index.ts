@@ -72,9 +72,6 @@ function sendFcmMessage(fcmMessage: any) {
 initializeApp({ credential: applicationDefault() });
 const db = getFirestore();
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-
 export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invites/{teammateId}" }, async (event) => {
     const context = event;
     let user;
@@ -555,8 +552,8 @@ const friendlyMessages = [
     "Is ${playerName} channeling their inner superhero? All they need is a cape to complete the look! Get out there and show them your own moves, ${teammateName}!"
 ];
 
-// Helper: Check if achievement is completed based on session and achievement criteria, using stats/weekly
-async function checkAchievementCompletion(userId: string, session: any, achievement: any, stats?: any): Promise<boolean> {
+// Helper: Check if achievement is completed based on achievement criteria, using stats/weekly
+async function checkAchievementCompletion(userId: string, achievement: any, stats?: any): Promise<boolean> {
     // If stats not provided, fetch it
     let statsData = stats;
     if (!statsData) {
@@ -842,7 +839,7 @@ async function updateAchievementsAfterSessionChange(userId: string, session: any
     for (const doc of achievementsSnap.docs) {
         const achievement = doc.data();
         if (!achievement.completed) {
-            const completed = await checkAchievementCompletion(userId, session, achievement, stats);
+            const completed = await checkAchievementCompletion(userId, achievement, stats);
             if (completed) {
                 batch.update(doc.ref, { completed: true, completed_at: require('firebase-admin').firestore.FieldValue.serverTimestamp() });
             }
@@ -857,19 +854,12 @@ async function updateAchievementsAfterSessionDelete(userId: string) {
     // Use the sessions array from stats/weekly
     const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
     const stats = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
-    const sessions = Array.isArray((stats as any).sessions) ? (stats as any).sessions : [];
     const batch = db.batch();
     for (const doc of achievementsSnap.docs) {
         const achievement = doc.data();
         if (achievement.completed) {
             // Re-check if achievement is still completed
-            let stillCompleted = false;
-            for (const session of sessions) {
-                if (await checkAchievementCompletion(userId, session, achievement, stats)) {
-                    stillCompleted = true;
-                    break;
-                }
-            }
+            const stillCompleted = await checkAchievementCompletion(userId, achievement, stats);
             if (!stillCompleted) {
                 batch.update(doc.ref, { completed: false, completed_at: null });
             }
