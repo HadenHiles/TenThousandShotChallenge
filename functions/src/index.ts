@@ -633,15 +633,18 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (shotType === 'all') {
-            // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand) in a single session
+            // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand) summed across all relevant sessions
             const types = ['wrist', 'snap', 'slap', 'backhand'];
+            const totals: { [key: string]: number } = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
             for (const s of relevantSessions) {
                 const shots = typeof s.shots === 'object' && s.shots !== null ? s.shots : {};
-                if (types.every(t => typeof shots[t] === 'number' && shots[t] >= goalValue)) {
-                    return true;
+                for (const t of types) {
+                    if (typeof shots[t] === 'number') {
+                        totals[t] += shots[t];
+                    }
                 }
             }
-            return false;
+            return types.every(t => totals[t] >= goalValue);
         } else if (shotType === 'any') {
             // Sum all types
             let sum = 0;
@@ -1288,6 +1291,10 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                         t.shotType = weakestType;
                         t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Accuracy Focus`;
                     }
+                    // Ensure isStreak is set correctly for streak templates
+                    if (typeof t.isStreak !== 'boolean') {
+                        t.isStreak = false;
+                    }
                     let sessionAccuracies: number[] = [];
                     if (stats.sessions && Array.isArray(stats.sessions)) {
                         for (const s of stats.sessions) {
@@ -1312,7 +1319,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                     let sessionPhrase = '';
                     if (t.sessions) {
                         if (t.isStreak === true) {
-                            sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row`;
+                            sessionPhrase = ` in any ${t.sessions} consecutive session${t.sessions > 1 ? 's' : ''}`;
                         } else {
                             sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''}`;
                         }
@@ -1328,7 +1335,9 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                         return type;
                     }
                     let shotTypePhrase = shotTypeLabel(t.shotType);
-                    t.description = `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
+                    t.description = t.isStreak
+                        ? `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`
+                        : `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
                 }
                 // --- Quantity ---
                 if (t.style === 'quantity' && t.goalValue) {
@@ -1425,7 +1434,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                         if (avgSessions > 0) {
                             t.goalValue = Math.max(t.goalValue, Math.ceil(avgSessions * 1.2));
                         }
-                        t.description = `Complete ${t.goalValue} shooting sessions. If you miss a day, you can still finish strong!`;
+                        t.description = `Complete ${t.goalValue} shooting sessions this week.`;
                     } else if (t.goalType === 'early_sessions') {
                         t.description = `Complete a shooting session before 7am ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
                     } else if (t.goalType === 'late_sessions') {
@@ -1435,7 +1444,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                     } else if (t.goalType === 'weekend_sessions') {
                         t.description = `Complete a session on both Saturday and Sunday.`;
                     } else if (t.goalType === 'morning_sessions') {
-                        t.description = `Complete ${t.goalValue} morning shooting sessions (before 10am).`;
+                        t.description = `Complete ${t.goalValue} shooting sessions before 10am.`;
                     } else if (t.goalType === 'lunch_sessions') {
                         t.description = `Complete ${t.goalValue} sessions on your lunch break.`;
                     }
