@@ -169,6 +169,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
     // --- Recalculate and write summary stats to /users/{userId}/stats/weekly ---
     try {
+        const weekStart = getWeekStartEST();
         const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
         let recentSessions = [];
         let seasonTotalShots = 0;
@@ -179,10 +180,14 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
         let seasonTargetsHitType = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
         let seasonAccuracyType = { wrist: 0.0, snap: 0.0, slap: 0.0, backhand: 0.0 };
 
-        let sessionCount = 0;
         for (const sessionDoc of sessionsSnap.docs) {
             const s = sessionDoc.data();
-            if (sessionCount < 10) {
+            // Only include sessions from the current week (on or after weekStart)
+            let sessionDate = s.date;
+            let jsDate = null;
+            if (sessionDate && sessionDate.toDate) jsDate = sessionDate.toDate();
+            else if (sessionDate instanceof Date) jsDate = sessionDate;
+            if (jsDate && jsDate >= weekStart) {
                 recentSessions.push({
                     date: s.date,
                     shots: {
@@ -199,7 +204,6 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                     }
                 });
             }
-            sessionCount++;
             seasonTotalShots += typeof s.total === 'number' ? s.total : 0;
             seasonShotTypeTotals.wrist += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
             seasonShotTypeTotals.snap += typeof s.total_snap === 'number' ? s.total_snap : 0;
@@ -386,6 +390,7 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
 
     // --- Recalculate and write summary stats to /users/{userId}/stats/weekly ---
     try {
+        const weekStart = getWeekStartEST();
         const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
         let recentSessions = [];
         let seasonTotalShots = 0;
@@ -396,10 +401,14 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
         let seasonTargetsHitType = { wrist: 0, snap: 0, slap: 0, backhand: 0 };
         let seasonAccuracyType = { wrist: 0.0, snap: 0.0, slap: 0.0, backhand: 0.0 };
 
-        let sessionCount = 0;
         for (const sessionDoc of sessionsSnap.docs) {
             const s = sessionDoc.data();
-            if (sessionCount < 10) {
+            // Only include sessions from the current week (on or after weekStart)
+            let sessionDate = s.date;
+            let jsDate = null;
+            if (sessionDate && sessionDate.toDate) jsDate = sessionDate.toDate();
+            else if (sessionDate instanceof Date) jsDate = sessionDate;
+            if (jsDate && jsDate >= weekStart) {
                 recentSessions.push({
                     date: s.date,
                     shots: {
@@ -416,7 +425,6 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
                     }
                 });
             }
-            sessionCount++;
             seasonTotalShots += typeof s.total === 'number' ? s.total : 0;
             seasonShotTypeTotals.wrist += typeof s.total_wrist === 'number' ? s.total_wrist : 0;
             seasonShotTypeTotals.snap += typeof s.total_snap === 'number' ? s.total_snap : 0;
