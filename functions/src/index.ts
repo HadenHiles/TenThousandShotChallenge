@@ -619,11 +619,14 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (shotType === 'all') {
-            // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand)
+            // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand) in a single session
             const types = ['wrist', 'snap', 'slap', 'backhand'];
             for (const s of sessions) {
-                const shots = s.shots || {};
-                if (types.every(t => (shots[t] || 0) >= goalValue)) {
+                const shots = typeof s.shots === 'object' && s.shots !== null ? s.shots : {};
+                // Debug: log session shots for troubleshooting
+                // logger.debug('Checking session shots for "all" quantity:', shots);
+                // Only count if all four types are present and each >= goalValue
+                if (types.every(t => typeof shots[t] === 'number' && shots[t] >= goalValue)) {
                     return true;
                 }
             }
@@ -885,11 +888,20 @@ function getWeekStartEST(): Date {
 
 // Main scheduled function
 export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York', timeoutSeconds: 1200 }, async (event) => {
-    // TODO: Copy request version here when ready
+    await assignAchievements(false, []);
 });
 
 // HTTP-triggered version for live testing
 export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
+    let result = await assignAchievements(true, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2']);
+    if (result.success) {
+        res.status(200).send(result.message || 'Achievements assigned successfully');
+    } else {
+        res.status(500).send(result.message || 'Failed to assign achievements.');
+    }
+});
+
+async function assignAchievements(test: Boolean, userIds: Array<string>): Promise<any> {
     const weekStart = getWeekStartEST();
     try {
         const now = new Date();
@@ -898,8 +910,7 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
         const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
-            // TODO: Remove this line for production
-            if (userId !== 'L5sRMTzi6OQfW86iK62todmS7Gz2' && userId !== 'bNyNJya3uwaNjH4eA8XWZcfZjYl2') continue; // Only update test user for now
+            if (test && !userIds.includes(userId)) continue; // Only update test users for test function calls
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
@@ -1296,73 +1307,88 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
                 return t;
             }
 
-            // Filter eligible templates
-            let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true));
-            eligible = eligible.sort(() => Math.random() - 0.5);
+            let achievements: any[] = [];
+            if (test) {
+                // In test mode, assign one achievement for every template (skip eligibility logic)
+                achievements = templates.map(t => ({
+                    ...substituteTemplate(t),
+                    completed: false,
+                    dateAssigned: Timestamp.fromDate(weekStart),
+                    dateCompleted: null,
+                    time_frame: 'week',
+                    userId,
+                }));
+            } else {
+                // Production: use eligibility logic as before
+                let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true));
+                eligible = eligible.sort(() => Math.random() - 0.5);
 
-            // --- Assign a variety of difficulties if possible ---
-            const assigned: any[] = [];
-            const usedTemplates = new Set();
-            const usedShotTypeCombos = new Set();
+                // --- Assign a variety of difficulties if possible ---
+                const assigned: any[] = [];
+                const usedTemplates = new Set();
+                const usedShotTypeCombos = new Set();
 
-            // 1. Always include one 'fun' style template if available
-            const funTemplates = eligible.filter(t => t.style === 'fun');
-            if (funTemplates.length > 0) {
-                const fun = substituteTemplate(funTemplates[Math.floor(Math.random() * funTemplates.length)]);
-                assigned.push(fun);
-                usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
-                usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
-            }
+                // 1. Always include one 'fun' style template if available
+                const funTemplates = eligible.filter(t => t.style === 'fun');
+                if (funTemplates.length > 0) {
+                    const fun = substituteTemplate(funTemplates[Math.floor(Math.random() * funTemplates.length)]);
+                    assigned.push(fun);
+                    usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
+                    usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
+                }
 
-            // 2. Try to assign templates of different difficulties
-            const difficulties = ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'];
-            const alreadyAssignedDifficulties = new Set(assigned.map(t => t.difficulty));
-            const nonFunTemplates = eligible.filter(t => t.style !== 'fun');
-            for (const diff of difficulties) {
-                if (assigned.length >= 4) break;
-                const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
-                if (candidates.length > 0) {
-                    const template = substituteTemplate(candidates[Math.floor(Math.random() * candidates.length)]);
-                    const comboKey = template.id + '|' + (template.shotType || 'any');
-                    if (!usedTemplates.has(comboKey)) {
-                        assigned.push(template);
-                        usedTemplates.add(comboKey);
-                        usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
-                        alreadyAssignedDifficulties.add(diff);
+                // 2. Try to assign templates of different difficulties
+                const difficulties = ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'];
+                const alreadyAssignedDifficulties = new Set(assigned.map(t => t.difficulty));
+                const nonFunTemplates = eligible.filter(t => t.style !== 'fun');
+                for (const diff of difficulties) {
+                    if (assigned.length >= 4) break;
+                    const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
+                    if (candidates.length > 0) {
+                        const template = substituteTemplate(candidates[Math.floor(Math.random() * candidates.length)]);
+                        const comboKey = template.id + '|' + (template.shotType || 'any');
+                        if (!usedTemplates.has(comboKey)) {
+                            assigned.push(template);
+                            usedTemplates.add(comboKey);
+                            usedShotTypeCombos.add(template.style + '|' + (template.shotType || 'any'));
+                            alreadyAssignedDifficulties.add(diff);
+                        }
                     }
                 }
-            }
 
-            // 3. If not enough, fill with random eligible (excluding fun/social already assigned)
-            let fallbackPool = [...nonFunTemplates];
-            while (assigned.length < 4 && fallbackPool.length) {
-                const next = substituteTemplate(fallbackPool.pop());
-                const comboKey = next.id + '|' + (next.shotType || 'any');
-                if (!usedTemplates.has(comboKey)) {
-                    assigned.push(next);
-                    usedTemplates.add(comboKey);
-                    usedShotTypeCombos.add(next.style + '|' + (next.shotType || 'any'));
+                // 3. If not enough, fill with random eligible (excluding fun/social already assigned)
+                let fallbackPool = [...nonFunTemplates];
+                while (assigned.length < 4 && fallbackPool.length) {
+                    const next = substituteTemplate(fallbackPool.pop());
+                    const comboKey = next.id + '|' + (next.shotType || 'any');
+                    if (!usedTemplates.has(comboKey)) {
+                        assigned.push(next);
+                        usedTemplates.add(comboKey);
+                        usedShotTypeCombos.add(next.style + '|' + (next.shotType || 'any'));
+                    }
                 }
-            }
 
-            // Format for Firestore: include all template fields
-            const achievements = assigned.slice(0, 4).map(t => ({
-                ...t,
-                completed: false,
-                dateAssigned: Timestamp.fromDate(weekStart),
-                dateCompleted: null,
-                time_frame: 'week',
-                userId,
-            }));
+                // Format for Firestore: include all template fields
+                achievements = assigned.slice(0, 4).map(t => ({
+                    ...t,
+                    completed: false,
+                    dateAssigned: Timestamp.fromDate(weekStart),
+                    dateCompleted: null,
+                    time_frame: 'week',
+                    userId,
+                }));
+            }
             for (const achievement of achievements) {
                 await db.collection('users').doc(userId).collection('achievements').add(achievement);
             }
         }
         logger.info('assignWeeklyAchievements executed successfully.');
-        res.status(200).send('assignWeeklyAchievements executed successfully:');
+        let res = { success: true, status: 200, message: 'Weekly achievements assigned successfully.' };
+        return res;
     } catch (error) {
         logger.error('Error assigning weekly achievements:', error);
         const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
-        res.status(200).send('assignWeeklyAchievements failed: ' + errorMessage);
+        let res = { success: false, status: 500, message: 'assignWeeklyAchievements failed: ' + errorMessage };
+        return res;
     }
-});
+}
