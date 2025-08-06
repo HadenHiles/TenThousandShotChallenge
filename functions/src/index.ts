@@ -579,9 +579,23 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
     }
     // QUANTITY
     if (style === 'quantity') {
+        // Only count sessions after dateAssigned (or week start)
+        let cutoff = null;
+        if (achievement.dateAssigned && achievement.dateAssigned.toDate) {
+            cutoff = achievement.dateAssigned.toDate();
+        } else if (statsData.week_start && statsData.week_start.toDate) {
+            cutoff = statsData.week_start.toDate();
+        }
+        const relevantSessions = cutoff
+            ? sessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && (dt >= cutoff);
+            })
+            : sessions;
+
         if (goalType === 'count_per_session') {
             // At least goalValue shots in requiredSessions consecutive sessions
-            let metList = sessions.map((s: any) => (s.shots?.[shotType] || 0) >= goalValue ? 1 : 0);
+            let metList = relevantSessions.map((s: any) => (s.shots?.[shotType] || 0) >= goalValue ? 1 : 0);
             let streak = 0;
             for (let i = 0; i < metList.length; i++) {
                 if (metList[i] === 1) {
@@ -594,7 +608,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             return false;
         } else if (goalType === 'count_evening') {
             // Must take goalValue shots after 7pm in a single session
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 const dt = getSessionTime(s);
                 if (dt && dt.getHours() >= 19) {
                     let sum = 0;
@@ -608,7 +622,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (goalType === 'count_time') {
             // Take goalValue shots in under timeLimit (minutes) in a single session
             const timeLimit = achievement.timeLimit || 10;
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 if (typeof s.duration === 'number' && s.duration <= timeLimit) {
                     let sum = 0;
                     for (const v of Object.values(s.shots || {})) {
@@ -621,11 +635,8 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (shotType === 'all') {
             // For 'all', must have at least goalValue of each type (wrist, snap, slap, backhand) in a single session
             const types = ['wrist', 'snap', 'slap', 'backhand'];
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 const shots = typeof s.shots === 'object' && s.shots !== null ? s.shots : {};
-                // Debug: log session shots for troubleshooting
-                // logger.debug('Checking session shots for "all" quantity:', shots);
-                // Only count if all four types are present and each >= goalValue
                 if (types.every(t => typeof shots[t] === 'number' && shots[t] >= goalValue)) {
                     return true;
                 }
@@ -634,16 +645,18 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (shotType === 'any') {
             // Sum all types
             let sum = 0;
-            for (const s of sessions) {
-                for (const v of Object.values(s.shots || {})) {
-                    if (typeof v === 'number') sum += v;
+            for (const s of relevantSessions) {
+                if (s.shots && typeof s.shots === 'object') {
+                    for (const v of Object.values(s.shots)) {
+                        if (typeof v === 'number') sum += v;
+                    }
                 }
             }
             return sum >= goalValue;
         } else {
             // Specific shot type
             let count = 0;
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 count += s.shots?.[shotType] || 0;
             }
             return count >= goalValue;
@@ -652,79 +665,116 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
     // ACCURACY
     if (style === 'accuracy') {
         const isStreak = achievement.isStreak === true;
-        let sessionAccuracies = [];
-        for (const s of sessions) {
-            const accMap = s.accuracy || {};
-            let acc = 0;
-            if (goalType === 'accuracy_morning') {
+        // Only count sessions after dateAssigned (or week_start)
+        let cutoff = null;
+        if (achievement.dateAssigned && achievement.dateAssigned.toDate) {
+            cutoff = achievement.dateAssigned.toDate();
+        } else if (statsData.week_start && statsData.week_start.toDate) {
+            cutoff = statsData.week_start.toDate();
+        }
+        const relevantSessions = cutoff
+            ? sessions.filter((s: any) => {
                 const dt = getSessionTime(s);
-                if (dt && dt.getHours() < 10) {
-                    if (shotType === 'any') {
-                        const types = ['wrist', 'snap', 'slap', 'backhand'];
-                        let sum = 0, count = 0;
-                        for (const t of types) {
-                            if (typeof accMap[t] === 'number') { sum += accMap[t]; count++; }
-                        }
-                        acc = count > 0 ? sum / count : 0;
-                    } else {
-                        acc = typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
-                    }
-                    sessionAccuracies.push(acc);
-                }
-            } else if (goalType === 'accuracy_variety') {
+                return dt && (dt >= cutoff);
+            })
+            : sessions;
+
+        // Helper: get per-session accuracy for the relevant goalType/shotType
+        function getSessionAccuracy(s: any): number {
+            const accMap = s.accuracy || {};
+            if (shotType === 'any') {
                 const types = ['wrist', 'snap', 'slap', 'backhand'];
+                let sum = 0, count = 0;
+                for (const t of types) {
+                    if (typeof accMap[t] === 'number') { sum += accMap[t]; count++; }
+                }
+                return count > 0 ? sum / count : 0;
+            } else {
+                return typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
+            }
+        }
+
+        if (goalType === 'accuracy_variety') {
+            // Must hit targetAccuracy for all types in a single session
+            const types = ['wrist', 'snap', 'slap', 'backhand'];
+            for (const s of relevantSessions) {
+                const accMap = s.accuracy || {};
                 if (types.every(t => typeof accMap[t] === 'number' && accMap[t] >= targetAccuracy)) {
                     return true;
                 }
-            } else {
-                acc = typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
-                sessionAccuracies.push(acc);
             }
-        }
-        if (goalType === 'accuracy_variety') return false;
-        if (isStreak) {
-            // Streak logic: find max streak of sessions with accuracy >= targetAccuracy
-            let streak = 0;
-            for (let i = 0; i < sessionAccuracies.length; i++) {
-                if (sessionAccuracies[i] >= targetAccuracy) {
-                    streak++;
-                    if (streak >= requiredSessions) return true;
-                } else {
-                    streak = 0;
+            return false;
+        } else if (goalType === 'accuracy_morning') {
+            // Morning session (before 10am) with required accuracy
+            for (const s of relevantSessions) {
+                const dt = getSessionTime(s);
+                if (dt && dt.getHours() < 10) {
+                    const acc = getSessionAccuracy(s);
+                    if (acc >= targetAccuracy) {
+                        return true;
+                    }
                 }
             }
             return false;
         } else {
-            // For achievements requiring N sessions (not necessarily in a row)
-            let metCount = sessionAccuracies.filter(v => v >= targetAccuracy).length;
-            return metCount >= requiredSessions;
+            // Standard accuracy achievements (single or multiple sessions)
+            let sessionAccuracies: number[] = [];
+            for (const s of relevantSessions) {
+                const acc = getSessionAccuracy(s);
+                sessionAccuracies.push(acc);
+            }
+            if (isStreak) {
+                // Streak logic: find max streak of sessions with accuracy >= targetAccuracy
+                let streak = 0;
+                for (let i = 0; i < sessionAccuracies.length; i++) {
+                    if (sessionAccuracies[i] >= targetAccuracy) {
+                        streak++;
+                        if (streak >= requiredSessions) return true;
+                    } else {
+                        streak = 0;
+                    }
+                }
+                return false;
+            } else {
+                // For achievements requiring N sessions (not necessarily in a row)
+                let metCount = sessionAccuracies.filter(v => v >= targetAccuracy).length;
+                return metCount >= requiredSessions;
+            }
         }
     }
     // CONSISTENCY
     if (style === 'consistency') {
-        if (goalType === 'early_sessions') {
-            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() < 7; }).length;
-            return count >= goalValue;
-        } else if (goalType === 'late_sessions') {
-            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() >= 21; }).length;
-            return count >= goalValue;
-        } else if (goalType === 'double_sessions') {
-            let dayCounts: { [key: string]: number } = {};
-            for (const s of sessions) {
+        // Only count sessions after dateAssigned (or week start)
+        let cutoff = null;
+        if (achievement.dateAssigned && achievement.dateAssigned.toDate) {
+            cutoff = achievement.dateAssigned.toDate();
+        } else if (statsData.week_start && statsData.week_start.toDate) {
+            cutoff = statsData.week_start.toDate();
+        }
+        const relevantSessions = cutoff
+            ? sessions.filter((s: any) => {
                 const dt = getSessionTime(s);
-                if (dt) {
-                    const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
-                    dayCounts[key] = (dayCounts[key] || 0) + 1;
-                }
-            }
-            let doubleDays = Object.values(dayCounts).filter((v: number) => v >= 2).length;
-            return doubleDays >= goalValue;
-        } else if (goalType === 'weekend_sessions') {
-            let days = new Set<number>(sessions.map((s: any) => { const dt = getSessionTime(s); return dt ? dt.getDay() : null; }).filter((d: number | null) => d !== null) as number[]);
-            let count = (days.has(6) ? 1 : 0) + (days.has(0) ? 1 : 0); // Saturday=6, Sunday=0
-            return count >= goalValue;
+                return dt && (dt >= cutoff);
+            })
+            : sessions;
+
+        if (goalType === 'weekend_sessions') {
+            // Must have at least one session on both Saturday and Sunday
+            let days = new Set<number>(relevantSessions.map((s: any) => {
+                const dt = getSessionTime(s);
+                return dt ? dt.getDay() : null;
+            }).filter((d: number | null) => d !== null) as number[]);
+            // Saturday = 6, Sunday = 0
+            const hasSaturday = days.has(6);
+            const hasSunday = days.has(0);
+            // Only mark complete if both are present
+            return hasSaturday && hasSunday;
         } else if (goalType === 'streak') {
-            let uniqueDays = Array.from(new Set<number>(sessions.map((s: any) => { const dt = getSessionTime(s); return dt ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime() : null; }).filter((d: number | null) => d !== null) as number[])).sort((a, b) => a - b);
+            // Longest streak of consecutive days with sessions
+            let uniqueDays = Array.from(new Set<number>(relevantSessions.map((s: any) => {
+                const dt = getSessionTime(s);
+                return dt ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime() : null;
+            }).filter((d: number | null) => d !== null) as number[])).sort((a, b) => a - b);
             let longestStreak = 0, currentStreak = 0, prevDay: number | null = null;
             for (const day of uniqueDays) {
                 if (prevDay === null || day - prevDay === 86400000) { // 1 day in ms
@@ -735,21 +785,71 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
                 }
                 prevDay = day;
             }
+            // Only mark complete if streak meets or exceeds goalValue
             return longestStreak >= goalValue;
-        } else if (goalType === 'morning_sessions') {
-            let count = sessions.filter((s: any) => { const dt = getSessionTime(s); return dt && dt.getHours() < 10; }).length;
+        } else if (goalType === 'early_sessions') {
+            // Must have at least goalValue sessions before 7am
+            let count = relevantSessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && dt.getHours() < 7;
+            }).length;
             return count >= goalValue;
+        } else if (goalType === 'late_sessions') {
+            // Must have at least goalValue sessions after 9pm
+            let count = relevantSessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && dt.getHours() >= 21;
+            }).length;
+            return count >= goalValue;
+        } else if (goalType === 'double_sessions') {
+            // Must have at least goalValue days with 2+ sessions
+            let dayCounts: { [key: string]: number } = {};
+            for (const s of relevantSessions) {
+                const dt = getSessionTime(s);
+                if (dt) {
+                    const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+                    dayCounts[key] = (dayCounts[key] || 0) + 1;
+                }
+            }
+            let doubleDays = Object.values(dayCounts).filter((v: number) => v >= 2).length;
+            return doubleDays >= goalValue;
+        } else if (goalType === 'morning_sessions') {
+            // Must have at least goalValue sessions before 10am
+            let count = relevantSessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && dt.getHours() < 10;
+            }).length;
+            return count >= goalValue;
+        } else if (goalType === 'sessions') {
+            // Must have at least goalValue total sessions after cutoff
+            return relevantSessions.length >= goalValue;
         } else {
-            // Total sessions
-            return sessions.length >= goalValue;
+            // Default fallback: total sessions
+            return relevantSessions.length >= goalValue;
         }
     }
     // PROGRESS
     if (style === 'progress') {
+        // Only count sessions after dateAssigned (or week start)
+        let cutoff = null;
+        if (achievement.dateAssigned && achievement.dateAssigned.toDate) {
+            cutoff = achievement.dateAssigned.toDate();
+        } else if (statsData.week_start && statsData.week_start.toDate) {
+            cutoff = statsData.week_start.toDate();
+        }
+        const relevantSessions = cutoff
+            ? sessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && (dt >= cutoff);
+            })
+            : sessions;
+
         if (goalType === 'improvement') {
+            // Overall season_accuracy must meet improvement
             const seasonAccuracy = typeof statsData.season_accuracy === 'number' ? statsData.season_accuracy : 0;
             return seasonAccuracy >= improvement;
         } else if (goalType === 'improvement_variety') {
+            // Improve accuracy by X% on all shot types
             const types = ['wrist', 'snap', 'slap', 'backhand'];
             let metTypes = 0;
             for (const t of types) {
@@ -758,8 +858,9 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return metTypes === types.length;
         } else if (goalType === 'improvement_evening') {
+            // Improve accuracy in evening sessions (after 7pm)
             let metCount = 0, total = 0;
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 const dt = getSessionTime(s);
                 if (dt && dt.getHours() >= 19 && s.accuracy) {
                     let acc = 0;
@@ -775,8 +876,25 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return total > 0 && metCount === total;
         } else if (goalType === 'target_hits_increase') {
+            // Hit X targets
             const hits = typeof statsData.season_targets_hit === 'number' ? statsData.season_targets_hit : 0;
             return hits >= improvement;
+        } else if (goalType === 'improvement_sessions') {
+            // Improve accuracy in at least N sessions
+            let metCount = 0;
+            for (const s of relevantSessions) {
+                let acc = 0;
+                if (s.accuracy) {
+                    if (shotType === 'any') {
+                        const values = Object.values(s.accuracy).filter((v: any) => typeof v === 'number') as number[];
+                        acc = values.reduce((a: number, b: number) => a + b, 0) / (values.length || 1);
+                    } else {
+                        acc = typeof s.accuracy[shotType] === 'number' ? s.accuracy[shotType] : 0;
+                    }
+                }
+                if (acc >= improvement) metCount++;
+            }
+            return metCount >= requiredSessions;
         } else {
             // Default: overall season_accuracy
             const seasonAccuracy = typeof statsData.season_accuracy === 'number' ? statsData.season_accuracy : 0;
@@ -785,10 +903,24 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
     }
     // RATIO
     if (style === 'ratio') {
+        // Only count sessions after dateAssigned (or week start)
+        let cutoff = null;
+        if (achievement.dateAssigned && achievement.dateAssigned.toDate) {
+            cutoff = achievement.dateAssigned.toDate();
+        } else if (statsData.week_start && statsData.week_start.toDate) {
+            cutoff = statsData.week_start.toDate();
+        }
+        const relevantSessions = cutoff
+            ? sessions.filter((s: any) => {
+                const dt = getSessionTime(s);
+                return dt && (dt >= cutoff);
+            })
+            : sessions;
+
         if (goalType === 'variety') {
-            // At least goalValue of each shot type in a single session
+            // Must have at least goalValue of each shot type in a single session
             const types = ['wrist', 'snap', 'slap', 'backhand'];
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 const shots = s.shots || {};
                 if (types.every(t => (shots[t] || 0) >= goalValue)) {
                     return true;
@@ -796,18 +928,19 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (goalType === 'ratio' || goalType === 'ratio_equal') {
-            // Calculate ratio of primaryType to secondaryType
+            // Calculate ratio of primaryType to secondaryType, supporting + delimited types
             let primaryCount = 0, secondaryCount = 0;
-            for (const s of sessions) {
+            for (const s of relevantSessions) {
                 const shots = s.shots || {};
-                if (shotType.includes('+')) {
+                // Support multi-type (e.g. 'wrist+snap')
+                if (shotType && shotType.includes('+')) {
                     for (const t of shotType.split('+')) {
                         primaryCount += shots[t] || 0;
                     }
                 } else {
                     primaryCount += shots[shotType] || 0;
                 }
-                if (secondaryType.includes('+')) {
+                if (secondaryType && secondaryType.includes('+')) {
                     for (const t of secondaryType.split('+')) {
                         secondaryCount += shots[t] || 0;
                     }
@@ -816,10 +949,11 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
                 }
             }
             if (goalType === 'ratio_equal') {
+                // Must be exactly equal and nonzero
                 return primaryCount === secondaryCount && primaryCount > 0;
             } else {
-                // e.g. 2:1 means primary/secondary >= 2
-                return secondaryCount > 0 && (primaryCount / secondaryCount) >= (goalValue / secondaryValue);
+                // e.g. 2:1 means primary/secondary >= 2, both must be nonzero
+                return secondaryCount > 0 && primaryCount > 0 && (primaryCount / secondaryCount) >= (goalValue / secondaryValue);
             }
         }
     }
@@ -914,18 +1048,45 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
-            // --- Delete incomplete achievements from previous week ---
-            const achievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('completed', '==', false).where('time_frame', '==', 'week').get();
+            // --- Gather all achievements for metrics (before deleting) ---
+            const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
+            const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Count total completed (including bonus) for this week
+            const completedThisWeek = allAchievements.filter(a => (a as any).completed === true).length;
+            // Count non-bonus achievements assigned this week
+            const nonBonusThisWeek = allAchievements.filter(a => !(a as any).isBonus);
+            // Count non-bonus completed this week
+            const nonBonusCompletedThisWeek = nonBonusThisWeek.filter(a => (a as any).completed === true).length;
+            // Fetch previous streak and total from stats/history
+            const historyDoc = await db.collection('users').doc(userId).collection('stats').doc('history').get();
+            let history = historyDoc.exists ? historyDoc.data() || {} : {};
+            let prevStreak = history.weeklyAllCompletedStreak || 0;
+            let prevTotal = history.totalAchievementsCompleted || 0;
+            let weeklyAllCompletedStreak = prevStreak;
+            if (nonBonusThisWeek.length > 0 && nonBonusCompletedThisWeek === nonBonusThisWeek.length) {
+                weeklyAllCompletedStreak = prevStreak + 1;
+            } else {
+                weeklyAllCompletedStreak = 0;
+            }
+            // totalAchievementsCompleted is a running total (previous + new completions this week)
+            const totalAchievementsCompleted = prevTotal + completedThisWeek;
+            const updatedHistory = {
+                totalAchievementsCompleted,
+                weeklyAllCompletedStreak
+            };
+            await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
+
+            // --- Delete all previous week achievements (completed and incomplete) ---
             const deletePromises: Promise<any>[] = [];
-            achievementsSnap.forEach(doc => {
+            allAchievementsSnap.forEach(doc => {
                 deletePromises.push(doc.ref.delete());
             });
             await Promise.all(deletePromises);
 
             // --- Use summary stats from /users/{userId}/stats/weekly ---
+            // (re-load stats for use below)
             const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
-            if (!statsDoc.exists) continue;
-            const stats = statsDoc.data() || {};
+            let stats = statsDoc.exists ? statsDoc.data() || {} : {};
             const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
             const sessionShotCounts: { [key: string]: number[] } = {};
             const sessionAccuracies: { [key: string]: number[] } = {};
@@ -1150,45 +1311,32 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                     t.description = `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
                 }
                 // --- Quantity ---
-                if (t.style === 'quantity' && t.shotType && t.goalValue) {
+                if (t.style === 'quantity' && t.goalValue) {
                     // Only substitute for wrist, snap, backhand, slap
                     if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
                         t.shotType = laggingType;
                         t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
                     }
-                    let avg = avgShotsPerSession[t.shotType] || 0;
-                    let percent = avg < 20 ? 0.50 : avg < 100 ? 0.25 : 0.20;
-                    let bump = Math.ceil(avg * percent);
-                    let maxBump = 100;
-                    t.goalValue = Math.max(t.goalValue, Math.min(Math.ceil(avg + bump), Math.ceil(avg + maxBump)));
-                    // Dynamically set sessions based on user's avgShotsPerSession
-                    if (!t.sessions) {
-                        let avg = avgShotsPerSession[t.shotType] || 0;
-                        if (avg > 0) {
-                            t.sessions = Math.max(1, Math.ceil(t.goalValue / avg));
-                        } else {
-                            // fallback if no avg available
-                            if (t.goalValue >= 250) t.sessions = 5;
-                            else if (t.goalValue >= 120) t.sessions = 3;
-                            else if (t.goalValue >= 100) t.sessions = 2;
-                            else t.sessions = 1;
-                        }
+                    // --- Description logic by goalType/shotType ---
+                    if (t.goalType === 'count_per_session') {
+                        // e.g. Take at least 20 wrist shots for any 3 sessions in a row
+                        t.description = `Take at least ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
+                    } else if (t.goalType === 'count_evening') {
+                        // e.g. Take 25 shots after 7pm in a single session
+                        t.description = `Take ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots after 7pm in a single session.`;
+                    } else if (t.goalType === 'count_time') {
+                        // e.g. Take 50 shots in under 10 minutes in a single session
+                        t.description = `Take ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots in under ${t.timeLimit || 10} minute${(t.timeLimit || 10) > 1 ? 's' : ''} in a single session.`;
+                    } else if (t.shotType === 'all') {
+                        // e.g. Take at least 10 of each shot type (wrist, snap, backhand, slap)
+                        t.description = `Take at least ${t.goalValue} of each shot type (wrist, snap, backhand, slap) this week.`;
+                    } else if (t.shotType === 'any') {
+                        // e.g. Take 25 shots (any type) this week
+                        t.description = `Take ${t.goalValue} shots (any type) this week.`;
+                    } else {
+                        // e.g. Take 30 wrist shots this week
+                        t.description = `Take ${t.goalValue} ${t.shotType} shots this week.`;
                     }
-                    // Omit shot type for 'any' or 'all'
-                    let shotTypeStr = (t.shotType === 'any' || t.shotType === 'all') ? '' : `${t.shotType} `;
-                    t.description = `Take ${t.goalValue} ${shotTypeStr}shots in ${t.sessions} session${t.sessions > 1 ? 's' : ''}.`;
-                }
-                // --- Quantity per session streak ---
-                if (t.style === 'quantity' && t.goalType === 'count_per_session' && t.shotType && t.goalValue) {
-                    // Only substitute for wrist, snap, backhand, slap
-                    if (['wrist', 'snap', 'backhand', 'slap'].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
-                        t.shotType = laggingType;
-                        t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Consistency Streak`;
-                    }
-                    let avg = avgShotsPerSession[t.shotType] || 0;
-                    let bump = Math.ceil(avg * 0.10);
-                    t.goalValue = Math.max(t.goalValue, Math.ceil(avg + bump));
-                    t.description = `Take at least ${t.goalValue} ${t.shotType} shots for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
                 }
                 // --- Ratio ---
                 if (t.style === 'ratio' && t.primaryType && t.secondaryType && t.goalValue && t.secondaryValue) {
@@ -1267,7 +1415,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                         } else if (avgSessions >= 3) {
                             t.goalValue = Math.max(t.goalValue, 3);
                         }
-                        t.description = `Complete a streak of ${t.goalValue} days in a row with at least one session each day.`;
+                        t.description = `Complete a ${t.goalValue} day shooting streak.`;
                     } else if (t.goalType === 'sessions') {
                         if (avgSessions > 0) {
                             t.goalValue = Math.max(t.goalValue, Math.ceil(avgSessions * 1.2));
