@@ -741,27 +741,45 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             return false;
         } else {
             // Standard accuracy achievements (single or multiple sessions)
-            let sessionAccuracies: number[] = [];
+            let sessionAccuracies = [];
+            let sessionHasShots = [];
             for (const s of relevantSessions) {
-                const acc = getSessionAccuracy(s);
-                sessionAccuracies.push(acc);
+                const shots = s.shots?.[shotType] ?? 0;
+                sessionHasShots.push(shots > 0);
+                sessionAccuracies.push(getSessionAccuracy(s));
             }
-            if (isStreak) {
-                // Streak logic: find max streak of sessions with accuracy >= targetAccuracy
-                let streak = 0;
-                for (let i = 0; i < sessionAccuracies.length; i++) {
-                    if (sessionAccuracies[i] >= targetAccuracy) {
-                        streak++;
-                        if (streak >= requiredSessions) return true;
-                    } else {
-                        streak = 0;
+            if (isStreak && requiredSessions > 1) {
+                // Look for any sequence of requiredSessions consecutive sessions (with shots > 0) meeting accuracy
+                for (let i = 0; i <= sessionAccuracies.length - requiredSessions; i++) {
+                    let allMet = true;
+                    for (let j = 0; j < requiredSessions; j++) {
+                        if (!sessionHasShots[i + j] || sessionAccuracies[i + j] < targetAccuracy) {
+                            allMet = false;
+                            break;
+                        }
+                    }
+                    if (allMet) {
+                        return true;
                     }
                 }
                 return false;
-            } else {
-                // For achievements requiring N sessions (not necessarily in a row)
-                let metCount = sessionAccuracies.filter(v => v >= targetAccuracy).length;
+            } else if (requiredSessions > 1) {
+                // Non-streak: count up to requiredSessions sessions (with shots > 0) meeting accuracy
+                let metCount = 0;
+                for (let i = 0; i < sessionAccuracies.length && metCount < requiredSessions; i++) {
+                    if (sessionHasShots[i] && sessionAccuracies[i] >= targetAccuracy) {
+                        metCount++;
+                    }
+                }
                 return metCount >= requiredSessions;
+            } else {
+                // Single session required
+                for (let i = 0; i < sessionAccuracies.length; i++) {
+                    if (sessionHasShots[i] && sessionAccuracies[i] >= targetAccuracy) {
+                        return true;
+                    }
+                }
+                return false;
             }
         }
     }
