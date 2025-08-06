@@ -681,16 +681,28 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
 
         // Helper: get per-session accuracy for the relevant goalType/shotType
         function getSessionAccuracy(s: any): number {
+            // Prefer explicit accuracy field if present
             const accMap = s.accuracy || {};
+            // If accuracy is present and valid, use it
             if (shotType === 'any') {
                 const types = ['wrist', 'snap', 'slap', 'backhand'];
                 let sum = 0, count = 0;
                 for (const t of types) {
                     if (typeof accMap[t] === 'number') { sum += accMap[t]; count++; }
+                    else if (s.targets_hit && s.shots && typeof s.targets_hit[t] === 'number' && typeof s.shots[t] === 'number' && s.shots[t] > 0) {
+                        sum += (s.targets_hit[t] / s.shots[t]) * 100;
+                        count++;
+                    }
                 }
                 return count > 0 ? sum / count : 0;
             } else {
-                return typeof accMap[shotType] === 'number' ? accMap[shotType] : 0;
+                if (typeof accMap[shotType] === 'number') {
+                    return accMap[shotType];
+                } else if (s.targets_hit && s.shots && typeof s.targets_hit[shotType] === 'number' && typeof s.shots[shotType] === 'number' && s.shots[shotType] > 0) {
+                    return (s.targets_hit[shotType] / s.shots[shotType]) * 100;
+                } else {
+                    return 0;
+                }
             }
         }
 
@@ -1044,7 +1056,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
         const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
         for (const userDoc of usersSnap.docs) {
             const userId = userDoc.id;
-            if (test && !userIds.includes(userId)) continue; // Only update test users for test function calls
+            if (!userIds.includes(userId)) continue; // Only update test users for test function calls
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
@@ -1075,6 +1087,21 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                 weeklyAllCompletedStreak
             };
             await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
+
+            // --- Move completed achievements to stats/history/completed_achievements before deleting ---
+            const movePromises: Promise<any>[] = [];
+            const completedAchievements = allAchievementsSnap.docs.filter(doc => (doc.data() as any).completed === true);
+            const completedAchievementsCollection = db.collection('users').doc(userId).collection('stats').doc('history').collection('completed_achievements');
+            for (const doc of completedAchievements) {
+                // Save the achievement data with its original Firestore ID for traceability
+                const achievementData = doc.data();
+                // Optionally, add a timestamp for when it was archived
+                achievementData.archivedAt = new Date();
+                movePromises.push(
+                    completedAchievementsCollection.doc(doc.id).set(achievementData, { merge: true })
+                );
+            }
+            await Promise.all(movePromises);
 
             // --- Delete all previous week achievements (completed and incomplete) ---
             const deletePromises: Promise<any>[] = [];
@@ -1257,12 +1284,10 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
 
                 // --- Accuracy ---
                 if (t.style === 'accuracy' && t.shotType && t.targetAccuracy) {
-                    // Only substitute for wrist, snap, backhand, slap
                     if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
                         t.shotType = weakestType;
                         t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Accuracy Focus`;
                     }
-                    // Calculate session accuracy for each session in weekly stats
                     let sessionAccuracies: number[] = [];
                     if (stats.sessions && Array.isArray(stats.sessions)) {
                         for (const s of stats.sessions) {
@@ -1273,23 +1298,17 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                             }
                         }
                     }
-                    // Use average or bump for target
                     let avg = sessionAccuracies.length ? sessionAccuracies.reduce((a, b) => a + b, 0) / sessionAccuracies.length : 0;
                     let bump = (t.sessions && t.sessions > 1) ? 2.5 : 5.0;
-                    let reasonableMin = 25; // never assign below 25%
+                    let reasonableMin = 25;
                     let templateDefault = t.targetAccuracy;
-                    // Calculate new target and round to nearest 2% increment
                     let rawTarget = avg + bump;
-                    let roundedTarget = Math.round(rawTarget / 2) * 2; // nearest 2%
-
-                    // If user is below template default, assign (avg + bump) but never below reasonableMin
-                    // If user is above template default, assign template default or (avg + bump) if that's higher
+                    let roundedTarget = Math.round(rawTarget / 2) * 2;
                     if (rawTarget < templateDefault) {
                         t.targetAccuracy = Math.max(reasonableMin, Math.min(roundedTarget, templateDefault));
                     } else {
                         t.targetAccuracy = Math.min(Math.max(templateDefault, roundedTarget), 100);
                     }
-                    // Fix: description should include 'in a row' only if isStreak is true
                     let sessionPhrase = '';
                     if (t.sessions) {
                         if (t.isStreak === true) {
@@ -1298,16 +1317,17 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                             sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''}`;
                         }
                     }
-                    // Determine proper shot type phrase
-                    let shotTypePhrase = '';
-                    if (t.shotType === 'all' || t.shotType === 'any') {
-                        shotTypePhrase = `${t.shotType} shots`;
-                    } else if (t.shotType === 'backhand') {
-                        shotTypePhrase = 'backhands';
-                    } else {
-                        // e.g. 'wrist shot(s)', 'snap shots', 'slap shots'
-                        shotTypePhrase = `${t.shotType} shots`;
+                    // Linguistically correct shot type phrases
+                    function shotTypeLabel(type: string) {
+                        if (type === 'backhand') return 'backhands';
+                        if (type === 'wrist') return 'wrist shots';
+                        if (type === 'snap') return 'snap shots';
+                        if (type === 'slap') return 'slap shots';
+                        if (type === 'all') return 'all shot types';
+                        if (type === 'any') return 'shots';
+                        return type;
                     }
+                    let shotTypePhrase = shotTypeLabel(t.shotType);
                     t.description = `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
                 }
                 // --- Quantity ---
@@ -1317,62 +1337,47 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                         t.shotType = laggingType;
                         t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
                     }
-                    // --- Description logic by goalType/shotType ---
+                    // Linguistically correct shot type phrases
+                    function shotTypeLabel(type: string) {
+                        if (type === 'backhand') return 'backhands';
+                        if (type === 'wrist') return 'wrist shots';
+                        if (type === 'snap') return 'snap shots';
+                        if (type === 'slap') return 'slap shots';
+                        if (type === 'all') return 'all shot types';
+                        if (type === 'any') return 'shots';
+                        return type;
+                    }
                     if (t.goalType === 'count_per_session') {
-                        // e.g. Take at least 20 wrist shots for any 3 sessions in a row
-                        t.description = `Take at least ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
+                        t.description = `Take at least ${t.goalValue} ${shotTypeLabel(t.shotType)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
                     } else if (t.goalType === 'count_evening') {
-                        // e.g. Take 25 shots after 7pm in a single session
-                        t.description = `Take ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots after 7pm in a single session.`;
+                        t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} after 7pm in a single session.`;
                     } else if (t.goalType === 'count_time') {
-                        // e.g. Take 50 shots in under 10 minutes in a single session
-                        t.description = `Take ${t.goalValue} ${t.shotType === 'any' ? '' : t.shotType + ' '}shots in under ${t.timeLimit || 10} minute${(t.timeLimit || 10) > 1 ? 's' : ''} in a single session.`;
+                        t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} in under ${t.timeLimit || 10} minute${(t.timeLimit || 10) > 1 ? 's' : ''} in a single session.`;
                     } else if (t.shotType === 'all') {
-                        // e.g. Take at least 10 of each shot type (wrist, snap, backhand, slap)
                         t.description = `Take at least ${t.goalValue} of each shot type (wrist, snap, backhand, slap) this week.`;
                     } else if (t.shotType === 'any') {
-                        // e.g. Take 25 shots (any type) this week
                         t.description = `Take ${t.goalValue} shots (any type) this week.`;
                     } else {
-                        // e.g. Take 30 wrist shots this week
-                        t.description = `Take ${t.goalValue} ${t.shotType} shots this week.`;
+                        t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} this week.`;
                     }
                 }
                 // --- Ratio ---
-                if (t.style === 'ratio' && t.primaryType && t.secondaryType && t.goalValue && t.secondaryValue) {
-                    // Only substitute for wrist, snap, backhand, slap
-                    if (['wrist', 'snap', 'backhand', 'slap'].includes(t.primaryType) && laggingType && t.primaryType !== laggingType) {
-                        t.primaryType = laggingType;
+                if (t.style === 'ratio' && t.goalValue && t.secondaryValue) {
+                    // Always use the originally assigned types for description
+                    function shotTypeLabel(type: string) {
+                        if (type === 'backhand') return 'backhands';
+                        if (type === 'wrist') return 'wrist shots';
+                        if (type === 'snap') return 'snap shots';
+                        if (type === 'slap') return 'slap shots';
+                        if (type === 'all') return 'all shot types';
+                        if (type === 'any') return 'shots';
+                        return type;
                     }
-                    if (['wrist', 'snap', 'backhand', 'slap'].includes(t.secondaryType) && weakestType && t.secondaryType !== weakestType) {
-                        t.secondaryType = weakestType;
-                    }
-                    // Ensure primaryType and secondaryType are not the same after substitution
-                    if (t.primaryType === t.secondaryType) {
-                        // Pick a different secondaryType: choose the next weakest type that isn't primaryType
-                        const shotTypes = ['wrist', 'snap', 'backhand', 'slap'];
-                        let altWeakest = null;
-                        let altLowestAcc = Infinity;
-                        for (const type of shotTypes) {
-                            if (type !== t.primaryType && avgAccuracies[type] > 0 && avgAccuracies[type] < altLowestAcc) {
-                                altLowestAcc = avgAccuracies[type];
-                                altWeakest = type;
-                            }
-                        }
-                        if (altWeakest) {
-                            t.secondaryType = altWeakest;
-                        } else {
-                            // fallback: pick any different type
-                            t.secondaryType = shotTypes.find(type => type !== t.primaryType) || t.secondaryType;
-                        }
-                    }
-                    let primaryAvg = avgShotsPerSession[t.primaryType] || 0;
-                    let secondaryAvg = avgShotsPerSession[t.secondaryType] || 0;
-                    if (secondaryAvg < primaryAvg * 0.5) {
-                        t.goalValue = Math.max(t.goalValue, 2);
-                        t.secondaryValue = Math.max(t.secondaryValue, 1);
-                    }
-                    t.description = `Take ${t.goalValue} ${t.primaryType} shots for every ${t.secondaryValue} ${t.secondaryType} shot.`;
+                    const descPrimary = t.shotType || t.primaryType || '';
+                    const descSecondary = t.shotTypeComparison || t.secondaryType || '';
+                    // Pluralize 'shot' if needed
+                    const secondaryLabel = shotTypeLabel(descSecondary);
+                    t.description = `Take ${t.goalValue} ${shotTypeLabel(descPrimary)} for every ${t.secondaryValue} ${secondaryLabel}` + (secondaryLabel.endsWith('s') ? '' : ' shot') + '.';
                 }
                 // --- Progress ---
                 if (t.style === 'progress' && t.shotType && t.improvement) {
