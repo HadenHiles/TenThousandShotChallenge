@@ -958,7 +958,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           ],
                         );
                       }
-                      // ...existing code for ratio achievement UI...
                       double primaryCount = 0.0;
                       double secondaryCount = 0.0;
                       for (final session in sessions) {

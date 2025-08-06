@@ -104,6 +104,8 @@ dart test/scripts/run_complete_test_suite.dart --verbose
 5. Always centralize and reuse test utilities and mocks for maintainability.
 6. Always add ToDo's for any debug code to remember to remove
 7. Prefer concise, readable code over clever or complex solutions.
-8. Review and update these guidelines as new best practices emerge.
+8. Always enforce DRY principals when possible
+9. Review and update these guidelines as new best practices emerge.
+10. Never abbreviate changes with "//..existing code" in actual file changes, only in suggestions in the chat
 
 Happy Testing! 🎯
