@@ -188,20 +188,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return false;
     }).toList();
 
-    if (goalType == 'count_each_hand') {
-      // Must take goalValue shots with each hand in one session
-      for (final session in sessions) {
-        if (session.containsKey('shots') && session['shots'] is Map) {
-          final shots = session['shots'] as Map;
-          double left = (shots['left'] is num) ? (shots['left'] as num).toDouble() : 0.0;
-          double right = (shots['right'] is num) ? (shots['right'] as num).toDouble() : 0.0;
-          if (left >= goalValue && right >= goalValue) {
-            return 1.0;
-          }
-        }
-      }
-      return 0.0;
-    } else if (goalType == 'count_per_session') {
+    if (goalType == 'count_per_session') {
       // Must take at least goalValue shots in requiredSessions consecutive sessions
       List<int> metList = [];
       for (final session in sessions) {
@@ -640,7 +627,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     if (_user == null) {
       return const Center(child: Text('Sign in to view achievements'));
     }
-    final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').limit(4);
+    final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements');
     final statsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('stats').doc('weekly');
 
     return Column(
@@ -693,7 +680,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: achievements.length,
-                  separatorBuilder: (context, idx) => const SizedBox(height: 12),
+                  separatorBuilder: (context, idx) => const SizedBox(height: 8),
                   itemBuilder: (context, idx) {
                     final data = achievements[idx].data() as Map<String, dynamic>;
                     final id = data['id'] ?? '';
@@ -736,7 +723,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           clipBehavior: Clip.none,
                           children: [
                             Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
@@ -1237,150 +1224,143 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           streak = 0;
                         }
                       }
-                      // Build session checkboxes
-                      accuracyIndicators = Row(
-                        children: () {
-                          // Find all sessions with >= n% accuracy for shotType
-                          List<int> metSessionIndices = [];
-                          for (int i = 0; i < sessionAccuracies.length; i++) {
-                            if (sessionAccuracies[i] >= targetAccuracy) {
-                              metSessionIndices.add(i);
+                      // Only show accuracyIndicators if more than 1 required session
+                      if (requiredSessions > 1) {
+                        accuracyIndicators = Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: () {
+                            // Find all sessions with >= n% accuracy for shotType
+                            List<int> metSessionIndices = [];
+                            for (int i = 0; i < sessionAccuracies.length; i++) {
+                              if (sessionAccuracies[i] >= targetAccuracy) {
+                                metSessionIndices.add(i);
+                              }
                             }
-                          }
 
-                          // If isStreak, only count the most recent consecutive streak
-                          if (isStreak) {
-                            // 1. If streak was ever achieved, show all checked
-                            bool achievedStreak = false;
-                            for (int i = 0; i <= sessionAccuracies.length - requiredSessions; i++) {
-                              bool allMet = true;
-                              for (int j = 0; j < requiredSessions; j++) {
-                                if (sessionAccuracies[i + j] < targetAccuracy) {
-                                  allMet = false;
+                            // If isStreak, only count the most recent consecutive streak
+                            if (isStreak) {
+                              // 1. If streak was ever achieved, show all checked
+                              bool achievedStreak = false;
+                              for (int i = 0; i <= sessionAccuracies.length - requiredSessions; i++) {
+                                bool allMet = true;
+                                for (int j = 0; j < requiredSessions; j++) {
+                                  if (sessionAccuracies[i + j] < targetAccuracy) {
+                                    allMet = false;
+                                    break;
+                                  }
+                                }
+                                if (allMet) {
+                                  achievedStreak = true;
                                   break;
                                 }
                               }
-                              if (allMet) {
-                                achievedStreak = true;
-                                break;
-                              }
-                            }
-                            List<Widget> streakBoxes = [];
-                            if (achievedStreak) {
-                              // Show all checked
-                              for (int i = 0; i < requiredSessions; i++) {
-                                streakBoxes.add(
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                                    child: Column(
-                                      children: [
-                                        _buildCheckboxCircle(true),
-                                      ],
+                              List<Widget> streakBoxes = [];
+                              if (achievedStreak) {
+                                // Show all checked
+                                for (int i = 0; i < requiredSessions; i++) {
+                                  streakBoxes.add(
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                      child: Column(
+                                        children: [
+                                          _buildCheckboxCircle(true),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            } else {
-                              // 2. Otherwise, show progress for the most recent streak attempt (from latest session)
-                              int streakCount = 0;
-                              // Only reset the streak if the most recent session (index 0) contains the shot type and fails accuracy
-                              bool mostRecentHasShotTypeAndShots = false;
-                              if (sortedSessions.isNotEmpty) {
-                                final shotsMap = sortedSessions[0]['shots'] as Map?;
-                                if (shotsMap != null && shotsMap.containsKey(shotType)) {
-                                  final shotsValue = shotsMap[shotType];
-                                  if (shotsValue is num && shotsValue > 0) {
-                                    mostRecentHasShotTypeAndShots = true;
-                                  }
+                                  );
                                 }
-                              }
-                              if (mostRecentHasShotTypeAndShots && sessionAccuracies.isNotEmpty && sessionAccuracies[0] < targetAccuracy) {
-                                streakCount = 0;
                               } else {
-                                // Start streak counting from the first relevant session (skip non-relevant at the start)
-                                int i = 0;
-                                // Skip non-relevant sessions at the start
-                                while (i < sortedSessions.length) {
-                                  final shotsMap = sortedSessions[i]['shots'] as Map?;
+                                // 2. Otherwise, show progress for the most recent streak attempt (from latest session)
+                                int streakCount = 0;
+                                // Only reset the streak if the most recent session (index 0) contains the shot type and fails accuracy
+                                bool mostRecentHasShotTypeAndShots = false;
+                                if (sortedSessions.isNotEmpty) {
+                                  final shotsMap = sortedSessions[0]['shots'] as Map?;
                                   if (shotsMap != null && shotsMap.containsKey(shotType)) {
                                     final shotsValue = shotsMap[shotType];
                                     if (shotsValue is num && shotsValue > 0) {
-                                      break;
+                                      mostRecentHasShotTypeAndShots = true;
                                     }
                                   }
-                                  i++;
                                 }
-                                // Now count streak for consecutive relevant sessions
-                                for (; i < sessionAccuracies.length; i++) {
-                                  final shotsMap = sortedSessions[i]['shots'] as Map?;
-                                  if (shotsMap != null && shotsMap.containsKey(shotType)) {
-                                    final shotsValue = shotsMap[shotType];
-                                    if (shotsValue is num && shotsValue > 0) {
-                                      if (sessionAccuracies[i] >= targetAccuracy) {
-                                        streakCount++;
-                                      } else {
+                                if (mostRecentHasShotTypeAndShots && sessionAccuracies.isNotEmpty && sessionAccuracies[0] < targetAccuracy) {
+                                  streakCount = 0;
+                                } else {
+                                  // Start streak counting from the first relevant session (skip non-relevant at the start)
+                                  int i = 0;
+                                  // Skip non-relevant sessions at the start
+                                  while (i < sortedSessions.length) {
+                                    final shotsMap = sortedSessions[i]['shots'] as Map?;
+                                    if (shotsMap != null && shotsMap.containsKey(shotType)) {
+                                      final shotsValue = shotsMap[shotType];
+                                      if (shotsValue is num && shotsValue > 0) {
                                         break;
+                                      }
+                                    }
+                                    i++;
+                                  }
+                                  // Now count streak for consecutive relevant sessions
+                                  for (; i < sessionAccuracies.length; i++) {
+                                    final shotsMap = sortedSessions[i]['shots'] as Map?;
+                                    if (shotsMap != null && shotsMap.containsKey(shotType)) {
+                                      final shotsValue = shotsMap[shotType];
+                                      if (shotsValue is num && shotsValue > 0) {
+                                        if (sessionAccuracies[i] >= targetAccuracy) {
+                                          streakCount++;
+                                        } else {
+                                          break;
+                                        }
+                                      } else {
+                                        continue;
                                       }
                                     } else {
                                       continue;
                                     }
-                                  } else {
-                                    continue;
                                   }
                                 }
-                              }
-                              for (int i = 0; i < requiredSessions; i++) {
-                                bool isChecked = i < streakCount;
-                                streakBoxes.add(
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                                    child: Column(
-                                      children: [
-                                        _buildCheckboxCircle(isChecked),
-                                      ],
+                                for (int i = 0; i < requiredSessions; i++) {
+                                  bool isChecked = i < streakCount;
+                                  streakBoxes.add(
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                      child: Column(
+                                        children: [
+                                          _buildCheckboxCircle(isChecked),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            }
-                            return streakBoxes;
-                          } else {
-                            // Non-streak: show checkboxes for each met session
-                            List<Widget> metBoxes = [];
-                            for (int i = 0; i < requiredSessions; i++) {
-                              bool isChecked = false;
-                              if (i < metSessionIndices.length) {
-                                int idx = metSessionIndices[i];
-                                if (idx >= 0 && idx < sessionAccuracies.length) {
-                                  isChecked = sessionAccuracies[idx] >= targetAccuracy;
+                                  );
                                 }
                               }
-                              // String label = '';
-                              // if (isChecked) {
-                              //   int sessionIdx = metSessionIndices[i];
-                              //   if (sessionIdx < sessionDates.length && sessionDates[sessionIdx] != null) {
-                              //     final dt = sessionDates[sessionIdx]!;
-                              //     final weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.weekday % 7];
-                              //     final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-                              //     final minute = dt.minute.toString().padLeft(2, '0');
-                              //     final ampm = dt.hour >= 12 ? 'pm' : 'am';
-                              //     label = '$weekday $hour:$minute$ampm';
-                              //   }
-                              // }
-                              metBoxes.add(Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                                child: Column(
-                                  children: [
-                                    _buildCheckboxCircle(isChecked),
-                                    // if (label.isNotEmpty) Text(label, style: TextStyle(fontSize: 10)) else SizedBox(height: 14),
-                                  ],
-                                ),
-                              ));
+                              return streakBoxes;
+                            } else {
+                              // Non-streak: show checkboxes for each met session
+                              List<Widget> metBoxes = [];
+                              for (int i = 0; i < requiredSessions; i++) {
+                                bool isChecked = false;
+                                if (i < metSessionIndices.length) {
+                                  int idx = metSessionIndices[i];
+                                  if (idx >= 0 && idx < sessionAccuracies.length) {
+                                    isChecked = sessionAccuracies[idx] >= targetAccuracy;
+                                  }
+                                }
+                                metBoxes.add(Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                  child: Column(
+                                    children: [
+                                      _buildCheckboxCircle(isChecked),
+                                    ],
+                                  ),
+                                ));
+                              }
+                              return metBoxes;
                             }
-                            return metBoxes;
-                          }
-                        }(),
-                      );
+                          }(),
+                        );
+                      } else {
+                        accuracyIndicators = null;
+                      }
                     }
                     Widget? consistencyIndicators;
                     if (style == 'consistency') {
@@ -1407,7 +1387,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       }).toList();
                       final details = getConsistencyDetails(goalType, sessions, goalValue);
                       if (goalType == 'weekend_sessions') {
-                        consistencyIndicators = Row(
+                        consistencyIndicators = Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
                             _buildCheckboxCircle(details['sat'] == true),
                             const SizedBox(width: 6),
@@ -1420,7 +1402,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         );
                       } else if (goalType == 'streak') {
                         int streak = details['streak'] ?? 0;
-                        consistencyIndicators = Row(
+                        consistencyIndicators = Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: List.generate(
                               goalValue.toInt(),
                               (i) => Padding(
@@ -1430,7 +1414,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         );
                       } else {
                         int count = details['count'] ?? 0;
-                        consistencyIndicators = Row(
+                        consistencyIndicators = Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: List.generate(
                               goalValue.toInt(),
                               (i) => Padding(
