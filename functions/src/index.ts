@@ -1,4 +1,5 @@
-import { onRequest } from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import { onRequest, onCall } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
@@ -1274,7 +1275,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
                 { id: 'fun_music_easy', style: 'fun', title: 'Music Motivation', description: 'Create a playlist and shoot to your favorite songs.', shotType: '', goalType: 'music', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
                 { id: 'social_share_easy', style: 'fun', title: 'Share the Love', description: 'Share your progress on social media or with a friend.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
                 { id: 'social_challenge_medium', style: 'fun', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-                { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Complete a team shooting drill with at least 2 teammates.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+                { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Shoot pucks with at least 2 teammates.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
                 // --- Accuracy based (pro) ---
                 { id: 'acc_wrist_70', style: 'accuracy', title: 'Wrist Wizard', description: 'Achieve 70% accuracy on wrist shots in a single session.', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
                 { id: 'acc_snap_80', style: 'accuracy', title: 'Snap Supreme', description: 'Achieve 80% accuracy on snap shots in a single session.', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 1, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: false },
@@ -1623,3 +1624,97 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
         return res;
     }
 }
+
+// Progressive swap delays in milliseconds (after 3 free swaps)
+const SWAP_DELAYS = [0, 0, 0, 60_000, 180_000, 300_000, 600_000, 1_200_000, 86_400_000]; // 0,0,0,1m,3m,5m,10m,20m,1d
+
+// Helper: Get a random achievement of the same difficulty (excluding current IDs)
+async function getRandomAchievementOfDifficulty(difficulty: string, excludeIds: string[] = []): Promise<any | null> {
+    // For demo: assume you have a Firestore collection 'achievementTemplates' with all possible achievements
+    const all = await db.collection('achievementTemplates').where('difficulty', '==', difficulty).get();
+    const pool = all.docs.filter(doc => !excludeIds.includes(doc.id));
+    if (pool.length === 0) return null;
+    const idx = Math.floor(Math.random() * pool.length);
+    return { id: pool[idx].id, ...pool[idx].data() };
+}
+
+// Callable function: swapAchievement
+export const swapAchievement = onCall(async (req) => {
+    // Auth required
+    const context = req.auth;
+    if (!context || !context.uid) {
+        throw new Error('Authentication required');
+    }
+    const userId = context.uid;
+    const { achievementId } = req.data || {};
+    if (!achievementId) {
+        throw new Error('Missing achievementId');
+    }
+    const userRef = db.collection('users').doc(userId);
+    const achievementsRef = userRef.collection('achievements');
+    const swapMetaRef = userRef.collection('meta').doc('achievementSwaps');
+
+    // Get swap meta (swapCount, lastSwap)
+    let swapMeta = (await swapMetaRef.get()).data() || {};
+    let swapCount = swapMeta.swapCount || 0;
+    let lastSwap = swapMeta.lastSwap ? swapMeta.lastSwap.toDate ? swapMeta.lastSwap.toDate() : new Date(swapMeta.lastSwap) : null;
+    let now = new Date();
+    // Determine required delay
+    let delayMs = SWAP_DELAYS[Math.min(swapCount, SWAP_DELAYS.length - 1)];
+    let nextAvailable = lastSwap ? new Date(lastSwap.getTime() + delayMs) : now;
+    if (lastSwap && now < nextAvailable) {
+        return { success: false, message: `Next swap available at ${nextAvailable.toISOString()}`, nextAvailable: nextAvailable.toISOString(), swapCount };
+    }
+
+    // Get the achievement to swap
+    const achDoc = await achievementsRef.doc(achievementId).get();
+    if (!achDoc.exists) {
+        return { success: false, message: 'Achievement not found' };
+    }
+
+    const ach = achDoc.data();
+    if (!ach) {
+        return { success: false, message: 'Achievement data not found' };
+    }
+    if (ach.completed) {
+        return { success: false, message: 'Cannot swap a completed achievement' };
+    }
+
+    // Get all current achievement IDs to avoid duplicates
+    const allAchSnap = await achievementsRef.get();
+    const currentIds: string[] = allAchSnap.docs.map(d => d.id);
+
+    // Get a new random achievement of the same difficulty
+    const newAch = await getRandomAchievementOfDifficulty(ach.difficulty as string, currentIds);
+    if (!newAch) {
+        return { success: false, message: 'No available achievements to swap in.' };
+    }
+
+    // Remove the old achievement and add the new one
+    const batch = db.batch();
+    batch.delete(achievementsRef.doc(achievementId));
+    batch.set(achievementsRef.doc(newAch.id), {
+        ...newAch,
+        completed: false,
+        dateAssigned: admin.firestore.FieldValue.serverTimestamp(),
+        dateCompleted: null,
+        userId,
+    });
+    // Update swap meta
+    batch.set(swapMetaRef, {
+        swapCount: swapCount + 1,
+        lastSwap: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await batch.commit();
+
+    // Calculate next delay
+    let nextDelayMs = SWAP_DELAYS[Math.min(swapCount + 1, SWAP_DELAYS.length - 1)];
+    let nextSwapTime = new Date(now.getTime() + nextDelayMs);
+
+    return {
+        success: true,
+        newAchievement: newAch,
+        swapCount: swapCount + 1,
+        nextAvailable: nextSwapTime.toISOString(),
+    };
+});

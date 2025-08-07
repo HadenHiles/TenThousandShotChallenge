@@ -471,14 +471,14 @@ class _ShotsState extends State<Shots> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.emoji_events, color: Theme.of(context).primaryColor, size: 28),
+                                      Icon(Icons.star, color: Colors.amberAccent, size: 28),
                                       const SizedBox(width: 10),
                                       Text(
                                         'Weekly Achievements',
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).primaryColor,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontFamily: 'NovecentoSans',
                                         ),
                                       ),
@@ -486,7 +486,7 @@ class _ShotsState extends State<Shots> {
                                   ),
                                   Icon(
                                     _achievementsCollapsed ? Icons.expand_more : Icons.expand_less,
-                                    color: Theme.of(context).primaryColor,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     size: 28,
                                   ),
                                 ],

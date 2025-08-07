@@ -1404,135 +1404,176 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         );
                       }
                     }
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
-                              width: 2.5,
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              if (showProgress)
-                                Positioned.fill(
-                                  child: FractionallySizedBox(
-                                    alignment: Alignment.centerLeft,
-                                    widthFactor: progress.clamp(0.0, 1.0),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.22),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                    return Dismissible(
+                      key: Key(data['id'] ?? 'achievement_$idx'),
+                      direction: completed ? DismissDirection.none : DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.transparent,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 5),
+                        child: Icon(Icons.refresh, color: Theme.of(context).primaryColor, size: 30),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Swap Achievement?'),
+                                content: const Text('Are you sure you want to swap this achievement for a new one?'),
+                                actions: [
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                      backgroundColor: Colors.transparent,
                                     ),
+                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                    child: const Text('Cancel'),
                                   ),
-                                ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsetsGeometry.only(right: 10),
-                                      child: GestureDetector(
-                                        onTap: isBonus
-                                            ? () async {
-                                                await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                              }
-                                            : null,
-                                        child: Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: completed
-                                                  ? Colors.green
-                                                  : (isBonus)
-                                                      ? const Color(0xFFFFD700)
-                                                      : Theme.of(context).primaryColor,
-                                              width: 2.2,
-                                            ),
-                                            color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                          ),
-                                          child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
-                                        ),
-                                      ),
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Theme.of(context).primaryColor,
                                     ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Padding(
-                                                padding: isBonus ? const EdgeInsets.only(left: 8) : EdgeInsets.zero,
-                                                child: Text(
-                                                  description,
-                                                  style: TextStyle(
-                                                    fontSize: 15,
-                                                    color: Theme.of(context).colorScheme.onSurface,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ),
-                                              if (consistencyIndicators != null) ...[
-                                                const SizedBox(height: 8),
-                                                consistencyIndicators,
-                                              ],
-                                              if (accuracyIndicators != null) ...[
-                                                const SizedBox(height: 8),
-                                                accuracyIndicators,
-                                              ],
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isBonus)
-                          Positioned(
-                            top: -7,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFD700),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFFD700).withOpacity(0.9),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                    child: const Text('Swap'),
                                   ),
                                 ],
                               ),
-                              child: Text(
-                                'BONUS',
-                                style: TextStyle(
-                                  color: Colors.black.withOpacity(0.9),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                  fontFamily: 'NovecentoSans',
-                                  letterSpacing: 1.2,
+                            ) ??
+                            false;
+                      },
+                      onDismissed: (direction) async {
+                        // Do stuff when dismissed
+                      },
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                width: 2.5,
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                if (showProgress)
+                                  Positioned.fill(
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: progress.clamp(0.0, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withOpacity(0.22),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsetsGeometry.only(right: 10),
+                                        child: GestureDetector(
+                                          onTap: isBonus
+                                              ? () async {
+                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                }
+                                              : null,
+                                          child: Container(
+                                            width: 28,
+                                            height: 28,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: completed
+                                                    ? Colors.green
+                                                    : (isBonus)
+                                                        ? const Color(0xFFFFD700)
+                                                        : Theme.of(context).primaryColor,
+                                                width: 2.2,
+                                              ),
+                                              color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                            ),
+                                            child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding: isBonus ? const EdgeInsets.only(left: 8) : EdgeInsets.zero,
+                                                  child: Text(
+                                                    description,
+                                                    style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                      fontFamily: 'NovecentoSans',
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (consistencyIndicators != null) ...[
+                                                  const SizedBox(height: 8),
+                                                  consistencyIndicators,
+                                                ],
+                                                if (accuracyIndicators != null) ...[
+                                                  const SizedBox(height: 8),
+                                                  accuracyIndicators,
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isBonus)
+                            Positioned(
+                              top: -7,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFD700),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.9),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'BONUS',
+                                  style: TextStyle(
+                                    color: Colors.black.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                    fontFamily: 'NovecentoSans',
+                                    letterSpacing: 1.2,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 );
@@ -1586,7 +1627,7 @@ class _WeeklyResetCountdownState extends State<_WeeklyResetCountdown> {
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 16,
-          color: Theme.of(context).primaryColor,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
           fontFamily: 'NovecentoSans',
         ),
       ),
