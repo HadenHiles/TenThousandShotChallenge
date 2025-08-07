@@ -122,10 +122,10 @@ class _StartShootingState extends State<StartShooting> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.grey.shade400,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                               width: 1,
                             ),
                           ),
@@ -163,8 +163,8 @@ class _StartShootingState extends State<StartShooting> {
                     children: presets
                         .map((preset) => ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: value == preset ? Colors.grey.shade300 : Colors.grey.shade100,
-                                foregroundColor: Colors.black87,
+                                backgroundColor: value == preset ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                                foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                                 minimumSize: const Size(48, 32),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 elevation: value == preset ? 2 : 0,
@@ -180,7 +180,7 @@ class _StartShootingState extends State<StartShooting> {
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
+                    foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   child: const Text('Cancel'),
                 ),
@@ -934,9 +934,10 @@ class _StartShootingState extends State<StartShooting> {
 
   Widget _buildShotSelector(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 0),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1293,8 +1294,8 @@ class _StartShootingState extends State<StartShooting> {
                             reset();
                           },
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.shade200,
-                            foregroundColor: Colors.grey.shade800,
+                            backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                            foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1307,8 +1308,8 @@ class _StartShootingState extends State<StartShooting> {
                               const SizedBox(width: 8),
                               Text(
                                 "Cancel".toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.black87,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
