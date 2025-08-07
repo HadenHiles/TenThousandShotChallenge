@@ -17,7 +17,7 @@ class ShotTypeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? Theme.of(context).primaryColor : Colors.grey.shade200,
+      color: active ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
       borderRadius: borderRadius ?? BorderRadius.circular(6),
       child: InkWell(
         borderRadius: borderRadius ?? BorderRadius.circular(6),
@@ -30,7 +30,7 @@ class ShotTypeButton extends StatelessWidget {
           child: Text(
             type.toUpperCase(),
             style: TextStyle(
-              color: active ? Colors.white : Colors.black87,
+              color: active ? Colors.white.withValues(alpha: 1) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               fontFamily: 'NovecentoSans',
               fontWeight: FontWeight.bold,
               fontSize: 18,

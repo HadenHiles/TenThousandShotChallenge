@@ -25,9 +25,32 @@
 
 - Display current weekly achievements in the Start tab.
 - Show progress (e.g., shots taken, accuracy, sessions completed).
-- Achievements are automatically checked off when the user completes the required actions; there is no manual check-off option.
+- Achievements are automatically checked off when the user completes the required actions; there is no manual check-off option except for fun style achievements
 - Provide feedback and rewards (badges, points, etc.) for completion.
 - Show the user's achievement streak in their profile, along with a running count of how many achievements they've completed in their lifetime, including a badge on their profile image with the number of consecutive weeks they've completed every achievement.
+- Each achievement will have a different style, and corresponding UI to indicate the user's progress towards the achievement
+  - **Consistency Achievements** (e.g., "Take X shots in Y sessions", "Practice on Z days this week")
+  - Progress Bar: Shows % of sessions/days completed out of the goal.
+  - Session/Day Tracker: Small checkmarks or dots for each required session/day.
+
+- **Quantity Achievements** (e.g., "Take 100 wrist shots this week")
+  - Progress Bar: Fills as shots are logged toward the total.
+  - Animated Counter: Shows current count vs. goal (e.g., 75/100).
+
+- **Accuracy Achievements** (e.g., "Achieve 70% accuracy on snap shots")
+  - Progress Bar: Shows current accuracy % vs. target.
+  - Color Indicator: Turns green when target is reached.
+
+- **Improvement Achievements** (e.g., "Improve backhand accuracy by 10%")
+  - Delta Indicator: Shows current improvement vs. baseline.
+  - Upward Arrow/Trend: Visualizes progress since last week.
+
+- **Ratio Achievements** (e.g., "Take more slap shots than wrist shots")
+  - Sliding Scale: Shows both shot types on a bar, with a sweet spot highlighted.
+  - Status Text: "Right on the money", "Crushing it!", "Almost there!", or "Take more X than Y".
+
+- **Bonus/Fun/Social Achievements** (`isBonus: true`)
+  - No progress indicator needed; these are simply marked as complete (yes/no) by the user for fun or social participation.
 
 ### 4. Achievement Assignment Logic
 
@@ -41,7 +64,7 @@
 - Award badges, points, or other incentives for completing achievements.
 - Track achievement streaks for consecutive weeks in which the user completes every assigned achievement.
 - Show achievement streak and achievement history in the profile tab.
-- Impossible bonus achievements do not affect the user's streak if not completed, but provide extra rewards if achieved.
+- Bonus achievements do not affect the user's streak if not completed
 
 ### 6. Achievement Swap Feature
 
