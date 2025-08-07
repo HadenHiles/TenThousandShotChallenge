@@ -1121,6 +1121,64 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
     }
 });
 
+const templates: any[] = [
+    // --- Quantity based ---
+    { id: 'qty_wrist_easy', style: 'quantity', title: 'Wrist Shot Week', description: 'Take 30 wrist shots. You can spread them out over any sessions!', shotType: 'wrist', goalType: 'count', goalValue: 30, difficulty: 'Easy', proLevel: false, isBonus: false },
+    { id: 'qty_snap_hard', style: 'quantity', title: 'Snap Shot Challenge', description: 'Take 60 snap shots. You can do it in any session(s)!', shotType: 'snap', goalType: 'count', goalValue: 60, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'qty_backhand_hardest', style: 'quantity', title: 'Backhand Mastery', description: 'Take 100 backhands. You can split them up however you want!', shotType: 'backhand', goalType: 'count', goalValue: 100, difficulty: 'Hardest', proLevel: false, isBonus: false },
+    { id: 'qty_slap_impossible', style: 'quantity', title: 'Slap Shot Marathon', description: 'Take 200 slap shots. Spread them out over the week!', shotType: 'slap', goalType: 'count', goalValue: 200, difficulty: 'Impossible', proLevel: false, isBonus: false },
+    { id: 'qty_mixed_medium', style: 'quantity', title: 'Mix It Up', description: 'Take at least 20 shots of each type (wrist, snap, backhand, slap).', shotType: 'all', goalType: 'count', goalValue: 20, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'qty_lefty_easy', style: 'quantity', title: 'Lefty Challenge', description: 'Take 25 shots with your non-dominant hand.', shotType: 'any', goalType: 'count', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
+    { id: 'qty_speed_50', style: 'quantity', title: 'Speed Demon', description: 'Take 50 shots in under 10 minutes in a single session.', shotType: 'any', goalType: 'count_time', goalValue: 50, timeLimit: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'qty_rapidfire_20', style: 'quantity', title: 'Rapid Fire', description: 'Take 20 shots in 60 seconds or less.', shotType: 'any', goalType: 'count_time', goalValue: 20, timeLimit: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'qty_balanced_40', style: 'quantity', title: 'Balanced Attack', description: 'Take 10 wrist, 10 snap, 10 backhand, and 10 slap shots.', shotType: 'all', goalType: 'count', goalValue: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'qty_evening_25', style: 'quantity', title: 'Evening Shooter', description: 'Take 25 shots after 7pm in a single session.', shotType: 'any', goalType: 'count_evening', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
+    // --- n shots for x sessions in a row ---
+    { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
+    { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'slap_15_three_sessions', style: 'quantity', title: 'Slap Shot Consistency', description: 'Take at least 15 slap shots for any 3 sessions in a row.', shotType: 'slap', goalType: 'count_per_session', goalValue: 15, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
+    // --- Creative/Generic ---
+    { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+    { id: 'fun_coach_hard', style: 'fun', title: 'Coach\'s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+    { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+    { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+    { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+    { id: 'fun_music_easy', style: 'fun', title: 'Music Motivation', description: 'Create a playlist and shoot to your favorite songs.', shotType: '', goalType: 'music', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+    { id: 'social_share_easy', style: 'fun', title: 'Share the Love', description: 'Share your progress on social media or with a friend.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
+    { id: 'social_challenge_medium', style: 'fun', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
+    { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Shoot pucks with at least 2 teammates.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
+    // --- Accuracy based (pro) ---
+    { id: 'acc_wrist_70', style: 'accuracy', title: 'Wrist Wizard', description: 'Achieve 70% accuracy on wrist shots in a single session.', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
+    { id: 'acc_snap_80', style: 'accuracy', title: 'Snap Supreme', description: 'Achieve 80% accuracy on snap shots in a single session.', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 1, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: false },
+    { id: 'acc_backhand_60', style: 'accuracy', title: 'Backhand Bull', description: 'Achieve 60% accuracy on backhands in any 2 sessions.', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: false },
+    { id: 'acc_slap_75', style: 'accuracy', title: 'Slap Shot Specialist', description: 'Achieve 55% accuracy on slap shots in any 2 sessions.', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 55.0, sessions: 2, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
+    { id: 'acc_morning_ace', style: 'accuracy', title: 'Morning Ace', description: 'Achieve 65% accuracy in a morning session (before 10am).', shotType: 'any', goalType: 'accuracy_morning', targetAccuracy: 65.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
+    { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: true },
+    { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: true },
+    { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false, isStreak: true },
+    { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: false, isStreak: true },
+    // --- Ratio based ---
+    { id: 'ratio_snap_slap_2to1', style: 'ratio', title: 'Snap to Slap', description: 'Take 2 snap shots for every 1 slap shot.', shotType: 'snap', shotTypeComparison: 'slap', primaryType: 'snap', secondaryType: 'slap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'ratio_even_steven', style: 'ratio', title: 'Even Steven', description: 'Take an equal number of wrist and backhand shots.', shotType: 'wrist', shotTypeComparison: 'backhand', primaryType: 'wrist', secondaryType: 'backhand', goalType: 'ratio_equal', goalValue: 1, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+    { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take.', shotType: 'backhand', shotTypeComparison: 'wrist', primaryType: 'backhand', secondaryType: 'wrist', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
+    { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take.', shotType: 'backhand', shotTypeComparison: 'snap', primaryType: 'backhand', secondaryType: 'snap', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'ratio_slap_snap_medium', style: 'ratio', title: 'Slap vs Snap', description: 'Take 2 slap shots for every 1 snap shot you take.', shotType: 'slap', shotTypeComparison: 'snap', primaryType: 'slap', secondaryType: 'snap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'variety_master', style: 'quantity', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session.', shotType: 'all', shotTypeComparison: '', primaryType: 'all', secondaryType: '', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: false },
+    // --- Consistency ---
+    { id: 'consistency_earlybird', style: 'consistency', title: 'Early Bird', description: 'Complete a shooting session before 7am three times.', shotType: '', goalType: 'early_sessions', goalValue: 3, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'consistency_doubleheader', style: 'consistency', title: 'Double Header', description: 'Complete two shooting sessions in one day.', shotType: '', goalType: 'double_sessions', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'consistency_weekendwarrior', style: 'consistency', title: 'Weekend Warrior', description: 'Complete a session on both Saturday and Sunday.', shotType: '', goalType: 'weekend_sessions', goalValue: 2, difficulty: 'Medium', proLevel: false, isBonus: false },
+    { id: 'consistency_streak_five', style: 'consistency', title: 'Five Alive', description: 'Shoot pucks at least 5 days this week.', shotType: '', goalType: 'streak', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day.', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
+    { id: 'consistency_morning_medium', style: 'consistency', title: 'Morning Warrior', description: 'Complete 3 morning shooting sessions (before 10am).', shotType: '', goalType: 'morning_sessions', goalValue: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
+    // --- Progress ---
+    { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5%. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
+    { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10%. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
+    { id: 'progress_target_hits', style: 'progress', title: 'Target Hitter', description: 'Hit 100 targets.', shotType: 'any', goalType: 'target_hits_increase', improvement: 100, difficulty: 'Easy', proLevel: true, isBonus: false },
+];
+
 async function assignAchievements(test: Boolean, userIds: Array<string>): Promise<any> {
     const weekStart = getWeekStartEST();
     try {
@@ -1247,65 +1305,6 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
             else if (playerAge < 13) ageGroup = 'u13';
             else if (playerAge < 15) ageGroup = 'u15';
             else if (playerAge < 18) ageGroup = 'u18';
-
-            // Achievement templates (full migration from Dart)
-            let templates: any[] = [
-                // --- Quantity based ---
-                { id: 'qty_wrist_easy', style: 'quantity', title: 'Wrist Shot Week', description: 'Take 30 wrist shots. You can spread them out over any sessions!', shotType: 'wrist', goalType: 'count', goalValue: 30, difficulty: 'Easy', proLevel: false, isBonus: false },
-                { id: 'qty_snap_hard', style: 'quantity', title: 'Snap Shot Challenge', description: 'Take 60 snap shots. You can do it in any session(s)!', shotType: 'snap', goalType: 'count', goalValue: 60, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'qty_backhand_hardest', style: 'quantity', title: 'Backhand Mastery', description: 'Take 100 backhands. You can split them up however you want!', shotType: 'backhand', goalType: 'count', goalValue: 100, difficulty: 'Hardest', proLevel: false, isBonus: false },
-                { id: 'qty_slap_impossible', style: 'quantity', title: 'Slap Shot Marathon', description: 'Take 200 slap shots. Spread them out over the week!', shotType: 'slap', goalType: 'count', goalValue: 200, difficulty: 'Impossible', proLevel: false, isBonus: false },
-                { id: 'qty_mixed_medium', style: 'quantity', title: 'Mix It Up', description: 'Take at least 20 shots of each type (wrist, snap, backhand, slap).', shotType: 'all', goalType: 'count', goalValue: 20, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_lefty_easy', style: 'quantity', title: 'Lefty Challenge', description: 'Take 25 shots with your non-dominant hand.', shotType: 'any', goalType: 'count', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
-                { id: 'qty_speed_50', style: 'quantity', title: 'Speed Demon', description: 'Take 50 shots in under 10 minutes in a single session.', shotType: 'any', goalType: 'count_time', goalValue: 50, timeLimit: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_rapidfire_20', style: 'quantity', title: 'Rapid Fire', description: 'Take 20 shots in 60 seconds or less.', shotType: 'any', goalType: 'count_time', goalValue: 20, timeLimit: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'qty_balanced_40', style: 'quantity', title: 'Balanced Attack', description: 'Take 10 wrist, 10 snap, 10 backhand, and 10 slap shots.', shotType: 'all', goalType: 'count', goalValue: 10, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'qty_evening_25', style: 'quantity', title: 'Evening Shooter', description: 'Take 25 shots after 7pm in a single session.', shotType: 'any', goalType: 'count_evening', goalValue: 25, difficulty: 'Easy', proLevel: false, isBonus: false },
-                // --- n shots for x sessions in a row ---
-                { id: 'wrist_20_three_sessions', style: 'quantity', title: 'Wrist Shot Consistency', description: 'Take at least 20 wrist shots for any 3 sessions in a row. You can keep trying until you get it!', shotType: 'wrist', goalType: 'count_per_session', goalValue: 20, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'snap_15_two_sessions', style: 'quantity', title: 'Snap Shot Streak', description: 'Take at least 15 snap shots for any 2 sessions in a row. Keep working at it!', shotType: 'snap', goalType: 'count_per_session', goalValue: 15, sessions: 2, difficulty: 'Easy', proLevel: false, isBonus: false },
-                { id: 'backhand_10_four_sessions', style: 'quantity', title: 'Backhand Streak', description: 'Take at least 10 backhands for any 4 sessions in a row. You can keep trying until you get it!', shotType: 'backhand', goalType: 'count_per_session', goalValue: 10, sessions: 4, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'slap_15_three_sessions', style: 'quantity', title: 'Slap Shot Consistency', description: 'Take at least 15 slap shots for any 3 sessions in a row.', shotType: 'slap', goalType: 'count_per_session', goalValue: 15, sessions: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
-                // --- Creative/Generic ---
-                { id: 'fun_celebration_easy', style: 'fun', title: 'Celebration Station', description: 'Come up with a new goal celebration and use it after every session!', shotType: '', goalType: 'celebration', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'fun_coach_hard', style: 'fun', title: 'Coach\'s Tip', description: 'Ask your coach or parent for a tip and try to use it in your next session.', shotType: '', goalType: 'coach_tip', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-                { id: 'fun_video_medium', style: 'fun', title: 'Video Star', description: 'Record a video of your best shot and share it with a friend or coach.', shotType: '', goalType: 'video', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-                { id: 'fun_trickshot_hard', style: 'fun', title: 'Trick Shot Showdown', description: 'Invent a new trick shot and attempt it in a session.', shotType: '', goalType: 'trickshot', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-                { id: 'fun_teamwork_easy', style: 'fun', title: 'Teamwork Makes the Dream Work', description: 'Help a teammate or sibling with their shooting.', shotType: '', goalType: 'teamwork', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'fun_music_easy', style: 'fun', title: 'Music Motivation', description: 'Create a playlist and shoot to your favorite songs.', shotType: '', goalType: 'music', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'social_share_easy', style: 'fun', title: 'Share the Love', description: 'Share your progress on social media or with a friend.', shotType: '', goalType: 'share', goalValue: 1, difficulty: 'Easy', proLevel: false, isBonus: true },
-                { id: 'social_challenge_medium', style: 'fun', title: 'Challenge a Friend', description: 'Challenge a friend to a shooting contest.', shotType: '', goalType: 'challenge_friend', goalValue: 1, difficulty: 'Medium', proLevel: false, isBonus: true },
-                { id: 'social_teamwork_hard', style: 'fun', title: 'Teamwork Triumph', description: 'Shoot pucks with at least 2 teammates.', shotType: '', goalType: 'teamwork_drill', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: true },
-                // --- Accuracy based (pro) ---
-                { id: 'acc_wrist_70', style: 'accuracy', title: 'Wrist Wizard', description: 'Achieve 70% accuracy on wrist shots in a single session.', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_snap_80', style: 'accuracy', title: 'Snap Supreme', description: 'Achieve 80% accuracy on snap shots in a single session.', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 1, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_backhand_60', style: 'accuracy', title: 'Backhand Bull', description: 'Achieve 60% accuracy on backhands in any 2 sessions.', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_slap_75', style: 'accuracy', title: 'Slap Shot Specialist', description: 'Achieve 55% accuracy on slap shots in any 2 sessions.', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 55.0, sessions: 2, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_morning_ace', style: 'accuracy', title: 'Morning Ace', description: 'Achieve 65% accuracy in a morning session (before 10am).', shotType: 'any', goalType: 'accuracy_morning', targetAccuracy: 65.0, sessions: 1, difficulty: 'Medium', proLevel: true, isBonus: false, isStreak: false },
-                { id: 'acc_wrist_easy', style: 'accuracy', title: 'Wrist Shot Precision', description: 'Achieve 60% accuracy on wrist shots in any 2 sessions in a row. Keep trying until you get it!', shotType: 'wrist', goalType: 'accuracy', targetAccuracy: 60.0, sessions: 2, difficulty: 'Easy', proLevel: true, isBonus: false, isStreak: true },
-                { id: 'acc_snap_hard', style: 'accuracy', title: 'Snap Shot Sniper', description: 'Achieve 70% accuracy on snap shots in any 3 sessions in a row. You can keep working at it all week!', shotType: 'snap', goalType: 'accuracy', targetAccuracy: 70.0, sessions: 3, difficulty: 'Hard', proLevel: true, isBonus: false, isStreak: true },
-                { id: 'acc_backhand_hardest', style: 'accuracy', title: 'Backhand Bullseye', description: 'Achieve 80% accuracy on backhands in any 4 sessions in a row. Don\'t give up if you miss early!', shotType: 'backhand', goalType: 'accuracy', targetAccuracy: 80.0, sessions: 4, difficulty: 'Hardest', proLevel: true, isBonus: false, isStreak: true },
-                { id: 'acc_slap_impossible', style: 'accuracy', title: 'Slap Shot Sharpshooter', description: 'Achieve 90% accuracy on slap shots in any 5 sessions in a row. You have all week to get there!', shotType: 'slap', goalType: 'accuracy', targetAccuracy: 90.0, sessions: 5, difficulty: 'Impossible', proLevel: true, isBonus: false, isStreak: true },
-                // --- Ratio based ---
-                { id: 'ratio_snap_slap_2to1', style: 'ratio', title: 'Snap to Slap', description: 'Take 2 snap shots for every 1 slap shot.', shotType: 'snap', shotTypeComparison: 'slap', primaryType: 'snap', secondaryType: 'slap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'ratio_even_steven', style: 'ratio', title: 'Even Steven', description: 'Take an equal number of wrist and backhand shots.', shotType: 'wrist', shotTypeComparison: 'backhand', primaryType: 'wrist', secondaryType: 'backhand', goalType: 'ratio_equal', goalValue: 1, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
-                { id: 'ratio_backhand_wrist_easy', style: 'ratio', title: 'Backhand Booster', description: 'Take 2 backhands for every 1 wrist shot you take.', shotType: 'backhand', shotTypeComparison: 'wrist', primaryType: 'backhand', secondaryType: 'wrist', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Easy', proLevel: false, isBonus: false },
-                { id: 'ratio_backhand_snap_hard', style: 'ratio', title: 'Backhand vs Snap', description: 'Take 3 backhands for every 1 snap shot you take.', shotType: 'backhand', shotTypeComparison: 'snap', primaryType: 'backhand', secondaryType: 'snap', goalType: 'ratio', goalValue: 3, secondaryValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'ratio_slap_snap_medium', style: 'ratio', title: 'Slap vs Snap', description: 'Take 2 slap shots for every 1 snap shot you take.', shotType: 'slap', shotTypeComparison: 'snap', primaryType: 'slap', secondaryType: 'snap', goalType: 'ratio', goalValue: 2, secondaryValue: 1, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'variety_master', style: 'quantity', title: 'Variety Master', description: 'Take at least 5 of each shot type (wrist, snap, backhand, slap) in a single session.', shotType: 'all', shotTypeComparison: '', primaryType: 'all', secondaryType: '', goalType: 'variety', goalValue: 5, difficulty: 'Medium', proLevel: false, isBonus: false },
-                // --- Consistency ---
-                { id: 'consistency_earlybird', style: 'consistency', title: 'Early Bird', description: 'Complete a shooting session before 7am three times.', shotType: '', goalType: 'early_sessions', goalValue: 3, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'consistency_doubleheader', style: 'consistency', title: 'Double Header', description: 'Complete two shooting sessions in one day.', shotType: '', goalType: 'double_sessions', goalValue: 1, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'consistency_weekendwarrior', style: 'consistency', title: 'Weekend Warrior', description: 'Complete a session on both Saturday and Sunday.', shotType: '', goalType: 'weekend_sessions', goalValue: 2, difficulty: 'Medium', proLevel: false, isBonus: false },
-                { id: 'consistency_streak_five', style: 'consistency', title: 'Five Alive', description: 'Shoot pucks at least 5 days this week.', shotType: '', goalType: 'streak', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'consistency_daily_easy', style: 'consistency', title: 'Daily Shooter', description: 'Shoot pucks every day.', shotType: '', goalType: 'streak', goalValue: 7, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'consistency_sessions_hard', style: 'consistency', title: 'Session Grinder', description: 'Complete 5 shooting sessions. If you miss a day, you can still finish strong!', shotType: '', goalType: 'sessions', goalValue: 5, difficulty: 'Hard', proLevel: false, isBonus: false },
-                { id: 'consistency_morning_medium', style: 'consistency', title: 'Morning Warrior', description: 'Complete 3 morning shooting sessions (before 10am).', shotType: '', goalType: 'morning_sessions', goalValue: 3, difficulty: 'Medium', proLevel: false, isBonus: false },
-                // --- Progress ---
-                { id: 'progress_wrist_improve_easy', style: 'progress', title: 'Wrist Shot Progress', description: 'Improve your wrist shot accuracy by 5%. Progress counts, even if it takes a few tries!', shotType: 'wrist', goalType: 'improvement', improvement: 5, difficulty: 'Easy', proLevel: true, isBonus: false },
-                { id: 'progress_snap_improve_hard', style: 'progress', title: 'Snap Shot Progress', description: 'Improve your snap shot accuracy by 10%. You can keep working at it all week!', shotType: 'snap', goalType: 'improvement', improvement: 10, difficulty: 'Hard', proLevel: true, isBonus: false },
-                { id: 'progress_target_hits', style: 'progress', title: 'Target Hitter', description: 'Hit 100 targets.', shotType: 'any', goalType: 'target_hits_increase', improvement: 100, difficulty: 'Easy', proLevel: true, isBonus: false },
-            ];
 
             // Difficulty mapping for templates
             const allowed = difficultyMap[ageGroup] || ['Easy'];
@@ -1625,18 +1624,326 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
     }
 }
 
+async function assignAchievement(userId: string): Promise<any> {
+    const weekStart = getWeekStartEST();
+    try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) throw new Error('User not found');
+        const userData = userDoc.data();
+        if (!userData) throw new Error('User data not found');
+        const playerAge = 18; // Placeholder for player age, replace with actual logic to get user's age in the future
+
+        // --- Gather all achievements for metrics (before assigning) ---
+        const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
+        const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // --- Use summary stats from /users/{userId}/stats/weekly ---
+        const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
+        let stats = statsDoc.exists ? statsDoc.data() || {} : {};
+        const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+        const sessionShotCounts: { [key: string]: number[] } = {};
+        const sessionAccuracies: { [key: string]: number[] } = {};
+        for (const type of shotTypes) {
+            sessionShotCounts[type] = (stats.sessions || []).map((s: any) => s.shots?.[type] ?? 0);
+            // Only include sessions with targets_hit for this shot type in accuracy calculations
+            const sessionsWithAccuracy = (stats.sessions || []).filter((s: any) => s.targets_hit && typeof s.targets_hit[type] === 'number');
+            sessionAccuracies[type] = sessionsWithAccuracy.map((s: any) => {
+                const shots = s.shots?.[type] ?? 0;
+                const hits = s.targets_hit?.[type] ?? 0;
+                return shots > 0 ? (hits / shots) * 100 : 0;
+            });
+        }
+
+        // --- RevenueCat Firestore Extension: Check if user is pro (new field structure) ---
+        let isPro = false;
+        try {
+            const entitlements = userData.entitlements || {};
+            const pro = entitlements.pro || {};
+            if (pro && typeof pro.expires_date === 'string') {
+                const expires = new Date(pro.expires_date);
+                if (expires > new Date()) {
+                    isPro = true;
+                }
+            }
+        } catch (e) {
+            isPro = false;
+        }
+
+        // --- Assignment Logic Ported from Dart ---
+        const difficultyMap: { [key: string]: string[] } = {
+            u7: ['Easy', 'Medium', 'Hard'],
+            u9: ['Easy', 'Medium', 'Hard'],
+            u11: ['Easy', 'Medium', 'Hard'],
+            u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
+            u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
+            u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+            adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+        };
+
+        let ageGroup = 'adult';
+        if (playerAge < 7) ageGroup = 'u7';
+        else if (playerAge < 9) ageGroup = 'u9';
+        else if (playerAge < 11) ageGroup = 'u11';
+        else if (playerAge < 13) ageGroup = 'u13';
+        else if (playerAge < 15) ageGroup = 'u15';
+        else if (playerAge < 18) ageGroup = 'u18';
+
+        // Difficulty mapping for templates
+        const allowed = difficultyMap[ageGroup] || ['Easy'];
+        function mapDifficulty(template: any) {
+            let mapped = template.difficulty;
+            if (['u7', 'u9', 'u11'].includes(ageGroup) && (template.difficulty === 'Hardest' || template.difficulty === 'Impossible')) {
+                mapped = 'Hard';
+            } else if (['u13', 'u15'].includes(ageGroup) && template.difficulty === 'Impossible') {
+                mapped = 'Hardest';
+            }
+            return mapped;
+        }
+
+        // --- Skill-based substitutions ---
+        const avgAccuracies: { [key: string]: number } = {};
+        const avgShotsPerSession: { [key: string]: number } = {};
+        for (const type of shotTypes) {
+            const accArr = sessionAccuracies[type] || [];
+            avgAccuracies[type] = accArr.length ? accArr.reduce((a, b) => a + b, 0) / accArr.length : 0;
+            const shotsArr = sessionShotCounts[type] || [];
+            avgShotsPerSession[type] = shotsArr.length ? shotsArr.reduce((a, b) => a + b, 0) / shotsArr.length : 0;
+        }
+
+        function substituteTemplate(tmpl: any): any {
+            let t = { ...tmpl };
+            // --- Find weakest/lagging shot type ---
+            let weakestType = null;
+            let lowestAcc = Infinity;
+            for (const type of Object.keys(avgAccuracies)) {
+                if (avgAccuracies[type] < lowestAcc && avgAccuracies[type] > 0) {
+                    lowestAcc = avgAccuracies[type];
+                    weakestType = type;
+                }
+            }
+            let laggingType = null;
+            let lowestShots = Infinity;
+            for (const type of Object.keys(avgShotsPerSession)) {
+                if (avgShotsPerSession[type] < lowestShots && avgShotsPerSession[type] > 0) {
+                    lowestShots = avgShotsPerSession[type];
+                    laggingType = type;
+                }
+            }
+
+            // --- Accuracy ---
+            if (t.style === 'accuracy' && t.shotType && t.targetAccuracy) {
+                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
+                    t.shotType = weakestType;
+                    t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Accuracy Focus`;
+                }
+                // Ensure isStreak is set correctly for streak templates
+                if (typeof t.isStreak !== 'boolean') {
+                    t.isStreak = false;
+                }
+                let sessionAccuracies: number[] = [];
+                if (stats.sessions && Array.isArray(stats.sessions)) {
+                    for (const s of stats.sessions) {
+                        const shots = s.shots?.[t.shotType] ?? 0;
+                        const hits = s.targets_hit?.[t.shotType] ?? 0;
+                        if (shots > 0) {
+                            sessionAccuracies.push((hits / shots) * 100);
+                        }
+                    }
+                }
+                let avg = sessionAccuracies.length ? sessionAccuracies.reduce((a, b) => a + b, 0) / sessionAccuracies.length : 0;
+                let bump = (t.sessions && t.sessions > 1) ? 2.5 : 5.0;
+                let reasonableMin = 25;
+                let templateDefault = t.targetAccuracy;
+                let rawTarget = avg + bump;
+                let roundedTarget = Math.round(rawTarget / 2) * 2;
+                if (rawTarget < templateDefault) {
+                    t.targetAccuracy = Math.max(reasonableMin, Math.min(roundedTarget, templateDefault));
+                } else {
+                    t.targetAccuracy = Math.min(Math.max(templateDefault, roundedTarget), 100);
+                }
+                let sessionPhrase = '';
+                if (t.sessions) {
+                    if (t.isStreak === true) {
+                        sessionPhrase = ` in any ${t.sessions} consecutive session${t.sessions > 1 ? 's' : ''}`;
+                    } else {
+                        sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''}`;
+                    }
+                }
+                // Linguistically correct shot type phrases
+                function shotTypeLabel(type: string) {
+                    if (type === 'backhand') return 'backhands';
+                    if (type === 'wrist') return 'wrist shots';
+                    if (type === 'snap') return 'snap shots';
+                    if (type === 'slap') return 'slap shots';
+                    if (type === 'all') return 'all shot types';
+                    if (type === 'any') return '';
+                    return type;
+                }
+                let shotTypePhrase = shotTypeLabel(t.shotType);
+                if (t.shotType === 'any') {
+                    t.description = t.isStreak
+                        ? `Achieve ${t.targetAccuracy}% accuracy in any${sessionPhrase}.`
+                        : `Achieve ${t.targetAccuracy}% accuracy in any${sessionPhrase}.`;
+                } else {
+                    t.description = t.isStreak
+                        ? `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`
+                        : `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
+                }
+            }
+            // --- Quantity ---
+            if (t.style === 'quantity' && t.goalValue) {
+                // Only substitute for wrist, snap, backhand, slap
+                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
+                    t.shotType = laggingType;
+                    t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
+                }
+                // Linguistically correct shot type phrases
+                function shotTypeLabel(type: string) {
+                    if (type === 'backhand') return 'backhands';
+                    if (type === 'wrist') return 'wrist shots';
+                    if (type === 'snap') return 'snap shots';
+                    if (type === 'slap') return 'slap shots';
+                    if (type === 'all') return 'all shot types';
+                    if (type === 'any') return 'shots';
+                    return type;
+                }
+                if (t.goalType === 'count_per_session') {
+                    t.description = `Take at least ${t.goalValue} ${shotTypeLabel(t.shotType)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
+                } else if (t.goalType === 'count_evening') {
+                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} after 7pm in a single session.`;
+                } else if (t.goalType === 'count_time') {
+                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} in under ${t.timeLimit || 10} minute${(t.timeLimit || 10) > 1 ? 's' : ''} in a single session.`;
+                } else if (t.shotType === 'all') {
+                    t.description = `Take at least ${t.goalValue} of each shot type (wrist, snap, backhand, slap) this week.`;
+                } else if (t.shotType === 'any') {
+                    t.description = `Take ${t.goalValue} shots (any type) this week.`;
+                } else {
+                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} this week.`;
+                }
+            }
+            // --- Ratio ---
+            if (t.style === 'ratio' && t.goalValue && t.secondaryValue) {
+                // Always use the originally assigned types for description
+                function shotTypeLabel(type: string, count: number) {
+                    if (type === 'backhand') return count === 1 ? 'backhand' : 'backhands';
+                    if (type === 'wrist') return count === 1 ? 'wrist shot' : 'wrist shots';
+                    if (type === 'snap') return count === 1 ? 'snap shot' : 'snap shots';
+                    if (type === 'slap') return count === 1 ? 'slap shot' : 'slap shots';
+                    if (type === 'all') return 'all shot types';
+                    if (type === 'any') return count === 1 ? 'shot' : 'shots';
+                    return count === 1 ? type : type + 's';
+                }
+                const descPrimary = t.shotType || t.primaryType || '';
+                const descSecondary = t.shotTypeComparison || t.secondaryType || '';
+                const primaryLabel = shotTypeLabel(descPrimary, t.goalValue);
+                const secondaryLabel = shotTypeLabel(descSecondary, t.secondaryValue);
+                t.description = `Take ${t.goalValue} ${primaryLabel} for every ${t.secondaryValue} ${secondaryLabel}.`;
+            }
+            // --- Progress ---
+            if (t.style === 'progress' && t.shotType && t.improvement) {
+                // Skill-based substitution for progress
+                // Only substitute for wrist, snap, backhand, slap
+                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
+                    t.shotType = weakestType;
+                    t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Progress`;
+                }
+                // Personalize improvement value based on user's average accuracy
+                let avg = avgAccuracies[t.shotType] || 0;
+                let bump = t.improvement;
+                // If user is below 40% accuracy, set a lower improvement target, else use template or a small bump
+                if (avg > 0 && avg < 40) {
+                    bump = Math.max(2, Math.round((40 - avg) / 4));
+                } else if (avg >= 40 && avg < 60) {
+                    bump = Math.max(t.improvement, 3);
+                } else if (avg >= 60) {
+                    bump = Math.max(t.improvement, 2);
+                }
+                t.improvement = bump;
+                t.description = t.goalType === 'improvement_variety'
+                    ? `Improve your accuracy by at least ${bump}% on all shot types.`
+                    : `Improve your ${t.shotType} accuracy by ${bump}%. Progress counts, even if it takes a few tries!`;
+            }
+            // --- Consistency ---
+            if (t.style === 'consistency' && t.goalType && t.goalValue) {
+                // Skill-based substitution for consistency
+                // Only substitute for wrist, snap, backhand, slap if shotType is present
+                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
+                    t.shotType = laggingType;
+                    t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Consistency`;
+                }
+                // Personalize goalValue based on user's average sessions or shots
+                let avgSessions = stats.sessions ? stats.sessions.length : 0;
+                // For streaks, set goalValue to at least 2 or 3 if user is active, else use template
+                if (t.goalType === 'streak') {
+                    if (avgSessions >= 5) {
+                        t.goalValue = Math.max(t.goalValue, 5);
+                    } else if (avgSessions >= 3) {
+                        t.goalValue = Math.max(t.goalValue, 3);
+                    }
+                    t.description = `Complete a ${t.goalValue} day shooting streak.`;
+                } else if (t.goalType === 'sessions') {
+                    if (avgSessions > 0) {
+                        t.goalValue = Math.max(t.goalValue, Math.ceil(avgSessions * 1.2));
+                    }
+                    t.description = `Complete ${t.goalValue} shooting sessions this week.`;
+                } else if (t.goalType === 'early_sessions') {
+                    t.description = `Complete a shooting session before 7am ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
+                } else if (t.goalType === 'double_sessions') {
+                    t.description = `Complete two shooting sessions in one day, ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
+                } else if (t.goalType === 'weekend_sessions') {
+                    t.description = `Complete a session on both Saturday and Sunday.`;
+                } else if (t.goalType === 'morning_sessions') {
+                    t.description = `Complete ${t.goalValue} shooting sessions before 10am.`;
+                }
+            }
+            // --- Target hits (progress) ---
+            if (t.style === 'progress' && t.goalType === 'target_hits_increase' && t.improvement) {
+                t.description = `Hit ${t.improvement} targets.`;
+            }
+            // --- Progress streak ---
+            if (t.style === 'progress' && t.goalType === 'improvement_streak' && t.improvement && t.days) {
+                t.description = `Improve your accuracy on any shot type for ${t.days} days in a row.`;
+            }
+            // --- Progress sessions ---
+            if (t.style === 'progress' && t.goalType === 'improvement_sessions' && t.improvement && t.sessions) {
+                t.description = `Improve your accuracy in at least ${t.sessions} different sessions.`;
+            }
+            // --- Progress evening ---
+            if (t.style === 'progress' && t.goalType === 'improvement_evening' && t.improvement) {
+                t.description = `Improve your overall accuracy by ${t.improvement}%.`;
+            }
+            // --- Fun/social (default: leave as is) ---
+            return t;
+        }
+
+        // Exclude already assigned achievement template IDs
+        const assignedTemplateIds = allAchievements.map(a => a.id);
+        let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true) && !assignedTemplateIds.includes(t.id));
+        eligible = eligible.sort(() => Math.random() - 0.5);
+        if (eligible.length === 0) {
+            return { success: false, message: 'No eligible achievements to assign.' };
+        }
+        // Pick one eligible achievement
+        const chosen = substituteTemplate(eligible[0]);
+        const achievement = {
+            ...chosen,
+            completed: false,
+            dateAssigned: Timestamp.fromDate(weekStart),
+            dateCompleted: null,
+            time_frame: 'week',
+            userId,
+        };
+        await db.collection('users').doc(userId).collection('achievements').add(achievement);
+        return { success: true, message: 'Achievement assigned.', achievement };
+    } catch (error) {
+        logger.error('Error assigning achievement:', error);
+        const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
+        return { success: false, message: 'assignAchievement failed: ' + errorMessage };
+    }
+}
+
 // Progressive swap delays in milliseconds (after 3 free swaps)
 const SWAP_DELAYS = [0, 0, 0, 60_000, 180_000, 300_000, 600_000, 1_200_000, 86_400_000]; // 0,0,0,1m,3m,5m,10m,20m,1d
-
-// Helper: Get a random achievement of the same difficulty (excluding current IDs)
-async function getRandomAchievementOfDifficulty(difficulty: string, excludeIds: string[] = []): Promise<any | null> {
-    // For demo: assume you have a Firestore collection 'achievementTemplates' with all possible achievements
-    const all = await db.collection('achievementTemplates').where('difficulty', '==', difficulty).get();
-    const pool = all.docs.filter(doc => !excludeIds.includes(doc.id));
-    if (pool.length === 0) return null;
-    const idx = Math.floor(Math.random() * pool.length);
-    return { id: pool[idx].id, ...pool[idx].data() };
-}
 
 // Callable function: swapAchievement
 export const swapAchievement = onCall(async (req) => {
@@ -1680,32 +1987,20 @@ export const swapAchievement = onCall(async (req) => {
         return { success: false, message: 'Cannot swap a completed achievement' };
     }
 
-    // Get all current achievement IDs to avoid duplicates
-    const allAchSnap = await achievementsRef.get();
-    const currentIds: string[] = allAchSnap.docs.map(d => d.id);
+    // Remove the old achievement
+    await achievementsRef.doc(achievementId).delete();
 
-    // Get a new random achievement of the same difficulty
-    const newAch = await getRandomAchievementOfDifficulty(ach.difficulty as string, currentIds);
-    if (!newAch) {
-        return { success: false, message: 'No available achievements to swap in.' };
+    // Assign a new eligible achievement using the new function
+    const assignResult = await assignAchievement(userId);
+    if (!assignResult.success) {
+        return { success: false, message: assignResult.message || 'No available achievements to swap in.' };
     }
 
-    // Remove the old achievement and add the new one
-    const batch = db.batch();
-    batch.delete(achievementsRef.doc(achievementId));
-    batch.set(achievementsRef.doc(newAch.id), {
-        ...newAch,
-        completed: false,
-        dateAssigned: admin.firestore.FieldValue.serverTimestamp(),
-        dateCompleted: null,
-        userId,
-    });
     // Update swap meta
-    batch.set(swapMetaRef, {
+    await swapMetaRef.set({
         swapCount: swapCount + 1,
         lastSwap: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    await batch.commit();
 
     // Calculate next delay
     let nextDelayMs = SWAP_DELAYS[Math.min(swapCount + 1, SWAP_DELAYS.length - 1)];
@@ -1713,7 +2008,7 @@ export const swapAchievement = onCall(async (req) => {
 
     return {
         success: true,
-        newAchievement: newAch,
+        newAchievement: assignResult.achievement,
         swapCount: swapCount + 1,
         nextAvailable: nextSwapTime.toISOString(),
     };

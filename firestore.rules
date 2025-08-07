@@ -7,6 +7,30 @@ service cloud.firestore {
       match /{userId}/{document=**} {
       	allow read: if request.auth != null
         allow write, delete: if request.auth.uid == userId;
+        
+        match /claims {
+        	allow read: if request.auth.uid == resource.data.app_user_id
+        }
+        
+        match /achievements {
+        	allow read: if request.auth != null
+          allow write, delete: if request.auth.uid == userId
+
+          match /{achievementId} {
+            allow read: if request.auth != null
+            allow write, delete: if request.auth != null && request.auth.uid == userId;
+          }
+        }
+        
+        match /stats {
+        	allow read: if request.auth != null
+          allow write, delete: if request.auth.uid == userId
+        }
+        
+        match /meta {
+        	allow read: if request.auth != null
+          allow write, delete: if request.auth.uid == userId
+        }
       }
     }
     match /iterations {
