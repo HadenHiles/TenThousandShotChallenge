@@ -591,14 +591,18 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
     // Helper: Convert a Date to EST/EDT (America/New_York) time
     function toEST(date: Date | null): Date | null {
         if (!date) return null;
-        // Convert to EST/EDT (America/New_York)
-        // Get UTC time, then apply EST offset (handles DST by using US Eastern time offset)
-        // Since JS Date does not support IANA tz conversion natively, use offset math for EST/EDT
-        // EST is UTC-5, EDT is UTC-4 (DST). We'll approximate using current offset for New York.
-        const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-        // Get offset for New York at this date
-        const nyOffset = -1 * (new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' })).getTimezoneOffset());
-        return new Date(utc + nyOffset * 60000);
+        // Use Intl.DateTimeFormat to get the correct hour/minute in America/New_York
+        const options = { timeZone: 'America/New_York', hour12: false, year: 'numeric' as const, month: 'numeric' as const, day: 'numeric' as const, hour: 'numeric' as const, minute: 'numeric' as const, second: 'numeric' as const };
+        const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
+        const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
+        return new Date(
+            get('year'),
+            get('month') - 1,
+            get('day'),
+            get('hour'),
+            get('minute'),
+            get('second')
+        );
     }
     // QUANTITY
     if (style === 'quantity') {

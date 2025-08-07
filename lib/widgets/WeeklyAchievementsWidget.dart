@@ -1048,7 +1048,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         }
                       }
                       final progress = (metSessions / qtyRequiredSessions).clamp(0.0, 1.0);
-                      // ...rest of block unchanged...
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -1120,15 +1119,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 color: Theme.of(context).colorScheme.onSurface,
                                                 fontFamily: 'NovecentoSans',
                                               ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              children: List.generate(
-                                                  qtyRequiredSessions,
-                                                  (i) => Padding(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                                                        child: _buildCheckboxCircle(i < metSessions),
-                                                      )),
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.only(top: 4.0),
@@ -1244,63 +1234,47 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       }
                       // Use isStreak property for streak/non-streak logic
                       final isStreak = data['isStreak'] == true;
-                      int streak = 0;
-                      int maxStreak = 0;
-                      for (final acc in sessionAccuracies) {
-                        // If the session does not have the shot type or has zero shots, streak resets
-                        final sessionIdx = sessionAccuracies.indexOf(acc);
-                        final shotsMap = (sessionIdx >= 0 && sessionIdx < sortedSessions.length) ? sortedSessions[sessionIdx]['shots'] as Map? : null;
-                        final shotsValue = (shotsMap != null && shotsMap.containsKey(shotType)) ? shotsMap[shotType] : null;
-                        if (shotsValue is num && shotsValue > 0) {
-                          if (acc >= targetAccuracy) {
-                            streak++;
-                            if (streak > maxStreak) maxStreak = streak;
-                          } else {
-                            streak = 0;
-                          }
-                        } else {
-                          // No shots for this shot type in this session, streak resets
-                          streak = 0;
-                        }
-                      }
-                      // Only show accuracyIndicators if more than 1 required session
                       if (requiredSessions > 1) {
                         accuracyIndicators = Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: () {
-                            // Find all sessions with >= n% accuracy for shotType
-                            List<int> metSessionIndices = [];
-                            for (int i = 0; i < sessionAccuracies.length; i++) {
-                              if (sessionAccuracies[i] >= targetAccuracy) {
-                                metSessionIndices.add(i);
-                              }
-                            }
-
-                            // If isStreak, only count the most recent consecutive streak
                             if (isStreak) {
-                              // Compute the current streak (most recent consecutive sessions with shots > 0 and accuracy >= targetAccuracy)
-                              int currentStreak = 0;
-                              for (int i = 0; i < sortedSessions.length; i++) {
-                                final session = sortedSessions[i];
-                                final shotsMap = session['shots'] as Map?;
-                                final hitsMap = session['targets_hit'] as Map?;
-                                final shots = (shotsMap != null && shotsMap[shotType] is num) ? (shotsMap[shotType] as num).toDouble() : 0.0;
-                                final hits = (hitsMap != null && hitsMap[shotType] is num) ? (hitsMap[shotType] as num).toDouble() : 0.0;
-                                double acc = 0.0;
-                                if (shots > 0) {
-                                  acc = (hits / shots) * 100.0;
+                              if (completed) {
+                                // If achievement is completed, show all boxes checked
+                                return List.generate(
+                                  requiredSessions,
+                                  (i) => Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                    child: Column(
+                                      children: [
+                                        _buildCheckboxCircle(true),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                // Show the current (most recent) streak of consecutive sessions with accuracy >= targetAccuracy
+                                int currentStreak = 0;
+                                for (int i = 0; i < sortedSessions.length; i++) {
+                                  final session = sortedSessions[i];
+                                  final shotsMap = session['shots'] as Map?;
+                                  final hitsMap = session['targets_hit'] as Map?;
+                                  final shots = (shotsMap != null && shotsMap[shotType] is num) ? (shotsMap[shotType] as num).toDouble() : 0.0;
+                                  final hits = (hitsMap != null && hitsMap[shotType] is num) ? (hitsMap[shotType] as num).toDouble() : 0.0;
+                                  double acc = 0.0;
+                                  if (shots > 0) {
+                                    acc = (hits / shots) * 100.0;
+                                  }
+                                  if (shots > 0 && acc >= targetAccuracy) {
+                                    currentStreak++;
+                                  } else {
+                                    break;
+                                  }
                                 }
-                                if (shots > 0 && acc >= targetAccuracy) {
-                                  currentStreak++;
-                                } else {
-                                  break;
-                                }
-                              }
-                              List<Widget> streakBoxes = [];
-                              for (int i = 0; i < requiredSessions; i++) {
-                                streakBoxes.add(
-                                  Padding(
+                                return List.generate(
+                                  requiredSessions,
+                                  (i) => Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
                                     child: Column(
                                       children: [
@@ -1310,30 +1284,27 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                   ),
                                 );
                               }
-                              return streakBoxes;
                             } else {
                               // Non-streak: show up to requiredSessions checked, then unchecked for the rest
                               int metCount = 0;
                               List<bool> checkedList = List.filled(requiredSessions, false);
-                              // Mark the first requiredSessions met sessions as checked
                               for (int i = 0; i < sessionAccuracies.length && metCount < requiredSessions; i++) {
                                 if (sessionAccuracies[i] >= targetAccuracy) {
                                   checkedList[metCount] = true;
                                   metCount++;
                                 }
                               }
-                              List<Widget> metBoxes = [];
-                              for (int i = 0; i < requiredSessions; i++) {
-                                metBoxes.add(Padding(
+                              return List.generate(
+                                requiredSessions,
+                                (i) => Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 5.0),
                                   child: Column(
                                     children: [
                                       _buildCheckboxCircle(checkedList[i]),
                                     ],
                                   ),
-                                ));
-                              }
-                              return metBoxes;
+                                ),
+                              );
                             }
                           }(),
                         );
