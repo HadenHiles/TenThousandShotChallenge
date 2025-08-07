@@ -862,288 +862,179 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         ratioValue,
                         sweetSpot,
                       );
-                      return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('meta').doc('achievementSwaps').get(),
-                        builder: (context, swapMetaSnap) {
-                          int swapCount = 0;
-                          DateTime? lastSwap;
-                          if (swapMetaSnap.hasData && swapMetaSnap.data != null && swapMetaSnap.data!.exists) {
-                            final meta = swapMetaSnap.data!.data() as Map<String, dynamic>?;
-                            swapCount = (meta?['swapCount'] is int) ? meta!['swapCount'] : 0;
-                            final ls = meta?['lastSwap'];
-                            if (ls is Timestamp) {
-                              lastSwap = ls.toDate();
-                            } else if (ls is DateTime) {
-                              lastSwap = ls;
-                            }
-                          }
-                          const swapDelays = [0, 0, 0, 60000, 180000, 300000, 600000, 1200000, 86400000];
-                          return Dismissible(
-                            key: Key(data['id'] ?? 'achievement_$idx'),
-                            direction: completed ? DismissDirection.none : DismissDirection.endToStart,
-                            background: Container(
-                              color: Colors.transparent,
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 5),
-                              child: SwapCooldownTimer(
-                                swapCount: swapCount,
-                                lastSwap: lastSwap,
-                                swapDelays: swapDelays,
-                              ),
-                            ),
-                            confirmDismiss: (direction) async {
-                              return await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Swap Achievement?'),
-                                      content: const Text('Are you sure you want to swap this achievement for a new one?'),
-                                      actions: [
-                                        TextButton(
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                            backgroundColor: Colors.transparent,
-                                          ),
-                                          onPressed: () => Navigator.of(ctx).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor: Theme.of(context).primaryColor,
-                                          ),
-                                          onPressed: () => Navigator.of(ctx).pop(true),
-                                          child: const Text('Swap'),
-                                        ),
-                                      ],
-                                    ),
-                                  ) ??
-                                  false;
-                            },
-                            onDismissed: (direction) async {
-                              // Call swapAchievement cloud function
-                              final achievementId = achievements[idx].id;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Text('Swapping achievement...'),
-                                    ],
-                                  ),
-                                  duration: Duration(seconds: 2),
+                      return _buildAchievementItem(
+                        achievements[idx],
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                  width: 2.5,
                                 ),
-                              );
-                              try {
-                                final functions = FirebaseFunctions.instance;
-                                final swapAchievement = functions.httpsCallable('swapAchievement');
-                                final result = await swapAchievement({'achievementId': achievementId});
-                                if (result.data != null && result.data['success'] == true) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Achievement swapped!'),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                } else {
-                                  final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(msg),
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                      duration: Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                print('Error occurred while swapping achievement: $e');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Swap failed.'),
-                                    backgroundColor: Colors.red,
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  decoration: BoxDecoration(
-                                    color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
-                                      width: 2.5,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            isBonus
-                                                ? GestureDetector(
-                                                    onTap: () async {
-                                                      await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                                    },
-                                                    child: Container(
-                                                      width: 28,
-                                                      height: 28,
-                                                      decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(
-                                                          color: completed
-                                                              ? Colors.green
-                                                              : (isBonus)
-                                                                  ? const Color(0xFFFFD700)
-                                                                  : Theme.of(context).colorScheme.onSurface.withAlpha(50),
-                                                          width: 2.2,
-                                                        ),
-                                                        color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                                      ),
-                                                      child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        isBonus
+                                            ? GestureDetector(
+                                                onTap: () async {
+                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                },
+                                                child: Container(
+                                                  width: 28,
+                                                  height: 28,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: completed
+                                                          ? Colors.green
+                                                          : (isBonus)
+                                                              ? const Color(0xFFFFD700)
+                                                              : Theme.of(context).colorScheme.onSurface.withAlpha(50),
+                                                      width: 2.2,
                                                     ),
-                                                  )
-                                                : Container(),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                    color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                                  ),
+                                                  child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                                ),
+                                              )
+                                            : Container(),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                description,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontFamily: 'NovecentoSans',
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Sliding scale
+                                              Stack(
+                                                alignment: Alignment.centerLeft,
                                                 children: [
-                                                  Text(
-                                                    description,
-                                                    style: TextStyle(
-                                                      fontSize: 15,
-                                                      color: Theme.of(context).colorScheme.onSurface,
-                                                      fontFamily: 'NovecentoSans',
+                                                  Container(
+                                                    height: 18,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green.withOpacity(0.13),
+                                                      borderRadius: BorderRadius.circular(8),
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  // Sliding scale
-                                                  Stack(
-                                                    alignment: Alignment.centerLeft,
-                                                    children: [
-                                                      Container(
+                                                  Positioned(
+                                                    left: 0,
+                                                    right: 0,
+                                                    child: FractionallySizedBox(
+                                                      alignment: Alignment.centerLeft,
+                                                      widthFactor: sweetSpot,
+                                                      child: Container(
                                                         height: 18,
                                                         decoration: BoxDecoration(
-                                                          color: Colors.green.withOpacity(0.13),
+                                                          color: Colors.green.withOpacity(0.28),
                                                           borderRadius: BorderRadius.circular(8),
                                                         ),
                                                       ),
-                                                      Positioned(
-                                                        left: 0,
-                                                        right: 0,
-                                                        child: FractionallySizedBox(
-                                                          alignment: Alignment.centerLeft,
-                                                          widthFactor: sweetSpot,
-                                                          child: Container(
-                                                            height: 18,
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.green.withOpacity(0.28),
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      // User's current ratio indicator
-                                                      Positioned(
-                                                        left: (ratioValue * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
-                                                        child: Container(
-                                                          width: 18,
-                                                          height: 18,
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.green,
-                                                            shape: BoxShape.circle,
-                                                            border: Border.all(color: Colors.white, width: 2),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      // Sweet spot indicator
-                                                      Positioned(
-                                                        left: (sweetSpot * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
-                                                        child: Container(
-                                                          width: 10,
-                                                          height: 10,
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.yellow,
-                                                            shape: BoxShape.circle,
-                                                            border: Border.all(color: Colors.black, width: 1),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    feedback,
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.green[900],
-                                                      fontWeight: FontWeight.w600,
                                                     ),
                                                   ),
-                                                  // Show actual ratio numbers for clarity
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(top: 2.0),
-                                                    child: Text(
-                                                      'Your ratio: ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
-                                                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                                  // User's current ratio indicator
+                                                  Positioned(
+                                                    left: (ratioValue * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                    child: Container(
+                                                      width: 18,
+                                                      height: 18,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.white, width: 2),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Sweet spot indicator
+                                                  Positioned(
+                                                    left: (sweetSpot * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                    child: Container(
+                                                      width: 10,
+                                                      height: 10,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.yellow,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.black, width: 1),
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                feedback,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.green[900],
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              // Show actual ratio numbers for clarity
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 2.0),
+                                                child: Text(
+                                                  'Your ratio: ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
+                                                  style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isBonus)
+                              Positioned(
+                                top: -7,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFD700),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD700).withOpacity(0.9),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                ),
-                                if (isBonus)
-                                  Positioned(
-                                    top: -7,
-                                    right: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFD700),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFFFFD700).withOpacity(0.9),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        'BONUS',
-                                        style: TextStyle(
-                                          color: Colors.black.withOpacity(0.9),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10,
-                                          fontFamily: 'NovecentoSans',
-                                          letterSpacing: 1.2,
-                                        ),
-                                      ),
+                                  child: Text(
+                                    'BONUS',
+                                    style: TextStyle(
+                                      color: Colors.black.withOpacity(0.9),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                      fontFamily: 'NovecentoSans',
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
-                              ],
-                            ),
-                          );
-                        },
+                                ),
+                              ),
+                          ],
+                        ),
                       );
                     } else if (style == 'quantity' && (data['goalType'] == 'variety' || data['goalType'] == 'qty_variety' || data['goalType'] == 'qty_mixed_medium')) {
                       // Special block for quantity style with goalType variety (or similar)
@@ -1183,96 +1074,10 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         }
                       }
                       final progress = (metSessions / qtyRequiredSessions).clamp(0.0, 1.0);
-                      return Dismissible(
-                        key: Key(data['id'] ?? 'achievement_$idx'),
-                        direction: completed ? DismissDirection.none : DismissDirection.endToStart,
-                        background: Container(
-                          color: Colors.transparent,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 5),
-                          child: Icon(Icons.refresh, color: Theme.of(context).primaryColor, size: 30),
-                        ),
-                        confirmDismiss: (direction) async {
-                          return await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Swap Achievement?'),
-                                  content: const Text('Are you sure you want to swap this achievement for a new one?'),
-                                  actions: [
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                        backgroundColor: Colors.transparent,
-                                      ),
-                                      onPressed: () => Navigator.of(ctx).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor: Theme.of(context).primaryColor,
-                                      ),
-                                      onPressed: () => Navigator.of(ctx).pop(true),
-                                      child: const Text('Swap'),
-                                    ),
-                                  ],
-                                ),
-                              ) ??
-                              false;
-                        },
-                        onDismissed: (direction) async {
-                          // Call swapAchievement cloud function
-                          final achievementId = achievements[idx].id;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Swapping achievement...'),
-                                ],
-                              ),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                          try {
-                            final functions = FirebaseFunctions.instance;
-                            final swapAchievement = functions.httpsCallable('swapAchievement');
-                            final result = await swapAchievement({'achievementId': achievementId});
-                            if (result.data != null && result.data['success'] == true) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Achievement swapped!'),
-                                  backgroundColor: Colors.green,
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            } else {
-                              final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(msg),
-                                  backgroundColor: Theme.of(context).primaryColor,
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            print('Error occurred while swapping achievement: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Swap failed.'),
-                                backgroundColor: Colors.red,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        },
-                        child: Stack(
+
+                      return _buildAchievementItem(
+                        achievements[idx],
+                        Stack(
                           clipBehavior: Clip.none,
                           children: [
                             Container(
@@ -1608,96 +1413,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         );
                       }
                     }
-                    return Dismissible(
-                      key: Key(data['id'] ?? 'achievement_$idx'),
-                      direction: completed ? DismissDirection.none : DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.transparent,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 5),
-                        child: Icon(Icons.refresh, color: Theme.of(context).primaryColor, size: 30),
-                      ),
-                      confirmDismiss: (direction) async {
-                        return await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Swap Achievement?'),
-                                content: const Text('Are you sure you want to swap this achievement for a new one?'),
-                                actions: [
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                      backgroundColor: Colors.transparent,
-                                    ),
-                                    onPressed: () => Navigator.of(ctx).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                    ),
-                                    onPressed: () => Navigator.of(ctx).pop(true),
-                                    child: const Text('Swap'),
-                                  ),
-                                ],
-                              ),
-                            ) ??
-                            false;
-                      },
-                      onDismissed: (direction) async {
-                        // Call swapAchievement cloud function
-                        final achievementId = achievements[idx].id;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                                SizedBox(width: 12),
-                                Text('Swapping achievement...'),
-                              ],
-                            ),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                        try {
-                          final functions = FirebaseFunctions.instance;
-                          final swapAchievement = functions.httpsCallable('swapAchievement');
-                          final result = await swapAchievement({'achievementId': achievementId});
-                          if (result.data != null && result.data['success'] == true) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Achievement swapped!'),
-                                backgroundColor: Colors.green,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          } else {
-                            final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(msg),
-                                backgroundColor: Theme.of(context).primaryColor,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          print('Error occurred while swapping achievement: $e');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Swap failed.'),
-                              backgroundColor: Colors.red,
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      },
-                      child: Stack(
+                    return _buildAchievementItem(
+                      achievements[idx],
+                      Stack(
                         clipBehavior: Clip.none,
                         children: [
                           Container(
@@ -1837,6 +1555,144 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       ],
     );
   }
+}
+
+Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget child) {
+  User? user = FirebaseAuth.instance.currentUser;
+  final data = achievement.data() as Map<String, dynamic>;
+  final id = data['id'] ?? '';
+  final completed = data['completed'] == true;
+
+  return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('meta').doc('achievementSwaps').get(),
+      builder: (context, swapMetaSnap) {
+        int swapCount = 0;
+        DateTime? lastSwap;
+        if (swapMetaSnap.hasData && swapMetaSnap.data != null && swapMetaSnap.data!.exists) {
+          final meta = swapMetaSnap.data!.data() as Map<String, dynamic>?;
+          swapCount = (meta?['swapCount'] is int) ? meta!['swapCount'] : 0;
+          final ls = meta?['lastSwap'];
+          if (ls is Timestamp) {
+            lastSwap = ls.toDate();
+          } else if (ls is DateTime) {
+            lastSwap = ls;
+          }
+        }
+        const swapDelays = [0, 0, 0, 60000, 180000, 300000, 600000, 1200000, 86400000];
+        // Calculate cooldown
+        int delayMs = 0;
+        if (swapCount >= 0 && swapCount < swapDelays.length) {
+          delayMs = swapDelays[swapCount];
+        } else if (swapCount >= swapDelays.length) {
+          delayMs = swapDelays.last;
+        }
+        bool inCooldown = false;
+        if (lastSwap != null && delayMs > 0) {
+          final now = DateTime.now();
+          final nextAllowed = lastSwap.add(Duration(milliseconds: delayMs));
+          inCooldown = now.isBefore(nextAllowed);
+        }
+        return Dismissible(
+          key: Key(id ?? 'achievement_${achievement.id}'),
+          direction: completed ? DismissDirection.none : DismissDirection.endToStart,
+          background: Container(
+            color: Colors.transparent,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 5),
+            child: SwapCooldownTimer(
+              swapCount: swapCount,
+              lastSwap: lastSwap,
+              swapDelays: swapDelays,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            if (inCooldown) {
+              // If in cooldown, do nothing (no dialog, no swap)
+              return false;
+            }
+            // Otherwise, show confirm dialog
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Swap Achievement?'),
+                    content: const Text('Are you sure you want to swap this achievement for a new one?'),
+                    actions: [
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          backgroundColor: Colors.transparent,
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).primaryColor,
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Swap'),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+          },
+          onDismissed: (direction) async {
+            // Call swapAchievement cloud function
+            final achievementId = achievement.id;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 12),
+                    Text('Swapping achievement...'),
+                  ],
+                ),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            try {
+              final functions = FirebaseFunctions.instance;
+              final swapAchievement = functions.httpsCallable('swapAchievement');
+              final result = await swapAchievement({'achievementId': achievementId});
+              if (result.data != null && result.data['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Achievement swapped!'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } else {
+                final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            } catch (e) {
+              print('Error occurred while swapping achievement: $e');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Swap failed.'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+          child: child,
+        );
+      });
 }
 
 class _WeeklyResetCountdown extends StatefulWidget {

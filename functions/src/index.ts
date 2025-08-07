@@ -1242,6 +1242,10 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
             });
             await Promise.all(deletePromises);
 
+            // --- Reset swapCount at the start of the week ---
+            const swapMetaRef = db.collection('users').doc(userId).collection('meta').doc('achievementSwaps');
+            await swapMetaRef.set({ swapCount: 0 }, { merge: true });
+
             // --- Use summary stats from /users/{userId}/stats/weekly ---
             // (re-load stats for use below)
             const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
@@ -1624,324 +1628,6 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
     }
 }
 
-async function assignAchievement(userId: string): Promise<any> {
-    const weekStart = getWeekStartEST();
-    try {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) throw new Error('User not found');
-        const userData = userDoc.data();
-        if (!userData) throw new Error('User data not found');
-        const playerAge = 18; // Placeholder for player age, replace with actual logic to get user's age in the future
-
-        // --- Gather all achievements for metrics (before assigning) ---
-        const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
-        const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // --- Use summary stats from /users/{userId}/stats/weekly ---
-        const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
-        let stats = statsDoc.exists ? statsDoc.data() || {} : {};
-        const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
-        const sessionShotCounts: { [key: string]: number[] } = {};
-        const sessionAccuracies: { [key: string]: number[] } = {};
-        for (const type of shotTypes) {
-            sessionShotCounts[type] = (stats.sessions || []).map((s: any) => s.shots?.[type] ?? 0);
-            // Only include sessions with targets_hit for this shot type in accuracy calculations
-            const sessionsWithAccuracy = (stats.sessions || []).filter((s: any) => s.targets_hit && typeof s.targets_hit[type] === 'number');
-            sessionAccuracies[type] = sessionsWithAccuracy.map((s: any) => {
-                const shots = s.shots?.[type] ?? 0;
-                const hits = s.targets_hit?.[type] ?? 0;
-                return shots > 0 ? (hits / shots) * 100 : 0;
-            });
-        }
-
-        // --- RevenueCat Firestore Extension: Check if user is pro (new field structure) ---
-        let isPro = false;
-        try {
-            const entitlements = userData.entitlements || {};
-            const pro = entitlements.pro || {};
-            if (pro && typeof pro.expires_date === 'string') {
-                const expires = new Date(pro.expires_date);
-                if (expires > new Date()) {
-                    isPro = true;
-                }
-            }
-        } catch (e) {
-            isPro = false;
-        }
-
-        // --- Assignment Logic Ported from Dart ---
-        const difficultyMap: { [key: string]: string[] } = {
-            u7: ['Easy', 'Medium', 'Hard'],
-            u9: ['Easy', 'Medium', 'Hard'],
-            u11: ['Easy', 'Medium', 'Hard'],
-            u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
-            u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
-            u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
-            adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
-        };
-
-        let ageGroup = 'adult';
-        if (playerAge < 7) ageGroup = 'u7';
-        else if (playerAge < 9) ageGroup = 'u9';
-        else if (playerAge < 11) ageGroup = 'u11';
-        else if (playerAge < 13) ageGroup = 'u13';
-        else if (playerAge < 15) ageGroup = 'u15';
-        else if (playerAge < 18) ageGroup = 'u18';
-
-        // Difficulty mapping for templates
-        const allowed = difficultyMap[ageGroup] || ['Easy'];
-        function mapDifficulty(template: any) {
-            let mapped = template.difficulty;
-            if (['u7', 'u9', 'u11'].includes(ageGroup) && (template.difficulty === 'Hardest' || template.difficulty === 'Impossible')) {
-                mapped = 'Hard';
-            } else if (['u13', 'u15'].includes(ageGroup) && template.difficulty === 'Impossible') {
-                mapped = 'Hardest';
-            }
-            return mapped;
-        }
-
-        // --- Skill-based substitutions ---
-        const avgAccuracies: { [key: string]: number } = {};
-        const avgShotsPerSession: { [key: string]: number } = {};
-        for (const type of shotTypes) {
-            const accArr = sessionAccuracies[type] || [];
-            avgAccuracies[type] = accArr.length ? accArr.reduce((a, b) => a + b, 0) / accArr.length : 0;
-            const shotsArr = sessionShotCounts[type] || [];
-            avgShotsPerSession[type] = shotsArr.length ? shotsArr.reduce((a, b) => a + b, 0) / shotsArr.length : 0;
-        }
-
-        function substituteTemplate(tmpl: any): any {
-            let t = { ...tmpl };
-            // --- Find weakest/lagging shot type ---
-            let weakestType = null;
-            let lowestAcc = Infinity;
-            for (const type of Object.keys(avgAccuracies)) {
-                if (avgAccuracies[type] < lowestAcc && avgAccuracies[type] > 0) {
-                    lowestAcc = avgAccuracies[type];
-                    weakestType = type;
-                }
-            }
-            let laggingType = null;
-            let lowestShots = Infinity;
-            for (const type of Object.keys(avgShotsPerSession)) {
-                if (avgShotsPerSession[type] < lowestShots && avgShotsPerSession[type] > 0) {
-                    lowestShots = avgShotsPerSession[type];
-                    laggingType = type;
-                }
-            }
-
-            // --- Accuracy ---
-            if (t.style === 'accuracy' && t.shotType && t.targetAccuracy) {
-                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
-                    t.shotType = weakestType;
-                    t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Accuracy Focus`;
-                }
-                // Ensure isStreak is set correctly for streak templates
-                if (typeof t.isStreak !== 'boolean') {
-                    t.isStreak = false;
-                }
-                let sessionAccuracies: number[] = [];
-                if (stats.sessions && Array.isArray(stats.sessions)) {
-                    for (const s of stats.sessions) {
-                        const shots = s.shots?.[t.shotType] ?? 0;
-                        const hits = s.targets_hit?.[t.shotType] ?? 0;
-                        if (shots > 0) {
-                            sessionAccuracies.push((hits / shots) * 100);
-                        }
-                    }
-                }
-                let avg = sessionAccuracies.length ? sessionAccuracies.reduce((a, b) => a + b, 0) / sessionAccuracies.length : 0;
-                let bump = (t.sessions && t.sessions > 1) ? 2.5 : 5.0;
-                let reasonableMin = 25;
-                let templateDefault = t.targetAccuracy;
-                let rawTarget = avg + bump;
-                let roundedTarget = Math.round(rawTarget / 2) * 2;
-                if (rawTarget < templateDefault) {
-                    t.targetAccuracy = Math.max(reasonableMin, Math.min(roundedTarget, templateDefault));
-                } else {
-                    t.targetAccuracy = Math.min(Math.max(templateDefault, roundedTarget), 100);
-                }
-                let sessionPhrase = '';
-                if (t.sessions) {
-                    if (t.isStreak === true) {
-                        sessionPhrase = ` in any ${t.sessions} consecutive session${t.sessions > 1 ? 's' : ''}`;
-                    } else {
-                        sessionPhrase = ` in any ${t.sessions} session${t.sessions > 1 ? 's' : ''}`;
-                    }
-                }
-                // Linguistically correct shot type phrases
-                function shotTypeLabel(type: string) {
-                    if (type === 'backhand') return 'backhands';
-                    if (type === 'wrist') return 'wrist shots';
-                    if (type === 'snap') return 'snap shots';
-                    if (type === 'slap') return 'slap shots';
-                    if (type === 'all') return 'all shot types';
-                    if (type === 'any') return '';
-                    return type;
-                }
-                let shotTypePhrase = shotTypeLabel(t.shotType);
-                if (t.shotType === 'any') {
-                    t.description = t.isStreak
-                        ? `Achieve ${t.targetAccuracy}% accuracy in any${sessionPhrase}.`
-                        : `Achieve ${t.targetAccuracy}% accuracy in any${sessionPhrase}.`;
-                } else {
-                    t.description = t.isStreak
-                        ? `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`
-                        : `Achieve ${t.targetAccuracy}% accuracy on ${shotTypePhrase}${sessionPhrase}.`;
-                }
-            }
-            // --- Quantity ---
-            if (t.style === 'quantity' && t.goalValue) {
-                // Only substitute for wrist, snap, backhand, slap
-                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
-                    t.shotType = laggingType;
-                    t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Shot Challenge`;
-                }
-                // Linguistically correct shot type phrases
-                function shotTypeLabel(type: string) {
-                    if (type === 'backhand') return 'backhands';
-                    if (type === 'wrist') return 'wrist shots';
-                    if (type === 'snap') return 'snap shots';
-                    if (type === 'slap') return 'slap shots';
-                    if (type === 'all') return 'all shot types';
-                    if (type === 'any') return 'shots';
-                    return type;
-                }
-                if (t.goalType === 'count_per_session') {
-                    t.description = `Take at least ${t.goalValue} ${shotTypeLabel(t.shotType)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
-                } else if (t.goalType === 'count_evening') {
-                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} after 7pm in a single session.`;
-                } else if (t.goalType === 'count_time') {
-                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} in under ${t.timeLimit || 10} minute${(t.timeLimit || 10) > 1 ? 's' : ''} in a single session.`;
-                } else if (t.shotType === 'all') {
-                    t.description = `Take at least ${t.goalValue} of each shot type (wrist, snap, backhand, slap) this week.`;
-                } else if (t.shotType === 'any') {
-                    t.description = `Take ${t.goalValue} shots (any type) this week.`;
-                } else {
-                    t.description = `Take ${t.goalValue} ${shotTypeLabel(t.shotType)} this week.`;
-                }
-            }
-            // --- Ratio ---
-            if (t.style === 'ratio' && t.goalValue && t.secondaryValue) {
-                // Always use the originally assigned types for description
-                function shotTypeLabel(type: string, count: number) {
-                    if (type === 'backhand') return count === 1 ? 'backhand' : 'backhands';
-                    if (type === 'wrist') return count === 1 ? 'wrist shot' : 'wrist shots';
-                    if (type === 'snap') return count === 1 ? 'snap shot' : 'snap shots';
-                    if (type === 'slap') return count === 1 ? 'slap shot' : 'slap shots';
-                    if (type === 'all') return 'all shot types';
-                    if (type === 'any') return count === 1 ? 'shot' : 'shots';
-                    return count === 1 ? type : type + 's';
-                }
-                const descPrimary = t.shotType || t.primaryType || '';
-                const descSecondary = t.shotTypeComparison || t.secondaryType || '';
-                const primaryLabel = shotTypeLabel(descPrimary, t.goalValue);
-                const secondaryLabel = shotTypeLabel(descSecondary, t.secondaryValue);
-                t.description = `Take ${t.goalValue} ${primaryLabel} for every ${t.secondaryValue} ${secondaryLabel}.`;
-            }
-            // --- Progress ---
-            if (t.style === 'progress' && t.shotType && t.improvement) {
-                // Skill-based substitution for progress
-                // Only substitute for wrist, snap, backhand, slap
-                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && weakestType && t.shotType !== weakestType) {
-                    t.shotType = weakestType;
-                    t.title = `${weakestType.charAt(0).toUpperCase() + weakestType.slice(1)} Progress`;
-                }
-                // Personalize improvement value based on user's average accuracy
-                let avg = avgAccuracies[t.shotType] || 0;
-                let bump = t.improvement;
-                // If user is below 40% accuracy, set a lower improvement target, else use template or a small bump
-                if (avg > 0 && avg < 40) {
-                    bump = Math.max(2, Math.round((40 - avg) / 4));
-                } else if (avg >= 40 && avg < 60) {
-                    bump = Math.max(t.improvement, 3);
-                } else if (avg >= 60) {
-                    bump = Math.max(t.improvement, 2);
-                }
-                t.improvement = bump;
-                t.description = t.goalType === 'improvement_variety'
-                    ? `Improve your accuracy by at least ${bump}% on all shot types.`
-                    : `Improve your ${t.shotType} accuracy by ${bump}%. Progress counts, even if it takes a few tries!`;
-            }
-            // --- Consistency ---
-            if (t.style === 'consistency' && t.goalType && t.goalValue) {
-                // Skill-based substitution for consistency
-                // Only substitute for wrist, snap, backhand, slap if shotType is present
-                if (["wrist", "snap", "backhand", "slap"].includes(t.shotType) && laggingType && t.shotType !== laggingType) {
-                    t.shotType = laggingType;
-                    t.title = `${laggingType.charAt(0).toUpperCase() + laggingType.slice(1)} Consistency`;
-                }
-                // Personalize goalValue based on user's average sessions or shots
-                let avgSessions = stats.sessions ? stats.sessions.length : 0;
-                // For streaks, set goalValue to at least 2 or 3 if user is active, else use template
-                if (t.goalType === 'streak') {
-                    if (avgSessions >= 5) {
-                        t.goalValue = Math.max(t.goalValue, 5);
-                    } else if (avgSessions >= 3) {
-                        t.goalValue = Math.max(t.goalValue, 3);
-                    }
-                    t.description = `Complete a ${t.goalValue} day shooting streak.`;
-                } else if (t.goalType === 'sessions') {
-                    if (avgSessions > 0) {
-                        t.goalValue = Math.max(t.goalValue, Math.ceil(avgSessions * 1.2));
-                    }
-                    t.description = `Complete ${t.goalValue} shooting sessions this week.`;
-                } else if (t.goalType === 'early_sessions') {
-                    t.description = `Complete a shooting session before 7am ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
-                } else if (t.goalType === 'double_sessions') {
-                    t.description = `Complete two shooting sessions in one day, ${t.goalValue} time${t.goalValue > 1 ? 's' : ''}.`;
-                } else if (t.goalType === 'weekend_sessions') {
-                    t.description = `Complete a session on both Saturday and Sunday.`;
-                } else if (t.goalType === 'morning_sessions') {
-                    t.description = `Complete ${t.goalValue} shooting sessions before 10am.`;
-                }
-            }
-            // --- Target hits (progress) ---
-            if (t.style === 'progress' && t.goalType === 'target_hits_increase' && t.improvement) {
-                t.description = `Hit ${t.improvement} targets.`;
-            }
-            // --- Progress streak ---
-            if (t.style === 'progress' && t.goalType === 'improvement_streak' && t.improvement && t.days) {
-                t.description = `Improve your accuracy on any shot type for ${t.days} days in a row.`;
-            }
-            // --- Progress sessions ---
-            if (t.style === 'progress' && t.goalType === 'improvement_sessions' && t.improvement && t.sessions) {
-                t.description = `Improve your accuracy in at least ${t.sessions} different sessions.`;
-            }
-            // --- Progress evening ---
-            if (t.style === 'progress' && t.goalType === 'improvement_evening' && t.improvement) {
-                t.description = `Improve your overall accuracy by ${t.improvement}%.`;
-            }
-            // --- Fun/social (default: leave as is) ---
-            return t;
-        }
-
-        // Exclude already assigned achievement template IDs
-        const assignedTemplateIds = allAchievements.map(a => a.id);
-        let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true) && !assignedTemplateIds.includes(t.id));
-        eligible = eligible.sort(() => Math.random() - 0.5);
-        if (eligible.length === 0) {
-            return { success: false, message: 'No eligible achievements to assign.' };
-        }
-        // Pick one eligible achievement
-        const chosen = substituteTemplate(eligible[0]);
-        const achievement = {
-            ...chosen,
-            completed: false,
-            dateAssigned: Timestamp.fromDate(weekStart),
-            dateCompleted: null,
-            time_frame: 'week',
-            userId,
-        };
-        await db.collection('users').doc(userId).collection('achievements').add(achievement);
-        return { success: true, message: 'Achievement assigned.', achievement };
-    } catch (error) {
-        logger.error('Error assigning achievement:', error);
-        const errorMessage = typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error);
-        return { success: false, message: 'assignAchievement failed: ' + errorMessage };
-    }
-}
-
 // Progressive swap delays in milliseconds (after 3 free swaps)
 const SWAP_DELAYS = [0, 0, 0, 60_000, 180_000, 300_000, 600_000, 1_200_000, 86_400_000]; // 0,0,0,1m,3m,5m,10m,20m,1d
 
@@ -1987,28 +1673,90 @@ export const swapAchievement = onCall(async (req) => {
         return { success: false, message: 'Cannot swap a completed achievement' };
     }
 
+
     // Remove the old achievement
     await achievementsRef.doc(achievementId).delete();
 
-    // Assign a new eligible achievement using the new function
-    const assignResult = await assignAchievement(userId);
-    if (!assignResult.success) {
-        return { success: false, message: assignResult.message || 'No available achievements to swap in.' };
-    }
+    // Check if user already has a bonus achievement
+    const currentAchievementsSnap = await achievementsRef.get();
+    const currentAchievements = currentAchievementsSnap.docs.map(doc => doc.data());
+    const hasBonus = currentAchievements.some(a => a.isBonus === true);
 
+    // Patch assignAchievement logic: if user already has a bonus, only allow non-bonus achievements to be assigned
+    // We'll inline the assignment logic here for this swap only
+    const userDoc = await userRef.get();
+    const userData = userDoc.data() || {};
+    const playerAge = userData.age || 18;
+    // --- Use summary stats from /users/{userId}/stats/weekly ---
+    const statsDoc = await userRef.collection('stats').doc('weekly').get();
+    let stats = statsDoc.exists ? statsDoc.data() || {} : {};
+    const shotTypes: string[] = ['wrist', 'snap', 'slap', 'backhand'];
+    const sessionShotCounts: { [key: string]: number[] } = {};
+    const sessionAccuracies: { [key: string]: number[] } = {};
+    for (const type of shotTypes) {
+        sessionShotCounts[type] = (Array.isArray(stats.sessions) ? stats.sessions : []).map((s: any) => s.shots?.[type] ?? 0);
+        const sessionsWithAccuracy = (Array.isArray(stats.sessions) ? stats.sessions : []).filter((s: any) => s.targets_hit && typeof s.targets_hit[type] === 'number');
+        sessionAccuracies[type] = sessionsWithAccuracy.map((s: any) => {
+            const shots = s.shots?.[type] ?? 0;
+            const hits = s.targets_hit?.[type] ?? 0;
+            return shots > 0 ? (hits / shots) * 100 : 0;
+        });
+    }
+    const difficultyMap: { [key: string]: string[] } = {
+        u7: ['Easy', 'Medium', 'Hard'],
+        u9: ['Easy', 'Medium', 'Hard'],
+        u11: ['Easy', 'Medium', 'Hard'],
+        u13: ['Easy', 'Medium', 'Hard', 'Hardest'],
+        u15: ['Easy', 'Medium', 'Hard', 'Hardest'],
+        u18: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+        adult: ['Easy', 'Medium', 'Hard', 'Hardest', 'Impossible'],
+    };
+    let ageGroup: string = 'adult';
+    if (playerAge < 7) ageGroup = 'u7';
+    else if (playerAge < 9) ageGroup = 'u9';
+    else if (playerAge < 11) ageGroup = 'u11';
+    else if (playerAge < 13) ageGroup = 'u13';
+    else if (playerAge < 15) ageGroup = 'u15';
+    else if (playerAge < 18) ageGroup = 'u18';
+    const allowed: string[] = difficultyMap[ageGroup] || ['Easy'];
+    function mapDifficulty(template: any): string {
+        let mapped = template.difficulty;
+        if (["u7", "u9", "u11"].includes(ageGroup) && (template.difficulty === "Hardest" || template.difficulty === "Impossible")) {
+            mapped = "Hard";
+        } else if (["u13", "u15"].includes(ageGroup) && template.difficulty === "Impossible") {
+            mapped = "Hardest";
+        }
+        return mapped;
+    }
+    // Exclude already assigned achievement template IDs
+    const assignedTemplateIds: string[] = currentAchievements.map((a: any) => a.id);
+    let eligible = templates.filter((t: any) => allowed.includes(mapDifficulty(t)) && (!hasBonus ? true : t.isBonus !== true) && !assignedTemplateIds.includes(t.id));
+    eligible = eligible.sort(() => Math.random() - 0.5);
+    if (eligible.length === 0) {
+        return { success: false, message: 'No eligible achievements to assign.' };
+    }
+    // Pick one eligible achievement
+    const chosen = eligible[0];
+    const achievement = {
+        ...chosen,
+        completed: false,
+        dateAssigned: admin.firestore.Timestamp.now(),
+        dateCompleted: null,
+        time_frame: 'week',
+        userId,
+    };
+    await achievementsRef.add(achievement);
     // Update swap meta
     await swapMetaRef.set({
         swapCount: swapCount + 1,
         lastSwap: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-
     // Calculate next delay
-    let nextDelayMs = SWAP_DELAYS[Math.min(swapCount + 1, SWAP_DELAYS.length - 1)];
-    let nextSwapTime = new Date(now.getTime() + nextDelayMs);
-
+    const nextDelayMs = SWAP_DELAYS[Math.min(swapCount + 1, SWAP_DELAYS.length - 1)];
+    const nextSwapTime = new Date(now.getTime() + nextDelayMs);
     return {
         success: true,
-        newAchievement: assignResult.achievement,
+        newAchievement: achievement,
         swapCount: swapCount + 1,
         nextAvailable: nextSwapTime.toISOString(),
     };
