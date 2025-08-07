@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -192,6 +193,15 @@ class _HomeState extends State<Home> {
       if (user != null && user.uid != _lastUser?.uid) {
         await initRevenueCat(user.uid);
         _lastUser = user;
+        // Set user's timezone in Firestore
+        try {
+          final String timezone = await FlutterTimezone.getLocalTimezone();
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+            'timezone': timezone,
+          }, SetOptions(merge: true));
+        } catch (e) {
+          // Optionally log error
+        }
       }
     };
     _authNotifier.addListener(_authListener);
