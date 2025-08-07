@@ -570,6 +570,17 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
         statsData = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
     }
+    // Fetch user's timezone (default to America/Toronto)
+    let userTimezone = 'America/Toronto';
+    try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.exists ? userDoc.data() : undefined;
+        if (userData && typeof userData.timezone === 'string' && userData.timezone.length > 0) {
+            userTimezone = userData.timezone;
+        }
+    } catch (e) {
+        // fallback to default
+    }
     const sessions: any[] = Array.isArray(statsData.sessions) ? statsData.sessions : [];
     const style = achievement.style;
     const goalType = achievement.goalType;
@@ -588,11 +599,11 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         return null;
     }
 
-    // Helper: Convert a Date to EST/EDT (America/New_York) time
-    function toEST(date: Date | null): Date | null {
+    // Helper: Convert a Date to the user's timezone (or default)
+    function toUserTimezone(date: Date | null): Date | null {
         if (!date) return null;
-        // Use Intl.DateTimeFormat to get the correct hour/minute in America/New_York
-        const options = { timeZone: 'America/New_York', hour12: false, year: 'numeric' as const, month: 'numeric' as const, day: 'numeric' as const, hour: 'numeric' as const, minute: 'numeric' as const, second: 'numeric' as const };
+        // Use Intl.DateTimeFormat to get the correct hour/minute in user's timezone
+        const options = { timeZone: userTimezone, hour12: false, year: 'numeric' as const, month: 'numeric' as const, day: 'numeric' as const, hour: 'numeric' as const, minute: 'numeric' as const, second: 'numeric' as const };
         const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
         const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
         return new Date(
@@ -615,7 +626,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         }
         const relevantSessions = cutoff
             ? sessions.filter((s: any) => {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt && (dt >= cutoff);
             })
             : sessions;
@@ -634,10 +645,10 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (goalType === 'count_evening') {
-            // Mark complete if there are at least goalValue sessions after 7pm EST
+            // Mark complete if there are at least goalValue sessions after 7pm in user's timezone
             let eveningCount = 0;
             for (const s of relevantSessions) {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 if (dt && dt.getHours() >= 19) {
                     eveningCount++;
                 }
@@ -701,7 +712,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         }
         const relevantSessions = cutoff
             ? sessions.filter((s: any) => {
-                const dt = getSessionTime(s);
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt && (dt >= cutoff);
             })
             : sessions;
@@ -744,9 +755,9 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (goalType === 'accuracy_morning') {
-            // Morning session (before 10am) with required accuracy
+            // Morning session (before 10am in user's timezone) with required accuracy
             for (const s of relevantSessions) {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 if (dt && dt.getHours() < 10) {
                     const acc = getSessionAccuracy(s);
                     if (acc >= targetAccuracy) {
@@ -810,15 +821,15 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         }
         const relevantSessions = cutoff
             ? sessions.filter((s: any) => {
-                const dt = getSessionTime(s);
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt && (dt >= cutoff);
             })
             : sessions;
 
         if (goalType === 'weekend_sessions') {
-            // Must have at least one session on both Saturday and Sunday
+            // Must have at least one session on both Saturday and Sunday (user's timezone)
             let days = new Set<number>(relevantSessions.map((s: any) => {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt ? dt.getDay() : null;
             }).filter((d: number | null) => d !== null) as number[]);
             // Saturday = 6, Sunday = 0
@@ -827,9 +838,9 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             // Only mark complete if both are present
             return hasSaturday && hasSunday;
         } else if (goalType === 'streak') {
-            // Longest streak of consecutive days with sessions
+            // Longest streak of consecutive days with sessions (user's timezone)
             let uniqueDays = Array.from(new Set<number>(relevantSessions.map((s: any) => {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime() : null;
             }).filter((d: number | null) => d !== null) as number[])).sort((a, b) => a - b);
             let longestStreak = 0, currentStreak = 0, prevDay: number | null = null;
@@ -845,9 +856,9 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             // Only mark complete if streak meets or exceeds goalValue
             return longestStreak >= goalValue;
         } else if (goalType === 'early_sessions') {
-            // Must have at least goalValue sessions before 7am
+            // Must have at least goalValue sessions before 7am (user's timezone)
             let count = relevantSessions.filter((s: any) => {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt && dt.getHours() < 7;
             }).length;
             return count >= goalValue;
@@ -864,9 +875,9 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             let doubleDays = Object.values(dayCounts).filter((v: number) => v >= 2).length;
             return doubleDays >= goalValue;
         } else if (goalType === 'morning_sessions') {
-            // Must have at least goalValue sessions before 10am
+            // Must have at least goalValue sessions before 10am (user's timezone)
             let count = relevantSessions.filter((s: any) => {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 return dt && dt.getHours() < 10;
             }).length;
             return count >= goalValue;
@@ -911,7 +922,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             // Improve accuracy in evening sessions (after 7pm)
             let metCount = 0, total = 0;
             for (const s of relevantSessions) {
-                const dt = toEST(getSessionTime(s));
+                const dt = toUserTimezone(getSessionTime(s));
                 if (dt && dt.getHours() >= 19 && s.accuracy) {
                     let acc = 0;
                     if (shotType === 'any') {

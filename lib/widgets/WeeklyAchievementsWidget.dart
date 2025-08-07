@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -11,6 +12,7 @@ class WeeklyAchievementsWidget extends StatefulWidget {
 }
 
 class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
+  String? _userTimezone;
   // Widget builder for checkbox circle
   Widget _buildCheckboxCircle(bool checked) {
     return Container(
@@ -34,13 +36,24 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return null;
     }
 
+    tz.Location? location;
+    if (_userTimezone != null) {
+      location = tz.getLocation(_userTimezone!);
+    }
+    DateTime toUserTz(DateTime dt) {
+      if (location != null) {
+        return tz.TZDateTime.from(dt, location);
+      }
+      return dt;
+    }
+
     switch (goalType) {
       case 'weekend_sessions':
         // Sat/Sun checkboxes
         Set<int> days = sessions
             .map((s) {
               final dt = getSessionTime(s);
-              return dt?.weekday;
+              return dt != null ? toUserTz(dt).weekday : null;
             })
             .where((d) => d != null)
             .cast<int>()
@@ -54,7 +67,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         Set<DateTime> uniqueDays = sessions
             .map((s) {
               final dt = getSessionTime(s);
-              return dt != null ? DateTime(dt.year, dt.month, dt.day) : null;
+              return dt != null ? DateTime(toUserTz(dt).year, toUserTz(dt).month, toUserTz(dt).day) : null;
             })
             .where((d) => d != null)
             .cast<DateTime>()
@@ -81,14 +94,15 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         if (goalType == 'early_sessions') {
           count = sessions.where((s) {
             final dt = getSessionTime(s);
-            return dt != null && dt.hour < 7;
+            return dt != null && toUserTz(dt).hour < 7;
           }).length;
         } else if (goalType == 'double_sessions') {
           Map<String, int> dayCounts = {};
           for (final s in sessions) {
             final dt = getSessionTime(s);
             if (dt != null) {
-              final key = '${dt.year}-${dt.month}-${dt.day}';
+              final userTzDt = toUserTz(dt);
+              final key = '${userTzDt.year}-${userTzDt.month}-${userTzDt.day}';
               dayCounts[key] = (dayCounts[key] ?? 0) + 1;
             }
           }
@@ -96,12 +110,12 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         } else if (goalType == 'lunch_sessions') {
           count = sessions.where((s) {
             final dt = getSessionTime(s);
-            return dt != null && dt.hour >= 12 && dt.hour < 14;
+            return dt != null && toUserTz(dt).hour >= 12 && toUserTz(dt).hour < 14;
           }).length;
         } else if (goalType == 'morning_sessions') {
           count = sessions.where((s) {
             final dt = getSessionTime(s);
-            return dt != null && dt.hour < 10;
+            return dt != null && toUserTz(dt).hour < 10;
           }).length;
         } else if (goalType == 'sessions') {
           count = sessions.length;
@@ -155,13 +169,10 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   double _quantityProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    // e.g. goalType: 'count', 'count_time', 'count_each_hand', 'count_per_session', 'count_evening', etc.
     final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
     final shotType = data['shotType'] ?? 'any';
     final goalType = data['goalType'] ?? 'count';
     final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
-    // Removed unused timeLimit variable
-    // Use dateAssigned if present, else week_start from stats
     final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
     DateTime? cutoff;
     if (cutoffDate is Timestamp) {
@@ -169,22 +180,34 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     } else if (cutoffDate is DateTime) {
       cutoff = cutoffDate;
     }
+    tz.Location? location;
+    if (_userTimezone != null) {
+      location = tz.getLocation(_userTimezone!);
+    }
+    DateTime toUserTz(DateTime dt) {
+      if (location != null) {
+        return tz.TZDateTime.from(dt, location);
+      }
+      return dt;
+    }
+
     final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
-    // Filter sessions to only those after cutoff
     final sessions = rawSessions.where((session) {
       if (session.containsKey('date') && cutoff != null) {
         final date = session['date'];
-        if (date is Timestamp) {
-          return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
-        } else if (date is DateTime) {
-          return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
+        DateTime? dt;
+        if (date is Timestamp) dt = date.toDate();
+        if (date is DateTime) dt = date;
+        if (dt != null) {
+          final userTzDt = toUserTz(dt);
+          final userTzCutoff = toUserTz(cutoff);
+          return userTzDt.isAfter(userTzCutoff) || userTzDt.isAtSameMomentAs(userTzCutoff);
         }
       }
       return false;
     }).toList();
 
     if (goalType == 'count_per_session') {
-      // Must take at least goalValue shots in requiredSessions consecutive sessions
       List<int> metList = [];
       for (final session in sessions) {
         if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
@@ -194,7 +217,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
           metList.add(0);
         }
       }
-      // Find max streak
       int streak = 0;
       int maxStreak = 0;
       for (int i = 0; i < metList.length; i++) {
@@ -210,27 +232,28 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       }
       return (maxStreak / requiredSessions).clamp(0.0, 1.0);
     } else if (goalType == 'count_evening') {
-      // Must take goalValue shots after 7pm in a single session
       for (final session in sessions) {
         if (session.containsKey('shots') && session['shots'] is Map && session.containsKey('date')) {
           final date = session['date'];
           DateTime? dt;
           if (date is Timestamp) dt = date.toDate();
           if (date is DateTime) dt = date;
-          if (dt != null && dt.hour >= 19) {
-            double sum = 0.0;
-            for (final v in (session['shots'] as Map).values) {
-              if (v is num) sum += v.toDouble();
-            }
-            if (sum >= goalValue) {
-              return 1.0;
+          if (dt != null) {
+            final userTzDt = toUserTz(dt);
+            if (userTzDt.hour >= 19) {
+              double sum = 0.0;
+              for (final v in (session['shots'] as Map).values) {
+                if (v is num) sum += v.toDouble();
+              }
+              if (sum >= goalValue) {
+                return 1.0;
+              }
             }
           }
         }
       }
       return 0.0;
     } else if (shotType == 'all') {
-      // For 'all', progress is the average of the four shot type progresses
       final types = ['wrist', 'snap', 'slap', 'backhand'];
       double progressSum = 0.0;
       for (final t in types) {
@@ -245,7 +268,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       }
       return progressSum / types.length;
     } else if (shotType == 'any') {
-      // Sum all types
       double sum = 0.0;
       for (final session in sessions) {
         if (session.containsKey('shots') && session['shots'] is Map) {
@@ -256,7 +278,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       }
       return (sum / goalValue).clamp(0.0, 1.0);
     } else {
-      // Specific shot type
       double count = 0.0;
       for (final session in sessions) {
         if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
