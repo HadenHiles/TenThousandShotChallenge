@@ -624,10 +624,12 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (statsData.week_start && statsData.week_start.toDate) {
             cutoff = statsData.week_start.toDate();
         }
-        const relevantSessions = cutoff
+        // Convert cutoff to user's timezone for accurate comparison
+        const userTzCutoff = cutoff ? toUserTimezone(cutoff) : null;
+        const relevantSessions = userTzCutoff
             ? sessions.filter((s: any) => {
                 const dt = toUserTimezone(getSessionTime(s));
-                return dt && (dt >= cutoff);
+                return dt && (dt >= userTzCutoff);
             })
             : sessions;
 
@@ -645,15 +647,26 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (goalType === 'count_evening') {
-            // Mark complete if there are at least goalValue sessions after 7pm in user's timezone
-            let eveningCount = 0;
+            // Mark complete if there is at least one session after 7pm in user's timezone with at least goalValue shots
             for (const s of relevantSessions) {
                 const dt = toUserTimezone(getSessionTime(s));
                 if (dt && dt.getHours() >= 19) {
-                    eveningCount++;
+                    let shotCount = 0;
+                    if (shotType === 'any') {
+                        if (s.shots && typeof s.shots === 'object') {
+                            for (const v of Object.values(s.shots)) {
+                                if (typeof v === 'number') shotCount += v;
+                            }
+                        }
+                    } else {
+                        shotCount = s.shots?.[shotType] || 0;
+                    }
+                    if (shotCount >= goalValue) {
+                        return true;
+                    }
                 }
             }
-            return eveningCount >= goalValue;
+            return false;
         } else if (goalType === 'count_time') {
             // Take goalValue shots in under timeLimit (minutes) in a single session
             const timeLimit = achievement.timeLimit || 10;
@@ -710,10 +723,12 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (statsData.week_start && statsData.week_start.toDate) {
             cutoff = statsData.week_start.toDate();
         }
-        const relevantSessions = cutoff
+        // Convert cutoff to user's timezone for accurate comparison
+        const userTzCutoff = cutoff ? toUserTimezone(cutoff) : null;
+        const relevantSessions = userTzCutoff
             ? sessions.filter((s: any) => {
                 const dt = toUserTimezone(getSessionTime(s));
-                return dt && (dt >= cutoff);
+                return dt && (dt >= userTzCutoff);
             })
             : sessions;
 
@@ -819,10 +834,12 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (statsData.week_start && statsData.week_start.toDate) {
             cutoff = statsData.week_start.toDate();
         }
-        const relevantSessions = cutoff
+        // Convert cutoff to user's timezone for accurate comparison
+        const userTzCutoff = cutoff ? toUserTimezone(cutoff) : null;
+        const relevantSessions = userTzCutoff
             ? sessions.filter((s: any) => {
                 const dt = toUserTimezone(getSessionTime(s));
-                return dt && (dt >= cutoff);
+                return dt && (dt >= userTzCutoff);
             })
             : sessions;
 
@@ -898,10 +915,12 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (statsData.week_start && statsData.week_start.toDate) {
             cutoff = statsData.week_start.toDate();
         }
-        const relevantSessions = cutoff
+        // Convert cutoff to user's timezone for accurate comparison
+        const userTzCutoff = cutoff ? toUserTimezone(cutoff) : null;
+        const relevantSessions = userTzCutoff
             ? sessions.filter((s: any) => {
-                const dt = getSessionTime(s);
-                return dt && (dt >= cutoff);
+                const dt = toUserTimezone(getSessionTime(s));
+                return dt && (dt >= userTzCutoff);
             })
             : sessions;
 
@@ -971,10 +990,12 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (statsData.week_start && statsData.week_start.toDate) {
             cutoff = statsData.week_start.toDate();
         }
-        const relevantSessions = cutoff
+        // Convert cutoff to user's timezone for accurate comparison
+        const userTzCutoff = cutoff ? toUserTimezone(cutoff) : null;
+        const relevantSessions = userTzCutoff
             ? sessions.filter((s: any) => {
-                const dt = getSessionTime(s);
-                return dt && (dt >= cutoff);
+                const dt = toUserTimezone(getSessionTime(s));
+                return dt && (dt >= userTzCutoff);
             })
             : sessions;
 
