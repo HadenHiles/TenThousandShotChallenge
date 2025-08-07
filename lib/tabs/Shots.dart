@@ -832,6 +832,7 @@ class _ShotsState extends State<Shots> {
                                         ),
                                       ),
                               ),
+                              SizedBox(height: 30),
                             ],
                           );
                         } else {
@@ -966,7 +967,7 @@ class _ShotsState extends State<Shots> {
                           sessionService.isRunning
                               ? Container()
                               : Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding: const EdgeInsets.only(bottom: 15),
                                   width: MediaQuery.of(context).size.width - 30,
                                   child: TextButton(
                                     style: TextButton.styleFrom(
