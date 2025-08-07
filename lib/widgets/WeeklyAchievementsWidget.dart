@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
@@ -1442,7 +1443,56 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             false;
                       },
                       onDismissed: (direction) async {
-                        // Do stuff when dismissed
+                        // Call swapAchievement cloud function
+                        final achievementId = data['id'];
+                        if (achievementId == null) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                SizedBox(width: 12),
+                                Text('Swapping achievement...'),
+                              ],
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        try {
+                          final functions = FirebaseFunctions.instance;
+                          final swapAchievement = functions.httpsCallable('swapAchievement');
+                          final result = await swapAchievement({'achievementId': achievementId});
+                          if (result.data != null && result.data['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Achievement swapped!'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          } else {
+                            final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(msg),
+                                backgroundColor: Colors.red,
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Swap failed: ' + e.toString()),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
                       },
                       child: Stack(
                         clipBehavior: Clip.none,
