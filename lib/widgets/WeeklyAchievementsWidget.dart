@@ -83,11 +83,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
             final dt = getSessionTime(s);
             return dt != null && dt.hour < 7;
           }).length;
-        } else if (goalType == 'late_sessions') {
-          count = sessions.where((s) {
-            final dt = getSessionTime(s);
-            return dt != null && dt.hour >= 21;
-          }).length;
         } else if (goalType == 'double_sessions') {
           Map<String, int> dayCounts = {};
           for (final s in sessions) {
@@ -434,13 +429,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         int count = sessions.where((s) {
           final dt = getSessionTime(s);
           return dt != null && dt.hour < 7;
-        }).length;
-        return (count / goalValue).clamp(0.0, 1.0);
-      case 'late_sessions':
-        // After 9pm
-        int count = sessions.where((s) {
-          final dt = getSessionTime(s);
-          return dt != null && dt.hour >= 21;
         }).length;
         return (count / goalValue).clamp(0.0, 1.0);
       case 'double_sessions':
@@ -819,132 +807,6 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           ],
                         );
                       }
-                      // Handle variety master (at least N of each shot type in a session)
-                      if (data['goalType'] == 'variety') {
-                        final types = ['wrist', 'snap', 'slap', 'backhand'];
-                        bool met = false;
-                        for (final session in sessions) {
-                          if (session.containsKey('shots') && session['shots'] is Map) {
-                            final shots = session['shots'] as Map;
-                            bool allMet = true;
-                            for (final t in types) {
-                              final count = (shots[t] is num) ? (shots[t] as num).toDouble() : 0.0;
-                              if (count < (data['goalValue'] is num ? data['goalValue'].toDouble() : 1.0)) {
-                                allMet = false;
-                                break;
-                              }
-                            }
-                            if (allMet) {
-                              met = true;
-                              break;
-                            }
-                          }
-                        }
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
-                                  width: 2.5,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        isBonus
-                                            ? GestureDetector(
-                                                onTap: () async {
-                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
-                                                },
-                                                child: Container(
-                                                  width: 28,
-                                                  height: 28,
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: completed
-                                                          ? Colors.green
-                                                          : (isBonus)
-                                                              ? const Color(0xFFFFD700)
-                                                              : Theme.of(context).primaryColor,
-                                                      width: 2.2,
-                                                    ),
-                                                    color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
-                                                  ),
-                                                  child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
-                                                ),
-                                              )
-                                            : Container(),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                description,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                  fontFamily: 'NovecentoSans',
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                met ? 'You completed at least ${data['goalValue']} of each shot type in a single session!' : 'You need at least ${data['goalValue']} of each shot type in one session.',
-                                                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (isBonus)
-                              Positioned(
-                                top: -7,
-                                right: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFD700),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.9),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    'BONUS',
-                                    style: TextStyle(
-                                      color: Colors.black.withOpacity(0.9),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                      fontFamily: 'NovecentoSans',
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        );
-                      }
                       double primaryCount = 0.0;
                       double secondaryCount = 0.0;
                       for (final session in sessions) {
@@ -1105,6 +967,174 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                               child: Text(
                                                 'Your ratio: ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
                                                 style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isBonus)
+                            Positioned(
+                              top: -7,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFD700),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.9),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'BONUS',
+                                  style: TextStyle(
+                                    color: Colors.black.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                    fontFamily: 'NovecentoSans',
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    } else if (style == 'quantity' && (data['goalType'] == 'variety' || data['goalType'] == 'qty_variety' || data['goalType'] == 'qty_mixed_medium')) {
+                      // Special block for quantity style with goalType variety (or similar)
+                      final qtyRequiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+                      final qtyCutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+                      DateTime? qtyCutoff;
+                      if (qtyCutoffDate is Timestamp) {
+                        qtyCutoff = qtyCutoffDate.toDate();
+                      } else if (qtyCutoffDate is DateTime) {
+                        qtyCutoff = qtyCutoffDate;
+                      }
+                      final qtyRawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      final qtySessions = qtyRawSessions.where((session) {
+                        if (session.containsKey('date') && qtyCutoff != null) {
+                          final date = session['date'];
+                          if (date is Timestamp) {
+                            return date.toDate().isAfter(qtyCutoff) || date.toDate().isAtSameMomentAs(qtyCutoff);
+                          } else if (date is DateTime) {
+                            return date.isAfter(qtyCutoff) || date.isAtSameMomentAs(qtyCutoff);
+                          }
+                        }
+                        return false;
+                      }).toList();
+                      // Count how many unique types were hit in each session
+                      final types = ['wrist', 'snap', 'slap', 'backhand'];
+                      int metSessions = 0;
+                      for (final session in qtySessions) {
+                        if (session.containsKey('shots') && session['shots'] is Map) {
+                          final shots = session['shots'] as Map;
+                          int typeCount = 0;
+                          for (final t in types) {
+                            if (shots[t] is num && (shots[t] as num) > 0) typeCount++;
+                          }
+                          if (typeCount == types.length) {
+                            metSessions++;
+                          }
+                        }
+                      }
+                      final progress = (metSessions / qtyRequiredSessions).clamp(0.0, 1.0);
+                      // ...rest of block unchanged...
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                                width: 2.5,
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: progress,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.22),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 10),
+                                        child: GestureDetector(
+                                          onTap: isBonus
+                                              ? () async {
+                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                }
+                                              : null,
+                                          child: Container(
+                                            width: 28,
+                                            height: 28,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: completed
+                                                    ? Colors.green
+                                                    : (isBonus)
+                                                        ? const Color(0xFFFFD700)
+                                                        : Theme.of(context).primaryColor,
+                                                width: 2.2,
+                                              ),
+                                              color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                            ),
+                                            child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              description,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                                fontFamily: 'NovecentoSans',
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: List.generate(
+                                                  qtyRequiredSessions,
+                                                  (i) => Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                                        child: _buildCheckboxCircle(i < metSessions),
+                                                      )),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(
+                                                'Complete a session with all shot types: ${types.join(", ")}',
+                                                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                                               ),
                                             ),
                                           ],
@@ -1340,13 +1370,20 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            _buildCheckboxCircle(details['sat'] == true),
-                            const SizedBox(width: 6),
-                            Text('Sat', style: TextStyle(fontSize: 12)),
-                            const SizedBox(width: 14),
-                            _buildCheckboxCircle(details['sun'] == true),
-                            const SizedBox(width: 6),
-                            Text('Sun', style: TextStyle(fontSize: 12)),
+                            Column(
+                              children: [
+                                _buildCheckboxCircle(details['sat'] == true),
+                                const SizedBox(height: 2),
+                                Text('Sat', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                _buildCheckboxCircle(details['sun'] == true),
+                                const SizedBox(height: 2),
+                                Text('Sun', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
                           ],
                         );
                       } else if (goalType == 'streak') {
