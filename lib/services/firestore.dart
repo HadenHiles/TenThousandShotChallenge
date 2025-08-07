@@ -76,19 +76,33 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
 
   try {
     final snapshot = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get();
+    bool result = false;
+    DocumentReference? iterationRef;
     if (snapshot.docs.isNotEmpty) {
       iteration = Iteration.fromSnapshot(snapshot.docs[0]);
-      final result = await saveSessionData(shootingSession, snapshot.docs[0].reference, shots, firestore);
-      return result;
+      iterationRef = snapshot.docs[0].reference;
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
     } else {
       final i = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap());
-      final result = await saveSessionData(shootingSession, i, shots, firestore);
-      return result;
+      iterationRef = i;
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
     }
+
+    return result;
   } catch (e) {
     print(e);
     return false;
   }
+}
+
+DateTime getWeekStart() {
+  final now = DateTime.now();
+  // Monday = 1, Sunday = 7
+  final int currentWeekday = now.weekday;
+  // Calculate how many days to subtract to get to Monday
+  final int daysToSubtract = currentWeekday - DateTime.monday;
+  final weekStart = DateTime(now.year, now.month, now.day - daysToSubtract);
+  return DateTime(weekStart.year, weekStart.month, weekStart.day, 0, 0, 0, 0, 0);
 }
 
 Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots, FirebaseFirestore firestore) async {

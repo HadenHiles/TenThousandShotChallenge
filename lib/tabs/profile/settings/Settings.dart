@@ -48,7 +48,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   }
 
   _loadSubscriptionLevel() async {
-    subscriptionLevel(context).then((level) {
+    subscriptionLevel(context).then((level) async {
       setState(() {
         _subscriptionLevel = level;
       });
@@ -203,7 +203,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Manage Subscription'),
                                   content: SizedBox(
-                                    height: 215,
+                                    height: 220,
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +289,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         ),
                                         const SizedBox(height: 13),
                                         SelectableText(
-                                          "ID: ${Provider.of<CustomerInfo>(context, listen: false).originalAppUserId}",
+                                          "ID: ${user?.uid ?? 'N/A'}",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onPrimary,
                                             fontSize: 11,
@@ -338,9 +338,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                     if (_subscriptionLevel != "pro")
                                       ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           Navigator.of(context).pop();
-                                          presentPaywallIfNeeded();
+                                          await presentPaywallIfNeeded();
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),

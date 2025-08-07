@@ -7,6 +7,8 @@
         "seed:firestore": "firestore-seed --emulatorHost localhost:8080 --project demo-project"
     },
     "dependencies": {
+        "firebase-admin": "^13.4.0",
+        "firebase-functions": "^6.3.2",
         "firestore-seed": "^0.0.11"
     },
     "firestore-seed": {

@@ -65,7 +65,7 @@ class _LoginState extends State<Login> {
     }
 
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
-    //If user is signed in
+    // If user is signed in, show main navigation
     if (auth.currentUser != null) {
       return const Navigation(tabId: 'start');
     }

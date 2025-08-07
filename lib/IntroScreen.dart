@@ -40,11 +40,11 @@ class _IntroScreenState extends State<IntroScreen> {
     preferences?.darkMode = _darkMode;
     preferences?.puckCount = int.tryParse(_puckCountTextFieldController.text) ?? 25;
     preferences?.targetDate = _targetDate;
-    if (context.mounted) {
-      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
-      // Routing to main app after intro
+    Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    // Routing to main app after intro (ensure navigation happens after UI updates)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       GoRouter.of(context).go('/app'); // Use GoRouter for navigation
-    }
+    });
   }
 
   Widget _buildImage(String assetName, [double width = 350]) {

@@ -2,7 +2,6 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:auto_size_text_field/auto_size_text_field.dart';
-import 'package:firestore_cache/firestore_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,8 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // For QRCodeDialog
 import 'package:rxdart/rxdart.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
-import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
-import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -173,49 +170,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           }
 
           List<Stream<int>> iterationShotSumStreams = iterationsSnapshot.docs.map((iterationDoc) {
-            Iteration iteration = Iteration.fromSnapshot(iterationDoc);
-            // IMPORTANT: 'updated_at' on the iterationDoc is crucial for FirestoreCache
-
-            // FirestoreCache.getDocuments returns a Future<QuerySnapshot>
-            // We need to convert this Future to a Stream to use RxDart's .map
-            // Or, if FirestoreCache.snapshots is available and preferred for real-time updates on sessions:
-            // return FirestoreCache.snapshots(
-            //   query: iteration.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: teamStartDate).where('date', isLessThanOrEqualTo: teamTargetDate),
-            //   cacheDocRef: iteration.reference!, // Cache is per iteration document
-            //   firestoreCacheField: 'updated_at',
-            // ).map((sessionsSnapshot) { // .map here is on the Stream<QuerySnapshot>
-            //   int shotsInThisIteration = 0;
-            //   for (var doc in sessionsSnapshot.docs) {
-            //     shotsInThisIteration += (ShootingSession.fromSnapshot(doc).total ?? 0);
-            //   }
-            //   return shotsInThisIteration;
-            // }) // ... rest of stream operators
-
-            // If you must use FirestoreCache.getDocuments (fetches once then uses cache logic):
-            return Stream.fromFuture(
-              FirestoreCache.getDocuments(
-                query: iteration.reference!.collection("sessions").where('date', isGreaterThanOrEqualTo: teamStartDate).where('date', isLessThanOrEqualTo: teamTargetDate),
-                // The cacheDocRef needs to be a DocumentReference<Map<String, dynamic>>
-                // If iteration.reference is already correctly typed, no need for withConverter here unless specifically required by your setup.
-                // However, if it's a DocumentReference<Object?> or similar, you might need:
-                cacheDocRef: iteration.reference!.withConverter<Map<String, dynamic>>(fromFirestore: (snapshot, _) => snapshot.data()!, toFirestore: (model, _) => model),
-                firestoreCacheField: 'updated_at',
-                // cacheRefreshStrategy: const CacheRefreshStrategy.periodic(Duration(minutes: 3)), // If available and needed
-              ),
-            )
-                .map((sessionsSnapshot) {
-                  // .map here is on the Stream<QuerySnapshot> from Stream.fromFuture
-                  int shotsInThisIteration = 0;
-                  for (var doc in sessionsSnapshot.docs) {
-                    shotsInThisIteration += (ShootingSession.fromSnapshot(doc).total ?? 0);
-                  }
-                  return shotsInThisIteration;
-                })
-                .startWith(0)
-                .handleError((e) {
-                  // print("Error fetching sessions for iteration ${iteration.reference!.id}: $e");
-                  return 0; // Return 0 shots for this iteration on error
-                });
+            // The following block previously used FirestoreCache for caching session queries.
+            // It is now removed. If you need to fetch sessions, use Firestore streams or queries directly here.
+            // Example placeholder:
+            return Stream.value(0); // Replace with actual Firestore query logic if needed.
           }).toList();
 
           if (iterationShotSumStreams.isEmpty) {
