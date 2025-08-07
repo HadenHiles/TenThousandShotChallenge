@@ -1563,136 +1563,137 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
   final id = data['id'] ?? '';
   final completed = data['completed'] == true;
 
-  return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('meta').doc('achievementSwaps').get(),
-      builder: (context, swapMetaSnap) {
-        int swapCount = 0;
-        DateTime? lastSwap;
-        if (swapMetaSnap.hasData && swapMetaSnap.data != null && swapMetaSnap.data!.exists) {
-          final meta = swapMetaSnap.data!.data() as Map<String, dynamic>?;
-          swapCount = (meta?['swapCount'] is int) ? meta!['swapCount'] : 0;
-          final ls = meta?['lastSwap'];
-          if (ls is Timestamp) {
-            lastSwap = ls.toDate();
-          } else if (ls is DateTime) {
-            lastSwap = ls;
-          }
+  return StreamBuilder<DocumentSnapshot>(
+    stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('meta').doc('achievementSwaps').snapshots(),
+    builder: (context, swapMetaSnap) {
+      int swapCount = 0;
+      DateTime? lastSwap;
+      if (swapMetaSnap.hasData && swapMetaSnap.data != null && swapMetaSnap.data!.exists) {
+        final meta = swapMetaSnap.data!.data() as Map<String, dynamic>?;
+        swapCount = (meta?['swapCount'] is int) ? meta!['swapCount'] : 0;
+        final ls = meta?['lastSwap'];
+        if (ls is Timestamp) {
+          lastSwap = ls.toDate();
+        } else if (ls is DateTime) {
+          lastSwap = ls;
         }
-        const swapDelays = [0, 0, 0, 60000, 180000, 300000, 600000, 1200000, 86400000];
-        // Calculate cooldown
-        int delayMs = 0;
-        if (swapCount >= 0 && swapCount < swapDelays.length) {
-          delayMs = swapDelays[swapCount];
-        } else if (swapCount >= swapDelays.length) {
-          delayMs = swapDelays.last;
-        }
-        bool inCooldown = false;
-        if (lastSwap != null && delayMs > 0) {
-          final now = DateTime.now();
-          final nextAllowed = lastSwap.add(Duration(milliseconds: delayMs));
-          inCooldown = now.isBefore(nextAllowed);
-        }
-        return Dismissible(
-          key: Key(id ?? 'achievement_${achievement.id}'),
-          direction: completed ? DismissDirection.none : DismissDirection.endToStart,
-          background: Container(
-            color: Colors.transparent,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 5),
-            child: SwapCooldownTimer(
-              swapCount: swapCount,
-              lastSwap: lastSwap,
-              swapDelays: swapDelays,
-            ),
+      }
+      const swapDelays = [0, 0, 0, 60000, 180000, 300000, 600000, 1200000, 86400000];
+      // Calculate cooldown
+      int delayMs = 0;
+      if (swapCount >= 0 && swapCount < swapDelays.length) {
+        delayMs = swapDelays[swapCount];
+      } else if (swapCount >= swapDelays.length) {
+        delayMs = swapDelays.last;
+      }
+      bool inCooldown = false;
+      if (lastSwap != null && delayMs > 0) {
+        final now = DateTime.now();
+        final nextAllowed = lastSwap.add(Duration(milliseconds: delayMs));
+        inCooldown = now.isBefore(nextAllowed);
+      }
+      return Dismissible(
+        key: Key(id ?? 'achievement_${achievement.id}'),
+        direction: completed ? DismissDirection.none : DismissDirection.endToStart,
+        background: Container(
+          color: Colors.transparent,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 5),
+          child: SwapCooldownTimer(
+            swapCount: swapCount,
+            lastSwap: lastSwap,
+            swapDelays: swapDelays,
           ),
-          confirmDismiss: (direction) async {
-            if (inCooldown) {
-              // If in cooldown, do nothing (no dialog, no swap)
-              return false;
-            }
-            // Otherwise, show confirm dialog
-            return await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Swap Achievement?'),
-                    content: const Text('Are you sure you want to swap this achievement for a new one?'),
-                    actions: [
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                          backgroundColor: Colors.transparent,
-                        ),
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancel'),
+        ),
+        confirmDismiss: (direction) async {
+          if (inCooldown) {
+            // If in cooldown, do nothing (no dialog, no swap)
+            return false;
+          }
+          // Otherwise, show confirm dialog
+          return await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Swap Achievement?'),
+                  content: const Text('Are you sure you want to swap this achievement for a new one?'),
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                        backgroundColor: Colors.transparent,
                       ),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Theme.of(context).primaryColor,
-                        ),
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Swap'),
-                      ),
-                    ],
-                  ),
-                ) ??
-                false;
-          },
-          onDismissed: (direction) async {
-            // Call swapAchievement cloud function
-            final achievementId = achievement.id;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Cancel'),
                     ),
-                    SizedBox(width: 12),
-                    Text('Swapping achievement...'),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Swap'),
+                    ),
                   ],
                 ),
-                duration: Duration(seconds: 2),
+              ) ??
+              false;
+        },
+        onDismissed: (direction) async {
+          // Call swapAchievement cloud function
+          final achievementId = achievement.id;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Swapping achievement...'),
+                ],
               ),
-            );
-            try {
-              final functions = FirebaseFunctions.instance;
-              final swapAchievement = functions.httpsCallable('swapAchievement');
-              final result = await swapAchievement({'achievementId': achievementId});
-              if (result.data != null && result.data['success'] == true) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Achievement swapped!'),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              } else {
-                final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(msg),
-                    backgroundColor: Theme.of(context).primaryColor,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-              }
-            } catch (e) {
-              print('Error occurred while swapping achievement: $e');
+              duration: Duration(seconds: 2),
+            ),
+          );
+          try {
+            final functions = FirebaseFunctions.instance;
+            final swapAchievement = functions.httpsCallable('swapAchievement');
+            final result = await swapAchievement({'achievementId': achievementId});
+            if (result.data != null && result.data['success'] == true) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Swap failed.'),
-                  backgroundColor: Colors.red,
+                  content: Text('Achievement swapped!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else {
+              final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(msg),
+                  backgroundColor: Theme.of(context).primaryColor,
                   duration: Duration(seconds: 3),
                 ),
               );
             }
-          },
-          child: child,
-        );
-      });
+          } catch (e) {
+            print('Error occurred while swapping achievement: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Swap failed.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        },
+        child: child,
+      );
+    },
+  );
 }
 
 class _WeeklyResetCountdown extends StatefulWidget {
