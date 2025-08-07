@@ -1479,15 +1479,16 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(msg),
-                                backgroundColor: Colors.red,
+                                backgroundColor: Theme.of(context).primaryColor,
                                 duration: Duration(seconds: 3),
                               ),
                             );
                           }
                         } catch (e) {
+                          print('Error occurred while swapping achievement: $e');
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Swap failed: ' + e.toString()),
+                              content: Text('Swap failed.'),
                               backgroundColor: Colors.red,
                               duration: Duration(seconds: 3),
                             ),
