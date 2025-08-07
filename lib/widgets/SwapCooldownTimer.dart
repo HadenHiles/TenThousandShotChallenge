@@ -55,9 +55,9 @@ class _SwapCooldownTimerState extends State<SwapCooldownTimer> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Icon(Icons.timer, color: Colors.orange, size: 22),
+        Icon(Icons.timer, color: Theme.of(context).primaryColor, size: 22),
         const SizedBox(width: 4),
-        Text(_formatDuration(_remaining), style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+        Text(_formatDuration(_remaining), style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
       ],
     );
   }
