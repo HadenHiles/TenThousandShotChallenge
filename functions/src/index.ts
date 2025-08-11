@@ -1145,15 +1145,14 @@ function getWeekStartEST(): Date {
 
 // Main scheduled function
 export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', timeZone: 'America/New_York', timeoutSeconds: 1200 }, async (event) => {
-    await assignAchievements(false, []);
+    await assignAchievements(false, [], {});
 });
 
 // HTTP-triggered version for live testing
 export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
     // Set to true for testing every type of achievement, false for normal weekly run
     // In test mode, only userIds in req.body.userIds (array of strings) will be processed
-    // let result = await assignAchievements(true, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2']);
-    let result = await assignAchievements(false, []);
+    let result = await assignAchievements(true, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2'], {});
     if (result.success) {
         res.status(200).send(result.message || 'Achievements assigned successfully');
     } else {
