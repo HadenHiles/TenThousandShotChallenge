@@ -16,6 +16,9 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAchievementsReadOnly.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
 
 class Player extends StatefulWidget {
   const Player({super.key, this.uid});
@@ -35,6 +38,7 @@ class _PlayerState extends State<Player> {
   bool? _isFriend = false;
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
+  bool _showAchievements = false;
 
   @override
   void initState() {
@@ -536,10 +540,58 @@ class _PlayerState extends State<Player> {
                             ),
                           ],
                         ),
-                        Divider(
-                          height: 25,
-                          color: Theme.of(context).cardTheme.color,
+                        // Achievements section: collapsible header with inline badges (mirror Profile)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _showAchievements = !_showAchievements);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            margin: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Achievements'.toUpperCase(),
+                                        style: Theme.of(context).textTheme.headlineSmall,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Flexible(
+                                        child: AchievementStatsRow(
+                                          userId: widget.uid!,
+                                          padding: EdgeInsets.zero,
+                                          inline: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  _showAchievements ? Icons.expand_less : Icons.expand_more,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        AnimatedCrossFade(
+                          firstChild: const SizedBox.shrink(),
+                          secondChild: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                            child: UserAchievementsReadOnly(userId: widget.uid!),
+                          ),
+                          crossFadeState: _showAchievements ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                          duration: const Duration(milliseconds: 300),
+                          sizeCurve: Curves.easeInOut,
+                        ),
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
