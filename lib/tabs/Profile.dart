@@ -23,6 +23,8 @@ import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dar
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -59,6 +61,7 @@ class _ProfileState extends State<Profile> {
   // Add state for collapsible sections
   bool _showSessions = true;
   bool _showAccuracy = false;
+  bool _showAchievements = false;
 
   // Dummy data for non-pro users
   final Map<String, double> _dummyAvgAccuracy = {
@@ -1466,6 +1469,79 @@ class _ProfileState extends State<Profile> {
                 return Container();
               },
             ),
+            // Achievements section: collapsible like others
+            GestureDetector(
+              onTap: () {
+                Future.microtask(() {
+                  setState(() {
+                    if (_showAchievements) {
+                      _showAchievements = false;
+                    } else {
+                      _showAchievements = true;
+                      _showAccuracy = false;
+                      _showSessions = false;
+                    }
+                  });
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                margin: const EdgeInsets.only(top: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Achievements'.toUpperCase(),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(width: 10),
+                          if (user != null)
+                            Flexible(
+                              child: AchievementStatsRow(
+                                userId: user!.uid,
+                                padding: EdgeInsets.zero,
+                                inline: true,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _showAchievements ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Padding(
+                padding: const EdgeInsets.only(top: 6.0, bottom: 8),
+                child: Opacity(
+                  opacity: _showAchievements ? 1.0 : 0.0,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
+                        child: const WeeklyAchievementsWidget(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              crossFadeState: _showAchievements ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 350),
+              sizeCurve: Curves.easeInOut,
+            ),
             // --- My Accuracy Section (moved above Recent Sessions) ---
             GestureDetector(
               onTap: () {
@@ -1487,7 +1563,6 @@ class _ProfileState extends State<Profile> {
                   color: lighten(Theme.of(context).colorScheme.primary, 0.1),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                margin: const EdgeInsets.only(top: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

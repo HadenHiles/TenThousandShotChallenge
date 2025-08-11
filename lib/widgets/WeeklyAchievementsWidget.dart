@@ -7,7 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
 
 class WeeklyAchievementsWidget extends StatefulWidget {
-  const WeeklyAchievementsWidget({super.key});
+  final bool showResetCountdown;
+  const WeeklyAchievementsWidget({super.key, this.showResetCountdown = false});
 
   @override
   State<WeeklyAchievementsWidget> createState() => _WeeklyAchievementsWidgetState();
@@ -729,7 +730,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _WeeklyResetCountdown(nextMonday: _nextMondayEST()),
+        widget.showResetCountdown ? _WeeklyResetCountdown(nextMonday: _nextMondayEST()) : const SizedBox.shrink(),
         StreamBuilder<DocumentSnapshot>(
           stream: statsRef.snapshots(),
           builder: (context, statsSnapshot) {
@@ -1880,7 +1881,7 @@ class _WeeklyResetCountdownState extends State<_WeeklyResetCountdown> {
         text,
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 16,
+          fontSize: 18,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
           fontFamily: 'NovecentoSans',
         ),

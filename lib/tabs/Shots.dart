@@ -499,7 +499,7 @@ class _ShotsState extends State<Shots> {
                             firstChild: Container(),
                             secondChild: Padding(
                               padding: const EdgeInsets.only(left: 8, right: 8, top: 0, bottom: 10),
-                              child: WeeklyAchievementsWidget(),
+                              child: WeeklyAchievementsWidget(showResetCountdown: true),
                             ),
                           ),
                         ],
