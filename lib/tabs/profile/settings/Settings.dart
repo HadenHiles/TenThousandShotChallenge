@@ -162,7 +162,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         size: 28,
                       ),
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        context.push('/app?tab=profile');
                       },
                     ),
                   ),
