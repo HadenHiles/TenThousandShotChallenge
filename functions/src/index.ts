@@ -1113,7 +1113,8 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
 export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
     // Set to true for testing every type of achievement, false for normal weekly run
     // In test mode, only userIds in req.body.userIds (array of strings) will be processed
-    let result = await assignAchievements(false, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2']);
+    // let result = await assignAchievements(true, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2']);
+    let result = await assignAchievements(false, []);
     if (result.success) {
         res.status(200).send(result.message || 'Achievements assigned successfully');
     } else {
@@ -1179,16 +1180,32 @@ const templates: any[] = [
     { id: 'progress_target_hits', style: 'progress', title: 'Target Hitter', description: 'Hit 100 targets.', shotType: 'any', goalType: 'target_hits_increase', improvement: 100, difficulty: 'Easy', proLevel: true, isBonus: false },
 ];
 
-async function assignAchievements(test: Boolean, userIds: Array<string>): Promise<any> {
+async function assignAchievements(test: Boolean, userIds: Array<string>, options?: { forceUsers?: string[] }): Promise<any> {
     const weekStart = getWeekStartEST();
     try {
         const now = new Date();
         const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
         const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
-        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
-        for (const userDoc of usersSnap.docs) {
+        // Determine which users to process
+        let userDocs: Array<{ id: string, data: () => any }>;
+        if (options && Array.isArray(options.forceUsers) && options.forceUsers.length > 0) {
+            // Force process these specific users regardless of last_seen
+            const forced: Array<{ id: string, data: () => any }> = [];
+            for (const uid of options.forceUsers) {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    forced.push({ id: doc.id, data: () => doc.data() });
+                }
+            }
+            userDocs = forced;
+        } else {
+            const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
+            userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
+        }
+
+        for (const userDoc of userDocs) {
             const userId = userDoc.id;
-            if (!userIds.includes(userId)) continue; // Only update test users for test function calls
+            if (test && !userIds.includes(userId)) continue; // Only update test users for test function calls
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
@@ -1627,6 +1644,22 @@ async function assignAchievements(test: Boolean, userIds: Array<string>): Promis
         return res;
     }
 }
+
+// Callable function: assign weekly achievements for the current authenticated user on demand
+export const assignPlayerAchievements = onCall(async (req) => {
+    const context = req.auth;
+    if (!context || !context.uid) {
+        throw new Error('Authentication required');
+    }
+    const userId = context.uid;
+    try {
+        const result = await assignAchievements(false, [], { forceUsers: [userId] });
+        return { success: result.success, message: result.message };
+    } catch (e) {
+        const msg = typeof e === 'object' && e !== null && 'message' in e ? (e as { message: string }).message : String(e);
+        return { success: false, message: msg };
+    }
+});
 
 async function assignAchievement({ userId, isBonusSwap = false, assignedTemplateIds = [], hasBonus = false }: {
     userId: string,
