@@ -189,9 +189,24 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
             if (sessionDate && sessionDate.toDate) jsDate = sessionDate.toDate();
             else if (sessionDate instanceof Date) jsDate = sessionDate;
             if (jsDate && jsDate >= weekStart) {
+                // Normalize duration to minutes if available
+                let durationMinutes: number | null = null;
+                if (typeof s.duration === 'number') {
+                    durationMinutes = s.duration;
+                } else if (typeof s.duration_seconds === 'number') {
+                    durationMinutes = s.duration_seconds / 60.0;
+                } else if (typeof s.duration_ms === 'number') {
+                    durationMinutes = s.duration_ms / 60000.0;
+                } else if (s.start_time && s.end_time) {
+                    const start = s.start_time.toDate ? s.start_time.toDate() : (s.start_time instanceof Date ? s.start_time : null);
+                    const end = s.end_time.toDate ? s.end_time.toDate() : (s.end_time instanceof Date ? s.end_time : null);
+                    if (start && end) {
+                        durationMinutes = (end.getTime() - start.getTime()) / 60000.0;
+                    }
+                }
                 recentSessions.push({
                     date: s.date,
-                    duration: typeof s.duration === 'number' ? s.duration : null,
+                    duration: durationMinutes,
                     shots: {
                         wrist: s.total_wrist || 0,
                         snap: s.total_snap || 0,
@@ -411,9 +426,24 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
             if (sessionDate && sessionDate.toDate) jsDate = sessionDate.toDate();
             else if (sessionDate instanceof Date) jsDate = sessionDate;
             if (jsDate && jsDate >= weekStart) {
+                // Normalize duration to minutes if available
+                let durationMinutes: number | null = null;
+                if (typeof s.duration === 'number') {
+                    durationMinutes = s.duration;
+                } else if (typeof s.duration_seconds === 'number') {
+                    durationMinutes = s.duration_seconds / 60.0;
+                } else if (typeof s.duration_ms === 'number') {
+                    durationMinutes = s.duration_ms / 60000.0;
+                } else if (s.start_time && s.end_time) {
+                    const start = s.start_time.toDate ? s.start_time.toDate() : (s.start_time instanceof Date ? s.start_time : null);
+                    const end = s.end_time.toDate ? s.end_time.toDate() : (s.end_time instanceof Date ? s.end_time : null);
+                    if (start && end) {
+                        durationMinutes = (end.getTime() - start.getTime()) / 60000.0;
+                    }
+                }
                 recentSessions.push({
                     date: s.date,
-                    duration: typeof s.duration === 'number' ? s.duration : null,
+                    duration: durationMinutes,
                     shots: {
                         wrist: s.total_wrist || 0,
                         snap: s.total_snap || 0,
@@ -669,13 +699,22 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             }
             return false;
         } else if (goalType === 'count_time') {
-            // Take goalValue shots in under timeLimit (minutes) in a single session
+            // Take goalValue total shots (any types) in under timeLimit minutes in a single session
             const timeLimit = achievement.timeLimit || 10;
             for (const s of relevantSessions) {
-                if (typeof s.duration === 'number' && s.duration <= timeLimit) {
+                // Accept duration in minutes (preferred) or seconds/ms fallbacks
+                let durationMinutes: number | null = null;
+                if (typeof s.duration === 'number') {
+                    durationMinutes = s.duration;
+                } else if (typeof s.duration_seconds === 'number') {
+                    durationMinutes = s.duration_seconds / 60.0;
+                } else if (typeof s.duration_ms === 'number') {
+                    durationMinutes = s.duration_ms / 60000.0;
+                }
+                if (durationMinutes !== null && durationMinutes <= timeLimit) {
                     let sum = 0;
                     for (const v of Object.values(s.shots || {})) {
-                        if (typeof v === 'number') sum += v;
+                        if (typeof v === 'number') sum += v as number;
                     }
                     if (sum >= goalValue) return true;
                 }

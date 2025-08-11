@@ -313,6 +313,33 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         }
       }
       return 0.0;
+    } else if (goalType == 'count_time') {
+      // Must take goalValue shots in under timeLimit minutes within a single session
+      final timeLimit = (data['timeLimit'] is num) ? (data['timeLimit'] as num).toDouble() : 10.0;
+      for (final session in sessions) {
+        final hasDuration = session.containsKey('duration') && session['duration'] is num;
+        if (!hasDuration) continue;
+        final durationMinutes = (session['duration'] as num).toDouble();
+        if (durationMinutes <= timeLimit) {
+          double count = 0.0;
+          if (shotType == 'any' || shotType == 'all') {
+            if (session.containsKey('shots') && session['shots'] is Map) {
+              for (final v in (session['shots'] as Map).values) {
+                if (v is num) count += v.toDouble();
+              }
+            }
+          } else {
+            if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+              count = (session['shots'][shotType] as num).toDouble();
+            }
+          }
+          if (count >= goalValue) {
+            return 1.0;
+          }
+        }
+      }
+      // No single session met both the time and shot count requirement
+      return 0.0;
     } else if (shotType == 'all') {
       final types = ['wrist', 'snap', 'slap', 'backhand'];
       double progressSum = 0.0;
