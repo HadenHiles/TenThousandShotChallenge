@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -111,7 +112,9 @@ Future<void> main() async {
         Provider<FirebaseAuth>.value(value: FirebaseAuth.instance),
         Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
         Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
-        Provider<CustomerInfo?>.value(value: await getCustomerInfo()),
+        ChangeNotifierProvider<CustomerInfoNotifier>(
+          create: (_) => CustomerInfoNotifier(),
+        ),
         Provider<NetworkStatusService>(
           create: (context) => NetworkStatusService(
             isTesting: false, // Always false in production
@@ -152,10 +155,10 @@ Future<void> initRevenueCat(String? appUserID) async {
   }
 }
 
+// Optional: kept for backward compatibility but unused now
 Future<CustomerInfo?> getCustomerInfo() async {
   try {
-    CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo;
+    return await Purchases.getCustomerInfo();
   } on PlatformException catch (e) {
     print('Error fetching customer info: ${e.message}');
     return null;
@@ -170,7 +173,7 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with WidgetsBindingObserver {
   late final GoRouter _router;
   late final AuthChangeNotifier _authNotifier;
   User? _lastUser;
@@ -180,6 +183,7 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _authNotifier = AuthChangeNotifier(Provider.of<FirebaseAuth>(context, listen: false));
+    WidgetsBinding.instance.addObserver(this);
     // Create the GoRouter instance once and reuse it
     _router = createAppRouter(
       Provider.of<FirebaseAnalytics>(context, listen: false),
@@ -192,6 +196,12 @@ class _HomeState extends State<Home> {
       final user = _authNotifier.user;
       if (user != null && user.uid != _lastUser?.uid) {
         await initRevenueCat(user.uid);
+        // After login, ensure notifier is available and refreshed
+        try {
+          final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
+          notifier.attach();
+          await notifier.refresh();
+        } catch (_) {}
         _lastUser = user;
         // Set user's timezone in Firestore
         try {
@@ -205,13 +215,29 @@ class _HomeState extends State<Home> {
       }
     };
     _authNotifier.addListener(_authListener);
+    // Trigger once in case user is already logged in
+    _authListener();
   }
 
   @override
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authNotifier.removeListener(_authListener);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // On resume, invalidate cache and refresh entitlements
+      Purchases.invalidateCustomerInfoCache();
+      try {
+        final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
+        notifier.attach();
+        notifier.refresh();
+      } catch (_) {}
+    }
   }
 
   @override

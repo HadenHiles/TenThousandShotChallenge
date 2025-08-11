@@ -14,6 +14,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
@@ -53,13 +54,29 @@ class _StartShootingState extends State<StartShooting> {
     _chartCollapsed = true; // Default to collapsed when starting a new session
     super.initState();
     _loadSubscriptionLevel();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.addListener(_onEntitlementsChanged);
+    });
   }
 
   @override
   void dispose() {
+    try {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.removeListener(_onEntitlementsChanged);
+    } catch (_) {}
     _shots = [];
     _currentShotCount = preferences!.puckCount!;
     super.dispose();
+  }
+
+  void _onEntitlementsChanged() {
+    subscriptionLevel(context).then((level) {
+      if (mounted) {
+        setState(() => _subscriptionLevel = level);
+      }
+    });
   }
 
   void reset() {
