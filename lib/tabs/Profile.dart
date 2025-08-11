@@ -1587,11 +1587,209 @@ class _ProfileState extends State<Profile> {
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       "Shot Accuracy".toUpperCase(),
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
+                    // Shot type stats row
+                    (_subscriptionLevel != 'pro' || _selectedIterationId == null)
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Builder(
+                                builder: (context) {
+                                  final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+                                  final shotTypeLabels = {'wrist': 'W', 'snap': 'S', 'slap': 'SL', 'backhand': 'B'};
+                                  final shotTypeColorsLocal = {
+                                    'wrist': wristShotColor,
+                                    'snap': snapShotColor,
+                                    'slap': slapShotColor,
+                                    'backhand': backhandShotColor,
+                                  };
+                                  Map<String, double> accuracyMap = _dummyAvgAccuracy;
+                                  return Row(
+                                    children: shotTypes.map((type) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              shotTypeLabels[type]!,
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                fontFamily: 'NovecentoSans',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Container(
+                                                  width: 30,
+                                                  height: 25,
+                                                  decoration: BoxDecoration(
+                                                    color: shotTypeColorsLocal[type],
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${accuracyMap[type]?.toStringAsFixed(0) ?? '--'}%",
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  );
+                                },
+                              ),
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                                    child: Container(
+                                      color: Colors.white.withOpacity(0.35),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : StreamBuilder<QuerySnapshot>(
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').snapshots(),
+                            builder: (context, snapshot) {
+                              final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+                              final shotTypeLabels = {'wrist': 'W', 'snap': 'S', 'slap': 'SL', 'backhand': 'B'};
+                              final shotTypeColorsLocal = {
+                                'wrist': wristShotColor,
+                                'snap': snapShotColor,
+                                'slap': slapShotColor,
+                                'backhand': backhandShotColor,
+                              };
+                              if (!snapshot.hasData) {
+                                return Row(
+                                  children: shotTypes
+                                      .map((type) => Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(shotTypeLabels[type]!, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'NovecentoSans', fontWeight: FontWeight.bold, fontSize: 14)),
+                                                Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    Container(
+                                                      width: 30,
+                                                      height: 25,
+                                                      decoration: BoxDecoration(
+                                                        color: shotTypeColorsLocal[type],
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 24,
+                                                      height: 16,
+                                                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ))
+                                      .toList(),
+                                );
+                              }
+                              final sessionDocs = snapshot.data!.docs;
+                              return FutureBuilder<List<ShootingSession>>(
+                                future: (() async {
+                                  List<ShootingSession> sessions = [];
+                                  for (final doc in sessionDocs) {
+                                    try {
+                                      final session = ShootingSession.fromSnapshot(doc);
+                                      final shotsSnap = await doc.reference.collection('shots').get();
+                                      final shots = shotsSnap.docs.map((shotDoc) => Shots.fromSnapshot(shotDoc)).toList();
+                                      session.shots = shots;
+                                      sessions.add(session);
+                                    } catch (_) {}
+                                  }
+                                  return sessions.where((s) => s.shots != null && s.shots!.any((shot) => shot.type != null && shot.targetsHit != null && shot.count != null && shot.count! > 0)).toList();
+                                })(),
+                                builder: (context, asyncSnapshot) {
+                                  Map<String, double> accuracyMap = {for (var t in shotTypes) t: 0};
+                                  if (asyncSnapshot.hasData && asyncSnapshot.data!.isNotEmpty) {
+                                    Map<String, int> totalHits = {for (var t in shotTypes) t: 0};
+                                    Map<String, int> totalShots = {for (var t in shotTypes) t: 0};
+                                    for (final session in asyncSnapshot.data!) {
+                                      for (final shot in session.shots!) {
+                                        if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+                                          totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+                                          totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+                                        }
+                                      }
+                                    }
+                                    for (final type in shotTypes) {
+                                      accuracyMap[type] = (totalShots[type]! > 0) ? (totalHits[type]! / totalShots[type]!) * 100 : 0;
+                                    }
+                                  }
+                                  return Row(
+                                    children: shotTypes.map((type) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              shotTypeLabels[type]!,
+                                              style: TextStyle(
+                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                fontFamily: 'NovecentoSans',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Container(
+                                                  width: 30,
+                                                  height: 25,
+                                                  decoration: BoxDecoration(
+                                                    color: shotTypeColorsLocal[type],
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${accuracyMap[type]?.toStringAsFixed(0) ?? '--'}%",
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                     Icon(
                       _showAccuracy ? Icons.expand_less : Icons.expand_more,
                       color: Theme.of(context).colorScheme.onPrimary,
@@ -1877,12 +2075,15 @@ class _ProfileState extends State<Profile> {
                             }
                             List<DocumentSnapshot> sessions = snapshot.data!.docs;
                             if (sessions.isEmpty) {
-                              return Text(
-                                "You don't have any sessions yet".toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'NovecentoSans',
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16,
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 20.0, bottom: 10),
+                                child: Text(
+                                  "You don't have any sessions yet".toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               );
                             }
