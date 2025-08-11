@@ -1542,10 +1542,8 @@ class _ProfileState extends State<Profile> {
               duration: const Duration(milliseconds: 350),
               sizeCurve: Curves.easeInOut,
             ),
-            // --- My Accuracy Section (moved above Recent Sessions) ---
             GestureDetector(
               onTap: () {
-                // Use Future.microtask to avoid scrollable assertion errors
                 Future.microtask(() {
                   setState(() {
                     // Toggle: If already open, close. If closed, open and close the other.
@@ -1554,6 +1552,7 @@ class _ProfileState extends State<Profile> {
                     } else {
                       _showAccuracy = true;
                       _showSessions = false;
+                      _showAchievements = false;
                     }
                   });
                 });
@@ -1667,6 +1666,8 @@ class _ProfileState extends State<Profile> {
                       _showSessions = false;
                     } else {
                       _showSessions = true;
+                      _showAccuracy = false;
+                      _showAchievements = false;
                     }
                   });
                 });
