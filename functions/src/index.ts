@@ -1226,9 +1226,12 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
         const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
         // Determine which users to process
         let userDocs: Array<{ id: string, data: () => any }>;
+        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
+        userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
+        const forced: Array<{ id: string, data: () => any }> = [];
+
         if (options && Array.isArray(options.forceUsers) && options.forceUsers.length > 0) {
             // Force process these specific users regardless of last_seen
-            const forced: Array<{ id: string, data: () => any }> = [];
             for (const uid of options.forceUsers) {
                 const doc = await db.collection('users').doc(uid).get();
                 if (doc.exists) {
@@ -1236,50 +1239,41 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                 }
             }
             userDocs = forced;
-        } else {
-            const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
-            userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
         }
 
         for (const userDoc of userDocs) {
             const userId = userDoc.id;
-            if (test && !userIds.includes(userId)) continue; // Only update test users for test function calls
+            if (forced.length <= 0 && test && !userIds.includes(userId)) continue; // Only update test users for test function calls
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
             // --- Gather all achievements for metrics (before deleting) ---
             const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
             const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Only consider achievements from the PREVIOUS week (avoid resetting streak on reruns within the same week)
-            const prevWeekAchievements = allAchievements.filter((a: any) => {
-                const ts = a.dateAssigned;
-                const dt = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : null);
-                // Treat missing dateAssigned as previous week to be safe
-                return dt ? dt < weekStart : true;
-            });
-            // Count completions for previous week's assignments
-            const completedPrevWeek = prevWeekAchievements.filter((a: any) => a.completed === true).length;
-            const nonBonusPrevWeek = prevWeekAchievements.filter((a: any) => a.isBonus !== true);
-            const nonBonusCompletedPrevWeek = nonBonusPrevWeek.filter((a: any) => a.completed === true).length;
+            // Count total completed (including bonus) for this week
+            const completedThisWeek = allAchievements.filter(a => (a as any).completed === true).length;
+            // Count non-bonus achievements assigned this week
+            const nonBonusThisWeek = allAchievements.filter(a => !(a as any).isBonus);
+            // Count non-bonus completed this week
+            const nonBonusCompletedThisWeek = nonBonusThisWeek.filter(a => (a as any).completed === true).length;
             // Fetch previous streak and total from stats/history
             const historyDoc = await db.collection('users').doc(userId).collection('stats').doc('history').get();
-            let history = historyDoc.exists ? (historyDoc.data() || {}) : {};
-            const prevStreak = typeof history.weeklyAllCompletedStreak === 'number' ? history.weeklyAllCompletedStreak : 0;
-            const prevTotal = typeof history.totalAchievementsCompleted === 'number' ? history.totalAchievementsCompleted : 0;
-            // Build a conditional update to avoid unintended resets when no previous-week achievements are present
-            const historyUpdates: any = {};
-            if (prevWeekAchievements.length > 0) {
-                // Update streak: increment if all non-bonus were completed, else reset to 0
-                historyUpdates.weeklyAllCompletedStreak = (nonBonusPrevWeek.length > 0 && nonBonusCompletedPrevWeek === nonBonusPrevWeek.length)
-                    ? (prevStreak + 1)
-                    : 0;
-            }
-            // Update totalAchievementsCompleted only when there were new completions to add
-            if (completedPrevWeek > 0) {
-                historyUpdates.totalAchievementsCompleted = prevTotal + completedPrevWeek;
-            }
-            if (Object.keys(historyUpdates).length > 0) {
-                await db.collection('users').doc(userId).collection('stats').doc('history').set(historyUpdates, { merge: true });
+            let history = historyDoc.exists ? historyDoc.data() || {} : {};
+            let prevStreak = history.weeklyAllCompletedStreak || 0;
+            let prevTotal = history.totalAchievementsCompleted || 0;
+            let weeklyAllCompletedStreak = prevStreak;
+            if (nonBonusThisWeek.length > 0 && nonBonusCompletedThisWeek === nonBonusThisWeek.length) {
+                weeklyAllCompletedStreak = prevStreak + 1;
+            } else {
+                weeklyAllCompletedStreak = 0;
+
+                // totalAchievementsCompleted is a running total (previous + new completions this week)
+                const totalAchievementsCompleted = prevTotal + completedThisWeek;
+                const updatedHistory = {
+                    totalAchievementsCompleted,
+                    weeklyAllCompletedStreak
+                };
+                await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
             }
 
             // --- Move completed achievements to stats/history/completed_achievements before deleting ---
