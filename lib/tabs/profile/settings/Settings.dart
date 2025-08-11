@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
@@ -45,6 +45,21 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     super.initState();
     _loadSettings();
     _loadSubscriptionLevel();
+    // Listen for RevenueCat entitlement changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.addListener(_onCustomerInfoChanged);
+    });
+  }
+
+  void _onCustomerInfoChanged() {
+    subscriptionLevel(context).then((level) {
+      if (mounted) {
+        setState(() {
+          _subscriptionLevel = level;
+        });
+      }
+    });
   }
 
   _loadSubscriptionLevel() async {
@@ -72,6 +87,15 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         _friendNotifications = u.friendNotifications ?? true;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    try {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.removeListener(_onCustomerInfoChanged);
+    } catch (_) {}
+    super.dispose();
   }
 
   @override
@@ -125,7 +149,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               return [
                 SliverAppBar(
                   collapsedHeight: 65,
-                  expandedHeight: 65,
+                  expandedHeight: 125,
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   floating: true,
                   pinned: true,
@@ -245,20 +269,11 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                                         Text("Renews: "),
                                                         Text(
                                                           (() {
-                                                            final exp = Provider.of<CustomerInfo>(context, listen: false).latestExpirationDate;
-                                                            if (exp == null) return "N/A";
-                                                            if (exp is DateTime) {
-                                                              final dt = (exp as DateTime).toLocal();
-                                                              return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
-                                                            }
-                                                            // If it's a String, try to parse
-                                                            try {
-                                                              final dt = DateTime.parse(exp);
-                                                              final local = dt.toLocal();
-                                                              return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
-                                                            } catch (_) {
-                                                              return exp.toString();
-                                                            }
+                                                            final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+                                                            final dt = notifier?.latestExpirationDateTime;
+                                                            if (dt == null) return "N/A";
+                                                            final local = dt.toLocal();
+                                                            return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
                                                           })(),
                                                           style: TextStyle(
                                                             color: Theme.of(context).colorScheme.onPrimary,
@@ -340,7 +355,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ElevatedButton(
                                         onPressed: () async {
                                           Navigator.of(context).pop();
-                                          await presentPaywallIfNeeded();
+                                          await presentPaywallIfNeeded(context);
                                         },
                                         style: ButtonStyle(
                                           backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
@@ -702,6 +717,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               context.go('/login');
                             },
                           ),
+                          SettingsTile(title: SizedBox.shrink()),
                         ],
                       ),
                     ],

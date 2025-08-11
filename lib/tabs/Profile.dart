@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
@@ -76,6 +77,19 @@ class _ProfileState extends State<Profile> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _setInitialIterationId());
     _loadSubscriptionLevel();
+    // Keep subscription level in sync with RevenueCat updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.addListener(_onEntitlementsChanged);
+    });
+  }
+
+  void _onEntitlementsChanged() {
+    subscriptionLevel(context).then((level) {
+      if (mounted) {
+        setState(() => _subscriptionLevel = level);
+      }
+    });
   }
 
   _loadSubscriptionLevel() async {
@@ -98,6 +112,15 @@ class _ProfileState extends State<Profile> {
         _selectedIterationId = snapshot.docs.last.id;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    try {
+      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      notifier?.removeListener(_onEntitlementsChanged);
+    } catch (_) {}
+    super.dispose();
   }
 
   // Helper to get if the selected iteration is completed
