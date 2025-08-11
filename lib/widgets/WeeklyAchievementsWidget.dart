@@ -129,11 +129,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   DateTime _previousMondayEST() {
-    final now = DateTime.now().toUtc().add(const Duration(hours: -5)); // Convert to EST
-    int daysToSubtract = (now.weekday - 1) % 7;
-    final prevMonday = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
-    // Set to 12am EST, then convert back to UTC
-    return DateTime(prevMonday.year, prevMonday.month, prevMonday.day, 0, 0, 0).toUtc().add(const Duration(hours: 5));
+    try {
+      final east = tz.getLocation('America/New_York');
+      final nowNY = tz.TZDateTime.now(east);
+      final daysToSubtract = (nowNY.weekday - DateTime.monday) % 7;
+      final prevMondayLocal = tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day).subtract(Duration(days: daysToSubtract));
+      // Midnight local time (America/New_York) converted to UTC
+      final prevMondayMidnightLocal = tz.TZDateTime(east, prevMondayLocal.year, prevMondayLocal.month, prevMondayLocal.day);
+      return prevMondayMidnightLocal.toUtc();
+    } catch (_) {
+      // Fallback without tz: use device local time
+      final now = DateTime.now();
+      final daysToSubtract = (now.weekday - DateTime.monday) % 7;
+      final prevMondayLocal = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+      return DateTime(prevMondayLocal.year, prevMondayLocal.month, prevMondayLocal.day);
+    }
   }
 
   User? _user;
@@ -145,13 +155,61 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   DateTime _nextMondayEST() {
-    final now = DateTime.now().toUtc().add(const Duration(hours: -5)); // EST
-    int daysToAdd = (8 - now.weekday) % 7;
-    final nextMonday = DateTime(now.year, now.month, now.day).add(Duration(days: daysToAdd));
-    return DateTime(nextMonday.year, nextMonday.month, nextMonday.day, 0, 0, 0).toUtc().add(const Duration(hours: 5)); // back to UTC
+    try {
+      final east = tz.getLocation('America/New_York');
+      final nowNY = tz.TZDateTime.now(east);
+      int daysToAdd = (DateTime.monday + 7 - nowNY.weekday) % 7;
+      if (daysToAdd == 0) daysToAdd = 7; // On Monday, go to next Monday
+      final startOfTodayLocal = tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day);
+      final nextMondayLocal = startOfTodayLocal.add(Duration(days: daysToAdd));
+      // Midnight local time (America/New_York) converted to UTC
+      final nextMondayMidnightLocal = tz.TZDateTime(east, nextMondayLocal.year, nextMondayLocal.month, nextMondayLocal.day);
+      return nextMondayMidnightLocal.toUtc();
+    } catch (_) {
+      // Fallback without tz: use device local time and ensure Monday goes to next week
+      final now = DateTime.now();
+      int daysToAdd = (DateTime.monday + 7 - now.weekday) % 7;
+      if (daysToAdd == 0) daysToAdd = 7;
+      final nextMondayLocal = DateTime(now.year, now.month, now.day).add(Duration(days: daysToAdd));
+      return DateTime(nextMondayLocal.year, nextMondayLocal.month, nextMondayLocal.day);
+    }
   }
 
   late List<bool> _expanded = [];
+
+  // Auto-assign state when no weekly achievements exist
+  bool _assigningAchievements = false;
+  bool _assignmentAttempted = false;
+  String? _assignmentError;
+
+  Future<void> _assignPlayerAchievementsIfNeeded() async {
+    try {
+      final functions = FirebaseFunctions.instance;
+      final callable = functions.httpsCallable('assignPlayerAchievements');
+      final result = await callable();
+      final data = result.data;
+      if (mounted) {
+        if (data != null && data is Map && data['success'] == true) {
+          setState(() {
+            _assignmentError = null;
+            _assigningAchievements = false;
+          });
+        } else {
+          final msg = (data is Map && data['message'] is String) ? data['message'] as String : 'Failed to assign achievements.';
+          setState(() {
+            _assignmentError = msg;
+            _assigningAchievements = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _assignmentError = 'Failed to assign achievements.';
+        _assigningAchievements = false;
+      });
+    }
+  }
 
   // Progress calculation for each style using stats
   double _getAchievementProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
@@ -672,7 +730,66 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No achievements assigned this week.'));
+                  // If no achievements exist, trigger an on-demand assignment once
+                  if (!_assignmentAttempted && !_assigningAchievements) {
+                    _assignmentAttempted = true;
+                    _assigningAchievements = true;
+                    // Defer the function call until after this frame
+                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                      _assignPlayerAchievementsIfNeeded();
+                    });
+                  }
+                  if (_assigningAchievements) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 12),
+                            Text('Assigning weekly achievements...'),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  if (_assignmentError != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              _assignmentError!,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _assignmentError = null;
+                                _assigningAchievements = true;
+                                _assignmentAttempted = true; // keep as attempted but retry now
+                              });
+                              SchedulerBinding.instance.addPostFrameCallback((_) {
+                                _assignPlayerAchievementsIfNeeded();
+                              });
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  // Fallback (should be rare since we auto-assign)
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 16, bottom: 8),
+                      child: Text('No achievements assigned this week.'),
+                    ),
+                  );
                 }
                 final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
                 achievements.sort((a, b) {
