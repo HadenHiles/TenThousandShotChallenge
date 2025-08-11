@@ -1231,7 +1231,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).primaryColor),
+                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
                                   width: 2.5,
                                 ),
                               ),

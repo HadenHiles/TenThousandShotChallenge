@@ -1225,25 +1225,31 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
         const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
         const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
         // Determine which users to process
-        let userDocs: Array<{ id: string, data: () => any }>;
-        const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
-        userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
-        const forced: Array<{ id: string, data: () => any }> = [];
-
-        if (options && Array.isArray(options.forceUsers) && options.forceUsers.length > 0) {
-            // Force process these specific users regardless of last_seen
-            for (const uid of options.forceUsers) {
+        let userDocs: Array<{ id: string, data: () => any }> = [];
+        // Priority 1: explicit forceUsers option
+        let idsToProcess: string[] = Array.isArray(options?.forceUsers) && options!.forceUsers!.length > 0
+            ? options!.forceUsers as string[]
+            : [];
+        // Priority 2: in test mode, use provided userIds
+        if (idsToProcess.length === 0 && test && Array.isArray(userIds) && userIds.length > 0) {
+            idsToProcess = userIds;
+        }
+        if (idsToProcess.length > 0) {
+            for (const uid of idsToProcess) {
                 const doc = await db.collection('users').doc(uid).get();
                 if (doc.exists) {
-                    forced.push({ id: doc.id, data: () => doc.data() });
+                    userDocs.push({ id: doc.id, data: () => doc.data() });
                 }
             }
-            userDocs = forced;
+        } else {
+            // Fallback: scheduled run processes recently active users
+            const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
+            userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
         }
 
         for (const userDoc of userDocs) {
             const userId = userDoc.id;
-            if (forced.length <= 0 && test && !userIds.includes(userId)) continue; // Only update test users for test function calls
+            // In test mode, idsToProcess already limits processing; no extra filtering needed
             const userData = userDoc.data();
             const playerAge = userData.age || 18;
 
