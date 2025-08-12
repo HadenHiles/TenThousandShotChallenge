@@ -701,6 +701,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
         } else if (goalType === 'count_time') {
             // Take goalValue total shots (any types) in under timeLimit minutes in a single session
             const timeLimit = achievement.timeLimit || 10;
+            const epsilon = 1e-6; // handle float rounding (e.g., 60s -> 1.0000001 min)
             for (const s of relevantSessions) {
                 // Accept duration in minutes (preferred) or seconds/ms fallbacks
                 let durationMinutes: number | null = null;
@@ -711,7 +712,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
                 } else if (typeof s.duration_ms === 'number') {
                     durationMinutes = s.duration_ms / 60000.0;
                 }
-                if (durationMinutes !== null && durationMinutes <= timeLimit) {
+                if (durationMinutes !== null && durationMinutes <= timeLimit + epsilon) {
                     let sum = 0;
                     for (const v of Object.values(s.shots || {})) {
                         if (typeof v === 'number') sum += v as number;
@@ -1503,6 +1504,35 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                         if (type === 'any') return 'shots';
                         return type;
                     }
+                    // Personalize count_time using user's average shots per minute per session
+                    if (t.goalType === 'count_time') {
+                        // Compute per-session SPM and then average across sessions
+                        let spmSum = 0;
+                        let spmCount = 0;
+                        const sess = Array.isArray(stats.sessions) ? stats.sessions : [];
+                        for (const s of sess) {
+                            const duration = typeof s.duration === 'number' ? s.duration : null; // minutes
+                            if (!duration || duration <= 0) continue;
+                            let totalShots = 0;
+                            const shots = s.shots && typeof s.shots === 'object' ? s.shots : {};
+                            for (const v of Object.values(shots)) {
+                                if (typeof v === 'number') totalShots += v as number;
+                            }
+                            if (totalShots > 0) {
+                                spmSum += totalShots / duration;
+                                spmCount += 1;
+                            }
+                        }
+                        const avgSpm = spmCount > 0 ? spmSum / spmCount : 0;
+                        if (avgSpm > 0 && typeof t.goalValue === 'number') {
+                            const estMinutes = t.goalValue / avgSpm;
+                            const bufferFactor = 1.1; // 10% buffer
+                            const desired = Math.max(1, Math.ceil(estMinutes * bufferFactor));
+                            const defaultLimit = (typeof t.timeLimit === 'number' && t.timeLimit > 0) ? t.timeLimit : 10;
+                            // Do not make it harder than template default; only tighten for faster users
+                            t.timeLimit = Math.max(1, Math.min(defaultLimit, desired));
+                        }
+                    }
                     if (t.goalType === 'count_per_session') {
                         t.description = `Take at least ${t.goalValue} ${shotTypeLabel(t.shotType)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
                     } else if (t.goalType === 'count_evening') {
@@ -1871,6 +1901,33 @@ async function assignAchievement({ userId, isBonusSwap = false, assignedTemplate
                 if (type === 'all') return 'all shot types';
                 if (type === 'any') return 'shots';
                 return type;
+            }
+            // Personalize count_time using user's average shots per minute per session
+            if (t.goalType === 'count_time') {
+                let spmSum = 0;
+                let spmCount = 0;
+                const sess = Array.isArray(stats.sessions) ? stats.sessions : [];
+                for (const s of sess) {
+                    const duration = typeof s.duration === 'number' ? s.duration : null; // minutes
+                    if (!duration || duration <= 0) continue;
+                    let totalShots = 0;
+                    const shots = s.shots && typeof s.shots === 'object' ? s.shots : {};
+                    for (const v of Object.values(shots)) {
+                        if (typeof v === 'number') totalShots += v as number;
+                    }
+                    if (totalShots > 0) {
+                        spmSum += totalShots / duration;
+                        spmCount += 1;
+                    }
+                }
+                const avgSpm = spmCount > 0 ? spmSum / spmCount : 0;
+                if (avgSpm > 0 && typeof t.goalValue === 'number') {
+                    const estMinutes = t.goalValue / avgSpm;
+                    const bufferFactor = 1.1; // 10% buffer
+                    const desired = Math.max(1, Math.ceil(estMinutes * bufferFactor));
+                    const defaultLimit = (typeof t.timeLimit === 'number' && t.timeLimit > 0) ? t.timeLimit : 10;
+                    t.timeLimit = Math.max(1, Math.min(defaultLimit, desired));
+                }
             }
             if (t.goalType === 'count_per_session') {
                 t.description = `Take at least ${t.goalValue} ${shotTypeLabel(t.shotType)} for any ${t.sessions} session${t.sessions > 1 ? 's' : ''} in a row.`;
