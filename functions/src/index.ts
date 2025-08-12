@@ -1148,7 +1148,15 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
     await assignAchievements(false, [], {});
 });
 
-// HTTP-triggered version for live testing
+export const testAssignAchievements = onRequest(async (req, res) => {
+    let result = await assignAchievements(false, [], {});
+    if (result.success) {
+        res.status(200).send(result.message || 'Achievements assigned successfully');
+    } else {
+        res.status(500).send(result.message || 'Failed to assign achievements.');
+    }
+});
+
 export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
     // Set to true for testing every type of achievement, false for normal weekly run
     // In test mode, only userIds in req.body.userIds (array of strings) will be processed
