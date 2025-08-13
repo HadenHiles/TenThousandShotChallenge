@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // For QRCodeDialog
 import 'package:rxdart/rxdart.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -290,7 +291,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
     return Container(
       key: const Key('team_tab_body'),
-      padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.zero,
+      padding: isThreeButtonAndroidNavigation(context)
+          ? EdgeInsets.only(bottom: sessionService.isRunning ? MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 65 : MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight)
+          : sessionService.isRunning
+              ? EdgeInsets.only(bottom: 65)
+              : EdgeInsets.zero,
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: _getUserProfileStream(),
         builder: (context, userProfileSnapshot) {

@@ -914,7 +914,11 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     return Container(
       key: const Key('profile_tab_body'),
-      padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.only(top: 15),
+      padding: isThreeButtonAndroidNavigation(context)
+          ? EdgeInsets.only(bottom: sessionService.isRunning ? MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 65 : MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight)
+          : sessionService.isRunning
+              ? EdgeInsets.only(top: 15, bottom: 65)
+              : EdgeInsets.only(top: 15),
       child: SingleChildScrollView(
         // <-- Make the whole profile screen scrollable
         child: Column(

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -24,6 +25,8 @@ class _FriendsState extends State<Friends> {
 
   bool _isLoadingFriends = false;
   List<DocumentSnapshot> _friends = [];
+  final TextEditingController _friendSearchController = TextEditingController();
+  String _friendSearchQuery = '';
 
   bool _isLoadingInvites = false;
   List<DocumentSnapshot> _invites = [];
@@ -35,6 +38,12 @@ class _FriendsState extends State<Friends> {
     _loadInvites();
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _friendSearchController.dispose();
+    super.dispose();
   }
 
   Future<Null> _loadInvites() async {
@@ -83,46 +92,68 @@ class _FriendsState extends State<Friends> {
       _friends = [];
     });
 
-    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get().then((snapshot) async {
-      if (snapshot.docs.isNotEmpty) {
-        await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final teammateQuery = await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get();
 
-        await Future.forEach(snapshot.docs, (DocumentSnapshot doc) {
-          FirebaseFirestore.instance.collection('users').doc(doc.reference.id).get().then((uSnap) {
-            if (mounted) {
-              setState(() {
-                _friends.add(uSnap);
-              });
-            }
-          });
-        }).then((_) {
-          if (mounted) {
-            setState(() {
-              _isLoadingFriends = false;
-            });
-          }
-        });
-      } else {
+      if (teammateQuery.docs.isEmpty) {
         if (mounted) {
           setState(() {
             _isLoadingFriends = false;
           });
         }
+        return;
       }
-    });
+
+      // Preserve ordering: build futures list in the same order
+      final idsInOrder = teammateQuery.docs.map((d) => d.reference.id).toList();
+      final futures = idsInOrder.map((id) => FirebaseFirestore.instance.collection('users').doc(id).get()).toList();
+
+      final userDocs = await Future.wait(futures);
+
+      if (mounted) {
+        setState(() {
+          _friends = userDocs; // Already ordered
+          _isLoadingFriends = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingFriends = false;
+        });
+      }
+      // Optionally log / surface error snackbar
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Derive filtered friend list based on search query (case-insensitive)
+    final List<DocumentSnapshot> filteredFriends = _friendSearchQuery.isEmpty
+        ? _friends
+        : _friends.where((doc) {
+            try {
+              final up = UserProfile.fromSnapshot(doc);
+              return (up.displayName ?? '').toLowerCase().contains(_friendSearchQuery.toLowerCase());
+            } catch (_) {
+              return false;
+            }
+          }).toList();
+
     return Container(
       key: const Key('friends_tab_body'),
-      padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.zero,
+      padding: isThreeButtonAndroidNavigation(context)
+          ? EdgeInsets.only(bottom: sessionService.isRunning ? MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight + 65 : MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight)
+          : sessionService.isRunning
+              ? EdgeInsets.only(bottom: 65)
+              : EdgeInsets.zero,
       margin: const EdgeInsets.all(0),
       child: DefaultTabController(
         length: 2,
         initialIndex: 0,
         child: Column(
           children: [
+            // Header (tabs + optional actions + search) wrapped in SafeArea so it never sits under system / app top bar.
             Container(
               decoration: BoxDecoration(
                 color: HomeTheme.darkTheme.colorScheme.primaryContainer,
@@ -210,6 +241,49 @@ class _FriendsState extends State<Friends> {
                       );
                     },
                   ),
+                  // Friend search (only on Friends tab)
+                  Builder(
+                    builder: (context) {
+                      final tabController = DefaultTabController.of(context);
+                      return AnimatedBuilder(
+                        animation: tabController,
+                        builder: (context, child) {
+                          if (tabController.index == 0) {
+                            return Container(
+                              padding: const EdgeInsets.fromLTRB(16, 25, 16, 8),
+                              child: TextField(
+                                controller: _friendSearchController,
+                                onChanged: (val) => setState(() => _friendSearchQuery = val.trim()),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  filled: true,
+                                  fillColor: Theme.of(context).cardTheme.color?.withOpacity(0.6),
+                                  hintText: 'Search friends',
+                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.6)),
+                                  prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)),
+                                  suffixIcon: _friendSearchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)),
+                                          onPressed: () {
+                                            _friendSearchController.clear();
+                                            setState(() => _friendSearchQuery = '');
+                                          },
+                                        )
+                                      : null,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -277,33 +351,47 @@ class _FriendsState extends State<Friends> {
                                   ],
                                 ),
                               )
-                            : ListView.builder(
-                                padding: const EdgeInsets.only(top: 0, right: 0, left: 0, bottom: kToolbarHeight),
-                                itemCount: _friends.length + 1,
-                                itemBuilder: (_, int index) {
-                                  if (index < _friends.length) {
-                                    final DocumentSnapshot document = _friends[index];
-                                    return _buildFriendItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                  }
+                            : filteredFriends.isEmpty
+                                ? Container(
+                                    margin: const EdgeInsets.only(top: 40),
+                                    width: MediaQuery.of(context).size.width,
+                                    child: Text(
+                                      "No friends match your search".toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 18,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    padding: const EdgeInsets.only(top: 0, right: 0, left: 0, bottom: kToolbarHeight),
+                                    itemCount: filteredFriends.length + 1,
+                                    itemBuilder: (_, int index) {
+                                      if (index < filteredFriends.length) {
+                                        final DocumentSnapshot document = filteredFriends[index];
+                                        return _buildFriendItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                      }
 
-                                  return !_isLoadingFriends
-                                      ? Container()
-                                      : const Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: [
-                                              SizedBox(
-                                                height: 25,
-                                                width: 25,
-                                                child: CircularProgressIndicator(),
+                                      return !_isLoadingFriends
+                                          ? Container()
+                                          : const Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.max,
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 25,
+                                                    width: 25,
+                                                    child: CircularProgressIndicator(),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        );
-                                },
-                              ),
+                                            );
+                                    },
+                                  ),
                     onRefresh: () async {
                       _friends.clear();
                       await _loadFriends();
