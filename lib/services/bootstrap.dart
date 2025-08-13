@@ -4,8 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 
 Future<void> bootstrap(FirebaseAuth auth, FirebaseFirestore firestore) async {
+  // Initialize cached platform info early.
+  await initAndroidSdkVersionCache();
   await bootstrapIterations(auth, firestore);
 }
 

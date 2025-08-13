@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -66,6 +67,9 @@ Future<void> main() async {
   // Load intro_shown synchronously before building the app
   final introShown = prefs.getBool('intro_shown') ?? false;
   final introShownNotifier = IntroShownNotifier.withValue(introShown);
+
+  // Initialize navigation environment (Android SDK + system paddings)
+  await initNavigationEnvironment();
 
   /**
    * Firebase messaging setup
@@ -253,6 +257,14 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
+          builder: (ctx, child) {
+            // Safe MediaQuery available here
+            final extraBottom = isThreeButtonAndroidNavigation(ctx) ? MediaQuery.paddingOf(ctx).bottom : 0.0;
+            return Padding(
+              padding: EdgeInsets.only(bottom: extraBottom),
+              child: child,
+            );
+          },
         );
       },
     );
