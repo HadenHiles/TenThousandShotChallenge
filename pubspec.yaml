@@ -1,6 +1,6 @@
 # PROJECT_ROOT
 name: tenthousandshotchallenge
-version: 2.0.0+26
+version: 2.0.1+27
 environment:
   sdk: ">=3.0.0 <4.0.0"
 description: A flutter project for the Ten Thousand Shot Challenge app
@@ -62,6 +62,7 @@ dependencies:
   word_generator: ^0.5.0
   youtube_player_flutter: ^9.0.1
   timezone: ^0.10.1
+  device_info_plus: ^11.5.0
 dev_dependencies:
   build_runner: ^2.4.9
   fake_cloud_firestore: ^4.0.0
