@@ -14,6 +14,7 @@ import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart'; // For the generic dialog function
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart'; // Assuming wristShotColor is here
@@ -289,6 +290,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
     return Container(
       key: const Key('team_tab_body'),
+      padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.zero,
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: _getUserProfileStream(),
         builder: (context, userProfileSnapshot) {

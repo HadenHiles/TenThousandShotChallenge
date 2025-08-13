@@ -116,6 +116,7 @@ class _FriendsState extends State<Friends> {
   Widget build(BuildContext context) {
     return Container(
       key: const Key('friends_tab_body'),
+      padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.zero,
       margin: const EdgeInsets.all(0),
       child: DefaultTabController(
         length: 2,

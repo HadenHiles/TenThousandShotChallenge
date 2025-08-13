@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/models/firestore/LearnToPlayItem.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Merch.dart';
 import 'package:tenthousandshotchallenge/models/firestore/TrainingProgram.dart';
 import 'package:tenthousandshotchallenge/services/YouTubeChannelService.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 // import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
@@ -250,6 +251,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       children: [
         Container(
           height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+          padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + kBottomNavigationBarHeight) : EdgeInsets.zero,
           margin: const EdgeInsets.only(
             top: 0,
             right: 0,
