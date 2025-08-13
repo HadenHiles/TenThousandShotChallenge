@@ -832,7 +832,11 @@ class _ShotsState extends State<Shots> {
                                         ),
                                       ),
                               ),
-                              SizedBox(height: 30),
+                              isThreeButtonAndroidNavigation(context)
+                                  ? SizedBox(
+                                      height: MediaQuery.paddingOf(context).bottom + kBottomNavigationBarHeight,
+                                    )
+                                  : const SizedBox(height: 30),
                             ],
                           );
                         } else {
