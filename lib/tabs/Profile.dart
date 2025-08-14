@@ -45,8 +45,51 @@ class _ProfileState extends State<Profile> {
   String _subscriptionLevel = "free";
 
   String? _selectedIterationId;
-  DateTime? firstSessionDate = DateTime.now();
-  DateTime? latestSessionDate = DateTime.now();
+  // First and latest session dates for the currently selected iteration.
+  // Initialized as null until loaded from Firestore to avoid using DateTime.now() placeholder values.
+  DateTime? firstSessionDate;
+  DateTime? latestSessionDate;
+  bool _loadingSessionDates = false;
+
+  Future<void> _loadFirstLastSession(String? iterationId) async {
+    if (iterationId == null || user == null) return;
+    if (_loadingSessionDates) return; // prevent overlapping calls
+    setState(() => _loadingSessionDates = true);
+    try {
+      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+      final sessionsCollection = firestore.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions');
+
+      // Fetch first and last session dates with two lightweight queries in parallel.
+      final futures = await Future.wait([
+        sessionsCollection.orderBy('date', descending: false).limit(1).get(),
+        sessionsCollection.orderBy('date', descending: true).limit(1).get(),
+      ]);
+
+      final firstSnap = futures[0];
+      final lastSnap = futures[1];
+
+      if (firstSnap.docs.isNotEmpty && lastSnap.docs.isNotEmpty) {
+        final first = ShootingSession.fromSnapshot(firstSnap.docs.first);
+        final last = ShootingSession.fromSnapshot(lastSnap.docs.first);
+        setState(() {
+          firstSessionDate = first.date;
+          latestSessionDate = last.date;
+        });
+      } else {
+        // No sessions yet: clear dates so UI can handle gracefully.
+        setState(() {
+          firstSessionDate = null;
+          latestSessionDate = null;
+        });
+      }
+    } catch (_) {
+      // Swallow silently; optional: add debug print.
+    } finally {
+      if (mounted) {
+        setState(() => _loadingSessionDates = false);
+      }
+    }
+  }
 
   // State for selected shot type in accuracy section
   String _selectedAccuracyShotType = 'wrist';
@@ -1195,6 +1238,8 @@ class _ProfileState extends State<Profile> {
                           // Set default selected iteration if not set
                           if (_selectedIterationId == null && iterations.isNotEmpty) {
                             _selectedIterationId = latestIterationId;
+                            // Load session date bounds for initial iteration selection.
+                            WidgetsBinding.instance.addPostFrameCallback((_) => _loadFirstLastSession(_selectedIterationId));
                           }
 
                           // Only show the dropdown if there is more than one challenge
@@ -1208,7 +1253,11 @@ class _ProfileState extends State<Profile> {
                             onChanged: (value) {
                               setState(() {
                                 _selectedIterationId = value;
+                                // Reset dates before loading to avoid stale display.
+                                firstSessionDate = null;
+                                latestSessionDate = null;
                               });
+                              _loadFirstLastSession(value);
                             },
                             dropdownColor: Theme.of(context).colorScheme.primary,
                           );
@@ -1225,19 +1274,19 @@ class _ProfileState extends State<Profile> {
                 if (snapshot.hasData && snapshot.data!.exists) {
                   Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
+                  // Decide which day-span calculation to use:
+                  // Completed iteration: inclusive span between first session date (or iteration startDate if available) and endDate.
+                  // Active iteration: inclusive span between first and latest session dates (or fallback to first->now if latest missing).
                   if (i.endDate != null) {
-                    int daysTaken = i.endDate!.difference(firstSessionDate!).inDays + 1;
-                    daysTaken = daysTaken < 1 ? 1 : daysTaken;
+                    final DateTime? startRef = firstSessionDate ?? i.startDate; // fallback to stored startDate if model contains it
+                    int daysTaken = (startRef != null) ? i.endDate!.difference(startRef).inDays + 1 : 0;
+                    // Never show 0 days if iteration has any shots; clamp to minimum 1 for display
+                    if (daysTaken < 1 && (i.total ?? 0) > 0) daysTaken = 1;
                     String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                     String iterationDescription;
                     String goalDescription = "";
                     String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-
-                    if (daysTaken <= 1) {
-                      iterationDescription = "$fTotal shots in $daysTaken day";
-                    } else {
-                      iterationDescription = "$fTotal shots in $daysTaken days";
-                    }
+                    iterationDescription = daysTaken == 1 ? "$fTotal shots in $daysTaken day" : "$fTotal shots in $daysTaken days";
 
                     if (i.targetDate != null) {
                       String targetDate = DateFormat('MMMM d, y').format(i.targetDate!);
@@ -1364,19 +1413,22 @@ class _ProfileState extends State<Profile> {
                       ),
                     );
                   } else {
-                    int daysSoFar = latestSessionDate!.difference(firstSessionDate!).inDays + 1;
-                    daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
+                    // Active iteration: derive inclusive day span only when we have at least one session date.
+                    final DateTime? first = firstSessionDate;
+                    final DateTime? latest = latestSessionDate;
+                    int daysSoFar = 0;
+                    if (first != null) {
+                      final DateTime latestRef = latest ?? DateTime.now();
+                      daysSoFar = latestRef.difference(first).inDays + 1;
+                    }
+                    // Clamp: Never show 0 days once any shots have been logged in the iteration.
+                    if (daysSoFar < 1 && (i.total ?? 0) > 0) daysSoFar = 1;
                     String? iterationDescription;
                     String goalDescription = "";
                     int remainingShots = 10000 - i.total!;
                     String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
                     String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
-
-                    if (daysSoFar <= 1 && daysSoFar != 0) {
-                      iterationDescription = "$fTotal shots in $daysSoFar day";
-                    } else {
-                      iterationDescription = "$fTotal shots in $daysSoFar days";
-                    }
+                    iterationDescription = daysSoFar == 1 ? "$fTotal shots in $daysSoFar day" : "$fTotal shots in $daysSoFar days";
 
                     if (i.targetDate != null && remainingShots > 0) {
                       String? targetDate = DateFormat("MM/dd/yyyy").format(i.targetDate!);

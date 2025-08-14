@@ -35,8 +35,9 @@ class _HistoryState extends State<History> {
   ScrollController? sessionsController;
   String? _selectedIterationId;
 
-  DateTime firstSessionDate = DateTime.now();
-  DateTime latestSessionDate = DateTime.now();
+  DateTime? firstSessionDate; // null until loaded
+  DateTime? latestSessionDate; // null until loaded
+  bool _loadingSessionDates = false;
 
   @override
   void initState() {
@@ -45,16 +46,35 @@ class _HistoryState extends State<History> {
   }
 
   Future<void> _loadFirstLastSession(String? iterationId) async {
-    if (iterationId == null) return;
-    final snap =
-        await Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).get();
-    if (snap.docs.isNotEmpty) {
-      ShootingSession first = ShootingSession.fromSnapshot(snap.docs.first);
-      ShootingSession latest = ShootingSession.fromSnapshot(snap.docs.last);
-      setState(() {
-        firstSessionDate = first.date!;
-        latestSessionDate = latest.date!;
-      });
+    if (iterationId == null || user == null) return;
+    if (_loadingSessionDates) return;
+    setState(() => _loadingSessionDates = true);
+    try {
+      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+      final sessionsCollection = firestore.collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions');
+      final results = await Future.wait([
+        sessionsCollection.orderBy('date', descending: false).limit(1).get(),
+        sessionsCollection.orderBy('date', descending: true).limit(1).get(),
+      ]);
+      final firstSnap = results[0];
+      final lastSnap = results[1];
+      if (firstSnap.docs.isNotEmpty && lastSnap.docs.isNotEmpty) {
+        final first = ShootingSession.fromSnapshot(firstSnap.docs.first);
+        final last = ShootingSession.fromSnapshot(lastSnap.docs.first);
+        setState(() {
+          firstSessionDate = first.date;
+          latestSessionDate = last.date;
+        });
+      } else {
+        setState(() {
+          firstSessionDate = null;
+          latestSessionDate = null;
+        });
+      }
+    } catch (_) {
+      // Optionally log
+    } finally {
+      if (mounted) setState(() => _loadingSessionDates = false);
     }
   }
 
@@ -228,8 +248,9 @@ class _HistoryState extends State<History> {
                               Iteration i = Iteration.fromSnapshot(snapshot.data as DocumentSnapshot);
 
                               if (i.endDate != null) {
-                                int daysTaken = i.endDate!.difference(firstSessionDate).inDays + 1;
-                                daysTaken = daysTaken < 1 ? 1 : daysTaken;
+                                final DateTime? startRef = firstSessionDate ?? i.startDate;
+                                int daysTaken = (startRef != null) ? i.endDate!.difference(startRef).inDays + 1 : 0;
+                                if (daysTaken < 1 && (i.total ?? 0) > 0) daysTaken = 1; // clamp for display
                                 String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                                 String iterationDescription;
                                 String goalDescription = "";
@@ -258,8 +279,14 @@ class _HistoryState extends State<History> {
 
                                 return _iterationSummaryRow(iterationDescription, goalDescription);
                               } else {
-                                int daysSoFar = latestSessionDate.difference(firstSessionDate).inDays + 1;
-                                daysSoFar = daysSoFar < 1 ? 1 : daysSoFar;
+                                final DateTime? first = firstSessionDate;
+                                final DateTime? latest = latestSessionDate;
+                                int daysSoFar = 0;
+                                if (first != null) {
+                                  final DateTime latestRef = latest ?? DateTime.now();
+                                  daysSoFar = latestRef.difference(first).inDays + 1;
+                                }
+                                if (daysSoFar < 1 && (i.total ?? 0) > 0) daysSoFar = 1; // clamp for display
                                 String? iterationDescription;
                                 String goalDescription = "";
                                 int remainingShots = 10000 - i.total!;
