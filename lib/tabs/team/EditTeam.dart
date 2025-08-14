@@ -5,7 +5,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -462,12 +461,10 @@ class _EditTeamState extends State<EditTeam> {
                                     fontSize: 16.0,
                                   );
 
-                                  Navigator.of(context).pushReplacement(MaterialPageRoute(
-                                    builder: (context) {
-                                      return const Navigation(tabId: 'team');
-                                    },
-                                    maintainState: false,
-                                  ));
+                                  // Use go_router unified route
+                                  if (context.mounted) {
+                                    context.go('/app?tab=team');
+                                  }
                                 } else {
                                   Fluttertoast.showToast(
                                     msg: 'Failed to delete team :('.toUpperCase(),
