@@ -331,6 +331,11 @@ class _LoginState extends State<Login> {
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Theme.of(context).colorScheme.surface,
+                                                  foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                                                ),
                                                 child: const Text("Forgot password?"),
                                                 onPressed: () {
                                                   showDialog(
@@ -398,6 +403,11 @@ class _LoginState extends State<Login> {
                                                                     Padding(
                                                                       padding: const EdgeInsets.all(8.0),
                                                                       child: ElevatedButton(
+                                                                        style: ElevatedButton.styleFrom(
+                                                                          backgroundColor: Theme.of(context).colorScheme.surface,
+                                                                          foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                                                          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                                                                        ),
                                                                         child: const Text("Send reset email"),
                                                                         onPressed: () {
                                                                           if (_forgotPasswordFormKey.currentState!.validate()) {
