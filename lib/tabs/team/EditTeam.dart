@@ -298,32 +298,38 @@ class _EditTeamState extends State<EditTeam> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            "Starting From:".toLowerCase(),
-                                            style: TextStyle(
-                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 14,
+                                          Expanded(
+                                            child: Text(
+                                              "Starting From:".toLowerCase(),
+                                              style: TextStyle(
+                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 14,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.left,
                                             ),
-                                            textAlign: TextAlign.left,
                                           ),
-                                          Text(
-                                            "By Target Completion Date:".toLowerCase(),
-                                            style: TextStyle(
-                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 14,
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              "By Target Completion Date:".toLowerCase(),
+                                              style: TextStyle(
+                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                                fontFamily: "NovecentoSans",
+                                                fontSize: 14,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.right,
                                             ),
-                                            textAlign: TextAlign.left,
                                           ),
                                         ],
                                       ),
                                       Row(
                                         children: [
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.4,
+                                          Expanded(
+                                            flex: 5,
                                             child: AutoSizeTextField(
                                               controller: startDateController,
                                               style: const TextStyle(fontSize: 12),
@@ -349,20 +355,19 @@ class _EditTeamState extends State<EditTeam> {
                                               },
                                             ),
                                           ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.1,
-                                            child: Text(
-                                              'To'.toUpperCase(),
-                                              style: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 14,
-                                              ),
-                                              textAlign: TextAlign.center,
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'To'.toUpperCase(),
+                                            style: TextStyle(
+                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 14,
                                             ),
+                                            textAlign: TextAlign.center,
                                           ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.4,
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            flex: 5,
                                             child: AutoSizeTextField(
                                               controller: targetDateController,
                                               style: const TextStyle(fontSize: 12),
@@ -421,91 +426,95 @@ class _EditTeamState extends State<EditTeam> {
                   ),
                 ),
               ),
-              floatingActionButton: Container(
-                width: MediaQuery.of(context).size.width,
-                margin: const EdgeInsets.all(0),
-                padding: const EdgeInsets.all(0),
-                child: TextButton(
-                  onPressed: () {
-                    dialog(
-                      context,
-                      ConfirmDialog(
-                        "Delete team \"${team!.name}\"?".toLowerCase(),
-                        Text(
-                          "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        "Cancel",
-                        () {
-                          Navigator.of(context).pop();
-                        },
-                        "Continue",
-                        () async {
-                          await deleteTeam(team!.id!, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((r) {
-                            if (r) {
-                              Fluttertoast.showToast(
-                                msg: 'Team deleted!'.toUpperCase(),
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.BOTTOM,
-                                timeInSecForIosWeb: 1,
-                                backgroundColor: Theme.of(context).cardTheme.color,
-                                textColor: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 16.0,
-                              );
-
-                              Navigator.of(context).pushReplacement(MaterialPageRoute(
-                                builder: (context) {
-                                  return const Navigation(tabId: 'team');
-                                },
-                                maintainState: false,
-                              ));
-                            } else {
-                              Fluttertoast.showToast(
-                                msg: 'Failed to delete team :('.toUpperCase(),
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.BOTTOM,
-                                timeInSecForIosWeb: 1,
-                                backgroundColor: Colors.redAccent,
-                                textColor: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 16.0,
-                              );
-
+              bottomNavigationBar: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        dialog(
+                          context,
+                          ConfirmDialog(
+                            "Delete team \"${team!.name}\"?".toLowerCase(),
+                            Text(
+                              "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            "Cancel",
+                            () {
                               Navigator.of(context).pop();
-                            }
-                          });
-                        },
+                            },
+                            "Continue",
+                            () async {
+                              await deleteTeam(team!.id!, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((r) {
+                                if (r) {
+                                  Fluttertoast.showToast(
+                                    msg: 'Team deleted!'.toUpperCase(),
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    timeInSecForIosWeb: 1,
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    textColor: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 16.0,
+                                  );
+
+                                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                                    builder: (context) {
+                                      return const Navigation(tabId: 'team');
+                                    },
+                                    maintainState: false,
+                                  ));
+                                } else {
+                                  Fluttertoast.showToast(
+                                    msg: 'Failed to delete team :('.toUpperCase(),
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.BOTTOM,
+                                    timeInSecForIosWeb: 1,
+                                    backgroundColor: Colors.redAccent,
+                                    textColor: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 16.0,
+                                  );
+
+                                  Navigator.of(context).pop();
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).cardTheme.color,
+                        backgroundColor: Theme.of(context).cardTheme.color,
+                        disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).cardTheme.color,
-                    backgroundColor: Theme.of(context).cardTheme.color,
-                    disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                  ),
-                  child: FittedBox(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Delete Team".toUpperCase(),
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 24,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Text(
+                            "Delete Team".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 22,
+                            ),
                           ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(top: 3, left: 4),
-                          child: Icon(
-                            Icons.delete_forever,
-                            color: Theme.of(context).primaryColor,
-                            size: 24,
+                          Container(
+                            margin: const EdgeInsets.only(top: 3, left: 6),
+                            child: Icon(
+                              Icons.delete_forever,
+                              color: Theme.of(context).primaryColor,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

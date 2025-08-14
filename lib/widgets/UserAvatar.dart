@@ -10,29 +10,43 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (user!.photoUrl != null && user!.photoUrl!.contains('http')) {
+    // Defensive: if user is null, show a default placeholder avatar
+    if (user == null) {
       return FittedBox(
         fit: BoxFit.cover,
         clipBehavior: Clip.antiAlias,
         child: CircleAvatar(
           radius: radius,
-          backgroundImage: NetworkImage(
-            user!.photoUrl!,
-          ),
+          backgroundImage: const AssetImage("assets/images/avatar.png"),
+          backgroundColor: backgroundColor,
+          child: const SizedBox(),
+        ),
+      );
+    }
+
+    final String? photoUrl = user!.photoUrl;
+
+    if (photoUrl != null && photoUrl.contains('http')) {
+      return FittedBox(
+        fit: BoxFit.cover,
+        clipBehavior: Clip.antiAlias,
+        child: CircleAvatar(
+          radius: radius,
+          backgroundImage: NetworkImage(photoUrl),
           backgroundColor: backgroundColor,
         ),
       );
-    } else if (user!.photoUrl != null && user!.photoUrl!.isNotEmpty) {
+    } else if (photoUrl != null && photoUrl.isNotEmpty) {
       return FittedBox(
         fit: BoxFit.cover,
         clipBehavior: Clip.antiAlias,
         child: Transform.scale(
-          scale: user!.photoUrl!.contains('characters') ? 1.03 : 0.98,
+          scale: photoUrl.contains('characters') ? 1.03 : 0.98,
           child: CircleAvatar(
             radius: radius,
             backgroundColor: backgroundColor,
             child: Image(
-              image: AssetImage(user!.photoUrl!),
+              image: AssetImage(photoUrl),
             ),
           ),
         ),
