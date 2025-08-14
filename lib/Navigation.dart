@@ -296,6 +296,7 @@ class _NavigationState extends State<Navigation> {
 
   void _onItemTapped(int index) async {
     if (_tabs[index].id == 'team') {
+      // Legacy manual load retained for other side-effects; actions now stream-driven.
       _loadTeam();
     }
     setState(() {
@@ -349,29 +350,54 @@ class _NavigationState extends State<Navigation> {
               Team t = Team.fromSnapshot(tSnap);
 
               setState(() {
-                team = t;
+                team = t; // Title handled by existing StreamBuilder; actions now dynamic.
+              });
+            }
+          });
+        }
+      }
+    });
+  }
 
-                _tabs[2] = NavigationTab(
-                  id: 'team',
-                  title: NavigationTitle(title: team!.name ?? "Team".toUpperCase()),
-                  body: const TeamPage(),
-                  actions: [
-                    team!.ownerId != user?.uid
-                        ? const SizedBox()
-                        : Container(
-                            margin: const EdgeInsets.only(top: 10),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.edit,
-                                color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                                size: 28,
-                              ),
-                              onPressed: () {
-                                context.push('/edit-team');
-                              },
-                            ),
-                          ),
-                    Container(
+  // Dynamically build Team tab actions using live streams so UI reflects membership/ownership changes immediately.
+  List<Widget> _buildDynamicTeamActions(BuildContext context) {
+    final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    if (user == null) {
+      return [];
+    }
+    final userDocStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
+    return [
+      // Wrap in Builder so each rebuild scope is isolated
+      Builder(
+        builder: (context) {
+          return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: userDocStream,
+            builder: (context, userSnap) {
+              if (!userSnap.hasData || !userSnap.data!.exists) {
+                return const SizedBox();
+              }
+              final data = userSnap.data!.data();
+              final teamId = data != null ? data['team_id'] as String? : null;
+              if (teamId == null || teamId.isEmpty) {
+                // No team: show QR code join action only
+                return Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.qr_code_2_rounded,
+                      color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                      size: 28,
+                    ),
+                    onPressed: () => _handleJoinTeamQRCode(context),
+                  ),
+                );
+              }
+              final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
+              return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: teamStream,
+                builder: (context, teamSnap) {
+                  if (!teamSnap.hasData || !teamSnap.data!.exists) {
+                    return Container(
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
                         icon: Icon(
@@ -379,37 +405,48 @@ class _NavigationState extends State<Navigation> {
                           color: HomeTheme.darkTheme.colorScheme.onPrimary,
                           size: 28,
                         ),
-                        onPressed: () async {
-                          await showTeamQRCode(context).then((hasTeam) async {
-                            if (!hasTeam) {
-                              final barcodeScanRes = await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
-                                ),
-                              );
-
-                              joinTeam(barcodeScanRes, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
-                                if (success == true && mounted) {
-                                  setState(() {
-                                    _selectedIndex = 2;
-                                    _leading = _tabs[2].leading;
-                                    _actions = widget.actions ?? _tabs[2].actions;
-                                  });
-                                }
-                              });
-                            }
-                          });
-                        },
+                        onPressed: () => _handleJoinTeamQRCode(context),
                       ),
-                    ),
-                  ],
-                );
-              });
-            }
-          });
-        }
-      }
-    });
+                    );
+                  }
+                  final teamData = teamSnap.data!.data();
+                  final ownerId = teamData != null ? teamData['owner_id'] as String? : null;
+                  final isOwner = ownerId == user.uid;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isOwner)
+                        Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                              size: 28,
+                            ),
+                            onPressed: () => context.push('/edit-team'),
+                          ),
+                        ),
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.qr_code_2_rounded,
+                            color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                            size: 28,
+                          ),
+                          onPressed: () => _handleJoinTeamQRCode(context),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    ];
   }
 
   @override
@@ -601,7 +638,7 @@ class _NavigationState extends State<Navigation> {
                               ),
                             ),
                             leading: _leading,
-                            actions: _actions,
+                            actions: _tabs[_selectedIndex].id == 'team' ? _buildDynamicTeamActions(context) : _actions,
                           ),
                         ];
                 },
