@@ -897,6 +897,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 await removePlayerFromTeam(currentTeam.id!, user?.uid ?? '', firestore).then((r) {
                   if (r) {
                     Fluttertoast.showToast(msg: "You left team ${currentTeam.name}!".toLowerCase());
+                    if (mounted) {
+                      context.go('/app?tab=team');
+                    }
                   } else {
                     Fluttertoast.showToast(msg: "Failed to leave team :(".toLowerCase());
                   }

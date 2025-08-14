@@ -130,7 +130,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                         });
                                         searchFieldController.text = "";
 
-                                        context.go('/tabs/team'); // Update all navigation to match folder structure
+                                        context.go('/app?tab=team');
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
@@ -330,7 +330,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                             ),
                                           );
 
-                                          context.go('/tabs/team'); // Update all navigation to match folder structure
+                                          context.go('/app?tab=team');
                                         }).onError((error, stackTrace) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
