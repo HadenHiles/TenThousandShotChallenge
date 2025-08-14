@@ -284,7 +284,7 @@ class _PlayerState extends State<Player> {
                                         "Continue",
                                         () {
                                           // Use go_router for navigation instead of pushReplacement
-                                          context.go('/tabs/friends');
+                                          context.go('/app?tab=friends');
 
                                           removePlayerFromFriends(
                                             _userPlayer!.reference!.id,
