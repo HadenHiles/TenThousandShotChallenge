@@ -12,14 +12,12 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditTeam extends StatefulWidget {
@@ -110,64 +108,10 @@ class _EditTeamState extends State<EditTeam> {
   }
 
   void _backToTeamPage() {
-    Navigator.of(context)
-        .pushReplacement(
-          MaterialPageRoute(
-            builder: (BuildContext context) {
-              return Navigation(
-                tabId: 'team',
-                actions: [
-                  team!.ownerId != user!.uid
-                      ? const SizedBox()
-                      : Container(
-                          margin: const EdgeInsets.only(top: 10),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.edit,
-                              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              context.push('/edit-team');
-                            },
-                          ),
-                        ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.qr_code_2_rounded,
-                        color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                        size: 28,
-                      ),
-                      onPressed: () async {
-                        await showTeamQRCode(context).then((hasTeam) async {
-                          if (!hasTeam) {
-                            final barcodeScanRes = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
-                              ),
-                            );
-
-                            joinTeam(
-                              barcodeScanRes,
-                              Provider.of<FirebaseAuth>(context, listen: false),
-                              Provider.of<FirebaseFirestore>(context, listen: false),
-                            ).then((success) {
-                              context.go('/app?tab=team');
-                            });
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
-            maintainState: false,
-          ),
-        )
-        .then((value) => setState(() {}));
+    // Use go_router to navigate back to team tab
+    if (mounted) {
+      context.go('/app?tab=team');
+    }
   }
 
   @override

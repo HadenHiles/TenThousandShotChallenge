@@ -367,7 +367,7 @@ class _NavigationState extends State<Navigation> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                context.push('/editTeam');
+                                context.push('/edit-team');
                               },
                             ),
                           ),
