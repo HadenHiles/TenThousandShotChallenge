@@ -172,10 +172,49 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           }
 
           List<Stream<int>> iterationShotSumStreams = iterationsSnapshot.docs.map((iterationDoc) {
-            // The following block previously used FirestoreCache for caching session queries.
-            // It is now removed. If you need to fetch sessions, use Firestore streams or queries directly here.
-            // Example placeholder:
-            return Stream.value(0); // Replace with actual Firestore query logic if needed.
+            // For each iteration, stream its sessions and sum the 'total' field for sessions
+            // that fall within the team goal window [teamStartDate, teamTargetDate].
+            final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+            return firestore
+                .collection('iterations')
+                .doc(playerUid)
+                .collection('iterations')
+                .doc(iterationDoc.id)
+                .collection('sessions')
+                // We'll listen to all sessions and filter client-side to keep logic clear and avoid composite indexes.
+                .snapshots()
+                .map((sessionsSnapshot) {
+              int sum = 0;
+              for (final sessionDoc in sessionsSnapshot.docs) {
+                final data = sessionDoc.data();
+                // Expect Firestore Timestamp in 'date'
+                final dynamic rawDate = data['date'];
+                DateTime? sessionDate;
+                if (rawDate is Timestamp) {
+                  sessionDate = rawDate.toDate();
+                } else if (rawDate is DateTime) {
+                  sessionDate = rawDate;
+                }
+                if (sessionDate == null) continue;
+                // Normalize to date (remove time) for inclusive comparison
+                final sessionDay = DateTime(sessionDate.year, sessionDate.month, sessionDate.day);
+                final startDay = DateTime(teamStartDate.year, teamStartDate.month, teamStartDate.day);
+                final endDay = DateTime(teamTargetDate.year, teamTargetDate.month, teamTargetDate.day);
+                if (sessionDay.isBefore(startDay) || sessionDay.isAfter(endDay)) {
+                  continue; // Outside team goal window
+                }
+                final dynamic totalVal = data['total'];
+                if (totalVal is int) {
+                  sum += totalVal;
+                } else if (totalVal is num) {
+                  sum += totalVal.toInt();
+                }
+              }
+              return sum;
+            }).handleError((e) {
+              // On error for this iteration's sessions, return 0 so other iterations still count
+              return 0;
+            });
           }).toList();
 
           if (iterationShotSumStreams.isEmpty) {
@@ -676,12 +715,23 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place) {
-    final String? photoUrl = plyr.profile?.photoUrl;
+    // Raw photo URL from profile (can be network URL, asset path, or an unintended file URI)
+    final String? rawPhotoUrl = plyr.profile?.photoUrl;
+    String? photoUrl = rawPhotoUrl;
+    // Sanitize: if the value starts with file:/// but actually points to an asset path we strip the schema
+    if (photoUrl != null && photoUrl.startsWith('file:///')) {
+      // Remove the scheme
+      photoUrl = photoUrl.substring('file:///'.length);
+      // If a leading slash remains (e.g. /assets/...), strip it so AssetImage can resolve it
+      if (photoUrl.startsWith('/')) {
+        photoUrl = photoUrl.substring(1);
+      }
+    }
     final String displayName = plyr.profile?.displayName ?? "Player";
     Widget? badgeWidget;
     double avatarRadius = 32;
-    double badgeFontSize = 16;
-    double badgePaddingH = 10;
+    double badgeFontSize = 14;
+    double badgePaddingH = 8;
     double badgePaddingV = 5;
     Color badgeColor;
     Color badgeTextColor = Colors.white;
@@ -723,7 +773,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         ),
       ];
     } else {
-      badgeColor = Theme.of(context).primaryColor;
+      badgeColor = (user?.uid == plyr.profile?.reference?.id) ? Theme.of(context).primaryColor.withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.3);
     }
     badgeWidget = Container(
       padding: EdgeInsets.symmetric(horizontal: badgePaddingH, vertical: badgePaddingV),
@@ -749,6 +799,21 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         ),
       ),
     );
+    // Decide which ImageProvider to use
+    ImageProvider? avatarImage;
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      if (photoUrl.startsWith('http')) {
+        // Network image
+        avatarImage = NetworkImage(photoUrl);
+      } else if (photoUrl.startsWith('assets/')) {
+        // Asset image in bundled assets
+        avatarImage = AssetImage(photoUrl);
+      } else {
+        // Fallback: if it's some other non-empty string treat as asset path attempt
+        avatarImage = AssetImage(photoUrl);
+      }
+    }
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       tileColor: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
@@ -758,9 +823,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         children: [
           CircleAvatar(
             radius: avatarRadius,
-            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.15),
-            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
-            child: (photoUrl == null || photoUrl.isEmpty)
+            backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            backgroundImage: avatarImage,
+            child: (avatarImage == null)
                 ? Text(
                     displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
                     style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
@@ -774,7 +839,15 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           ),
         ],
       ),
-      title: Text(displayName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20)),
+      title: Text(
+        displayName,
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontSize: 20,
+          color: (plyr.profile?.reference?.id == user?.uid) ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface,
+          fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
       trailing: SizedBox(
         height: 60,
         child: Stack(
