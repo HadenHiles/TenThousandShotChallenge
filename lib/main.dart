@@ -6,6 +6,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'services/RevenueCatConfig.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
@@ -155,7 +156,12 @@ Future<void> initRevenueCat(String? appUserID) async {
 
   if (configuration != null) {
     configuration.appUserID = appUserID;
-    await Purchases.configure(configuration);
+    try {
+      await Purchases.configure(configuration);
+      RevenueCatConfig.configured = true;
+    } catch (e) {
+      RevenueCatConfig.configured = false;
+    }
   }
 }
 
@@ -200,12 +206,13 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       final user = _authNotifier.user;
       if (user != null && user.uid != _lastUser?.uid) {
         await initRevenueCat(user.uid);
-        // After login, ensure notifier is available and refreshed
-        try {
-          final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
-          notifier.attach();
-          await notifier.refresh();
-        } catch (_) {}
+        if (RevenueCatConfig.configured) {
+          try {
+            final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
+            notifier.attach();
+            await notifier.refresh();
+          } catch (_) {}
+        }
         _lastUser = user;
         // Set user's timezone in Firestore
         try {
@@ -234,13 +241,15 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // On resume, invalidate cache and refresh entitlements
-      Purchases.invalidateCustomerInfoCache();
-      try {
-        final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
-        notifier.attach();
-        notifier.refresh();
-      } catch (_) {}
+      if (RevenueCatConfig.configured) {
+        // On resume, invalidate cache and refresh entitlements
+        Purchases.invalidateCustomerInfoCache();
+        try {
+          final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
+          notifier.attach();
+          notifier.refresh();
+        } catch (_) {}
+      }
     }
   }
 

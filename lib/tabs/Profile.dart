@@ -134,6 +134,11 @@ class _ProfileState extends State<Profile> {
 
   // 1. Radial area chart for overall average accuracy per shot type
   Widget _buildRadialAccuracyChart(BuildContext context, String? iterationId) {
+    // Guard against null user during auth transitions
+    final authUser = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    if (authUser == null && _subscriptionLevel == 'pro') {
+      return const SizedBox.shrink();
+    }
     if (_subscriptionLevel != 'pro') {
       final shotTypes = ['wrist', 'backhand', 'slap', 'snap'];
       Map<String, double> avgAccuracy = Map<String, double>.from(_dummyAvgAccuracy);
@@ -277,7 +282,7 @@ class _ProfileState extends State<Profile> {
 
     if (iterationId == null) return Container();
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-    final currentUser = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    final currentUser = authUser; // already guarded above
     // Swap 'snap' and 'backhand' in shotTypes for the radar chart
     final shotTypes = ['wrist', 'backhand', 'slap', 'snap'];
     Map<String, double> avgAccuracy = {for (var t in shotTypes) t: 0};
@@ -508,6 +513,10 @@ class _ProfileState extends State<Profile> {
 
   // 2. TargetAccuracyVisualizers for each shot type, tappable
   Widget _buildShotTypeAccuracyVisualizers(BuildContext context, String? iterationId) {
+    final authUser = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    if (authUser == null && _subscriptionLevel == 'pro') {
+      return const SizedBox.shrink();
+    }
     if (_subscriptionLevel != 'pro') {
       // Always show dummy data for non-pro users
       final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
@@ -550,12 +559,12 @@ class _ProfileState extends State<Profile> {
       );
     }
 
-    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-    if (iterationId == null) return Container();
+    User? user = authUser;
+    if (iterationId == null || user == null) return Container();
 
     final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
     return StreamBuilder<QuerySnapshot>(
-      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
+      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').doc(iterationId).collection('sessions').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()));
@@ -644,6 +653,10 @@ class _ProfileState extends State<Profile> {
 
   // 3. Scatter chart for accuracy over time for selected shot type
   Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId) {
+    final authUser = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    if (authUser == null && _subscriptionLevel == 'pro') {
+      return const SizedBox.shrink();
+    }
     if (_subscriptionLevel != 'pro') {
       // Always show dummy data for non-pro users
       final shotType = _selectedAccuracyShotType;
@@ -697,13 +710,12 @@ class _ProfileState extends State<Profile> {
       );
     }
 
-    User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-    if (iterationId == null) return Container();
+    User? user = authUser;
+    if (iterationId == null || user == null) return Container();
 
     final shotType = _selectedAccuracyShotType;
     return StreamBuilder<QuerySnapshot>(
-      stream:
-          Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
+      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user.uid).collection('iterations').doc(iterationId).collection('sessions').orderBy('date', descending: false).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(height: 220, child: Center(child: CircularProgressIndicator()));
@@ -912,6 +924,11 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = user; // getter
+    if (currentUser == null) {
+      // While auth state is changing (e.g., user just signed out) we avoid building with null assertions
+      return const Center(child: CircularProgressIndicator());
+    }
     return Container(
       key: const Key('profile_tab_body'),
       padding: isThreeButtonAndroidNavigation(context)
@@ -988,7 +1005,7 @@ class _ProfileState extends State<Profile> {
                                   if (value == 'edit') {
                                     context.push('/editProfile');
                                   } else if (value == 'qr_code') {
-                                    showQRCode(context, user);
+                                    showQRCode(context, currentUser);
                                   }
                                 },
                               ),
@@ -1013,7 +1030,7 @@ class _ProfileState extends State<Profile> {
                                     height: 60,
                                     width: 60,
                                     child: StreamBuilder<DocumentSnapshot>(
-                                      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).snapshots(),
+                                      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).snapshots(),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasData) {
                                           UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data!);
@@ -1024,7 +1041,7 @@ class _ProfileState extends State<Profile> {
                                         }
 
                                         return UserAvatar(
-                                          user: UserProfile(user!.displayName, user!.email, user!.photoURL, true, true, null, ''),
+                                          user: UserProfile(currentUser.displayName, currentUser.email, currentUser.photoURL, true, true, null, ''),
                                           backgroundColor: Colors.transparent,
                                         );
                                       },
@@ -1045,7 +1062,7 @@ class _ProfileState extends State<Profile> {
                         SizedBox(
                           width: (MediaQuery.of(context).size.width - 100) * 0.6,
                           child: StreamBuilder<DocumentSnapshot>(
-                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).snapshots(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) {
                                 return const Column(
@@ -1069,7 +1086,7 @@ class _ProfileState extends State<Profile> {
                               return SizedBox(
                                 width: (MediaQuery.of(context).size.width - 100) * 0.5,
                                 child: AutoSizeText(
-                                  userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : user!.displayName!,
+                                  userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : (currentUser.displayName ?? 'Player'),
                                   maxLines: 1,
                                   maxFontSize: 22,
                                   style: TextStyle(
@@ -1083,7 +1100,7 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                         StreamBuilder(
-                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(currentUser.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
@@ -1115,7 +1132,7 @@ class _ProfileState extends State<Profile> {
                               }
                             }),
                         StreamBuilder(
-                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').snapshots(),
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(currentUser.uid).collection('iterations').snapshots(),
                             builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                               if (!snapshot.hasData) {
                                 return Center(
