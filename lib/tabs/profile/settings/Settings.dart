@@ -713,8 +713,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             onPressed: (BuildContext context) async {
                               await signOut();
-                              // Use absolute route to ensure navigation to login
-                              context.go('/login');
+                              // No manual navigation: GoRouter redirect will send unauthenticated user to /login
                             },
                           ),
                           SettingsTile(title: SizedBox.shrink()),

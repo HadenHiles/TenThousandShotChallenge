@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'RevenueCatConfig.dart';
 
 /// A simple ChangeNotifier that keeps the latest RevenueCat CustomerInfo
 /// and exposes convenience getters. Call attach() after Purchases.configure
@@ -25,6 +26,7 @@ class CustomerInfoNotifier extends ChangeNotifier {
   /// Attach a listener to RevenueCat updates (idempotent).
   void attach() {
     if (_attached) return;
+    if (!RevenueCatConfig.configured) return; // Defer until configured
     Purchases.addCustomerInfoUpdateListener((CustomerInfo customerInfo) {
       _info = customerInfo;
       notifyListeners();
@@ -34,6 +36,7 @@ class CustomerInfoNotifier extends ChangeNotifier {
 
   /// Fetch current CustomerInfo from the SDK and notify listeners.
   Future<void> refresh() async {
+    if (!RevenueCatConfig.configured) return;
     try {
       final ci = await Purchases.getCustomerInfo();
       _info = ci;

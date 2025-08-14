@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'RevenueCatConfig.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart' show RevenueCatUI;
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 
@@ -10,10 +11,12 @@ Future<void> presentPaywallIfNeeded(BuildContext context) async {
   log('Paywall result: $paywallResult');
   // After closing paywall, force refresh entitlements so UI updates immediately
   try {
-    Purchases.invalidateCustomerInfoCache();
-    final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
-    notifier.attach();
-    await notifier.refresh();
+    if (RevenueCatConfig.configured) {
+      Purchases.invalidateCustomerInfoCache();
+      final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
+      notifier.attach();
+      await notifier.refresh();
+    }
   } catch (_) {}
 }
 
