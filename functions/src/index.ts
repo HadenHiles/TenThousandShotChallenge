@@ -1099,6 +1099,11 @@ async function updateAchievementsAfterSessionChange(userId: string, session: any
     const stats = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
     for (const doc of achievementsSnap.docs) {
         const achievement = doc.data();
+        const isManual = achievement?.style === 'fun' || achievement?.style === 'social' || achievement?.isBonus === true;
+        if (isManual) {
+            // Do not auto-toggle manual / bonus achievements; preserve manual completion state.
+            continue;
+        }
         const completed = await checkAchievementCompletion(userId, achievement, stats);
         if (completed && !achievement.completed) {
             batch.update(doc.ref, { completed: true, completed_at: require('firebase-admin').firestore.FieldValue.serverTimestamp() });
@@ -1118,8 +1123,13 @@ async function updateAchievementsAfterSessionDelete(userId: string) {
     const batch = db.batch();
     for (const doc of achievementsSnap.docs) {
         const achievement = doc.data();
+        const isManual = achievement?.style === 'fun' || achievement?.style === 'social' || achievement?.isBonus === true;
+        if (isManual) {
+            // Preserve manual / bonus achievement completion; skip auto un-complete.
+            continue;
+        }
         if (achievement.completed) {
-            // Re-check if achievement is still completed
+            // Re-check if achievement is still completed for non-manual achievements
             const stillCompleted = await checkAchievementCompletion(userId, achievement, stats);
             if (!stillCompleted) {
                 batch.update(doc.ref, { completed: false, completed_at: null });
