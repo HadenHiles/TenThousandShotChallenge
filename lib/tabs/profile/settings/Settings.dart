@@ -434,7 +434,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               ),
                             ),
                             onPressed: (BuildContext context) {
-                              context.push('/editPuckCount');
+                              // Use push so that edit puck count screen is added on top of the stack and pop returns here.
+                              GoRouter.of(context).push('/edit-puck-count');
                             },
                           ),
                           SettingsTile.switchTile(
@@ -604,7 +605,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                             onPressed: (BuildContext context) {
-                              context.push("editProfile");
+                              // Use absolute path matching router.dart definition
+                              context.push('/edit-profile');
                             },
                           ),
                           SettingsTile(
@@ -671,7 +673,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         onPressed: () {
                                           FirebaseAuth.instance.currentUser!.delete().then((_) {
                                             context.pop();
-                                            context.push("login");
+                                            context.push("/login");
 
                                             SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                                           }).onError((FirebaseAuthException error, stackTrace) {
