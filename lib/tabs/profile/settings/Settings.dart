@@ -37,6 +37,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
   // Simulated subscription level (replace with RevenueCat or your backend)
   String _subscriptionLevel = "free"; // Can be "Free", "Premium", or "Pro"
+  CustomerInfoNotifier? _customerInfoNotifier; // cache notifier to avoid lookups after dispose
 
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
@@ -47,8 +48,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     _loadSubscriptionLevel();
     // Listen for RevenueCat entitlement changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.addListener(_onCustomerInfoChanged);
+      if (!mounted) return;
+      _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      _customerInfoNotifier?.addListener(_onCustomerInfoChanged);
     });
   }
 
@@ -64,6 +66,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
   _loadSubscriptionLevel() async {
     subscriptionLevel(context).then((level) async {
+      if (!mounted) return;
       setState(() {
         _subscriptionLevel = level;
       });
@@ -92,8 +95,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   @override
   void dispose() {
     try {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.removeListener(_onCustomerInfoChanged);
+      _customerInfoNotifier?.removeListener(_onCustomerInfoChanged);
     } catch (_) {}
     super.dispose();
   }

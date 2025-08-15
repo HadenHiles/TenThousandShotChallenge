@@ -46,6 +46,7 @@ class _StartShootingState extends State<StartShooting> {
   bool _showAccuracyPrompt = true;
   int? _lastTargetsHit;
   bool _chartCollapsed = true;
+  CustomerInfoNotifier? _customerInfoNotifier; // cache to avoid lookups after dispose
 
   @override
   void initState() {
@@ -55,17 +56,19 @@ class _StartShootingState extends State<StartShooting> {
     super.initState();
     _loadSubscriptionLevel();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.addListener(_onEntitlementsChanged);
+      if (!mounted) return;
+      _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      _customerInfoNotifier?.addListener(_onEntitlementsChanged);
     });
   }
 
   @override
   void dispose() {
     try {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.removeListener(_onEntitlementsChanged);
-    } catch (_) {}
+      _customerInfoNotifier?.removeListener(_onEntitlementsChanged);
+    } catch (_) {
+      // ignore
+    }
     _shots = [];
     _currentShotCount = preferences!.puckCount!;
     super.dispose();
@@ -86,6 +89,7 @@ class _StartShootingState extends State<StartShooting> {
 
   _loadSubscriptionLevel() async {
     subscriptionLevel(context).then((level) {
+      if (!mounted) return;
       setState(() {
         _subscriptionLevel = level;
       });
