@@ -263,7 +263,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           title: '10,000 Shot Challenge',
           routerConfig: _router,
           debugShowCheckedModeBanner: false,
-          theme: preferences!.darkMode! ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+          theme: (preferences!.darkMode! || MediaQuery.of(context).platformBrightness == Brightness.dark) ? HomeTheme.darkTheme : HomeTheme.lightTheme,
           darkTheme: HomeTheme.darkTheme,
           themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
           builder: (ctx, child) {
