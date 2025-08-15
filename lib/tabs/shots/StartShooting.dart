@@ -289,7 +289,7 @@ class _StartShootingState extends State<StartShooting> {
                           ),
                         ),
                         trailing: IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: const Icon(Icons.close, color: Colors.green),
                           onPressed: () {
                             setState(() => _showAccuracyPrompt = false);
                           },
