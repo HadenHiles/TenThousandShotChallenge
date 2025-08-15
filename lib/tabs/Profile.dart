@@ -1046,7 +1046,7 @@ class _ProfileState extends State<Profile> {
                                 ],
                                 onSelected: (value) {
                                   if (value == 'edit') {
-                                    context.push('/editProfile');
+                                    context.push('/edit-profile');
                                   } else if (value == 'qr_code') {
                                     showQRCode(context, currentUser);
                                   }
@@ -1062,7 +1062,7 @@ class _ProfileState extends State<Profile> {
                                 child: GestureDetector(
                                   onLongPress: () {
                                     Feedback.forLongPress(context);
-                                    context.push('/editProfile');
+                                    context.push('/edit-profile');
                                   },
                                   onTap: () {
                                     Feedback.forTap(context);

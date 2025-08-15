@@ -38,7 +38,7 @@ class ShotBreakdownDonut extends StatelessWidget {
           badgeWidget: Text(
             sc.type,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               fontFamily: 'Novecento',
               fontSize: 12,
               fontWeight: FontWeight.bold,
