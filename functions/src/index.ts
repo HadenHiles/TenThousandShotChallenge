@@ -1128,12 +1128,14 @@ async function updateAchievementsAfterSessionDelete(userId: string) {
             // Preserve manual / bonus achievement completion; skip auto un-complete.
             continue;
         }
-        if (achievement.completed) {
-            // Re-check if achievement is still completed for non-manual achievements
-            const stillCompleted = await checkAchievementCompletion(userId, achievement, stats);
-            if (!stillCompleted) {
-                batch.update(doc.ref, { completed: false, completed_at: null });
-            }
+        const currentlyCompleted = achievement.completed === true;
+        const shouldBeCompleted = await checkAchievementCompletion(userId, achievement, stats);
+        if (currentlyCompleted && !shouldBeCompleted) {
+            // Achievement no longer satisfied after deletion -> un-complete
+            batch.update(doc.ref, { completed: false, completed_at: null });
+        } else if (!currentlyCompleted && shouldBeCompleted) {
+            // Achievement newly satisfied due to deletion (e.g., ratio balancing) -> complete it
+            batch.update(doc.ref, { completed: true, completed_at: require('firebase-admin').firestore.FieldValue.serverTimestamp() });
         }
     }
     await batch.commit();
