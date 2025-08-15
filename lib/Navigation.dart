@@ -644,7 +644,14 @@ class _NavigationState extends State<Navigation> {
                 },
                 body: Container(
                   padding: const EdgeInsets.only(bottom: 0),
-                  child: _tabs.elementAt(_selectedIndex),
+                  // Use an IndexedStack so tab bodies remain mounted when not visible.
+                  // This prevents disposing scroll controllers (e.g. Explore's NestedScrollView)
+                  // while a user begins a gesture then quickly switches tabs, which was
+                  // triggering disposed RenderObject / semantics assertions.
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: _tabs,
+                  ),
                 ),
               ),
               offlineChild: Scaffold(

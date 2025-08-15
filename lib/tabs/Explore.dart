@@ -74,12 +74,24 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _tabController!.dispose();
-
+    try {
+      _exploreScrollController?.removeListener(swapPageListener);
+      _exploreScrollController?.dispose();
+    } catch (_) {}
+    try {
+      _explorePageController.dispose();
+    } catch (_) {}
+    try {
+      _tabController?.removeListener(changeTabListener);
+      _tabController?.dispose();
+    } catch (_) {}
     super.dispose();
   }
 
   Future<void> changeTabListener() async {
+    if (!mounted || _tabController == null || !_tabController!.indexIsChanging) {
+      return;
+    }
     if (_tabController!.indexIsChanging) {
       switch (_tabController!.index) {
         case 0:
@@ -105,16 +117,18 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       }
     }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadExploringVideos timed out");
+      if (!mounted) return;
       setState(() {
         _loadingExploreVideos = false;
       });
     }).onError((error, stackTrace) {
       print("Error loading explore videos: $error");
+      if (!mounted) return;
       setState(() {
         _loadingExploreVideos = false;
       });
     });
-
+    if (!mounted) return null;
     setState(() {
       _exploreVideos = videos;
       _loadingExploreVideos = false;
@@ -126,6 +140,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     final coachJeremyId = GlobalConfiguration().getValue("coach_jeremy_channel_id");
     if (coachJeremyId != null && coachJeremyId is String && coachJeremyId.isNotEmpty) {
       await getChannelThumbnail(coachJeremyId).then((photo) {
+        if (!mounted) return;
         setState(() {
           _coachJeremyPhoto = photo;
         });
@@ -136,6 +151,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     final hthId = GlobalConfiguration().getValue("hth_channel_id");
     if (hthId != null && hthId is String && hthId.isNotEmpty) {
       await getChannelThumbnail(hthId).then((photo) {
+        if (!mounted) return;
         setState(() {
           _hthPhoto = photo;
         });
@@ -152,16 +168,18 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       }
     }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadTrainingPrograms timed out");
+      if (!mounted) return;
       setState(() {
         _loadingPrograms = false;
       });
     }).onError((error, stackTrace) {
       print("Error loading training programs: $error");
+      if (!mounted) return;
       setState(() {
         _loadingPrograms = false;
       });
     });
-
+    if (!mounted) return null;
     setState(() {
       _programs = programs;
       _loadingPrograms = false;
@@ -177,16 +195,18 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       }
     }).timeout(const Duration(seconds: 10), onTimeout: () {
       print("_loadLearnToPlayItems timed out");
+      if (!mounted) return;
       setState(() {
         _loadingLearnToPlayItems = false;
       });
     }).onError((error, stackTrace) {
       print("Error loading learn to play items: $error");
+      if (!mounted) return;
       setState(() {
         _loadingLearnToPlayItems = false;
       });
     });
-
+    if (!mounted) return null;
     setState(() {
       _learnToPlayItems = items;
       _loadingLearnToPlayItems = false;
@@ -202,16 +222,18 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       }
     }).timeout(const Duration(seconds: 30), onTimeout: () {
       print("_loadMerch timed out");
+      if (!mounted) return;
       setState(() {
         _loadingMerch = false;
       });
     }).onError((error, stackTrace) {
       print("Error loading merch: $error");
+      if (!mounted) return;
       setState(() {
         _loadingMerch = false;
       });
     });
-
+    if (!mounted) return null;
     setState(() {
       _merch = merch;
       _loadingMerch = false;
@@ -219,8 +241,11 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   Future<Null> _checkIfChallengeCompletedOnce() async {
-    await FirebaseFirestore.instance.collection('iterations').doc(user!.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
+    final u = user;
+    if (u == null) return null;
+    await FirebaseFirestore.instance.collection('iterations').doc(u.uid).collection('iterations').where('complete', isEqualTo: true).get().then((snap) async {
       if (snap.docs.isNotEmpty) {
+        if (!mounted) return;
         setState(() {
           _oneChallengeCompleted = true;
         });
@@ -229,6 +254,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   void swapPageListener() {
+    if (!mounted || _exploreScrollController == null || !_exploreScrollController!.hasClients) return;
     if (_exploreScrollController!.offset > _exploreScrollController!.position.maxScrollExtent + 50) {
       _explorePageController.nextPage(
         duration: const Duration(milliseconds: 500),
@@ -356,157 +382,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     scrollDirection: Axis.vertical,
                                     itemCount: _exploreVideos.length,
                                     itemBuilder: (BuildContext context, int i) {
-                                      YoutubePlayerController ytController = YoutubePlayerController(
-                                        initialVideoId: _exploreVideos[i].id,
-                                        flags: const YoutubePlayerFlags(
-                                          autoPlay: false,
-                                          mute: false,
-                                        ),
-                                      );
-
-                                      return Flex(
-                                        direction: Axis.vertical,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          YoutubePlayerBuilder(
-                                            player: YoutubePlayer(
-                                              controller: ytController,
-                                              aspectRatio: 16 / 9,
-                                              showVideoProgressIndicator: true,
-                                              progressIndicatorColor: Theme.of(context).primaryColor,
-                                              progressColors: ProgressBarColors(
-                                                playedColor: Theme.of(context).primaryColor,
-                                                handleColor: Theme.of(context).primaryColor,
-                                              ),
-                                              bottomActions: const [
-                                                SizedBox(width: 14.0),
-                                                CurrentPosition(),
-                                                SizedBox(width: 8.0),
-                                                ProgressBar(
-                                                  isExpanded: true,
-                                                ),
-                                                RemainingDuration(),
-                                                PlaybackSpeedButton(),
-                                              ],
-                                              actionsPadding: const EdgeInsets.all(2),
-                                              liveUIColor: Theme.of(context).primaryColor,
-                                              onReady: () {
-                                                // _ytController.addListener(listener);
-                                              },
-                                            ),
-                                            builder: (context, player) {
-                                              return Column(
-                                                children: [
-                                                  player,
-                                                ],
-                                              );
-                                            },
-                                          ),
-                                          Flexible(
-                                            flex: 2,
-                                            child: Container(
-                                              margin: EdgeInsets.symmetric(
-                                                vertical: 5,
-                                                horizontal: MediaQuery.of(context).size.width * .075,
-                                              ),
-                                              child: SingleChildScrollView(
-                                                physics: const BouncingScrollPhysics(),
-                                                controller: _exploreScrollController,
-                                                child: Column(
-                                                  children: [
-                                                    Container(
-                                                      margin: const EdgeInsets.only(top: 15),
-                                                      child: Text(
-                                                        _exploreVideos[i].title.toUpperCase(),
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 42,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Html(
-                                                      data: _exploreVideos[i].content,
-                                                      style: {
-                                                        "h1": Style(
-                                                          textAlign: TextAlign.center,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: FontSize(36),
-                                                        ),
-                                                        "h2": Style(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: FontSize(30),
-                                                        ),
-                                                        "h3": Style(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: FontSize(23),
-                                                        ),
-                                                        "ul": Style(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: FontSize(23),
-                                                          listStyleType: ListStyleType.disc,
-                                                        ),
-                                                        "ol": Style(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: FontSize(23),
-                                                          listStyleType: ListStyleType.decimal,
-                                                          listStylePosition: ListStylePosition.inside,
-                                                          lineHeight: LineHeight.em(1.1),
-                                                        ),
-                                                        "ul li, ol li": Style(
-                                                          padding: HtmlPaddings.symmetric(vertical: 5),
-                                                          margin: Margins.only(bottom: 2),
-                                                        ),
-                                                        "p": Style(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontSize: FontSize(16),
-                                                        ),
-                                                      },
-                                                    ),
-                                                    _exploreVideos[i].buttonUrl!.isNotEmpty
-                                                        ? Container(
-                                                            margin: const EdgeInsets.only(bottom: 25),
-                                                            child: TextButton(
-                                                              onPressed: () async {
-                                                                await canLaunchUrlString(_exploreVideos[i].buttonUrl!).then((can) {
-                                                                  launchUrlString(_exploreVideos[i].buttonUrl!).catchError((err) {
-                                                                    print(err);
-                                                                    return false;
-                                                                  });
-                                                                });
-                                                              },
-                                                              style: ButtonStyle(
-                                                                padding: WidgetStateProperty.all(
-                                                                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                                ),
-                                                                backgroundColor: WidgetStateProperty.all(
-                                                                  Theme.of(context).primaryColor,
-                                                                ),
-                                                              ),
-                                                              child: Text(
-                                                                _exploreVideos[i].buttonText?.toUpperCase() ?? "See more".toUpperCase(),
-                                                                style: const TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontFamily: "NovecentoSans",
-                                                                  fontSize: 24,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          )
-                                                        : Container(),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                      return _ExploreVideoItem(
+                                        video: _exploreVideos[i],
+                                        scrollController: _exploreScrollController!,
                                       );
                                     },
                                   ),
@@ -1448,6 +1326,182 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                   ],
                 ),
               ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExploreVideoItem extends StatefulWidget {
+  final YouTubeVideo video;
+  final ScrollController scrollController;
+  const _ExploreVideoItem({required this.video, required this.scrollController});
+
+  @override
+  State<_ExploreVideoItem> createState() => _ExploreVideoItemState();
+}
+
+class _ExploreVideoItemState extends State<_ExploreVideoItem> {
+  late YoutubePlayerController _ytController;
+
+  @override
+  void initState() {
+    _ytController = YoutubePlayerController(
+      initialVideoId: widget.video.id,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+      ),
+    );
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    try {
+      _ytController.pause();
+      _ytController.dispose();
+    } catch (_) {}
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = widget.video;
+    return Flex(
+      direction: Axis.vertical,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: _ytController,
+            aspectRatio: 16 / 9,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: Theme.of(context).primaryColor,
+            progressColors: ProgressBarColors(
+              playedColor: Theme.of(context).primaryColor,
+              handleColor: Theme.of(context).primaryColor,
+            ),
+            bottomActions: const [
+              SizedBox(width: 14.0),
+              CurrentPosition(),
+              SizedBox(width: 8.0),
+              ProgressBar(
+                isExpanded: true,
+              ),
+              RemainingDuration(),
+              PlaybackSpeedButton(),
+            ],
+            actionsPadding: const EdgeInsets.all(2),
+            liveUIColor: Theme.of(context).primaryColor,
+          ),
+          builder: (context, player) => Column(children: [player]),
+        ),
+        Flexible(
+          flex: 2,
+          child: Container(
+            margin: EdgeInsets.symmetric(
+              vertical: 5,
+              horizontal: MediaQuery.of(context).size.width * .075,
+            ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              controller: widget.scrollController,
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 15),
+                    child: Text(
+                      v.title.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: 42,
+                      ),
+                    ),
+                  ),
+                  Html(
+                    data: v.content,
+                    style: {
+                      "h1": Style(
+                        textAlign: TextAlign.center,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: FontSize(36),
+                      ),
+                      "h2": Style(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: FontSize(30),
+                      ),
+                      "h3": Style(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: FontSize(23),
+                      ),
+                      "ul": Style(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: FontSize(23),
+                        listStyleType: ListStyleType.disc,
+                      ),
+                      "ol": Style(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: "NovecentoSans",
+                        fontSize: FontSize(23),
+                        listStyleType: ListStyleType.decimal,
+                        listStylePosition: ListStylePosition.inside,
+                        lineHeight: LineHeight.em(1.1),
+                      ),
+                      "ul li, ol li": Style(
+                        padding: HtmlPaddings.symmetric(vertical: 5),
+                        margin: Margins.only(bottom: 2),
+                      ),
+                      "p": Style(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: FontSize(16),
+                      ),
+                    },
+                  ),
+                  v.buttonUrl != null && v.buttonUrl!.isNotEmpty
+                      ? Container(
+                          margin: const EdgeInsets.only(bottom: 25),
+                          child: TextButton(
+                            onPressed: () async {
+                              final url = v.buttonUrl;
+                              if (url == null || url.isEmpty) return;
+                              await canLaunchUrlString(url).then((can) {
+                                launchUrlString(url).catchError((err) {
+                                  print(err);
+                                  return false;
+                                });
+                              });
+                            },
+                            style: ButtonStyle(
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              ),
+                              backgroundColor: WidgetStateProperty.all(
+                                Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            child: Text(
+                              (v.buttonText ?? "See more").toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: "NovecentoSans",
+                                fontSize: 24,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(),
+                ],
+              ),
             ),
           ),
         ),
