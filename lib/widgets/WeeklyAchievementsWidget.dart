@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:tenthousandshotchallenge/main.dart';
 import 'SwapCooldownTimer.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1127,7 +1128,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 feedback,
                                                 style: TextStyle(
                                                   fontSize: 11,
-                                                  color: Colors.green[900],
+                                                  color: (preferences!.darkMode! || MediaQuery.of(context).platformBrightness == Brightness.dark) ? Theme.of(context).colorScheme.onSurface : Colors.green[900],
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -1136,7 +1137,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 padding: const EdgeInsets.only(top: 2.0),
                                                 child: Text(
                                                   'Your ratio: ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
-                                                  style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
                                                 ),
                                               ),
                                             ],

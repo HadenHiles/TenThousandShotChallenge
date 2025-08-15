@@ -4,8 +4,9 @@ import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 
 class ShotBreakdownDonut extends StatelessWidget {
   final List<ShotCount> shotCounts;
+  final BuildContext context;
 
-  const ShotBreakdownDonut(this.shotCounts, {super.key});
+  const ShotBreakdownDonut(this.context, this.shotCounts, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +37,8 @@ class ShotBreakdownDonut extends StatelessWidget {
           title: sc.count.toString(),
           badgeWidget: Text(
             sc.type,
-            style: const TextStyle(
-              color: Colors.black38,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontFamily: 'Novecento',
               fontSize: 12,
               fontWeight: FontWeight.bold,

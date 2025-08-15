@@ -441,7 +441,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   decoration: InputDecoration(
                                     labelText: "${numberFormat.format(safeGoalTotal)} Shots By:".toLowerCase(),
                                     labelStyle: TextStyle(
-                                        color: isDarkMode ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3), fontFamily: "NovecentoSans", fontSize: 22),
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 22,
+                                    ),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     contentPadding: const EdgeInsets.all(2),
