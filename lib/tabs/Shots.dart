@@ -37,8 +37,8 @@ class _ShotsState extends State<Shots> {
   bool _showShotsPerDay = true;
   Iteration? currentIteration;
 
-  // Move streams to instance variables to avoid recreating in build
-  late final Future<QuerySnapshot> _activeIterationFuture;
+  // Real-time stream of the active (incomplete) iteration for live updates
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _activeIterationStream;
 
   @override
   void initState() {
@@ -47,16 +47,12 @@ class _ShotsState extends State<Shots> {
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     final user = auth.currentUser;
     if (user == null) {
-      // Always initialize _activeIterationFuture to avoid LateInitializationError
-      _activeIterationFuture = Future.value(FakeQuerySnapshot());
-      // Redirect to login after first build
+      _activeIterationStream = const Stream.empty();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          GoRouter.of(context).go('/login');
-        }
+        if (mounted) GoRouter.of(context).go('/login');
       });
     } else {
-      _activeIterationFuture = firestore.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).get();
+      _activeIterationStream = firestore.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots();
     }
   }
 
@@ -117,8 +113,8 @@ class _ShotsState extends State<Shots> {
                 child: Column(
                   children: [
                     SizedBox(height: 10),
-                    FutureBuilder<QuerySnapshot>(
-                      future: _activeIterationFuture,
+                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _activeIterationStream,
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
                           return Center(
@@ -296,10 +292,10 @@ class _ShotsState extends State<Shots> {
                         ),
                       ],
                     ),
-                    FutureBuilder<QuerySnapshot>(
-                      future: _activeIterationFuture,
+                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _activeIterationStream,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState != ConnectionState.done || !snapshot.hasData) {
+                        if (!snapshot.hasData) {
                           return const Center(
                             child: LinearProgressIndicator(),
                           );
@@ -506,8 +502,8 @@ class _ShotsState extends State<Shots> {
                       ),
                     ),
                     SizedBox(height: 10),
-                    FutureBuilder<QuerySnapshot>(
-                      future: _activeIterationFuture,
+                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: _activeIterationStream,
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
                           return const Column(
@@ -827,7 +823,7 @@ class _ShotsState extends State<Shots> {
                                                 ),
                                               ),
                                             ),
-                                            ShotBreakdownDonut(shotCounts),
+                                            ShotBreakdownDonut(context, shotCounts),
                                           ],
                                         ),
                                       ),
@@ -885,8 +881,8 @@ class _ShotsState extends State<Shots> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          FutureBuilder<QuerySnapshot>(
-                            future: _activeIterationFuture,
+                          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            stream: _activeIterationStream,
                             builder: (context, snapshot) {
                               if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                                 Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
