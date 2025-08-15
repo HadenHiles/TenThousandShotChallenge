@@ -47,13 +47,19 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<Null> _loadInvites() async {
+    final currentUser = user;
+    if (currentUser == null) {
+      // Auth state not ready; skip for now.
+      return;
+    }
+
     setState(() {
       _isLoadingInvites = true;
       _invites = [];
       _inviteDates = [];
     });
 
-    await FirebaseFirestore.instance.collection('invites').doc(user!.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
+    await FirebaseFirestore.instance.collection('invites').doc(currentUser.uid).collection('invites').orderBy('date', descending: true).get().then((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -87,13 +93,18 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<Null> _loadFriends() async {
+    final currentUser = user;
+    if (currentUser == null) {
+      return;
+    }
+
     setState(() {
       _isLoadingFriends = true;
       _friends = [];
     });
 
     try {
-      final teammateQuery = await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').orderBy('display_name', descending: false).get();
+      final teammateQuery = await FirebaseFirestore.instance.collection('teammates').doc(currentUser.uid).collection('teammates').orderBy('display_name', descending: false).get();
 
       if (teammateQuery.docs.isEmpty) {
         if (mounted) {
@@ -128,6 +139,10 @@ class _FriendsState extends State<Friends> {
 
   @override
   Widget build(BuildContext context) {
+    // If auth state not yet available, show a lightweight loader to avoid null assertions.
+    if (user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     // Derive filtered friend list based on search query (case-insensitive)
     final List<DocumentSnapshot> filteredFriends = _friendSearchQuery.isEmpty
         ? _friends
@@ -209,12 +224,16 @@ class _FriendsState extends State<Friends> {
                                 onPressed: () async {
                                   for (int i = 0; i < _invites.length; i++) {
                                     final UserProfile friend = UserProfile.fromSnapshot(_invites[i]);
+                                    final ref = friend.reference;
+                                    if (ref == null) continue;
                                     await acceptInvite(
-                                      Invite(friend.reference!.id, DateTime.now()),
+                                      Invite(ref.id, DateTime.now()),
                                       Provider.of<FirebaseAuth>(context, listen: false),
                                       Provider.of<FirebaseFirestore>(context, listen: false),
                                     );
+                                    if (!mounted) return; // stop if disposed mid-loop
                                   }
+                                  if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: Theme.of(context).cardTheme.color,
@@ -365,32 +384,36 @@ class _FriendsState extends State<Friends> {
                                       textAlign: TextAlign.center,
                                     ),
                                   )
-                                : ListView.builder(
-                                    padding: const EdgeInsets.only(top: 0, right: 0, left: 0, bottom: kToolbarHeight),
-                                    itemCount: filteredFriends.length + 1,
-                                    itemBuilder: (_, int index) {
-                                      if (index < filteredFriends.length) {
-                                        final DocumentSnapshot document = filteredFriends[index];
-                                        return _buildFriendItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
-                                      }
+                                : AbsorbPointer(
+                                    absorbing: _isLoadingFriends,
+                                    child: ListView.builder(
+                                      physics: _isLoadingFriends ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.only(top: 0, right: 0, left: 0, bottom: kToolbarHeight),
+                                      itemCount: filteredFriends.length + 1,
+                                      itemBuilder: (_, int index) {
+                                        if (index < filteredFriends.length) {
+                                          final DocumentSnapshot document = filteredFriends[index];
+                                          return _buildFriendItem(UserProfile.fromSnapshot(document), index % 2 == 0 ? true : false);
+                                        }
 
-                                      return !_isLoadingFriends
-                                          ? Container()
-                                          : const Center(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 25,
-                                                    width: 25,
-                                                    child: CircularProgressIndicator(),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                    },
+                                        return !_isLoadingFriends
+                                            ? Container()
+                                            : const Center(
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.max,
+                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                                  children: [
+                                                    SizedBox(
+                                                      height: 25,
+                                                      width: 25,
+                                                      child: CircularProgressIndicator(),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                      },
+                                    ),
                                   ),
                     onRefresh: () async {
                       _friends.clear();
@@ -419,32 +442,36 @@ class _FriendsState extends State<Friends> {
                                   child: Text("No invites"),
                                 ),
                               )
-                            : ListView.builder(
-                                padding: const EdgeInsets.only(top: 0, left: 0, right: 0, bottom: kToolbarHeight),
-                                itemCount: _invites.length + 1,
-                                itemBuilder: (_, int index) {
-                                  if (index < _invites.length) {
-                                    final DocumentSnapshot document = _invites[index];
-                                    return _buildFriendInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
-                                  }
+                            : AbsorbPointer(
+                                absorbing: _isLoadingInvites,
+                                child: ListView.builder(
+                                  physics: _isLoadingInvites ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.only(top: 0, left: 0, right: 0, bottom: kToolbarHeight),
+                                  itemCount: _invites.length + 1,
+                                  itemBuilder: (_, int index) {
+                                    if (index < _invites.length) {
+                                      final DocumentSnapshot document = _invites[index];
+                                      return _buildFriendInviteItem(UserProfile.fromSnapshot(document), _inviteDates[index], index % 2 == 0 ? true : false);
+                                    }
 
-                                  return !_isLoadingInvites
-                                      ? Container()
-                                      : const Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: [
-                                              SizedBox(
-                                                height: 25,
-                                                width: 25,
-                                                child: CircularProgressIndicator(),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                },
+                                    return !_isLoadingInvites
+                                        ? Container()
+                                        : const Center(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.max,
+                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  height: 25,
+                                                  width: 25,
+                                                  child: CircularProgressIndicator(),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                  },
+                                ),
                               ),
                     onRefresh: () async {
                       _invites.clear();
@@ -465,7 +492,10 @@ class _FriendsState extends State<Friends> {
       onTap: () {
         Feedback.forTap(context);
 
-        context.push('/player/${friend.reference!.id}');
+        final ref = friend.reference;
+        if (ref != null) {
+          context.push('/player/${ref.id}');
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -521,8 +551,8 @@ class _FriendsState extends State<Friends> {
                   children: [
                     SizedBox(
                       width: 135,
-                      child: StreamBuilder(
-                          stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                      child: StreamBuilder<QuerySnapshot>(
+                          stream: friend.reference == null ? const Stream<QuerySnapshot>.empty() : FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
                               return const Center(
@@ -551,8 +581,8 @@ class _FriendsState extends State<Friends> {
                             }
                           }),
                     ),
-                    StreamBuilder(
-                        stream: FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                    StreamBuilder<QuerySnapshot>(
+                        stream: friend.reference == null ? const Stream<QuerySnapshot>.empty() : FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                           if (!snapshot.hasData) {
                             return const Center(
@@ -597,12 +627,17 @@ class _FriendsState extends State<Friends> {
     return Dismissible(
       key: UniqueKey(),
       onDismissed: (direction) async {
+        final currentUser = user;
+        if (currentUser == null || friend.reference == null) return;
+        final ref = friend.reference;
+        if (ref == null) return;
         await deleteInvite(
-          friend.reference!.id,
-          user!.uid,
+          ref.id,
+          currentUser.uid,
           Provider.of<FirebaseAuth>(context, listen: false),
           Provider.of<FirebaseFirestore>(context, listen: false),
         ).then((deleted) {
+          if (!mounted) return;
           if (!deleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -630,7 +665,7 @@ class _FriendsState extends State<Friends> {
               ),
             );
           }
-
+          if (!mounted) return;
           _invites.clear();
           _loadInvites();
         });
@@ -738,7 +773,9 @@ class _FriendsState extends State<Friends> {
                     child: GestureDetector(
                       onTap: () {
                         Feedback.forTap(context);
-                        context.push('/player/${friend.reference!.id}');
+                        if (friend.reference != null) {
+                          context.push('/player/${friend.reference!.id}');
+                        }
                       },
                       child: UserAvatar(
                         user: friend,
@@ -790,11 +827,13 @@ class _FriendsState extends State<Friends> {
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextButton(
                     onPressed: () {
+                      if (friend.reference == null) return;
                       acceptInvite(
                         Invite(friend.reference!.id, DateTime.now()),
                         Provider.of<FirebaseAuth>(context, listen: false),
                         Provider.of<FirebaseFirestore>(context, listen: false),
                       ).then((accepted) {
+                        if (!mounted) return;
                         if (!accepted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -821,7 +860,7 @@ class _FriendsState extends State<Friends> {
                               duration: const Duration(milliseconds: 1500),
                             ),
                           );
-
+                          if (!mounted) return;
                           _loadFriends();
                           _loadInvites();
                         }
