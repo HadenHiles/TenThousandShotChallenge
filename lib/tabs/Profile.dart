@@ -106,6 +106,7 @@ class _ProfileState extends State<Profile> {
   bool _showSessions = true;
   bool _showAccuracy = false;
   bool _showAchievements = false;
+  CustomerInfoNotifier? _customerInfoNotifier; // cache RevenueCat notifier
 
   // Dummy data for non-pro users
   final Map<String, double> _dummyAvgAccuracy = {
@@ -122,8 +123,9 @@ class _ProfileState extends State<Profile> {
     _loadSubscriptionLevel();
     // Keep subscription level in sync with RevenueCat updates
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.addListener(_onEntitlementsChanged);
+      if (!mounted) return;
+      _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+      _customerInfoNotifier?.addListener(_onEntitlementsChanged);
     });
   }
 
@@ -137,6 +139,7 @@ class _ProfileState extends State<Profile> {
 
   _loadSubscriptionLevel() async {
     subscriptionLevel(context).then((level) {
+      if (!mounted) return;
       setState(() {
         _subscriptionLevel = level;
       });
@@ -160,9 +163,10 @@ class _ProfileState extends State<Profile> {
   @override
   void dispose() {
     try {
-      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-      notifier?.removeListener(_onEntitlementsChanged);
-    } catch (_) {}
+      _customerInfoNotifier?.removeListener(_onEntitlementsChanged);
+    } catch (_) {
+      // ignore
+    }
     super.dispose();
   }
 
