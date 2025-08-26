@@ -3,6 +3,7 @@ import { onRequest, onCall } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
+import { defineSecret } from "firebase-functions/params";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import * as https from "https";
@@ -72,6 +73,30 @@ function sendFcmMessage(fcmMessage: any) {
 
 initializeApp({ credential: applicationDefault() });
 const db = getFirestore();
+
+// Secure admin key via Firebase Secrets Manager.
+// 1. Set with: firebase functions:secrets:set ADMIN_KEY
+// 2. Deployed functions that list it in their 'secrets' array can access via ADMIN_KEY_SECRET.value()
+const ADMIN_KEY_SECRET = defineSecret('ADMIN_KEY');
+function constantTimeEquals(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    let result = 0;
+    for (let i = 0; i < a.length; i++) result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return result === 0;
+}
+function requireAdminKey(req: any, res: any): boolean {
+    const configured = ADMIN_KEY_SECRET.value() || process.env.ADMIN_KEY;
+    if (!configured) {
+        res.status(500).send('Server misconfigured: ADMIN_KEY not set');
+        return false;
+    }
+    const provided = req.header('x-admin-key') || '';
+    if (!provided || !constantTimeEquals(provided, configured)) {
+        res.status(401).send('Unauthorized');
+        return false;
+    }
+    return true;
+}
 
 export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invites/{teammateId}" }, async (event) => {
     const context = event;
@@ -1161,7 +1186,8 @@ export const assignWeeklyAchievements = onSchedule({ schedule: '0 5 * * 1', time
     await assignAchievements(false, [], {});
 });
 
-export const testAssignAchievements = onRequest(async (req, res) => {
+export const testAssignAchievements = onRequest({ secrets: [ADMIN_KEY_SECRET] }, async (req, res) => {
+    if (!requireAdminKey(req, res)) return; // auth guard
     let result = await assignAchievements(false, [], {});
     if (result.success) {
         res.status(200).send(result.message || 'Achievements assigned successfully');
@@ -1170,7 +1196,8 @@ export const testAssignAchievements = onRequest(async (req, res) => {
     }
 });
 
-export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
+export const testAssignWeeklyAchievements = onRequest({ secrets: [ADMIN_KEY_SECRET] }, async (req, res) => {
+    if (!requireAdminKey(req, res)) return; // auth guard
     // Set to true for testing every type of achievement, false for normal weekly run
     // In test mode, only userIds in req.body.userIds (array of strings) will be processed
     let result = await assignAchievements(true, req.body.userIds || ['L5sRMTzi6OQfW86iK62todmS7Gz2', 'bNyNJya3uwaNjH4eA8XWZcfZjYl2'], {});
@@ -1178,6 +1205,32 @@ export const testAssignWeeklyAchievements = onRequest(async (req, res) => {
         res.status(200).send(result.message || 'Achievements assigned successfully');
     } else {
         res.status(500).send(result.message || 'Failed to assign achievements.');
+    }
+});
+
+// New: Force-run normal weekly assignment logic (4 achievements, production algorithm) for specific users on demand.
+// POST body: { "userIds": ["uid1", "uid2" ] }
+export const assignWeeklyAchievementsForUsers = onRequest({ secrets: [ADMIN_KEY_SECRET] }, async (req, res) => {
+    if (!requireAdminKey(req, res)) return; // auth guard
+    if (req.method !== 'POST') {
+        res.status(405).send('Use POST');
+        return;
+    }
+    const userIds = Array.isArray(req.body?.userIds) ? req.body.userIds.filter((v: any) => typeof v === 'string' && v.length > 0) : [];
+    if (userIds.length === 0) {
+        res.status(400).send('Provide JSON body { "userIds": ["uid"] }');
+        return;
+    }
+    try {
+        // test = false so only standard 4 achievements per user, using forceUsers to restrict scope
+        const result = await assignAchievements(false, [], { forceUsers: userIds });
+        if (result.success) {
+            res.status(200).send(result.message || 'Weekly achievements (standard set) assigned for requested users.');
+        } else {
+            res.status(result.status || 500).send(result.message || 'Failed to assign achievements');
+        }
+    } catch (e: any) {
+        res.status(500).send('Error assigning achievements: ' + (e?.message || String(e)));
     }
 });
 
