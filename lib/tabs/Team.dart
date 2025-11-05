@@ -579,7 +579,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           Text(
             teamName != null ? "You have been removed from team \"$teamName\" or the team no longer exists.".toUpperCase() : "The team you were part of no longer exists or your access was removed.".toUpperCase(),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 22),
+            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 20),
           Text("You are free to join or create a new team.", textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16)),
@@ -592,7 +592,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 });
               }
             },
-            child: Text("Ok".toUpperCase()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+            child: Text("Ok".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)),
           ),
         ],
       ),
