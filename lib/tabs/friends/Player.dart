@@ -492,7 +492,7 @@ class _PlayerState extends State<Player> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   AutoSizeText(
-                                    _userPlayer!.email!,
+                                    _userPlayer?.email ?? 'Private Email',
                                     maxLines: 1,
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
