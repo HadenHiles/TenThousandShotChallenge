@@ -815,6 +815,11 @@ class _PlayerState extends State<Player> {
   }
 
   Widget _buildSessionItem(ShootingSession s, bool showBackground) {
+    // Skip sessions with 0 total shots to prevent rendering issues
+    if (s.total == null || s.total! <= 0) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.only(top: 5, bottom: 15),
       decoration: BoxDecoration(
@@ -1081,6 +1086,10 @@ class _PlayerState extends State<Player> {
   }
 
   double calculateSessionShotWidth(ShootingSession session, int shotCount) {
+    // Prevent division by zero
+    if (session.total == null || session.total! <= 0) {
+      return 0.0;
+    }
     double percentage = (shotCount / session.total!);
     return (MediaQuery.of(context).size.width - 30) * percentage;
   }
