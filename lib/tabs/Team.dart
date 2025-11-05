@@ -153,8 +153,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       if (snap.exists) {
         return UserProfile.fromSnapshot(snap);
       }
-      // Corrected UserProfile placeholder
-      return UserProfile("Loading...", "Loading...", null, null, null, null, null);
+      // Create a placeholder for deleted users (when Firestore document doesn't exist)
+      return UserProfile("Deleted User", null, null, null, null, null, null);
     });
 
     // Stream of total shots for this player
@@ -234,8 +234,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       (UserProfile profile, int totalShots) => Plyr(profile, totalShots),
     ).handleError((error) {
       // print("Error combining profile and shots for $playerUid: $error");
-      // Fallback Plyr object
-      // Corrected UserProfile placeholder
+      // Fallback Plyr object for errors (keep as Loading to filter out)
       return Plyr(UserProfile("Loading...", "Loading...", null, null, null, null, null), 0);
     });
   }
@@ -250,7 +249,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     }).toList();
 
     return CombineLatestStream.list<Plyr>(playerStreams).map((listOfPlyrs) {
-      var validPlyrs = listOfPlyrs.where((p) => p.profile?.displayName != "Loading..." && p.profile?.displayName != "Error").toList();
+      // Include deleted users but filter out loading/error states
+      var validPlyrs = listOfPlyrs.where((p) => p.profile?.displayName != null && p.profile!.displayName != "Loading..." && p.profile!.displayName != "Error").toList();
       validPlyrs.sort((a, b) => (b.shots ?? 0).compareTo(a.shots ?? 0));
       return validPlyrs;
     }).handleError((error, stackTrace) {
@@ -644,14 +644,17 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
 
   Widget _buildPlayerItem(Plyr plyr, bool bg, int place, Team currentTeam, bool isCurrentUserOwner) {
     final String playerUid = plyr.profile?.reference?.id ?? "";
+    final bool isDeletedUser = plyr.profile?.displayName == "Deleted User";
     // Removed unused local variables for firestore/auth
     return GestureDetector(
-      onTap: () {
-        Feedback.forTap(context);
-        if (playerUid.isNotEmpty) {
-          context.push('/player/$playerUid');
-        }
-      },
+      onTap: isDeletedUser
+          ? null
+          : () {
+              Feedback.forTap(context);
+              if (playerUid.isNotEmpty) {
+                context.push('/player/$playerUid');
+              }
+            },
       child: (isCurrentUserOwner && user?.uid != playerUid && playerUid.isNotEmpty)
           ? Dismissible(
               key: ValueKey(playerUid),
@@ -687,9 +690,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
-              child: _buildPlayerListItemContent(plyr, bg, place),
+              child: _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
             )
-          : _buildPlayerListItemContent(plyr, bg, place),
+          : _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
     );
   }
 
@@ -712,7 +715,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place) {
+  Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place, bool isDeletedUser) {
     // Raw photo URL from profile (can be network URL, asset path, or an unintended file URI)
     final String? rawPhotoUrl = plyr.profile?.photoUrl;
     String? photoUrl = rawPhotoUrl;
@@ -812,68 +815,75 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       }
     }
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      tileColor: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-      leading: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          CircleAvatar(
-            radius: avatarRadius,
-            backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-            backgroundImage: avatarImage,
-            child: (avatarImage == null)
-                ? Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
-                  )
-                : null,
-          ),
-          Positioned(
-            bottom: -4,
-            right: -4,
-            child: badgeWidget,
-          ),
-        ],
-      ),
-      title: Text(
-        displayName,
-        style: TextStyle(
-          fontFamily: 'NovecentoSans',
-          fontSize: 20,
-          color: (plyr.profile?.reference?.id == user?.uid) ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface,
-          fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      trailing: SizedBox(
-        height: 60,
-        child: Stack(
+    return Opacity(
+      opacity: isDeletedUser ? 0.5 : 1.0,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        tileColor: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+        leading: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
           children: [
-            Text(
-              numberFormat.format(plyr.shots ?? 0), // Format with commas
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 26, // Large shot count
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            CircleAvatar(
+              radius: avatarRadius,
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              backgroundImage: avatarImage,
+              child: (avatarImage == null)
+                  ? Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
+                    )
+                  : null,
             ),
             Positioned(
-              top: 30,
-              right: 0,
-              child: Text(
-                'Shots'.toLowerCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              bottom: -4,
+              right: -4,
+              child: badgeWidget,
             ),
           ],
+        ),
+        title: Text(
+          displayName,
+          style: TextStyle(
+            fontFamily: 'NovecentoSans',
+            fontSize: 20,
+            color: isDeletedUser
+                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                : (plyr.profile?.reference?.id == user?.uid)
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).colorScheme.onSurface,
+            fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        trailing: SizedBox(
+          height: 60,
+          child: Stack(
+            children: [
+              Text(
+                numberFormat.format(plyr.shots ?? 0), // Format with commas
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 26, // Large shot count
+                  fontWeight: FontWeight.bold,
+                  color: isDeletedUser ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4) : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              Positioned(
+                top: 30,
+                right: 0,
+                child: Text(
+                  'Shots'.toLowerCase(),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
