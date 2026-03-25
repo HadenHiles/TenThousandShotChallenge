@@ -150,8 +150,10 @@ Future<void> initRevenueCat(String? appUserID) async {
 
   if (Platform.isAndroid) {
     configuration = PurchasesConfiguration("goog_lMkTFgSIHgkcidnIYJvtHQCzQKs");
+    print('RevenueCat: Initializing for Android with user: $appUserID');
   } else if (Platform.isIOS) {
     configuration = PurchasesConfiguration("appl_PcUjDTGDZGysagZYobhltwmeGrq");
+    print('RevenueCat: Initializing for iOS with user: $appUserID');
   }
 
   if (configuration != null) {
@@ -159,9 +161,27 @@ Future<void> initRevenueCat(String? appUserID) async {
     try {
       await Purchases.configure(configuration);
       RevenueCatConfig.configured = true;
+      print('RevenueCat: Successfully configured');
+
+      // Check if offerings are available
+      try {
+        final offerings = await Purchases.getOfferings();
+        print('RevenueCat: Found ${offerings.all.length} offerings');
+        if (offerings.current != null) {
+          print('RevenueCat: Current offering: ${offerings.current!.identifier}');
+          print('RevenueCat: Available packages: ${offerings.current!.availablePackages.length}');
+        } else {
+          print('RevenueCat: WARNING - No current offering found! Configure offerings in RevenueCat dashboard.');
+        }
+      } catch (e) {
+        print('RevenueCat: Error fetching offerings: $e');
+      }
     } catch (e) {
+      print('RevenueCat: Configuration failed: $e');
       RevenueCatConfig.configured = false;
     }
+  } else {
+    print('RevenueCat: Platform not supported or configuration is null');
   }
 }
 
