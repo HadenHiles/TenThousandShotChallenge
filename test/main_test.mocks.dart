@@ -30,6 +30,7 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart'
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeFirebaseApp_0 extends _i1.SmartFake implements _i2.FirebaseApp {
   _FakeFirebaseApp_0(
@@ -87,10 +88,10 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i5.FirebaseAnalytics {
       ) as _i4.Future<String?>);
 
   @override
-  set app(_i2.FirebaseApp? _app) => super.noSuchMethod(
+  set app(_i2.FirebaseApp? value) => super.noSuchMethod(
         Invocation.setter(
           #app,
-          _app,
+          value,
         ),
         returnValueForMissingStub: null,
       );
@@ -123,6 +124,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i5.FirebaseAnalytics {
   _i4.Future<void> logEvent({
     required String? name,
     Map<String, Object>? parameters,
+    List<_i6.AnalyticsEventItem>? items,
     _i6.AnalyticsCallOptions? callOptions,
   }) =>
       (super.noSuchMethod(
@@ -132,6 +134,7 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i5.FirebaseAnalytics {
           {
             #name: name,
             #parameters: parameters,
+            #items: items,
             #callOptions: callOptions,
           },
         ),
@@ -1058,6 +1061,48 @@ class MockFirebaseAnalytics extends _i1.Mock implements _i5.FirebaseAnalytics {
             #items: items,
             #parameters: parameters,
           },
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> logInAppPurchase({
+    String? currency,
+    bool? freeTrial,
+    double? price,
+    bool? priceIsDiscounted,
+    String? productID,
+    String? productName,
+    int? quantity,
+    bool? subscription,
+    num? value,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logInAppPurchase,
+          [],
+          {
+            #currency: currency,
+            #freeTrial: freeTrial,
+            #price: price,
+            #priceIsDiscounted: priceIsDiscounted,
+            #productID: productID,
+            #productName: productName,
+            #quantity: quantity,
+            #subscription: subscription,
+            #value: value,
+          },
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> logTransaction(String? transactionId) => (super.noSuchMethod(
+        Invocation.method(
+          #logTransaction,
+          [transactionId],
         ),
         returnValue: _i4.Future<void>.value(),
         returnValueForMissingStub: _i4.Future<void>.value(),
