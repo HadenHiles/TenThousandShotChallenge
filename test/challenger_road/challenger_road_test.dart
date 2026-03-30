@@ -20,21 +20,9 @@ Future<String> _seedChallenge(
   bool levelActive = true,
 }) async {
   final id = challengeId ?? 'ch_$level';
-  await db
-      .collection('challenger_road')
-      .doc('challenges')
-      .collection('challenges')
-      .doc(id)
-      .set({'name': 'Challenge $level', 'active': active});
+  await db.collection('challenger_road').doc('challenges').collection('challenges').doc(id).set({'name': 'Challenge $level', 'active': active});
 
-  await db
-      .collection('challenger_road')
-      .doc('challenges')
-      .collection('challenges')
-      .doc(id)
-      .collection('levels')
-      .doc('lvl_$level')
-      .set({
+  await db.collection('challenger_road').doc('challenges').collection('challenges').doc(id).collection('levels').doc('lvl_$level').set({
     'level': level,
     'level_name': 'Level $level',
     'sequence': 1,
@@ -55,14 +43,7 @@ Future<void> _seedPassingProgress(
   required int level,
 }) async {
   final date = DateTime.now();
-  await db
-      .collection('users')
-      .doc(userId)
-      .collection('challenger_road_attempts')
-      .doc(attemptId)
-      .collection('challenge_progress')
-      .doc(challengeId)
-      .set({
+  await db.collection('users').doc(userId).collection('challenger_road_attempts').doc(attemptId).collection('challenge_progress').doc(challengeId).set({
     'challengeId': challengeId,
     'bestLevel': level,
     'totalAttempts': 1,
@@ -93,11 +74,7 @@ Future<String> _seedAttempt(
   int resetCount = 0,
   String status = 'active',
 }) async {
-  final ref = await db
-      .collection('users')
-      .doc(userId)
-      .collection('challenger_road_attempts')
-      .add({
+  final ref = await db.collection('users').doc(userId).collection('challenger_road_attempts').add({
     'attempt_number': 1,
     'starting_level': startingLevel,
     'current_level': currentLevel,
