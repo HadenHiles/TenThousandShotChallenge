@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.da
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
@@ -179,14 +180,13 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       );
 
       if (milestone.didHitMilestone && mounted) {
-        Fluttertoast.showToast(
-          msg: '🏒 You\'ve hit ${milestone.resetCount * 10000} Challenger Road shots!',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Theme.of(context).primaryColor,
-          textColor: Colors.white,
-          fontSize: 16,
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ChallengerRoadMilestoneScreen(result: milestone),
+            fullscreenDialog: true,
+          ),
         );
+        if (!mounted) return;
       }
 
       // Level advancement check.
