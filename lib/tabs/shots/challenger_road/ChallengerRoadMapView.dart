@@ -7,6 +7,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'ChallengeDetailSheet.dart';
 import 'ChallengeMapNode.dart';
 import 'ChallengerRoadHeader.dart';
 import 'LevelBannerWidget.dart';
@@ -456,7 +457,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                       data,
                       i == firstIncompleteIdx,
                     ),
-                    onTap: interactive && attempt != null ? () => _handleNodeTap(challenges[i], level, attempt) : null,
+                    onTap: interactive && attempt != null ? () => _handleNodeTap(challenges[i], level, attempt, data) : null,
                   ),
                 ),
             ],
@@ -470,11 +471,26 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     ChallengerRoadChallenge challenge,
     int level,
     ChallengerRoadAttempt attempt,
+    _CRMapData data,
   ) async {
-    if (widget.onChallengeTap == null) return;
     final levelDoc = await _service!.getLevelDoc(challenge.id!, level);
     if (levelDoc == null || !mounted) return;
-    widget.onChallengeTap!(challenge, levelDoc, attempt);
+
+    if (widget.onChallengeTap != null) {
+      widget.onChallengeTap!(challenge, levelDoc, attempt);
+      return;
+    }
+
+    // Default: show the challenge detail sheet.
+    await ChallengeDetailSheet.show(
+      context,
+      challenge: challenge,
+      levelDoc: levelDoc,
+      attempt: attempt,
+      userId: widget.userId,
+      progress: data.progress[challenge.id],
+      onSessionComplete: _refreshData,
+    );
   }
 
   // ── Root build ────────────────────────────────────────────────────────────
