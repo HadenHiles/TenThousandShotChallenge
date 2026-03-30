@@ -126,12 +126,47 @@ users/{userId}/
                 date:       Timestamp
               }
             ]
+
+      challenge_progress/                 ← sub-collection (per-challenge summary within attempt)
+        {challengeId}/                    ← document (one per unique challenge run this attempt)
+          challengeId:    string
+          bestLevel:      int             ← highest level passed for this challenge this attempt
+          totalAttempts:  int             ← total sessions for this challenge this attempt
+          totalPassed:    int             ← number of passes this attempt
+          firstPassedAt:  Timestamp?      ← first pass within this attempt (null if never)
+          lastAttemptAt:  Timestamp?      ← most recent session for this challenge this attempt
+          levelHistory:   array           ← compact append-only log of every session
+            [
+              {
+                level:          int,
+                passed:         bool,
+                shotsMade:      int,
+                shotsRequired:  int,
+                date:           Timestamp
+              }
+            ]
+```
+
+**Per-challenge cross-attempt history (stored separately for profile stats & badge math):**
+
+```
+users/{userId}/
+  challenger_road_challenge_history/      ← sub-collection (one doc per unique challenge)
+    {challengeId}/                        ← document
+      challengeId:           string
+      allTimeBestLevel:      int          ← highest level ever passed for this challenge
+      allTimeTotalAttempts:  int          ← total challenge sessions across all attempts
+      allTimeTotalPassed:    int          ← total passes across all attempts
+      firstPassedAt:         Timestamp?   ← very first time this challenge was ever passed
+      lastPassedAt:          Timestamp?   ← most recent pass across any attempt
 ```
 
 **Key rules:**
 - `challengerRoadShotCount` is the display counter (resets at 10k). `totalShotsThisAttempt` never resets and is used for "X × 10,000" badges.
 - `passed: true` sessions are what determine level advancement eligibility.
 - All shots in `challenge_sessions` also get written to the user's current `iterations/{iterationId}/sessions` via the existing session service (global shot count integration).
+- `challenge_progress/{challengeId}` is updated atomically with each `challenge_sessions` write (WriteBatch). Avoids scanning all sessions for per-challenge stats.
+- `challenger_road_challenge_history/{challengeId}` is also updated atomically on every session save — aggregates stats for that challenge across all attempts (used for profile display and badge math).
 
 ---
 
@@ -140,6 +175,8 @@ users/{userId}/
 - **"Challenge passed at current level"** — query `challenge_sessions` in `currentAttemptId` where `challengeId == X`, `level == currentLevel`, `passed == true`. If any exist, the challenge is complete for this level.
 - **"All challenges complete at current level"** — check above for every active challenge that has a level doc for `currentLevel`.
 - **"Next attempt starting level"** — `max(1, highestLevelReachedThisAttempt - 1)` from the most recent completed attempt.
+- **"Best level for a challenge this attempt"** — read `challenge_progress/{challengeId}.bestLevel` (O(1) doc read; no session scan).
+- **"All-time best level for a challenge"** — read `challenger_road_challenge_history/{challengeId}.allTimeBestLevel` (O(1) doc read across all attempts).
 
 ---
 
@@ -195,6 +232,25 @@ Files to create in `lib/models/firestore/`:
 // Methods: fromMap(), toMap(), fromSnapshot()
 ```
 
+### `ChallengeProgressEntry.dart`
+```dart
+// Fields: challengeId (String), bestLevel (int), totalAttempts (int), totalPassed (int),
+//         firstPassedAt (DateTime?), lastAttemptAt (DateTime?),
+//         levelHistory (List<ChallengeLevelHistoryEntry>)
+// ChallengeLevelHistoryEntry: level (int), passed (bool), shotsMade (int),
+//                             shotsRequired (int), date (DateTime)
+// Firestore path: users/{uid}/challenger_road_attempts/{aid}/challenge_progress/{challengeId}
+// Methods: fromMap(), toMap(), fromSnapshot(), copyWith()
+```
+
+### `ChallengeAllTimeHistory.dart`
+```dart
+// Fields: challengeId (String), allTimeBestLevel (int), allTimeTotalAttempts (int),
+//         allTimeTotalPassed (int), firstPassedAt (DateTime?), lastPassedAt (DateTime?)
+// Firestore path: users/{uid}/challenger_road_challenge_history/{challengeId}
+// Methods: fromMap(), toMap(), fromSnapshot(), copyWith()
+```
+
 ---
 
 ## 4. Services Layer
@@ -213,9 +269,14 @@ Responsibilities:
    - `Future<ChallengerRoadAttempt> createAttempt(String userId, int startingLevel)`
    - `Future<void> updateAttempt(String userId, String attemptId, Map<String, dynamic> data)`
 4. **Challenge session management**
-   - `Future<void> saveChallengeSession(String userId, String attemptId, ChallengeSession session)`
+   - `Future<void> saveChallengeSession(String userId, String attemptId, ChallengeSession session)` → uses a `WriteBatch` to atomically write the session, update `challenge_progress`, and update `challenger_road_challenge_history`
    - `Future<List<ChallengeSession>> getSessionsForAttempt(String userId, String attemptId)`
    - `Future<bool> isChallengePassedAtLevel(String userId, String attemptId, String challengeId, int level)`
+4b. **Per-challenge history management**
+   - `Future<void> updateChallengeProgress(String userId, String attemptId, ChallengeSession session)` → upserts `challenge_progress/{challengeId}` after each session; appends to `levelHistory`, updates `bestLevel`, increments counters
+   - `Future<ChallengeProgressEntry?> getChallengeProgress(String userId, String attemptId, String challengeId)`
+   - `Future<void> updateChallengeAllTimeHistory(String userId, ChallengeSession session)` → upserts `challenger_road_challenge_history/{challengeId}`; updates `allTimeBestLevel`, increments `allTimeTotalAttempts` and `allTimeTotalPassed`, sets `firstPassedAt`/`lastPassedAt`
+   - `Future<ChallengeAllTimeHistory?> getChallengeAllTimeHistory(String userId, String challengeId)`
 5. **Level advancement check**
    - `Future<bool> isLevelComplete(String userId, String attemptId, int level)` → true if all active challenges with a doc for `level` have a passed session
    - `Future<void> advanceLevel(String userId, String attemptId)` → increments `currentLevel` and updates `highestLevelReachedThisAttempt` if needed
@@ -245,6 +306,8 @@ Work through these phases in order. Each phase is self-contained and testable be
 - `lib/models/firestore/ChallengerRoadAttempt.dart`
 - `lib/models/firestore/ChallengeSession.dart`
 - `lib/models/firestore/ChallengerRoadUserSummary.dart`
+- `lib/models/firestore/ChallengeProgressEntry.dart` _(Phase 1c)_
+- `lib/models/firestore/ChallengeAllTimeHistory.dart` _(Phase 1c)_
 
 **Firestore rules to add** (`firestore.rules`):
 ```
@@ -267,6 +330,12 @@ match /users/{userId}/challenger_road_attempts/{attemptId} {
   match /challenge_sessions/{sessionId} {
     allow read, write: if request.auth.uid == userId;
   }
+  match /challenge_progress/{challengeId} {
+    allow read, write: if request.auth.uid == userId;
+  }
+}
+match /users/{userId}/challenger_road_challenge_history/{challengeId} {
+  allow read, write: if request.auth.uid == userId;
 }
 ```
 
@@ -275,6 +344,10 @@ match /users/{userId}/challenger_road_attempts/{attemptId} {
   - Fields: `challengeId ASC`, `level ASC`, `passed ASC`
 - Collection: `challenger_road/challenges/{cid}/levels`
   - Fields: `level ASC`, `sequence ASC`, `active ASC`
+- Collection: `users/{uid}/challenger_road_attempts/{aid}/challenge_progress`
+  - Direct doc-ID lookups only; no composite index required.
+- Collection: `users/{uid}/challenger_road_challenge_history`
+  - Direct doc-ID lookups only; no composite index required.
 
 ---
 
@@ -650,7 +723,10 @@ The map itself lives inside the Start tab body, so no top-level route needed for
 | `LevelBannerWidget` | `lib/tabs/shots/challenger_road/` | Level section header between groups |
 | `MapPathPainter` | `lib/tabs/shots/challenger_road/` | `CustomPainter` drawing the winding path between nodes |
 | `HockeyDecoration` | `lib/tabs/shots/challenger_road/` | Scattered hockey item widgets along the path |
-| `ChallengeDetailSheet` | `lib/tabs/shots/challenger_road/` | Bottom sheet with challenge info + CTA |
+| `ChallengeDetailSheet` | `lib/tabs/shots/challenger_road/` | Bottom sheet with challenge info + CTA; two tabs: "Steps" and "History" |
+| `ChallengeHistorySheet` | `lib/tabs/shots/challenger_road/` | History tab content: chronological list of attempt rows for this challenge |
+| `ChallengeAttemptHistoryRow` | `lib/tabs/shots/challenger_road/` | Single row: level badge, pass/fail chip, quota result (X/N on target), date |
+| `ChallengerRoadStatsCard` | `lib/tabs/profile/` | Per-challenge all-time bests grid (best level, total attempts, total passes); shown in Profile tab |
 | `ChallengeStepViewer` | `lib/tabs/shots/challenger_road/` | PageView of media steps |
 | `StartChallengeScreen` | `lib/tabs/shots/challenger_road/` | Modified StartShooting for challenge context |
 | `ChallengeQuotaIndicator` | `lib/tabs/shots/challenger_road/` | Live "X / N on target" display during session |
@@ -731,6 +807,7 @@ All global challenge data is managed directly in Firestore via **PushTable** (sa
 | Existing Code | How Challenger Road Integrates |
 |---------------|-------------------------------|
 | `lib/services/session.dart` | After saving a `ChallengeSession`, call the same shot-saving logic to write a `ShootingSession` entry to the current `Iteration`. |
+| `ChallengerRoadService.saveChallengeSession()` | Must use a Firestore `WriteBatch` to atomically write: (1) `challenge_sessions/{sid}`, (2) upsert `challenge_progress/{challengeId}`, (3) upsert `challenger_road_challenge_history/{challengeId}`. All three succeed or none. |
 | `lib/models/firestore/Iteration.dart` | No changes needed. Challenge shots add to `total`, `totalWrist`, etc. via the existing service. |
 | `lib/tabs/shots/StartShooting.dart` | `StartChallengeScreen` is a new widget but reuses `ShotButton`, `TargetAccuracyVisualizer`, and `ShotBreakdownDonut` internally. Do not modify `StartShooting.dart` itself — compose from its children. |
 | `lib/services/RevenueCat.dart` / `RevenueCatProvider.dart` | Use `CustomerInfoNotifier.isPro` to gate Challenger Road map vs. teaser view. No changes to RevenueCat service. |
@@ -749,9 +826,16 @@ All global challenge data is managed directly in Firestore via **PushTable** (sa
 - [ ] `ChallengerRoadService.restartChallengerRoad()` — starting level = max(1, highest - 1)
 - [ ] `ChallengerRoadLevel.fromMap()` / `toMap()` round-trip
 - [ ] `ChallengeSession.fromMap()` / `toMap()` round-trip
+- [ ] `ChallengeProgressEntry.fromMap()` / `toMap()` round-trip
+- [ ] `ChallengeAllTimeHistory.fromMap()` / `toMap()` round-trip
+- [ ] `updateChallengeProgress()` — `bestLevel` updates to max, `totalAttempts` increments, `levelHistory` appended
+- [ ] `updateChallengeAllTimeHistory()` — `allTimeBestLevel` is max across calls, `allTimeTotalAttempts` increments, `firstPassedAt` set only once
 - [ ] Badge award logic — each badge condition fires exactly once (idempotent)
 
 ### Integration Tests
+- [ ] Saving a session atomically updates `challenge_sessions`, `challenge_progress`, and `challenger_road_challenge_history` (all three or none via WriteBatch)
+- [ ] `challenge_progress.bestLevel` reflects the max level passed across all sessions for that challenge within the attempt
+- [ ] `challenger_road_challenge_history.allTimeTotalAttempts` counts sessions across multiple separate attempts correctly
 - [ ] Starting a challenge session and saving it updates both `challenge_sessions` and the global `Iteration`
 - [ ] Level completion triggers `advanceLevel()` and `highestLevelReachedThisAttempt` is updated
 - [ ] Restart creates a new attempt with correct `startingLevel`
@@ -782,6 +866,8 @@ Firestore paths:
   User state: users/{uid}/challenger_road
               users/{uid}/challenger_road_attempts/{aid}
               users/{uid}/challenger_road_attempts/{aid}/challenge_sessions/{sid}
+              users/{uid}/challenger_road_attempts/{aid}/challenge_progress/{cid}
+              users/{uid}/challenger_road_challenge_history/{cid}
 
 Pro gate:     CustomerInfoNotifier.isPro (RevenueCatProvider.dart)
 
