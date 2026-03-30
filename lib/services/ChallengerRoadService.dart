@@ -294,13 +294,42 @@ class ChallengerRoadService {
     });
 
     // Update all-time best level on user summary if we set a new record.
+    // Capture pre-advancement best level for comeback badge check.
     final summary = await getUserSummary(userId);
+    final prevBestLevel = summary.allTimeBestLevel;
     if (newHighest > summary.allTimeBestLevel) {
       await updateUserSummary(userId, {'all_time_best_level': newHighest});
     }
 
     final updatedSummary = await getUserSummary(userId);
     await _checkAndAwardBadges(userId: userId, summary: updatedSummary);
+
+    // Extra badges that require attempt-level context not available from summary alone.
+    final extraBadges = <String>[];
+
+    // cr_comeback: started at level 1 on a player who previously reached higher;
+    // awarded when they complete level 5 in this attempt.
+    if (completedLevel >= 5 && attempt.startingLevel == 1 && prevBestLevel > 1) {
+      extraBadges.add('cr_comeback');
+    }
+
+    // cr_perfect_level: no retries at this level in this attempt.
+    if (await _isLevelPerfect(userId, attemptId, completedLevel)) {
+      extraBadges.add('cr_perfect_level');
+    }
+
+    if (extraBadges.isNotEmpty) {
+      final freshSummary = await getUserSummary(userId);
+      final earned = List<String>.from(freshSummary.badges);
+      bool changed = false;
+      for (final badgeId in extraBadges) {
+        if (!earned.contains(badgeId)) {
+          earned.add(badgeId);
+          changed = true;
+        }
+      }
+      if (changed) await updateUserSummary(userId, {'badges': earned});
+    }
 
     return attempt.copyWith(
       currentLevel: newLevel,
@@ -383,6 +412,14 @@ class ChallengerRoadService {
     final snap = await _userSummaryRef(userId).get();
     if (!snap.exists) return ChallengerRoadUserSummary.empty();
     return ChallengerRoadUserSummary.fromSnapshot(snap);
+  }
+
+  /// Live stream of the user summary — use in profile widgets.
+  Stream<ChallengerRoadUserSummary> watchUserSummary(String userId) {
+    return _userSummaryRef(userId).snapshots().map((snap) {
+      if (!snap.exists) return ChallengerRoadUserSummary.empty();
+      return ChallengerRoadUserSummary.fromSnapshot(snap);
+    });
   }
 
   /// Applies a partial update to the user summary document. If the document
@@ -484,8 +521,36 @@ class ChallengerRoadService {
   }
 
   // ---------------------------------------------------------------------------
-  // Internal: badge checking
+  // Internal: badge helpers
   // ---------------------------------------------------------------------------
+
+  /// Returns true if every active challenge at [level] was completed on the
+  /// first try within [attemptId] — i.e., there is exactly one
+  /// [ChallengeLevelHistoryEntry] at this level in each progress entry.
+  Future<bool> _isLevelPerfect(String userId, String attemptId, int level) async {
+    try {
+      final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).get();
+      if (levelSnaps.docs.isEmpty) return false;
+
+      for (final levelDoc in levelSnaps.docs) {
+        final challengeRef = levelDoc.reference.parent.parent;
+        if (challengeRef == null) continue;
+        final challengeSnap = await challengeRef.get();
+        if (!challengeSnap.exists) continue;
+        final data = challengeSnap.data() ?? {};
+        if (data['active'] != true) continue;
+
+        final progressSnap = await _progressRef(userId, attemptId).doc(challengeRef.id).get();
+        if (!progressSnap.exists) return false;
+        final entry = ChallengeProgressEntry.fromSnapshot(progressSnap);
+        final attemptsAtLevel = entry.levelHistory.where((h) => h.level == level).length;
+        if (attemptsAtLevel != 1) return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Checks all badge conditions against the current [summary] and awards any
   /// newly earned badges. Idempotent — will not re-award a badge already in the

@@ -24,6 +24,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dar
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileSection.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +112,7 @@ class _ProfileState extends State<Profile> {
   bool _showSessions = true;
   bool _showAccuracy = false;
   bool _showAchievements = false;
+  bool _showChallengerRoad = false;
   bool _showProgress = true; // expanded by default (persisted in SharedPreferences)
   CustomerInfoNotifier? _customerInfoNotifier; // cache RevenueCat notifier
 
@@ -2173,6 +2175,7 @@ class _ProfileState extends State<Profile> {
                       _showAchievements = true;
                       _showAccuracy = false;
                       _showSessions = false;
+                      _showChallengerRoad = false;
                     }
                   });
                 });
@@ -2246,6 +2249,7 @@ class _ProfileState extends State<Profile> {
                       _showAccuracy = true;
                       _showSessions = false;
                       _showAchievements = false;
+                      _showChallengerRoad = false;
                     }
                   });
                 });
@@ -2559,6 +2563,7 @@ class _ProfileState extends State<Profile> {
                       _showSessions = true;
                       _showAccuracy = false;
                       _showAchievements = false;
+                      _showChallengerRoad = false;
                     }
                   });
                 });
@@ -2792,6 +2797,70 @@ class _ProfileState extends State<Profile> {
                 ],
               ),
               crossFadeState: _showSessions ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 350),
+              sizeCurve: Curves.easeInOut,
+            ),
+            // ── Challenger Road section ───────────────────────────────────
+            GestureDetector(
+              onTap: () {
+                Future.microtask(() {
+                  setState(() {
+                    if (_showChallengerRoad) {
+                      _showChallengerRoad = false;
+                    } else {
+                      _showChallengerRoad = true;
+                      _showAccuracy = false;
+                      _showAchievements = false;
+                      _showSessions = false;
+                    }
+                  });
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                margin: const EdgeInsets.only(top: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.route_rounded,
+                            color: Color(0xFFFFD700),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Challenger Road'.toUpperCase(),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _showChallengerRoad ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Opacity(
+                opacity: _showChallengerRoad ? 1.0 : 0.0,
+                child: user != null
+                    ? ChallengerRoadProfileSection(
+                        userId: user!.uid,
+                        isPro: _subscriptionLevel == 'pro',
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              crossFadeState: _showChallengerRoad ? CrossFadeState.showSecond : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 350),
               sizeCurve: Curves.easeInOut,
             ),
