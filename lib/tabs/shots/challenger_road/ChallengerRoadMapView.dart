@@ -628,8 +628,7 @@ class _LevelUnlockAnimatedBanner extends StatefulWidget {
   State<_LevelUnlockAnimatedBanner> createState() => _LevelUnlockAnimatedBannerState();
 }
 
-class _LevelUnlockAnimatedBannerState extends State<_LevelUnlockAnimatedBanner>
-    with SingleTickerProviderStateMixin {
+class _LevelUnlockAnimatedBannerState extends State<_LevelUnlockAnimatedBanner> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slide;
   late final Animation<double> _fade;
