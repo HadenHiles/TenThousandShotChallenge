@@ -133,6 +133,14 @@ service cloud.firestore {
       match /challenge_sessions/{sessionId} {
         allow read, write: if request.auth.uid == userId;
       }
+
+      match /challenge_progress/{challengeId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    match /users/{userId}/challenger_road_challenge_history/{challengeId} {
+      allow read, write: if request.auth.uid == userId;
     }
   }
 }
