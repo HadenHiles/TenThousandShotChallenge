@@ -22,6 +22,7 @@ import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
@@ -538,6 +539,80 @@ class _ShotsState extends State<Shots> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        // Challenger Road teaser banner for free users
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const ChallengerRoadTeaserView(),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            color: Theme.of(context).cardTheme.color,
+                            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: const BorderSide(
+                                color: Color(0xFFFFD700),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFFFFD700).withValues(alpha: 0.12),
+                                      border: Border.all(
+                                        color: const Color(0xFFFFD700),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.route_rounded,
+                                      color: Color(0xFFFFD700),
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Challenger Road',
+                                          style: TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 20,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Pro feature — tap to preview',
+                                          style: TextStyle(
+                                            fontFamily: 'NovecentoSans',
+                                            fontSize: 13,
+                                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         SizedBox(height: 10),
