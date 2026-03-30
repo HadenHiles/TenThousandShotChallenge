@@ -17,6 +17,7 @@ class ChallengeResultScreen extends StatelessWidget {
     required this.levelDoc,
     required this.updatedAttempt,
     required this.milestoneResult,
+    this.levelAdvanced = false,
   });
 
   final ChallengeSession session;
@@ -24,6 +25,10 @@ class ChallengeResultScreen extends StatelessWidget {
   final ChallengerRoadLevel levelDoc;
   final ChallengerRoadAttempt updatedAttempt;
   final ChallengerRoadMilestoneResult milestoneResult;
+
+  /// True when this session caused a level-advancement (all challenges in the
+  /// level were completed).  Shows a "Level N Unlocked!" callout when true.
+  final bool levelAdvanced;
 
   bool get _passed => session.passed;
 
@@ -81,6 +86,12 @@ class ChallengeResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
+              // ── Level unlocked callout (only when level advanced) ──────
+              if (levelAdvanced) ...[
+                _buildLevelUnlockedBanner(context),
+                const SizedBox(height: 16),
+              ],
+
               // ── Stats card ─────────────────────────────────────────────
               _buildStatsCard(context),
               const SizedBox(height: 24),
@@ -104,6 +115,60 @@ class ChallengeResultScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Level unlocked banner ─────────────────────────────────────────────────
+
+  Widget _buildLevelUnlockedBanner(BuildContext context) {
+    final newLevel = updatedAttempt.currentLevel;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFF4A400)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.35),
+            blurRadius: 14,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_open_rounded, color: Colors.black87, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LEVEL UNLOCKED!',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 18,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'Level $newLevel is now available on your Challenger Road.',
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

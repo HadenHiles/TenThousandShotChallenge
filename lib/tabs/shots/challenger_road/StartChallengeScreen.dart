@@ -14,6 +14,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 
@@ -190,6 +191,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
       // Level advancement check.
       ChallengerRoadAttempt updatedAttempt = widget.attempt;
+      bool levelAdvanced = false;
       if (passed) {
         final levelComplete = await service.isLevelComplete(
           widget.userId,
@@ -198,10 +200,30 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         );
         if (levelComplete) {
           updatedAttempt = await service.advanceLevel(widget.userId, widget.attempt.id!);
+          levelAdvanced = true;
         }
       }
 
       if (!mounted) return;
+
+      // Edge case: the new level has no challenges yet (admin hasn't published them).
+      if (levelAdvanced) {
+        final nextLevelChallenges = await service.getChallengesForLevel(
+          updatedAttempt.currentLevel,
+        );
+        if (!mounted) return;
+        if (nextLevelChallenges.isEmpty) {
+          // All currently available challenges conquered — show the all-clear screen.
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ChallengerRoadAllClearScreen(
+                completedLevel: widget.levelDoc.level,
+              ),
+            ),
+          );
+          return;
+        }
+      }
 
       // Replace this screen with the result screen.
       Navigator.of(context).pushReplacement(
@@ -212,6 +234,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
             levelDoc: widget.levelDoc,
             updatedAttempt: updatedAttempt,
             milestoneResult: milestone,
+            levelAdvanced: levelAdvanced,
           ),
         ),
       );

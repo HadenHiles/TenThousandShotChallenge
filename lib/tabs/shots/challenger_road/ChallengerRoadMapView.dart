@@ -137,13 +137,24 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   // Key: level number, Value: cumulative top offset from the very top of scroll content.
   final Map<int, double> _levelTopOffsets = {};
 
+  /// When a level is newly unlocked after a session, we store it here so the
+  /// corresponding banner can play its slide-in animation on the first rebuild.
+  int? _justUnlockedLevel;
+
+  /// The last known current level before a data refresh, used to detect
+  /// whether a level-unlock animation should fire.
+  int? _previousCurrentLevel;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_service == null) {
       final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
       _service = ChallengerRoadService(firestore: firestore);
-      _dataFuture = _loadMapData();
+      _dataFuture = _loadMapData().then((data) {
+        _previousCurrentLevel = data.activeAttempt?.currentLevel;
+        return data;
+      });
     }
   }
 
@@ -183,7 +194,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     setState(() {
       _didScrollToCurrentLevel = false;
       _levelTopOffsets.clear();
-      _dataFuture = _loadMapData();
+      _dataFuture = _loadMapData().then((data) {
+        final newLevel = data.activeAttempt?.currentLevel;
+        if (newLevel != null && _previousCurrentLevel != null && newLevel > _previousCurrentLevel!) {
+          // A level advance happened — flag the new level for its unlock animation.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _justUnlockedLevel = newLevel);
+          });
+        }
+        _previousCurrentLevel = newLevel;
+        return data;
+      });
     });
   }
 
@@ -434,11 +455,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: LevelBannerWidget(
-                    level: level,
-                    isCurrentLevel: isCurrentLevel,
-                    isLocked: isLocked,
-                  ),
+                  child: _buildLevelBanner(context, level, isCurrentLevel, isLocked),
                 ),
               ),
 
@@ -465,6 +482,34 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         );
       },
     );
+  }
+
+  // ── Level banner (with optional unlock animation) ─────────────────────────
+
+  Widget _buildLevelBanner(
+    BuildContext context,
+    int level,
+    bool isCurrentLevel,
+    bool isLocked,
+  ) {
+    final banner = LevelBannerWidget(
+      level: level,
+      isCurrentLevel: isCurrentLevel,
+      isLocked: isLocked,
+    );
+
+    if (_justUnlockedLevel == level) {
+      // Clear the flag after the first frame so the animation only plays once.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _justUnlockedLevel == level) {
+          setState(() => _justUnlockedLevel = null);
+        }
+      });
+
+      return _LevelUnlockAnimatedBanner(child: banner);
+    }
+
+    return banner;
   }
 
   Future<void> _handleNodeTap(
@@ -567,6 +612,53 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           ],
         );
       },
+    );
+  }
+}
+
+// ── Level unlock slide-in animation ──────────────────────────────────────────
+
+/// Wraps a level banner widget and plays a one-shot slide-from-right + fade-in
+/// animation to celebrate a newly-unlocked level.
+class _LevelUnlockAnimatedBanner extends StatefulWidget {
+  const _LevelUnlockAnimatedBanner({required this.child});
+  final Widget child;
+
+  @override
+  State<_LevelUnlockAnimatedBanner> createState() => _LevelUnlockAnimatedBannerState();
+}
+
+class _LevelUnlockAnimatedBannerState extends State<_LevelUnlockAnimatedBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _slide = Tween<Offset>(begin: const Offset(0.35, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slide,
+      child: FadeTransition(opacity: _fade, child: widget.child),
     );
   }
 }
