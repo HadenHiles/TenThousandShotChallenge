@@ -466,17 +466,17 @@ class ChallengerRoadService {
       final existing = ChallengeProgressEntry.fromSnapshot(snap);
       final newBest = session.passed ? max(existing.bestLevel, session.level) : existing.bestLevel;
       final data = <String, dynamic>{
-        'best_level': newBest,
-        'total_attempts': existing.totalAttempts + 1,
-        'total_passed': existing.totalPassed + (session.passed ? 1 : 0),
-        'last_attempt_at': Timestamp.fromDate(session.date),
-        'level_history': [
+        'bestLevel': newBest,
+        'totalAttempts': existing.totalAttempts + 1,
+        'totalPassed': existing.totalPassed + (session.passed ? 1 : 0),
+        'lastAttemptAt': Timestamp.fromDate(session.date),
+        'levelHistory': [
           ...existing.levelHistory.map((e) => e.toMap()),
           historyEntry.toMap(),
         ],
       };
       if (session.passed && existing.firstPassedAt == null) {
-        data['first_passed_at'] = Timestamp.fromDate(session.date);
+        data['firstPassedAt'] = Timestamp.fromDate(session.date);
       }
       batch.update(ref, data);
     }
@@ -506,15 +506,15 @@ class ChallengerRoadService {
       final existing = ChallengeAllTimeHistory.fromSnapshot(snap);
       final newBest = session.passed ? max(existing.allTimeBestLevel, session.level) : existing.allTimeBestLevel;
       final data = <String, dynamic>{
-        'all_time_best_level': newBest,
-        'all_time_total_attempts': existing.allTimeTotalAttempts + 1,
-        'all_time_total_passed': existing.allTimeTotalPassed + (session.passed ? 1 : 0),
+        'allTimeBestLevel': newBest,
+        'allTimeTotalAttempts': existing.allTimeTotalAttempts + 1,
+        'allTimeTotalPassed': existing.allTimeTotalPassed + (session.passed ? 1 : 0),
       };
       if (session.passed) {
         if (existing.firstPassedAt == null) {
-          data['first_passed_at'] = Timestamp.fromDate(session.date);
+          data['firstPassedAt'] = Timestamp.fromDate(session.date);
         }
-        data['last_passed_at'] = Timestamp.fromDate(session.date);
+        data['lastPassedAt'] = Timestamp.fromDate(session.date);
       }
       batch.update(ref, data);
     }
