@@ -16,6 +16,7 @@ import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:provider/provider.dart';
 
 class AuthChangeNotifier extends ChangeNotifier {
@@ -123,6 +124,10 @@ GoRouter createAppRouter(
       GoRoute(
         path: '/history',
         builder: (context, state) => const History(),
+      ),
+      GoRoute(
+        path: '/challenger-road',
+        builder: (context, state) => const ChallengerRoadTeaserView(),
       ),
     ],
     redirect: (context, state) {
