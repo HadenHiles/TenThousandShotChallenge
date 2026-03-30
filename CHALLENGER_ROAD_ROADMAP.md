@@ -297,7 +297,7 @@ Work through these phases in order. Each phase is self-contained and testable be
 
 ---
 
-### Phase 1 — Dart Models & Firestore Rules
+### Phase 1 — Dart Models & Firestore Rules ✅ COMPLETE
 
 **Files to create:**
 - `lib/models/firestore/ChallengeStep.dart`
@@ -351,7 +351,7 @@ match /users/{userId}/challenger_road_challenge_history/{challengeId} {
 
 ---
 
-### Phase 1b — Seed Test Data
+### Phase 1b — Seed Test Data ✅ COMPLETE
 
 > **Goal:** Have realistic Firestore data in place so every phase from Phase 2 onwards can be developed and tested against real map content without waiting for real challenge content from coaches/admins.
 
@@ -486,7 +486,7 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 ---
 
-### Phase 2 — ChallengerRoadService
+### Phase 2 — ChallengerRoadService ✅ COMPLETE
 
 **File to create:** `lib/services/ChallengerRoadService.dart`
 
@@ -497,7 +497,7 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 ---
 
-### Phase 3 — Profile Tab: Move Progress Section
+### Phase 3 — Profile Tab: Move Progress Section ✅ COMPLETE
 
 **File to modify:** `lib/tabs/Shots.dart` (Start tab) and `lib/tabs/Profile.dart`
 
@@ -519,7 +519,7 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 ---
 
-### Phase 4 — Start Tab Redesign (Pro Users)
+### Phase 4 — Start Tab Redesign (Pro Users) ✅ COMPLETE
 
 **File to heavily modify:** `lib/tabs/Shots.dart`
 
@@ -540,7 +540,7 @@ else:
 
 ---
 
-### Phase 5 — Challenger Road Map UI
+### Phase 5 — Challenger Road Map UI ✅ COMPLETE
 
 **Files to create:**
 - `lib/tabs/shots/challenger_road/ChallengerRoadMapView.dart` — root scrollable map
