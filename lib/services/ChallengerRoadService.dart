@@ -41,38 +41,26 @@ class ChallengerRoadService {
 
   /// Root of the global challenges sub-collection.
   /// Firestore path: challenger_road/challenges/challenges
-  CollectionReference get _challengesRef => _firestore
-      .collection('challenger_road')
-      .doc('challenges')
-      .collection('challenges');
+  CollectionReference get _challengesRef => _firestore.collection('challenger_road').doc('challenges').collection('challenges');
 
   /// Levels sub-collection for a given challenge.
-  CollectionReference _levelsRef(String challengeId) =>
-      _challengesRef.doc(challengeId).collection('levels');
+  CollectionReference _levelsRef(String challengeId) => _challengesRef.doc(challengeId).collection('levels');
 
   /// Per-user Challenger Road summary document.
   /// Firestore path: users/{uid}/challenger_road/summary
-  DocumentReference _userSummaryRef(String userId) => _firestore
-      .collection('users')
-      .doc(userId)
-      .collection('challenger_road')
-      .doc('summary');
+  DocumentReference _userSummaryRef(String userId) => _firestore.collection('users').doc(userId).collection('challenger_road').doc('summary');
 
   /// Attempts sub-collection for a user.
-  CollectionReference _attemptsRef(String userId) =>
-      _firestore.collection('users').doc(userId).collection('challenger_road_attempts');
+  CollectionReference _attemptsRef(String userId) => _firestore.collection('users').doc(userId).collection('challenger_road_attempts');
 
   /// Challenge sessions sub-collection for a given attempt.
-  CollectionReference _sessionsRef(String userId, String attemptId) =>
-      _attemptsRef(userId).doc(attemptId).collection('challenge_sessions');
+  CollectionReference _sessionsRef(String userId, String attemptId) => _attemptsRef(userId).doc(attemptId).collection('challenge_sessions');
 
   /// Per-challenge progress sub-collection within one attempt.
-  CollectionReference _progressRef(String userId, String attemptId) =>
-      _attemptsRef(userId).doc(attemptId).collection('challenge_progress');
+  CollectionReference _progressRef(String userId, String attemptId) => _attemptsRef(userId).doc(attemptId).collection('challenge_progress');
 
   /// Cross-attempt per-challenge history sub-collection.
-  CollectionReference _allTimeHistoryRef(String userId) =>
-      _firestore.collection('users').doc(userId).collection('challenger_road_challenge_history');
+  CollectionReference _allTimeHistoryRef(String userId) => _firestore.collection('users').doc(userId).collection('challenger_road_challenge_history');
 
   // ---------------------------------------------------------------------------
   // 1. Global challenge data
@@ -82,12 +70,7 @@ class ChallengerRoadService {
   /// document at [level], ordered by that level's [sequence] field.
   Future<List<ChallengerRoadChallenge>> getChallengesForLevel(int level) async {
     // Query the 'levels' collection group for all active level docs matching [level].
-    final levelSnaps = await _firestore
-        .collectionGroup('levels')
-        .where('level', isEqualTo: level)
-        .where('active', isEqualTo: true)
-        .orderBy('sequence')
-        .get();
+    final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).orderBy('sequence').get();
 
     if (levelSnaps.docs.isEmpty) return [];
 
@@ -118,10 +101,7 @@ class ChallengerRoadService {
   /// Returns the [ChallengerRoadLevel] document for a specific challenge at a
   /// specific level, or null if the challenge does not participate at that level.
   Future<ChallengerRoadLevel?> getLevelDoc(String challengeId, int level) async {
-    final snap = await _levelsRef(challengeId)
-        .where('level', isEqualTo: level)
-        .limit(1)
-        .get();
+    final snap = await _levelsRef(challengeId).where('level', isEqualTo: level).limit(1).get();
     if (snap.docs.isEmpty) return null;
     return ChallengerRoadLevel.fromSnapshot(snap.docs.first);
   }
@@ -133,18 +113,9 @@ class ChallengerRoadService {
   /// Returns a sorted list of all distinct active level numbers across all challenges.
   /// Used to build the full snake map without loading every challenge.
   Future<List<int>> getAllActiveLevels() async {
-    final snap = await _firestore
-        .collectionGroup('levels')
-        .where('active', isEqualTo: true)
-        .get();
+    final snap = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
 
-    final levels = snap.docs
-        .map((d) => d.data()['level'] as num?)
-        .whereType<num>()
-        .map((n) => n.toInt())
-        .toSet()
-        .toList()
-      ..sort();
+    final levels = snap.docs.map((d) => d.data()['level'] as num?).whereType<num>().map((n) => n.toInt()).toSet().toList()..sort();
 
     return levels;
   }
@@ -156,10 +127,7 @@ class ChallengerRoadService {
   /// Returns the current active [ChallengerRoadAttempt] for a user, or null
   /// if the user has never started Challenger Road.
   Future<ChallengerRoadAttempt?> getActiveAttempt(String userId) async {
-    final snap = await _attemptsRef(userId)
-        .where('status', isEqualTo: 'active')
-        .limit(1)
-        .get();
+    final snap = await _attemptsRef(userId).where('status', isEqualTo: 'active').limit(1).get();
     if (snap.docs.isEmpty) return null;
     return ChallengerRoadAttempt.fromSnapshot(snap.docs.first);
   }
@@ -167,8 +135,7 @@ class ChallengerRoadService {
   /// Creates a brand-new [ChallengerRoadAttempt] for a user starting at
   /// [startingLevel]. Also updates the user summary's `currentAttemptId` and
   /// `totalAttempts`, then runs badge checks.
-  Future<ChallengerRoadAttempt> createAttempt(
-      String userId, int startingLevel) async {
+  Future<ChallengerRoadAttempt> createAttempt(String userId, int startingLevel) async {
     final summary = await getUserSummary(userId);
     final attemptNumber = summary.totalAttempts + 1;
 
@@ -205,8 +172,7 @@ class ChallengerRoadService {
 
   /// Applies a partial update to an attempt document. Callers should use the
   /// snake_case field names that match the Firestore document schema.
-  Future<void> updateAttempt(
-      String userId, String attemptId, Map<String, dynamic> data) async {
+  Future<void> updateAttempt(String userId, String attemptId, Map<String, dynamic> data) async {
     await _attemptsRef(userId).doc(attemptId).update(data);
   }
 
@@ -219,8 +185,7 @@ class ChallengerRoadService {
   /// [ChallengeAllTimeHistory] for the same challenge.
   ///
   /// All three writes succeed or none do (WriteBatch).
-  Future<void> saveChallengeSession(
-      String userId, String attemptId, ChallengeSession session) async {
+  Future<void> saveChallengeSession(String userId, String attemptId, ChallengeSession session) async {
     final batch = _firestore.batch();
 
     // 1. New challenge_sessions document.
@@ -228,8 +193,7 @@ class ChallengerRoadService {
     batch.set(sessionRef, session.toMap());
 
     // 2. Upsert challenge_progress for this attempt.
-    await _buildChallengeProgressUpdate(
-        userId, attemptId, session, batch: batch);
+    await _buildChallengeProgressUpdate(userId, attemptId, session, batch: batch);
 
     // 3. Upsert cross-attempt challenge history.
     await _buildAllTimeHistoryUpdate(userId, session, batch: batch);
@@ -243,11 +207,8 @@ class ChallengerRoadService {
 
   /// Returns all [ChallengeSession] documents for a given attempt, ordered by
   /// date descending.
-  Future<List<ChallengeSession>> getSessionsForAttempt(
-      String userId, String attemptId) async {
-    final snap = await _sessionsRef(userId, attemptId)
-        .orderBy('date', descending: true)
-        .get();
+  Future<List<ChallengeSession>> getSessionsForAttempt(String userId, String attemptId) async {
+    final snap = await _sessionsRef(userId, attemptId).orderBy('date', descending: true).get();
     return snap.docs.map(ChallengeSession.fromSnapshot).toList();
   }
 
@@ -256,8 +217,7 @@ class ChallengerRoadService {
   ///
   /// Prefer [getChallengeProgress] for repeated/bulk checks — this method
   /// queries challenge_sessions directly and is best for one-off verification.
-  Future<bool> isChallengePassedAtLevel(
-      String userId, String attemptId, String challengeId, int level) async {
+  Future<bool> isChallengePassedAtLevel(String userId, String attemptId, String challengeId, int level) async {
     // Fast path: read challenge_progress document (O(1) doc read).
     final progress = await getChallengeProgress(userId, attemptId, challengeId);
     if (progress != null) return progress.bestLevel >= level;
@@ -272,8 +232,7 @@ class ChallengerRoadService {
 
   /// Returns the [ChallengeProgressEntry] for a specific challenge within one
   /// attempt, or null if the challenge has never been attempted.
-  Future<ChallengeProgressEntry?> getChallengeProgress(
-      String userId, String attemptId, String challengeId) async {
+  Future<ChallengeProgressEntry?> getChallengeProgress(String userId, String attemptId, String challengeId) async {
     final snap = await _progressRef(userId, attemptId).doc(challengeId).get();
     if (!snap.exists) return null;
     return ChallengeProgressEntry.fromSnapshot(snap);
@@ -281,8 +240,7 @@ class ChallengerRoadService {
 
   /// Returns the [ChallengeAllTimeHistory] for a specific challenge across all
   /// of a user's attempts, or null if the challenge has never been attempted.
-  Future<ChallengeAllTimeHistory?> getChallengeAllTimeHistory(
-      String userId, String challengeId) async {
+  Future<ChallengeAllTimeHistory?> getChallengeAllTimeHistory(String userId, String challengeId) async {
     final snap = await _allTimeHistoryRef(userId).doc(challengeId).get();
     if (!snap.exists) return null;
     return ChallengeAllTimeHistory.fromSnapshot(snap);
@@ -294,14 +252,9 @@ class ChallengerRoadService {
 
   /// Returns true when every active challenge that participates at [level] has
   /// a passing session in the given attempt.
-  Future<bool> isLevelComplete(
-      String userId, String attemptId, int level) async {
+  Future<bool> isLevelComplete(String userId, String attemptId, int level) async {
     // Get all active challenge IDs that have a level doc at this level.
-    final levelSnaps = await _firestore
-        .collectionGroup('levels')
-        .where('level', isEqualTo: level)
-        .where('active', isEqualTo: true)
-        .get();
+    final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).get();
 
     if (levelSnaps.docs.isEmpty) return false;
 
@@ -315,8 +268,7 @@ class ChallengerRoadService {
       final data = challengeSnap.data() ?? {};
       if (data['active'] != true) continue;
 
-      final passed = await isChallengePassedAtLevel(
-          userId, attemptId, challengeRef.id, level);
+      final passed = await isChallengePassedAtLevel(userId, attemptId, challengeRef.id, level);
       if (!passed) return false;
     }
 
@@ -328,15 +280,13 @@ class ChallengerRoadService {
   /// [isLevelComplete] returns true.
   ///
   /// Returns the updated [ChallengerRoadAttempt].
-  Future<ChallengerRoadAttempt> advanceLevel(
-      String userId, String attemptId) async {
+  Future<ChallengerRoadAttempt> advanceLevel(String userId, String attemptId) async {
     final attemptSnap = await _attemptsRef(userId).doc(attemptId).get();
     final attempt = ChallengerRoadAttempt.fromSnapshot(attemptSnap);
 
     final completedLevel = attempt.currentLevel;
     final newLevel = completedLevel + 1;
-    final newHighest =
-        max(attempt.highestLevelReachedThisAttempt, completedLevel);
+    final newHighest = max(attempt.highestLevelReachedThisAttempt, completedLevel);
 
     await updateAttempt(userId, attemptId, {
       'current_level': newLevel,
@@ -367,8 +317,7 @@ class ChallengerRoadService {
   /// it wraps around (resets to the remainder) and `resetCount` is incremented.
   ///
   /// Also updates [ChallengerRoadUserSummary.allTimeTotalChallengerRoadShots].
-  Future<ChallengerRoadMilestoneResult> incrementChallengerRoadShots(
-      String userId, String attemptId, int count) async {
+  Future<ChallengerRoadMilestoneResult> incrementChallengerRoadShots(String userId, String attemptId, int count) async {
     final attemptSnap = await _attemptsRef(userId).doc(attemptId).get();
     final attempt = ChallengerRoadAttempt.fromSnapshot(attemptSnap);
 
@@ -386,8 +335,7 @@ class ChallengerRoadService {
 
     // Keep the all-time total in sync on the summary doc.
     final summary = await getUserSummary(userId);
-    final newAllTimeTotal =
-        summary.allTimeTotalChallengerRoadShots + count;
+    final newAllTimeTotal = summary.allTimeTotalChallengerRoadShots + count;
     await updateUserSummary(userId, {
       'all_time_total_challenger_road_shots': newAllTimeTotal,
     });
@@ -419,8 +367,7 @@ class ChallengerRoadService {
         'status': 'completed',
         'end_date': Timestamp.fromDate(DateTime.now()),
       });
-      startingLevel =
-          max(1, active.highestLevelReachedThisAttempt - 1);
+      startingLevel = max(1, active.highestLevelReachedThisAttempt - 1);
     }
 
     return createAttempt(userId, startingLevel);
@@ -440,8 +387,7 @@ class ChallengerRoadService {
 
   /// Applies a partial update to the user summary document. If the document
   /// does not exist it will be created (merge: true behaviour via [SetOptions]).
-  Future<void> updateUserSummary(
-      String userId, Map<String, dynamic> data) async {
+  Future<void> updateUserSummary(String userId, Map<String, dynamic> data) async {
     await _userSummaryRef(userId).set(data, SetOptions(merge: true));
   }
 
@@ -481,9 +427,7 @@ class ChallengerRoadService {
       batch.set(ref, entry.toMap());
     } else {
       final existing = ChallengeProgressEntry.fromSnapshot(snap);
-      final newBest = session.passed
-          ? max(existing.bestLevel, session.level)
-          : existing.bestLevel;
+      final newBest = session.passed ? max(existing.bestLevel, session.level) : existing.bestLevel;
       final data = <String, dynamic>{
         'best_level': newBest,
         'total_attempts': existing.totalAttempts + 1,
@@ -523,14 +467,11 @@ class ChallengerRoadService {
       batch.set(ref, history.toMap());
     } else {
       final existing = ChallengeAllTimeHistory.fromSnapshot(snap);
-      final newBest = session.passed
-          ? max(existing.allTimeBestLevel, session.level)
-          : existing.allTimeBestLevel;
+      final newBest = session.passed ? max(existing.allTimeBestLevel, session.level) : existing.allTimeBestLevel;
       final data = <String, dynamic>{
         'all_time_best_level': newBest,
         'all_time_total_attempts': existing.allTimeTotalAttempts + 1,
-        'all_time_total_passed':
-            existing.allTimeTotalPassed + (session.passed ? 1 : 0),
+        'all_time_total_passed': existing.allTimeTotalPassed + (session.passed ? 1 : 0),
       };
       if (session.passed) {
         if (existing.firstPassedAt == null) {
@@ -577,8 +518,7 @@ class ChallengerRoadService {
 
     // 10K milestone badges (based on cumulative resets across all attempts).
     // We approximate from allTimeTotalChallengerRoadShots / 10000.
-    final milestoneCount =
-        summary.allTimeTotalChallengerRoadShots ~/ 10000;
+    final milestoneCount = summary.allTimeTotalChallengerRoadShots ~/ 10000;
     if (milestoneCount >= 1) maybeAward('cr_10k_x1');
     if (milestoneCount >= 3) maybeAward('cr_10k_x3');
     if (milestoneCount >= 10) maybeAward('cr_10k_x10');
