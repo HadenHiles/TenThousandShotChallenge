@@ -4,7 +4,11 @@
     "private": true,
     "description": "Test and dev tools for Ten Thousand Shot Challenge",
     "scripts": {
-        "seed:firestore": "firestore-seed --emulatorHost localhost:8080 --project demo-project"
+        "seed:firestore": "firestore-seed --emulatorHost localhost:8080 --project demo-project",
+        "seed:challenger-road": "node scripts/seed_challenger_road.js",
+        "unseed:challenger-road": "node scripts/unseed_challenger_road.js",
+        "seed:challenger-road:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/seed_challenger_road.js",
+        "unseed:challenger-road:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road.js"
     },
     "dependencies": {
         "firebase-admin": "^13.4.0",
