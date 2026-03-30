@@ -26,17 +26,14 @@ const admin = require('firebase-admin');
 // ---------------------------------------------------------------------------
 
 if (!admin.apps.length) {
-  if (process.env.FIRESTORE_EMULATOR_HOST) {
-    admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
-  } else {
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      console.error(
-        'ERROR: Set GOOGLE_APPLICATION_CREDENTIALS or FIRESTORE_EMULATOR_HOST before running this script.'
-      );
-      process.exit(1);
+    if (process.env.FIRESTORE_EMULATOR_HOST) {
+        admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
+    } else {
+        // Real project — accepts either:
+        //   1. GOOGLE_APPLICATION_CREDENTIALS pointing to a service account JSON, OR
+        //   2. Application Default Credentials (run `firebase login` first).
+        admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
     }
-    admin.initializeApp();
-  }
 }
 
 const db = admin.firestore();
@@ -48,50 +45,50 @@ const db = admin.firestore();
 // ---------------------------------------------------------------------------
 
 async function deleteSubcollection(docRef, subcollectionName) {
-  const snap = await docRef.collection(subcollectionName).get();
-  if (snap.empty) return;
+    const snap = await docRef.collection(subcollectionName).get();
+    if (snap.empty) return;
 
-  const batch = db.batch();
-  snap.docs.forEach((d) => batch.delete(d.ref));
-  await batch.commit();
-  console.log(`    ↳ Deleted ${snap.size} doc(s) from ${subcollectionName}/`);
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    console.log(`    ↳ Deleted ${snap.size} doc(s) from ${subcollectionName}/`);
 }
 
 async function main() {
-  console.log('\n🗑️   Removing Challenger Road seed data...\n');
+    console.log('\n🗑️   Removing Challenger Road seed data...\n');
 
-  const challengesRef = db
-    .collection('challenger_road')
-    .doc('challenges')
-    .collection('challenges');
+    const challengesRef = db
+        .collection('challenger_road')
+        .doc('challenges')
+        .collection('challenges');
 
-  const snap = await challengesRef.get();
+    const snap = await challengesRef.get();
 
-  if (snap.empty) {
-    console.log('  Nothing to delete — collection is empty.\n');
-    return;
-  }
+    if (snap.empty) {
+        console.log('  Nothing to delete — collection is empty.\n');
+        return;
+    }
 
-  const seedDocs = snap.docs.filter((d) => d.id.startsWith('seed_'));
+    const seedDocs = snap.docs.filter((d) => d.id.startsWith('seed_'));
 
-  if (seedDocs.length === 0) {
-    console.log('  No seed_ documents found — nothing to delete.\n');
-    return;
-  }
+    if (seedDocs.length === 0) {
+        console.log('  No seed_ documents found — nothing to delete.\n');
+        return;
+    }
 
-  for (const doc of seedDocs) {
-    console.log(`  Deleting ${doc.id}…`);
-    await deleteSubcollection(doc.ref, 'levels');
-    await doc.ref.delete();
-    console.log(`  ✓  Deleted ${doc.id}`);
-  }
+    for (const doc of seedDocs) {
+        console.log(`  Deleting ${doc.id}…`);
+        await deleteSubcollection(doc.ref, 'levels');
+        await doc.ref.delete();
+        console.log(`  ✓  Deleted ${doc.id}`);
+    }
 
-  console.log(`\n✅  Done. Removed ${seedDocs.length} seed challenge(s).\n`);
+    console.log(`\n✅  Done. Removed ${seedDocs.length} seed challenge(s).\n`);
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('\n❌  Unseed failed:', err);
-    process.exit(1);
-  });
+    .then(() => process.exit(0))
+    .catch((err) => {
+        console.error('\n❌  Unseed failed:', err);
+        process.exit(1);
+    });
