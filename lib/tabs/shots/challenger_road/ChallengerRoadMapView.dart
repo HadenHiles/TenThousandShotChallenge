@@ -638,16 +638,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         return Column(
           children: [
             // ── Header (pinned below app header) ───────────────────────
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 320),
-              curve: Curves.easeInOutCubic,
-              padding: EdgeInsets.only(
-                top: _mainHeaderVisible ? 0 : MediaQuery.of(context).padding.top,
-              ),
-              child: ChallengerRoadHeader(
-                attempt: attempt,
-                onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
-              ),
+            ChallengerRoadHeader(
+              attempt: attempt,
+              topPadding: _mainHeaderVisible ? 0 : MediaQuery.of(context).padding.top,
+              onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
             ),
 
             // ── Map (scrollable) or first-time splash ─────────────────
