@@ -245,7 +245,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
           elevation: 12,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
+            side: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
@@ -258,16 +258,16 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.12),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
                     border: Border.all(
-                      color: const Color(0xFFFFD700),
+                      color: Theme.of(context).primaryColor,
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.route_rounded,
                     size: 40,
-                    color: Color(0xFFFFD700),
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -310,8 +310,8 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                       await presentPaywallIfNeeded(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
-                      foregroundColor: Colors.black87,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
