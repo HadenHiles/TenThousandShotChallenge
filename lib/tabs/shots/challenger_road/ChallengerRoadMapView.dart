@@ -177,7 +177,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   void _emitMainHeaderVisibility(bool visible) {
     if (_mainHeaderVisible == visible) return;
-    _mainHeaderVisible = visible;
+    if (mounted) {
+      setState(() {
+        _mainHeaderVisible = visible;
+      });
+    } else {
+      _mainHeaderVisible = visible;
+    }
     widget.onMainHeaderVisibilityChanged?.call(visible);
   }
 
