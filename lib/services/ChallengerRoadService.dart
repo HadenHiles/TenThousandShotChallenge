@@ -385,20 +385,51 @@ class ChallengerRoadService {
   // 7. Attempt restart
   // ---------------------------------------------------------------------------
 
-  /// Marks the current active attempt as 'completed', then creates and returns
-  /// a new attempt starting at `max(1, previousHighestLevel - 1)`.
+  /// Restarts Challenger Road for a user.
+  ///
+  /// **Mid-attempt restart** (`resetCount == 0`, i.e. user has never hit the
+  /// 10 000-shot milestone in the current attempt): the attempt is marked
+  /// `cancelled` and a fresh attempt doc is created reusing the **same**
+  /// `attemptNumber` — `totalAttempts` in the user summary is NOT incremented.
+  ///
+  /// **Post-completion restart** (`resetCount >= 1`): the attempt is marked
+  /// `completed` and a genuinely new attempt is created with an incremented
+  /// `attemptNumber` / `totalAttempts` (original behaviour).
   Future<ChallengerRoadAttempt> restartChallengerRoad(String userId) async {
     final active = await getActiveAttempt(userId);
 
     int startingLevel = 1;
     if (active != null) {
+      startingLevel = max(1, active.highestLevelReachedThisAttempt - 1);
+
+      final hasCompletedRoad = active.resetCount >= 1;
       await updateAttempt(userId, active.id!, {
-        'status': 'completed',
+        'status': hasCompletedRoad ? 'completed' : 'cancelled',
         'end_date': Timestamp.fromDate(DateTime.now()),
       });
-      startingLevel = max(1, active.highestLevelReachedThisAttempt - 1);
+
+      if (!hasCompletedRoad) {
+        // Reuse the same attempt number — this is a "do-over", not a new attempt.
+        final attempt = ChallengerRoadAttempt(
+          attemptNumber: active.attemptNumber,
+          startingLevel: startingLevel,
+          currentLevel: startingLevel,
+          challengerRoadShotCount: 0,
+          totalShotsThisAttempt: 0,
+          resetCount: 0,
+          highestLevelReachedThisAttempt: startingLevel,
+          status: 'active',
+          startDate: DateTime.now(),
+        );
+        final docRef = await _attemptsRef(userId).add(attempt.toMap());
+        attempt.id = docRef.id;
+        // Only update the pointer — do NOT touch total_attempts.
+        await updateUserSummary(userId, {'current_attempt_id': docRef.id});
+        return attempt;
+      }
     }
 
+    // Genuine new attempt (post-completion) — increment totalAttempts.
     return createAttempt(userId, startingLevel);
   }
 

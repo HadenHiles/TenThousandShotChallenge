@@ -19,7 +19,11 @@ import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/StartChallengeScreen.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -29,6 +33,27 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'models/Preferences.dart';
 
 final PanelController sessionPanelController = PanelController();
+
+/// Configuration for an active challenge session shown in the sliding panel.
+/// Set to non-null to activate challenge mode; null = normal shooting.
+class ChallengeSessionConfig {
+  final ChallengerRoadChallenge challenge;
+  final ChallengerRoadLevel levelDoc;
+  final ChallengerRoadAttempt attempt;
+  final String userId;
+  final VoidCallback? onSessionComplete;
+
+  const ChallengeSessionConfig({
+    required this.challenge,
+    required this.levelDoc,
+    required this.attempt,
+    required this.userId,
+    this.onSessionComplete,
+  });
+}
+
+/// Active challenge session; non-null activates challenge mode in the panel.
+final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotifier(null);
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
@@ -121,9 +146,14 @@ class _NavigationState extends State<Navigation> {
     if (mounted) setState(() {});
   }
 
+  void _onChallengeSessionChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     sessionService.addListener(_onSessionChanged);
+    activeChallengeSession.addListener(_onChallengeSessionChanged);
     try {
       versionCheck(context);
     } catch (e) {
@@ -294,6 +324,7 @@ class _NavigationState extends State<Navigation> {
   @override
   void dispose() {
     sessionService.removeListener(_onSessionChanged);
+    activeChallengeSession.removeListener(_onChallengeSessionChanged);
     super.dispose();
   }
 
@@ -323,6 +354,93 @@ class _NavigationState extends State<Navigation> {
         });
       }
     }
+  }
+
+  // ── Challenge session panel header ────────────────────────────────────────
+
+  Widget _buildChallengeSessionHeader(ChallengeSessionConfig config) {
+    return Container(
+      decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+        tileColor: Theme.of(context).primaryColor,
+        title: Row(
+          children: [
+            const Icon(Icons.sports_hockey, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    config.challenge.name.toUpperCase(),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'LEVEL ${config.levelDoc.level}  •  CHALLENGE IN PROGRESS',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Cancel challenge session
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                activeChallengeSession.value = null;
+                sessionPanelController.close();
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Icons.close, color: Colors.white, size: 22),
+              ),
+            ),
+            // Collapse/expand panel
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                if (sessionPanelController.isPanelClosed) {
+                  sessionPanelController.open();
+                } else {
+                  sessionPanelController.close();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ],
+        ),
+        onTap: () {
+          if (sessionPanelController.isPanelClosed) {
+            sessionPanelController.open();
+          } else {
+            sessionPanelController.close();
+          }
+        },
+      ),
+    );
   }
 
   // Helper to get FirebaseFirestore from Provider
@@ -472,7 +590,7 @@ class _NavigationState extends State<Navigation> {
           backdropEnabled: true,
           controller: sessionPanelController,
           maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-          minHeight: sessionService.isRunning ? 65 : 0,
+          minHeight: sessionService.isRunning || activeChallengeSession.value != null ? 65 : 0,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
@@ -500,113 +618,123 @@ class _NavigationState extends State<Navigation> {
             ),
             child: Column(
               children: [
-                AnimatedBuilder(
-                  animation: sessionService, // listen to ChangeNotifier
-                  builder: (context, child) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      child: ListTile(
-                        tileColor: Theme.of(context).primaryColor, // This doesn't work in latest flutter upgrade
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "${printWeekday(DateTime.now())} Session",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSecondary,
-                                fontFamily: "NovecentoSans",
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
+                // Panel header — switches between challenge mode and normal shooting.
+                activeChallengeSession.value != null
+                    ? _buildChallengeSessionHeader(activeChallengeSession.value!)
+                    : AnimatedBuilder(
+                        animation: sessionService,
+                        builder: (context, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                InkWell(
-                                  onTap: () {
-                                    Feedback.forLongPress(context);
-
-                                    if (!sessionService.isPaused) {
-                                      sessionService.pause();
-                                    } else {
-                                      sessionService.resume();
-                                    }
-                                  },
-                                  focusColor: darken(Theme.of(context).primaryColor, 0.2),
-                                  enableFeedback: true,
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Icon(
-                                      sessionService.isPaused ? Icons.play_arrow : Icons.pause,
-                                      size: 30,
-                                      color: Colors.white,
+                            child: ListTile(
+                              tileColor: Theme.of(context).primaryColor,
+                              title: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "${printWeekday(DateTime.now())} Session",
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSecondary,
+                                      fontFamily: "NovecentoSans",
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                ),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    Text(
-                                      printDuration(sessionService.currentDuration, true),
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSecondary,
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          Feedback.forLongPress(context);
+                                          if (!sessionService.isPaused) {
+                                            sessionService.pause();
+                                          } else {
+                                            sessionService.resume();
+                                          }
+                                        },
+                                        focusColor: darken(Theme.of(context).primaryColor, 0.2),
+                                        enableFeedback: true,
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(10),
+                                          child: Icon(
+                                            sessionService.isPaused ? Icons.play_arrow : Icons.pause,
+                                            size: 30,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Text(
+                                            printDuration(sessionService.currentDuration, true),
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSecondary,
+                                              fontFamily: "NovecentoSans",
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              trailing: InkWell(
+                                focusColor: darken(Theme.of(context).primaryColor, 0.6),
+                                enableFeedback: true,
+                                borderRadius: BorderRadius.circular(30),
+                                child: Icon(
+                                  _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).colorScheme.onSecondary,
                                 ),
-                              ],
+                                onTap: () {
+                                  Feedback.forLongPress(context);
+                                  if (sessionPanelController.isPanelClosed) {
+                                    sessionPanelController.open();
+                                    setState(() => _sessionPanelState = PanelState.OPEN);
+                                  } else {
+                                    sessionPanelController.close();
+                                    setState(() => _sessionPanelState = PanelState.CLOSED);
+                                  }
+                                },
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                              onTap: () {
+                                if (sessionPanelController.isPanelClosed) {
+                                  sessionPanelController.open();
+                                  setState(() => _sessionPanelState = PanelState.OPEN);
+                                } else {
+                                  sessionPanelController.close();
+                                  setState(() => _sessionPanelState = PanelState.CLOSED);
+                                }
+                              },
                             ),
-                          ],
-                        ),
-                        trailing: InkWell(
-                          focusColor: darken(Theme.of(context).primaryColor, 0.6),
-                          enableFeedback: true,
-                          borderRadius: BorderRadius.circular(30),
-                          child: Icon(
-                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: Theme.of(context).colorScheme.onSecondary,
-                          ),
-                          onTap: () {
-                            Feedback.forLongPress(context);
-
-                            if (sessionPanelController.isPanelClosed) {
-                              sessionPanelController.open();
-                              setState(() {
-                                _sessionPanelState = PanelState.OPEN;
-                              });
-                            } else {
-                              sessionPanelController.close();
-                              setState(() {
-                                _sessionPanelState = PanelState.CLOSED;
-                              });
-                            }
-                          },
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                        onTap: () {
-                          if (sessionPanelController.isPanelClosed) {
-                            sessionPanelController.open();
-                            setState(() {
-                              _sessionPanelState = PanelState.OPEN;
-                            });
-                          } else {
-                            sessionPanelController.close();
-                            setState(() {
-                              _sessionPanelState = PanelState.CLOSED;
-                            });
-                          }
+                          );
                         },
                       ),
-                    );
-                  },
-                ),
-                StartShooting(sessionPanelController: sessionPanelController),
+                // Panel body — challenge session or normal shooting.
+                if (activeChallengeSession.value != null)
+                  Expanded(
+                    child: StartChallengeScreen(
+                      challenge: activeChallengeSession.value!.challenge,
+                      levelDoc: activeChallengeSession.value!.levelDoc,
+                      attempt: activeChallengeSession.value!.attempt,
+                      userId: activeChallengeSession.value!.userId,
+                      onDismiss: () {
+                        final cb = activeChallengeSession.value?.onSessionComplete;
+                        activeChallengeSession.value = null;
+                        sessionPanelController.close();
+                        cb?.call();
+                      },
+                    ),
+                  )
+                else
+                  StartShooting(sessionPanelController: sessionPanelController),
               ],
             ),
           ),
