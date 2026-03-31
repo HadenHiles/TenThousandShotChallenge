@@ -17,7 +17,6 @@ import 'package:tenthousandshotchallenge/tabs/Friends.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui' show FontFeature;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
