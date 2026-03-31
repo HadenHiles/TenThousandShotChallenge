@@ -152,7 +152,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     final service = ChallengerRoadService(firestore: firestore);
 
     final duration = DateTime.now().difference(_startTime);
-    final passed = _shotsMade >= widget.levelDoc.shotsToPass;
+    // A session is passed when any single try met or exceeded the goal.
+    final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
 
     final session = ChallengeSession(
       challengeId: widget.challenge.id!,
@@ -392,7 +393,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                       ),
                       icon: const Icon(Icons.sports_hockey, color: Colors.white, size: 22),
                       label: const Text(
-                        'ATTEMPT CHALLENGE',
+                        'LOG A TRY',
                         style: TextStyle(
                           fontFamily: 'NovecentoSans',
                           fontSize: 20,
@@ -404,7 +405,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Records one attempt at the challenge',
+                    'Records one try at the challenge',
                     style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                   ),
                   const SizedBox(height: 16),
@@ -415,7 +416,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                     Row(
                       children: [
                         Text(
-                          'ATTEMPTS THIS SESSION',
+                          'TRIES',
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
@@ -425,7 +426,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          '${_shots.length} attempt${_shots.length == 1 ? '' : 's'}',
+                          '${_shots.length} tr${_shots.length == 1 ? 'y' : 'ies'}',
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
@@ -546,6 +547,23 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         Shots(DateTime.now(), _selectedShotType, _currentShotCount, targetsHit),
       );
     });
+
+    // Auto-complete if this try passed the challenge.
+    if (targetsHit >= widget.levelDoc.shotsToPass && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Text('🏒  Challenge passed! Finishing session…'),
+            ],
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(milliseconds: 1400),
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) _finishSession();
+    }
   }
 
   Future<void> _openShotCountNumpad() async {
@@ -597,8 +615,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     return _shots.asMap().entries.map((entry) {
       final i = entry.key;
       final s = entry.value;
-      // Most recent is index 0 — attempt number counts from oldest.
-      final attemptNumber = _shots.length - i;
+      // Most recent is index 0 — try number counts from oldest.
+      final tryNumber = _shots.length - i;
       final count = s.count ?? 1;
       final hit = s.targetsHit ?? 0;
       final passed = hit >= shotsToPass;
@@ -622,7 +640,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         key: UniqueKey(),
         onDismissed: (_) {
           Fluttertoast.showToast(
-            msg: 'Attempt #$attemptNumber deleted',
+            msg: 'Try #$tryNumber deleted',
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             backgroundColor: Theme.of(context).cardTheme.color,
@@ -664,7 +682,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '#$attemptNumber',
+                      '#$tryNumber',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 13,

@@ -109,7 +109,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'ATTEMPT',
+                      'TRY',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                         fontFamily: 'NovecentoSans',
