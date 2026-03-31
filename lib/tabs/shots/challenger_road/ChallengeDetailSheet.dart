@@ -224,7 +224,7 @@ class ChallengeDetailSheet extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _quotaStat(context, '${levelDoc.shotsRequired}', 'SHOTS TOTAL'),
+          _quotaStat(context, '${levelDoc.shotsRequired}', 'SHOTS / ATTEMPT'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           _quotaStat(context, '${levelDoc.shotsToPass}', 'ON TARGET TO PASS'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
