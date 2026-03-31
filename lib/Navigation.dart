@@ -370,6 +370,10 @@ class _NavigationState extends State<Navigation> {
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+              backgroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Keep session'),
           ),

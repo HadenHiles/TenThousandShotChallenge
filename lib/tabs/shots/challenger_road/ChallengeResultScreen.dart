@@ -4,6 +4,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart'
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
 /// Displayed after a challenge session completes (pass or fail).
@@ -39,6 +40,33 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
   late final ConfettiController _confettiController;
 
   bool get _passed => widget.session.passed;
+  List<Shots> get _tries => widget.session.shots;
+  int get _tryCount => _tries.length;
+
+  Shots? get _bestTry {
+    if (_tries.isEmpty) return null;
+    return _tries.reduce((a, b) {
+      final aHits = a.targetsHit ?? 0;
+      final bHits = b.targetsHit ?? 0;
+      if (bHits != aHits) return bHits > aHits ? b : a;
+
+      final aCount = a.count ?? 0;
+      final bCount = b.count ?? 0;
+      final aAcc = aCount > 0 ? (aHits / aCount) : 0.0;
+      final bAcc = bCount > 0 ? (bHits / bCount) : 0.0;
+      if (bAcc != aAcc) return bAcc > aAcc ? b : a;
+
+      // If tied on hits and accuracy, prefer the most recent try.
+      final aDate = a.date ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.date ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.isAfter(aDate) ? b : a;
+    });
+  }
+
+  int get _bestTryHits => _bestTry?.targetsHit ?? 0;
+  bool get _bestTryClose => _bestTryHits >= (widget.session.shotsToPass * 0.7).floor();
+  double get _averageHitsPerTry => _tryCount > 0 ? (widget.session.shotsMade / _tryCount) : 0;
+  int get _sessionAccuracy => widget.session.totalShots > 0 ? ((widget.session.shotsMade / widget.session.totalShots) * 100).round() : 0;
 
   @override
   void initState() {
@@ -63,8 +91,7 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
   String get _headline {
     if (_passed && widget.levelAdvanced) return 'LEVEL UP! 🏒';
     if (_passed) return 'CHALLENGE COMPLETE!';
-    final close = widget.session.shotsMade >= (widget.session.shotsToPass * 0.7).floor();
-    return close ? 'SO CLOSE!' : 'NOT QUITE...';
+    return _bestTryClose ? 'SO CLOSE!' : 'NOT QUITE...';
   }
 
   String get _subMessage {
@@ -72,13 +99,12 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
       return 'You crushed the ${widget.challenge.name} challenge and unlocked Level ${widget.updatedAttempt.currentLevel}!';
     }
     if (_passed) {
-      return 'You completed the ${widget.challenge.name} challenge! You hit ${widget.session.shotsMade} / ${widget.session.shotsToPass} required on-target shots. Keep it up!';
+      return 'You completed the ${widget.challenge.name} challenge! Your best try was $_bestTryHits / ${widget.session.shotsToPass} required on-target shots. Keep it up!';
     }
-    final close = widget.session.shotsMade >= (widget.session.shotsToPass * 0.7).floor();
-    if (close) {
-      return 'Nice shooting! You hit ${widget.session.shotsMade} on target — you needed ${widget.session.shotsToPass}. You\'ve almost got it!';
+    if (_bestTryClose) {
+      return 'Nice shooting! Your best try hit $_bestTryHits on target — you needed ${widget.session.shotsToPass}. You\'ve almost got it!';
     }
-    return 'You hit ${widget.session.shotsMade} on target, but needed ${widget.session.shotsToPass}. Keep grinding — every rep counts!';
+    return 'Your best try hit $_bestTryHits on target, but you needed ${widget.session.shotsToPass}. Keep grinding — every rep counts!';
   }
 
   @override
@@ -261,9 +287,9 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
   // ── Stats ─────────────────────────────────────────────────────────────────
 
   Widget _buildStatsCard(BuildContext context) {
-    final accuracy = widget.session.totalShots > 0 ? ((widget.session.shotsMade / widget.session.totalShots) * 100).round() : 0;
     final mins = widget.session.duration.inMinutes;
     final secs = widget.session.duration.inSeconds.remainder(60);
+    final avgScore = _averageHitsPerTry.toStringAsFixed(1);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -288,11 +314,20 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _stat('${widget.session.shotsMade} / ${widget.session.shotsToPass}', 'ON TARGET'),
-              _stat('${widget.session.totalShots}', 'TOTAL SHOTS'),
-              _stat('$accuracy%', 'ACCURACY'),
+              _stat('$_bestTryHits / ${widget.session.shotsToPass}', 'BEST TRY'),
+              _stat('$_tryCount', 'TRIES'),
+              _stat('$avgScore / ${widget.session.shotsRequired}', 'AVG SCORE'),
               _stat('${mins}m ${secs}s', 'TIME'),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Session accuracy: $_sessionAccuracy%',
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.75),
+            ),
           ),
         ],
       ),

@@ -17,7 +17,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 
-import 'package:tenthousandshotchallenge/Navigation.dart' show sessionPanelController;
+import 'package:tenthousandshotchallenge/Navigation.dart' show sessionPanelController, activeChallengeSession, ChallengeSessionConfig;
 
 /// Challenge shooting session shown inside the sliding panel in Navigation.
 ///
@@ -283,7 +283,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       // Close the panel, push the result screen above navigation, then clear
       // the active challenge once the user dismisses the result screen.
       sessionPanelController.close();
-      await Navigator.of(context).push(
+      final retryRequested = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => ChallengeResultScreen(
             session: session,
@@ -296,6 +296,34 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         ),
       );
       if (!mounted) return;
+
+      if (retryRequested == true) {
+        // Start a fresh challenge session for the same challenge/attempt.
+        final current = activeChallengeSession.value;
+        if (current != null) {
+          activeChallengeSession.value = ChallengeSessionConfig(
+            challenge: current.challenge,
+            levelDoc: current.levelDoc,
+            attempt: current.attempt,
+            userId: current.userId,
+            startedAt: DateTime.now(),
+            onSessionComplete: current.onSessionComplete,
+          );
+        }
+
+        setState(() {
+          _shots.clear();
+          _lastTargetsHit = null;
+          _saving = false;
+          _startTime = DateTime.now();
+          _selectedShotType = widget.challenge.shotType ?? 'wrist';
+          _currentShotCount = widget.levelDoc.shotsRequired;
+        });
+
+        sessionPanelController.open();
+        return;
+      }
+
       widget.onDismiss?.call();
     } catch (e) {
       setState(() => _saving = false);
