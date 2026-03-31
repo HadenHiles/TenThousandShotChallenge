@@ -56,8 +56,14 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
   // ── Computed values ───────────────────────────────────────────────────────
 
-  int get _shotsMade => _shots.fold(0, (sum, s) => sum + (s.targetsHit ?? 0));
-  int get _totalShots => _shots.fold(0, (sum, s) => sum + (s.count ?? 0));
+  int get _sessionShotsMade => _shots.fold(0, (sum, s) => sum + (s.targetsHit ?? 0));
+  int get _sessionTotalShots => _shots.fold(0, (sum, s) => sum + (s.count ?? 0));
+
+  // Indicator values are per-try so the denominator stays meaningful when a
+  // user logs multiple tries in the same challenge session.
+  Shots? get _latestTry => _shots.isEmpty ? null : _shots.first;
+  int get _currentTryShotsMade => _latestTry?.targetsHit ?? 0;
+  int get _currentTryTotalShots => _latestTry?.count ?? 0;
 
   // Lightweight anti-spam guardrail:
   // - ~0.5s per shot is the lower-bound execution speed.
@@ -166,7 +172,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
     final duration = DateTime.now().difference(_startTime);
     final minSeconds = _minimumRealisticSeconds(
-      totalShots: _totalShots,
+      totalShots: _sessionTotalShots,
       tryCount: _shots.length,
     );
     if (duration.inSeconds < minSeconds) {
@@ -200,8 +206,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       duration: duration,
       shotsRequired: widget.levelDoc.shotsRequired,
       shotsToPass: widget.levelDoc.shotsToPass,
-      shotsMade: _shotsMade,
-      totalShots: _totalShots,
+      shotsMade: _sessionShotsMade,
+      totalShots: _sessionTotalShots,
       passed: passed,
       shots: List.unmodifiable(_shots),
     );
@@ -223,7 +229,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       final milestone = await service.incrementChallengerRoadShots(
         widget.userId,
         widget.attempt.id!,
-        _totalShots,
+        _sessionTotalShots,
       );
 
       if (milestone.didHitMilestone && mounted) {
@@ -330,10 +336,11 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: ChallengeQuotaIndicator(
-            shotsMade: _shotsMade,
+            shotsMade: _currentTryShotsMade,
             shotsToPass: widget.levelDoc.shotsToPass,
             shotsRequired: widget.levelDoc.shotsRequired,
-            totalShots: _totalShots,
+            totalShots: _currentTryTotalShots,
+            tryCount: _shots.length,
           ),
         ),
 
