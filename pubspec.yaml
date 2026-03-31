@@ -9,6 +9,7 @@ dependencies:
   auto_size_text_field: ^2.2.3
   chewie: ^1.8.1
   cloud_firestore: ^6.0.0
+  confetti: ^0.8.0
   cloud_functions: ^6.0.0
   connectivity_plus: ^6.0.3
   cupertino_icons: ^1.0.8

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
@@ -13,7 +12,6 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
-import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
@@ -42,8 +40,8 @@ class StartChallengeScreen extends StatefulWidget {
 }
 
 class _StartChallengeScreenState extends State<StartChallengeScreen> {
-  String _selectedShotType = 'wrist';
-  int _currentShotCount = 5;
+  late String _selectedShotType;
+  late int _currentShotCount;
   final List<Shots> _shots = [];
   int? _lastTargetsHit;
   bool _saving = false;
@@ -58,7 +56,11 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   void initState() {
     super.initState();
     _startTime = DateTime.now();
-    _currentShotCount = preferences?.puckCount ?? 5;
+    // Pre-select the shot type required by the challenge; fall back to 'wrist'.
+    _selectedShotType = widget.challenge.shotType ?? 'wrist';
+    // Default puck count to the challenge's required shots so each attempt is
+    // a full "round" of the challenge out of the box.
+    _currentShotCount = widget.levelDoc.shotsRequired;
   }
 
   // ── Accuracy dialog ───────────────────────────────────────────────────────
@@ -166,11 +168,17 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     );
 
     try {
-      // Save to ChallengerRoad sub-collection.
+      // Save to ChallengerRoad sub-collection — this is the critical write.
       await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
 
-      // Save to global shooting session so the main iteration counter updates.
-      await saveShootingSession(_shots, auth, firestore);
+      // Save to the global shooting session so the main iteration counter
+      // updates.  This is best-effort: a missing index or network hiccup
+      // should NOT block the user from seeing their challenge result.
+      try {
+        await saveShootingSession(_shots, auth, firestore);
+      } catch (globalSaveError) {
+        debugPrint('Global session save failed (non-fatal): $globalSaveError');
+      }
 
       // Increment CR shot count + milestone check.
       final milestone = await service.incrementChallengerRoadShots(
@@ -241,11 +249,29 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
+        final msg = _friendlyError(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save session: $e')),
+          SnackBar(content: Text(msg)),
         );
       }
     }
+  }
+
+  /// Returns a human-readable error message, hiding raw Firebase details.
+  String _friendlyError(Object e) {
+    // FirebaseException carries a code that's safe to branch on.
+    if (e is FirebaseException) {
+      switch (e.code) {
+        case 'permission-denied':
+          return 'Permission denied. Please sign in and try again.';
+        case 'unavailable':
+        case 'deadline-exceeded':
+          return 'Couldn\'t reach the server. Check your connection and try again.';
+        default:
+          return 'Something went wrong saving your session. Please try again.';
+      }
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -356,34 +382,60 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
                   // ── Check (log shots) button ───────────────────────────
                   SizedBox(
-                    width: MediaQuery.of(context).size.width - 200,
-                    child: TextButton(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
                       onPressed: _logShots,
-                      style: ButtonStyle(
-                        padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
-                        backgroundColor: WidgetStateProperty.all(Colors.green.shade600),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                        backgroundColor: Colors.green.shade600,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Icon(Icons.check, size: 40, color: Colors.white),
+                      icon: const Icon(Icons.sports_hockey, color: Colors.white, size: 22),
+                      label: const Text(
+                        'ATTEMPT CHALLENGE',
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 20,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Tap ',
-                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
-                      ),
-                      Icon(Icons.check, color: Colors.green.shade600, size: 14),
-                      Text(
-                        ' to save below',
-                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Records one attempt at the challenge',
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                   ),
                   const SizedBox(height: 16),
 
                   // ── Shot list ──────────────────────────────────────────
+                  if (_shots.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'ATTEMPTS THIS SESSION',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 13,
+                            letterSpacing: 0.8,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_shots.length} attempt${_shots.length == 1 ? '' : 's'}',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   ListView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -434,26 +486,50 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   // ── Helper widgets ────────────────────────────────────────────────────────
 
   Widget _buildShotSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: ['wrist', 'snap', 'slap', 'backhand'].map((type) {
-          return ShotTypeButton(
-            type: type,
-            active: _selectedShotType == type,
-            onPressed: () {
-              Feedback.forLongPress(context);
-              setState(() => _selectedShotType = type);
-            },
-            borderRadius: BorderRadius.circular(_selectedShotType == type ? 12 : 6),
-          );
-        }).toList(),
-      ),
+    final locked = widget.challenge.shotType != null;
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: ['wrist', 'snap', 'slap', 'backhand'].map((type) {
+              final isChallengType = type == widget.challenge.shotType;
+              return Opacity(
+                opacity: locked && !isChallengType ? 0.25 : 1.0,
+                child: IgnorePointer(
+                  ignoring: locked && !isChallengType,
+                  child: ShotTypeButton(
+                    type: type,
+                    active: _selectedShotType == type,
+                    onPressed: () {
+                      Feedback.forLongPress(context);
+                      setState(() => _selectedShotType = type);
+                    },
+                    borderRadius: BorderRadius.circular(_selectedShotType == type ? 12 : 6),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        if (locked) ...[
+          const SizedBox(height: 4),
+          Text(
+            '${widget.challenge.shotType!.toUpperCase()} SHOTS REQUIRED FOR THIS CHALLENGE',
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 10,
+              letterSpacing: 0.5,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -517,14 +593,36 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   }
 
   List<Widget> _buildShotsList() {
+    final shotsToPass = widget.levelDoc.shotsToPass;
     return _shots.asMap().entries.map((entry) {
       final i = entry.key;
       final s = entry.value;
+      // Most recent is index 0 — attempt number counts from oldest.
+      final attemptNumber = _shots.length - i;
+      final count = s.count ?? 1;
+      final hit = s.targetsHit ?? 0;
+      final passed = hit >= shotsToPass;
+      final closeEnough = !passed && hit >= (shotsToPass * 0.7).floor();
+      final pct = ((hit / count) * 100).round();
+
+      final Color tileColor;
+      final Color labelColor;
+      if (passed) {
+        tileColor = Colors.green.shade700.withValues(alpha: 0.15);
+        labelColor = Colors.green.shade600;
+      } else if (closeEnough) {
+        tileColor = Colors.orange.shade700.withValues(alpha: 0.12);
+        labelColor = Colors.orange.shade700;
+      } else {
+        tileColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+        labelColor = Colors.red.shade400;
+      }
+
       return Dismissible(
         key: UniqueKey(),
         onDismissed: (_) {
           Fluttertoast.showToast(
-            msg: '${s.count} ${s.type} shots deleted',
+            msg: 'Attempt #$attemptNumber deleted',
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             backgroundColor: Theme.of(context).cardTheme.color,
@@ -543,27 +641,98 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
             ],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          child: ListTile(
-            tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
-            leading: Text(
-              s.count.toString(),
-              style: const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          decoration: BoxDecoration(
+            color: tileColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: labelColor.withValues(alpha: 0.35),
             ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+            child: Row(
               children: [
-                Text(s.type!.toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontFamily: 'NovecentoSans')),
-                Text(printTime(s.date!), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontFamily: 'NovecentoSans')),
+                // Attempt number badge
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: labelColor.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '#$attemptNumber',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: labelColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Score and type
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '$hit / $count',
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 26,
+                              color: labelColor,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            s.type!.toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: count > 0 ? (hit / count).clamp(0.0, 1.0) : 0.0,
+                          minHeight: 5,
+                          backgroundColor: labelColor.withValues(alpha: 0.15),
+                          valueColor: AlwaysStoppedAnimation<Color>(labelColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Result badge
+                Column(
+                  children: [
+                    Icon(
+                      passed ? Icons.check_circle_rounded : (closeEnough ? Icons.radio_button_checked_rounded : Icons.cancel_rounded),
+                      color: labelColor,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$pct%',
+                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 12, color: labelColor),
+                    ),
+                  ],
+                ),
               ],
             ),
-            subtitle: s.targetsHit != null
-                ? Text(
-                    'Accuracy: ${((s.targetsHit! / (s.count ?? 1)) * 100).round()}%',
-                    style: TextStyle(color: Colors.green.shade700, fontSize: 14, fontFamily: 'NovecentoSans'),
-                  )
-                : null,
           ),
         ),
       );
