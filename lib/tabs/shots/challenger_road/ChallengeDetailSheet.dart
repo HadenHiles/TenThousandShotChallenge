@@ -6,6 +6,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'ChallengeStepViewer.dart';
+import 'ChallengeTriesHistorySheet.dart';
 
 /// Bottom sheet showing the details of a Challenger Road challenge at a
 /// specific level, with an action button to start or retry the challenge.
@@ -165,6 +166,11 @@ class ChallengeDetailSheet extends StatelessWidget {
 
                     // ── Quota card ────────────────────────────────────────
                     _buildQuotaCard(context),
+                    const SizedBox(height: 12),
+
+                    // ── Try history link ──────────────────────────────────
+                    if (progress != null && progress!.totalAttempts > 0) _buildHistoryLink(context),
+
                     const SizedBox(height: 20),
 
                     // ── Steps header ──────────────────────────────────────
@@ -261,6 +267,61 @@ class ChallengeDetailSheet extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  // ── Try history link ──────────────────────────────────────────────────────
+
+  Widget _buildHistoryLink(BuildContext context) {
+    final tryCount = progress!.totalAttempts;
+    final passCount = progress!.totalPassed;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        ChallengeTriesHistorySheet.show(
+          context,
+          challenge: challenge,
+          levelDoc: levelDoc,
+          userId: userId,
+          attemptId: attempt.id!,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.09),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.history_rounded,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$tryCount ${tryCount == 1 ? 'TRY' : 'TRIES'} LOGGED  ·  $passCount PASSED',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 13,
+                  letterSpacing: 0.6,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
