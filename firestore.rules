@@ -113,7 +113,7 @@ service cloud.firestore {
     // ── Challenger Road ────────────────────────────────────────────────────────
     // Global challenge catalogue — all authenticated users can read;
     // writes are admin-only (Firebase Console / Admin SDK).
-    // Firestore path: challenger_road (collection) / challenges (doc) / challenges (sub-collection) / {challengeId} / levels / {levelId}
+    // Firestore path: challenger_road/challenges/challenges/{challengeId}/levels/{levelId}
     match /challenger_road/challenges/challenges/{challengeId} {
       allow read: if request.auth != null;
       allow write: if false;
@@ -122,6 +122,13 @@ service cloud.firestore {
         allow read: if request.auth != null;
         allow write: if false;
       }
+    }
+
+    // Required for collectionGroup('levels') queries — Firestore rules must
+    // explicitly cover the collection group with a wildcard path rule.
+    match /{path=**}/levels/{levelId} {
+      allow read: if request.auth != null;
+      allow write: if false;
     }
 
     // Per-user Challenger Road state — owner read/write only.
