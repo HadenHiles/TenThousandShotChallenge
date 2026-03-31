@@ -27,11 +27,8 @@ import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileSection.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:auto_size_text_field/auto_size_text_field.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
-import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -113,7 +110,6 @@ class _ProfileState extends State<Profile> {
   bool _showAccuracy = false;
   bool _showAchievements = false;
   bool _showChallengerRoad = false;
-  bool _showProgress = true; // expanded by default (persisted in SharedPreferences)
   CustomerInfoNotifier? _customerInfoNotifier; // cache RevenueCat notifier
 
   // State for the Progress section
@@ -133,7 +129,6 @@ class _ProfileState extends State<Profile> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _setInitialIterationId());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProgressSectionState());
     _loadSubscriptionLevel();
     // Keep subscription level in sync with RevenueCat updates
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -183,16 +178,6 @@ class _ProfileState extends State<Profile> {
     }
     _progressTargetDateController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadProgressSectionState() async {
-    if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getBool('profile_progress_expanded');
-    if (!mounted) return;
-    setState(() {
-      _showProgress = saved ?? true;
-    });
   }
 
   void _editProgressTargetDate(String iterationId) {
@@ -1629,307 +1614,281 @@ class _ProfileState extends State<Profile> {
                 return Container();
               },
             ),
-            // Progress section: collapsible, expanded by default
-            GestureDetector(
-              onTap: () {
-                Future.microtask(() async {
-                  final bool newVal = !_showProgress;
-                  setState(() => _showProgress = newVal);
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('profile_progress_expanded', newVal);
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: lighten(Theme.of(context).colorScheme.primary, 0.1),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                margin: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Progress'.toUpperCase(),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    Icon(
-                      _showProgress ? Icons.expand_less : Icons.expand_more,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(top: 6.0, bottom: 8),
-                child: Opacity(
-                  opacity: _showProgress ? 1.0 : 0.0,
-                  child: StreamBuilder<DocumentSnapshot>(
-                    stream: _selectedIterationId == null ? null : Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
-                    builder: (context, iterSnap) {
-                      if (!iterSnap.hasData || !iterSnap.data!.exists) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final iteration = Iteration.fromSnapshot(iterSnap.data!);
-                      final bool isComplete = iteration.complete ?? false;
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0, bottom: 8),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: _selectedIterationId == null ? null : Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+                builder: (context, iterSnap) {
+                  if (!iterSnap.hasData || !iterSnap.data!.exists) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final iteration = Iteration.fromSnapshot(iterSnap.data!);
+                  final bool isComplete = iteration.complete ?? false;
 
-                      // Initialise target date from iteration on first load or after switching iterations.
-                      if (_progressTargetDate == null) {
-                        _progressTargetDate = iteration.targetDate;
-                        _progressTargetDateController.text = DateFormat('MMMM d, y').format(
-                          iteration.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                        );
-                      }
+                  // Initialise target date from iteration on first load or after switching iterations.
+                  if (_progressTargetDate == null) {
+                    _progressTargetDate = iteration.targetDate;
+                    _progressTargetDateController.text = DateFormat('MMMM d, y').format(
+                      iteration.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                    );
+                  }
 
-                      final int iterationTotal = iteration.total ?? 0;
-                      final int maxForWidth = iterationTotal <= 10000 ? iterationTotal : 10000;
-                      final double totalShotsWidth = (maxForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
+                  final int iterationTotal = iteration.total ?? 0;
+                  final int maxForWidth = iterationTotal <= 10000 ? iterationTotal : 10000;
+                  final double totalShotsWidth = (maxForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
 
-                      final List<ShotCount> shotCounts = [
-                        ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
-                        ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
-                        ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
-                        ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
-                      ];
-
-                      return Column(
+                  return Column(
+                    children: [
+                      // ── Goal date row ────────────────────────────────
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // ── Goal date row ────────────────────────────────
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          Text(
+                            "Goal".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 26,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                          Stack(
                             children: [
-                              Text(
-                                "Goal".toUpperCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 26,
-                                  fontFamily: 'NovecentoSans',
+                              SizedBox(
+                                width: 150,
+                                child: AutoSizeTextField(
+                                  controller: _progressTargetDateController,
+                                  style: const TextStyle(fontSize: 20),
+                                  maxLines: 1,
+                                  maxFontSize: 20,
+                                  decoration: InputDecoration(
+                                    labelText: "10,000 Shots By:".toLowerCase(),
+                                    labelStyle: TextStyle(
+                                      color: (preferences?.darkMode == true) ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                      fontFamily: "NovecentoSans",
+                                    ),
+                                    border: null,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    contentPadding: const EdgeInsets.all(2),
+                                    fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                  ),
+                                  readOnly: true,
+                                  onTap: isComplete ? null : () => _editProgressTargetDate(_selectedIterationId!),
                                 ),
                               ),
-                              Stack(
-                                children: [
-                                  SizedBox(
-                                    width: 150,
-                                    child: AutoSizeTextField(
-                                      controller: _progressTargetDateController,
-                                      style: const TextStyle(fontSize: 20),
-                                      maxLines: 1,
-                                      maxFontSize: 20,
-                                      decoration: InputDecoration(
-                                        labelText: "10,000 Shots By:".toLowerCase(),
-                                        labelStyle: TextStyle(
-                                          color: (preferences?.darkMode == true) ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                          fontFamily: "NovecentoSans",
-                                        ),
-                                        border: null,
-                                        disabledBorder: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        contentPadding: const EdgeInsets.all(2),
-                                        fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                      ),
-                                      readOnly: true,
-                                      onTap: isComplete ? null : () => _editProgressTargetDate(_selectedIterationId!),
-                                    ),
-                                  ),
-                                  if (!isComplete)
-                                    Positioned(
-                                      top: -8,
-                                      right: 0,
-                                      child: InkWell(
-                                        enableFeedback: true,
-                                        focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                        onTap: () => _editProgressTargetDate(_selectedIterationId!),
-                                        borderRadius: BorderRadius.circular(30),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: Icon(Icons.edit, size: 18),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  SizedBox(
-                                    width: 80,
-                                    child: Builder(
-                                      builder: (context) {
-                                        final int total = iterationTotal >= 10000 ? 10000 : iterationTotal;
-                                        final int shotsRemaining = 10000 - total;
-                                        final DateTime? targetDate = _progressTargetDate ?? iteration.targetDate;
-                                        int daysRemaining = targetDate != null ? targetDate.difference(DateTime.now()).inDays : 0;
-                                        final double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
-                                        int shotsPerDay = 0;
-                                        if (daysRemaining <= 1) {
-                                          shotsPerDay = shotsRemaining;
-                                        } else {
-                                          shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                        }
-                                        int shotsPerWeek = 0;
-                                        if (weeksRemaining <= 1) {
-                                          shotsPerWeek = shotsRemaining;
-                                        } else {
-                                          shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                        }
-                                        String shotsPerDayText = shotsRemaining < 1
-                                            ? "Done!".toLowerCase()
-                                            : shotsPerDay <= 999
-                                                ? "$shotsPerDay / Day".toLowerCase()
-                                                : "${numberFormat.format(shotsPerDay)} / Day".toLowerCase();
-                                        String shotsPerWeekText = shotsRemaining < 1
-                                            ? "Done!".toLowerCase()
-                                            : shotsPerWeek <= 999
-                                                ? "$shotsPerWeek / Week".toLowerCase()
-                                                : "${numberFormat.format(shotsPerWeek)} / Week".toLowerCase();
-                                        if (targetDate != null && targetDate.compareTo(DateTime.now()) < 0) {
-                                          daysRemaining = DateTime.now().difference(targetDate).inDays * -1;
-                                          shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                          shotsPerWeekText = shotsRemaining <= 999 ? "$shotsRemaining remaining".toLowerCase() : "${numberFormat.format(shotsRemaining)} remaining".toLowerCase();
-                                        }
-                                        return GestureDetector(
-                                          onTap: () => setState(() => _progressShowShotsPerDay = !_progressShowShotsPerDay),
-                                          child: AutoSizeText(
-                                            _progressShowShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                            maxFontSize: 26,
-                                            maxLines: 1,
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 26,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  InkWell(
+                              if (!isComplete)
+                                Positioned(
+                                  top: -8,
+                                  right: 0,
+                                  child: InkWell(
                                     enableFeedback: true,
                                     focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                    onTap: () => setState(() => _progressShowShotsPerDay = !_progressShowShotsPerDay),
+                                    onTap: () => _editProgressTargetDate(_selectedIterationId!),
                                     borderRadius: BorderRadius.circular(30),
                                     child: const Padding(
                                       padding: EdgeInsets.all(10),
-                                      child: Icon(Icons.swap_vert, size: 18),
+                                      child: Icon(Icons.edit, size: 18),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
                             ],
                           ),
-                          // ── "PROGRESS" label ─────────────────────────────
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.max,
                             children: [
-                              Text(
-                                "Progress".toUpperCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 22,
-                                  fontFamily: 'NovecentoSans',
+                              SizedBox(
+                                width: 80,
+                                child: Builder(
+                                  builder: (context) {
+                                    final int total = iterationTotal >= 10000 ? 10000 : iterationTotal;
+                                    final int shotsRemaining = 10000 - total;
+                                    final DateTime? targetDate = _progressTargetDate ?? iteration.targetDate;
+                                    int daysRemaining = targetDate != null ? targetDate.difference(DateTime.now()).inDays : 0;
+                                    final double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
+                                    int shotsPerDay = 0;
+                                    if (daysRemaining <= 1) {
+                                      shotsPerDay = shotsRemaining;
+                                    } else {
+                                      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+                                    }
+                                    int shotsPerWeek = 0;
+                                    if (weeksRemaining <= 1) {
+                                      shotsPerWeek = shotsRemaining;
+                                    } else {
+                                      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
+                                    }
+                                    String shotsPerDayText = shotsRemaining < 1
+                                        ? "Done!".toLowerCase()
+                                        : shotsPerDay <= 999
+                                            ? "$shotsPerDay / Day".toLowerCase()
+                                            : "${numberFormat.format(shotsPerDay)} / Day".toLowerCase();
+                                    String shotsPerWeekText = shotsRemaining < 1
+                                        ? "Done!".toLowerCase()
+                                        : shotsPerWeek <= 999
+                                            ? "$shotsPerWeek / Week".toLowerCase()
+                                            : "${numberFormat.format(shotsPerWeek)} / Week".toLowerCase();
+                                    if (targetDate != null && targetDate.compareTo(DateTime.now()) < 0) {
+                                      daysRemaining = DateTime.now().difference(targetDate).inDays * -1;
+                                      shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
+                                      shotsPerWeekText = shotsRemaining <= 999 ? "$shotsRemaining remaining".toLowerCase() : "${numberFormat.format(shotsRemaining)} remaining".toLowerCase();
+                                    }
+                                    return GestureDetector(
+                                      onTap: () => setState(() => _progressShowShotsPerDay = !_progressShowShotsPerDay),
+                                      child: AutoSizeText(
+                                        _progressShowShotsPerDay ? shotsPerDayText : shotsPerWeekText,
+                                        maxFontSize: 26,
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 26,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              InkWell(
+                                enableFeedback: true,
+                                focusColor: Theme.of(context).colorScheme.primaryContainer,
+                                onTap: () => setState(() => _progressShowShotsPerDay = !_progressShowShotsPerDay),
+                                borderRadius: BorderRadius.circular(30),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: Icon(Icons.swap_vert, size: 18),
                                 ),
                               ),
                             ],
                           ),
-                          // ── Stacked progress bar ──────────────────────────
-                          Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.symmetric(horizontal: 30),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Theme.of(context).cardTheme.color,
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                Builder(
-                                  builder: (context) => Tooltip(
-                                    message: "${iteration.totalWrist ?? 0} Wrist Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: (iteration.totalWrist ?? 0) > 0 ? ((iteration.totalWrist ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(color: wristShotColor),
-                                    ),
-                                  ),
-                                ),
-                                Builder(
-                                  builder: (context) => Tooltip(
-                                    message: "${iteration.totalSnap ?? 0} Snap Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: (iteration.totalSnap ?? 0) > 0 ? ((iteration.totalSnap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(color: snapShotColor),
-                                    ),
-                                  ),
-                                ),
-                                Builder(
-                                  builder: (context) => Tooltip(
-                                    message: "${iteration.totalBackhand ?? 0} Backhands".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: (iteration.totalBackhand ?? 0) > 0 ? ((iteration.totalBackhand ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(color: backhandShotColor),
-                                    ),
-                                  ),
-                                ),
-                                Builder(
-                                  builder: (context) => Tooltip(
-                                    message: "${iteration.totalSlap ?? 0} Slap Shots".toLowerCase(),
-                                    preferBelow: false,
-                                    textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                    child: Container(
-                                      height: 40,
-                                      width: (iteration.totalSlap ?? 0) > 0 ? ((iteration.totalSlap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: const BoxDecoration(color: slapShotColor),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                        ],
+                      ),
+                      // ── "PROGRESS" label ─────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Progress".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 22,
+                              fontFamily: 'NovecentoSans',
                             ),
                           ),
-                          Container(
-                            width: MediaQuery.of(context).size.width - 30,
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                            clipBehavior: Clip.antiAlias,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                        ],
+                      ),
+                      // ── Stacked progress bar ──────────────────────────
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.symmetric(horizontal: 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).cardTheme.color,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Builder(
+                              builder: (context) => Tooltip(
+                                message: "${iteration.totalWrist ?? 0} Wrist Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalWrist ?? 0) > 0 ? ((iteration.totalWrist ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: const BoxDecoration(color: wristShotColor),
+                                ),
+                              ),
+                            ),
+                            Builder(
+                              builder: (context) => Tooltip(
+                                message: "${iteration.totalSnap ?? 0} Snap Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalSnap ?? 0) > 0 ? ((iteration.totalSnap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: const BoxDecoration(color: snapShotColor),
+                                ),
+                              ),
+                            ),
+                            Builder(
+                              builder: (context) => Tooltip(
+                                message: "${iteration.totalBackhand ?? 0} Backhands".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalBackhand ?? 0) > 0 ? ((iteration.totalBackhand ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: const BoxDecoration(color: backhandShotColor),
+                                ),
+                              ),
+                            ),
+                            Builder(
+                              builder: (context) => Tooltip(
+                                message: "${iteration.totalSlap ?? 0} Slap Shots".toLowerCase(),
+                                preferBelow: false,
+                                textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                                child: Container(
+                                  height: 40,
+                                  width: (iteration.totalSlap ?? 0) > 0 ? ((iteration.totalSlap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: const BoxDecoration(color: slapShotColor),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width - 30,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: totalShotsWidth < 35
+                                  ? 40
+                                  : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
+                                      ? totalShotsWidth - 65
+                                      : totalShotsWidth,
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: Text(
+                                iterationTotal <= 999 ? iterationTotal.toString() : numberFormat.format(iterationTotal),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 22,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               mainAxisSize: MainAxisSize.max,
                               children: [
                                 Container(
                                   height: 40,
-                                  width: totalShotsWidth < 35
-                                      ? 40
-                                      : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
-                                          ? totalShotsWidth - 65
-                                          : totalShotsWidth,
                                   padding: const EdgeInsets.symmetric(horizontal: 2),
                                   child: Text(
-                                    iterationTotal <= 999 ? iterationTotal.toString() : numberFormat.format(iterationTotal),
+                                    " / ${numberFormat.format(10000)}",
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
@@ -1938,231 +1897,164 @@ class _ProfileState extends State<Profile> {
                                     ),
                                   ),
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                                      child: Text(
-                                        " / ${numberFormat.format(10000)}",
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          fontFamily: 'NovecentoSans',
-                                          fontSize: 22,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
-                          ),
-                          // ── Weekly Achievements ───────────────────────────
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                            child: const WeeklyAchievementsWidget(showResetCountdown: true),
-                          ),
-                          // ── Shot type breakdown ───────────────────────────
-                          Container(
-                            margin: EdgeInsets.only(
-                              left: MediaQuery.of(context).size.width * .1,
-                              right: MediaQuery.of(context).size.width * .1,
-                              bottom: 5,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Flexible(
-                                  fit: FlexFit.loose,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "Wrist".toUpperCase(),
-                                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                      ),
-                                      Container(
-                                        width: 30,
-                                        margin: const EdgeInsets.only(top: 2),
-                                        decoration: const BoxDecoration(color: wristShotColor),
-                                        child: const Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Opacity(opacity: 0.75, child: Text("W", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 50,
-                                        child: AutoSizeText(
-                                          (iteration.totalWrist ?? 0) > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : (iteration.totalWrist ?? 0).toString().toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                        ),
-                                      ),
-                                    ],
+                          ],
+                        ),
+                      ),
+                      // ── Shot type breakdown ───────────────────────────
+                      Container(
+                        margin: EdgeInsets.only(
+                          left: MediaQuery.of(context).size.width * .1,
+                          right: MediaQuery.of(context).size.width * .1,
+                          bottom: 5,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Wrist".toUpperCase(),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
                                   ),
-                                ),
-                                Flexible(
-                                  fit: FlexFit.loose,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "Snap".toUpperCase(),
-                                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                      ),
-                                      Container(
-                                        width: 30,
-                                        margin: const EdgeInsets.only(top: 2),
-                                        decoration: const BoxDecoration(color: snapShotColor),
-                                        child: const Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Opacity(opacity: 0.75, child: Text("SN", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 50,
-                                        child: AutoSizeText(
-                                          (iteration.totalSnap ?? 0) > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : (iteration.totalSnap ?? 0).toString().toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Flexible(
-                                  fit: FlexFit.loose,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "Backhand".toUpperCase(),
-                                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                      ),
-                                      Container(
-                                        width: 30,
-                                        margin: const EdgeInsets.only(top: 2),
-                                        decoration: const BoxDecoration(color: backhandShotColor),
-                                        child: const Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Opacity(opacity: 0.75, child: Text("B", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 50,
-                                        child: AutoSizeText(
-                                          (iteration.totalBackhand ?? 0) > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : (iteration.totalBackhand ?? 0).toString().toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Flexible(
-                                  fit: FlexFit.loose,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "Slap".toUpperCase(),
-                                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                      ),
-                                      Container(
-                                        width: 30,
-                                        margin: const EdgeInsets.only(top: 2),
-                                        decoration: const BoxDecoration(color: slapShotColor),
-                                        child: const Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Opacity(opacity: 0.75, child: Text("SL", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 50,
-                                        child: AutoSizeText(
-                                          (iteration.totalSlap ?? 0) > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : (iteration.totalSlap ?? 0).toString().toLowerCase(),
-                                          maxFontSize: 18,
-                                          maxLines: 1,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // ── Donut chart ───────────────────────────────────
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.3,
-                            width: MediaQuery.of(context).size.width * 0.7,
-                            child: iterationTotal < 1
-                                ? Text(
-                                    "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 16,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  )
-                                : Container(
-                                    margin: const EdgeInsets.only(top: 50),
-                                    child: Stack(
+                                  Container(
+                                    width: 30,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: const BoxDecoration(color: wristShotColor),
+                                    child: const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Positioned(
-                                          top: MediaQuery.of(context).size.height * (0.3 / 2),
-                                          left: MediaQuery.of(context).size.width * (0.7 / 2),
-                                          child: Transform.translate(
-                                            offset: const Offset(-14, -40),
-                                            child: Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                Icon(FontAwesomeIcons.hockeyPuck, size: 30, color: Theme.of(context).colorScheme.onPrimary),
-                                                Positioned(left: -13, top: -13, child: Icon(FontAwesomeIcons.hockeyPuck, size: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                                                Positioned(left: -12, bottom: -12, child: Icon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary)),
-                                                Positioned(right: -12, top: -12, child: Icon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary)),
-                                                Positioned(right: -12, bottom: -14, child: Icon(FontAwesomeIcons.hockeyPuck, size: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        ShotBreakdownDonut(context, shotCounts),
+                                        Opacity(opacity: 0.75, child: Text("W", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
                                       ],
                                     ),
                                   ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      (iteration.totalWrist ?? 0) > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : (iteration.totalWrist ?? 0).toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Snap".toUpperCase(),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: const BoxDecoration(color: snapShotColor),
+                                    child: const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(opacity: 0.75, child: Text("SN", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      (iteration.totalSnap ?? 0) > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : (iteration.totalSnap ?? 0).toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Backhand".toUpperCase(),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: const BoxDecoration(color: backhandShotColor),
+                                    child: const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(opacity: 0.75, child: Text("B", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      (iteration.totalBackhand ?? 0) > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : (iteration.totalBackhand ?? 0).toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Slap".toUpperCase(),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                  ),
+                                  Container(
+                                    width: 30,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: const BoxDecoration(color: slapShotColor),
+                                    child: const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Opacity(opacity: 0.75, child: Text("SL", style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'NovecentoSans'))),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                    child: AutoSizeText(
+                                      (iteration.totalSlap ?? 0) > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : (iteration.totalSlap ?? 0).toString().toLowerCase(),
+                                      maxFontSize: 18,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18, fontFamily: 'NovecentoSans'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-              crossFadeState: _showProgress ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 350),
-              sizeCurve: Curves.easeInOut,
             ),
             // Achievements section: collapsible like others
             GestureDetector(
