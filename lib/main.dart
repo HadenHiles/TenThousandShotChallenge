@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'services/RevenueCatConfig.dart';
+import 'services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
@@ -231,6 +232,18 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
             final notifier = Provider.of<CustomerInfoNotifier>(context, listen: false);
             notifier.attach();
             await notifier.refresh();
+
+            // Show the Pro Access Paywall for first-time users (onboarding)
+            final prefs = await SharedPreferences.getInstance();
+            final paywallShown = prefs.getBool('paywall_shown') ?? false;
+            if (!paywallShown && !notifier.isPro && context.mounted) {
+              await prefs.setBool('paywall_shown', true);
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (context.mounted) {
+                  await presentPaywallIfNeeded(context);
+                }
+              });
+            }
           } catch (_) {}
         }
         _lastUser = user;

@@ -552,9 +552,7 @@ class _StartShootingState extends State<StartShooting> {
                                                           drawVerticalLine: true,
                                                           horizontalInterval: 20,
                                                           verticalInterval:
-                                                              (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x)
-                                                                  ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity)
-                                                                  : 1,
+                                                              (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
                                                           getDrawingHorizontalLine: (value) => FlLine(
                                                             color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                                                             strokeWidth: 1,
@@ -631,9 +629,7 @@ class _StartShootingState extends State<StartShooting> {
                                                                 return const SizedBox.shrink();
                                                               },
                                                               interval:
-                                                                  (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x)
-                                                                      ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity)
-                                                                      : 1,
+                                                                  (accuracySpotsByType[_selectedShotType]!.isNotEmpty && accuracySpotsByType[_selectedShotType]!.last.x > accuracySpotsByType[_selectedShotType]!.first.x) ? ((accuracySpotsByType[_selectedShotType]!.last.x - accuracySpotsByType[_selectedShotType]!.first.x) / 5).clamp(1, double.infinity) : 1,
                                                             ),
                                                           ),
                                                           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -1307,12 +1303,18 @@ class _StartShootingState extends State<StartShooting> {
                 child: NetworkAwareWidget(
                   onlineChild: _shots.isEmpty
                       ? TextButton(
-                          onPressed: () {
+                          onPressed: () async {
                             Feedback.forLongPress(context);
-                            // Reset session and close panel
+                            // Hide the panel fully, then reset session
+                            await widget.sessionPanelController.hide();
                             sessionService.reset();
-                            widget.sessionPanelController.close();
-                            reset();
+                            if (mounted) {
+                              setState(() {
+                                _shots = [];
+                                _currentShotCount = preferences!.puckCount!;
+                                _chartCollapsed = true;
+                              });
+                            }
                           },
                           style: TextButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
@@ -1353,17 +1355,18 @@ class _StartShootingState extends State<StartShooting> {
                               Provider.of<FirebaseAuth>(context, listen: false),
                               Provider.of<FirebaseFirestore>(context, listen: false),
                             ).then((success) async {
+                              // Hide the panel fully before resetting
+                              await widget.sessionPanelController.hide();
                               sessionService.reset();
-                              widget.sessionPanelController.close();
-                              reset();
+                              if (mounted) {
+                                setState(() {
+                                  _shots = [];
+                                  _currentShotCount = preferences!.puckCount!;
+                                  _chartCollapsed = true;
+                                });
+                              }
 
-                              await FirebaseFirestore.instance
-                                  .collection('iterations')
-                                  .doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid)
-                                  .collection('iterations')
-                                  .where('complete', isEqualTo: false)
-                                  .get()
-                                  .then((snapshot) {
+                              await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
                                 if (snapshot.docs.isNotEmpty) {
                                   Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
