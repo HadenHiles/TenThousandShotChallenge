@@ -7,11 +7,13 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.
 /// and the current attempt number.
 class ChallengerRoadHeader extends StatelessWidget {
   final ChallengerRoadAttempt? attempt;
+  final double topPadding;
   final VoidCallback? onRestartTap;
 
   const ChallengerRoadHeader({
     super.key,
     this.attempt,
+    this.topPadding = 0,
     this.onRestartTap,
   });
 
@@ -24,8 +26,10 @@ class ChallengerRoadHeader extends StatelessWidget {
     final numberFormat = NumberFormat('#,###');
     final progress = shotCount / 10000.0;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 7, 16, 6),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeInOutCubic,
+      padding: EdgeInsets.fromLTRB(16, 7 + topPadding, 16, 6),
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
         border: Border(
