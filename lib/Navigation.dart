@@ -41,6 +41,7 @@ class ChallengeSessionConfig {
   final ChallengerRoadLevel levelDoc;
   final ChallengerRoadAttempt attempt;
   final String userId;
+  final DateTime startedAt;
   final VoidCallback? onSessionComplete;
 
   const ChallengeSessionConfig({
@@ -48,6 +49,7 @@ class ChallengeSessionConfig {
     required this.levelDoc,
     required this.attempt,
     required this.userId,
+    required this.startedAt,
     this.onSessionComplete,
   });
 }
@@ -399,6 +401,37 @@ class _NavigationState extends State<Navigation> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            StreamBuilder<int>(
+              stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
+              initialData: 0,
+              builder: (context, _) {
+                final elapsed = DateTime.now().difference(config.startedAt);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        printDuration(elapsed, true),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
             // Cancel challenge session
             InkWell(
               borderRadius: BorderRadius.circular(20),

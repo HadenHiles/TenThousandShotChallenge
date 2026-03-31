@@ -59,6 +59,18 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   int get _shotsMade => _shots.fold(0, (sum, s) => sum + (s.targetsHit ?? 0));
   int get _totalShots => _shots.fold(0, (sum, s) => sum + (s.count ?? 0));
 
+  // Lightweight anti-spam guardrail:
+  // - ~0.5s per shot is the lower-bound execution speed.
+  // - add a conservative 15s reset/load time between logged tries.
+  int _minimumRealisticSeconds({
+    required int totalShots,
+    required int tryCount,
+  }) {
+    final shotTimeSeconds = (totalShots * 0.5).ceil();
+    final resetSeconds = (tryCount <= 1) ? 0 : (tryCount - 1) * 15;
+    return shotTimeSeconds + resetSeconds;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -152,13 +164,32 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       return;
     }
 
+    final duration = DateTime.now().difference(_startTime);
+    final minSeconds = _minimumRealisticSeconds(
+      totalShots: _totalShots,
+      tryCount: _shots.length,
+    );
+    if (duration.inSeconds < minSeconds) {
+      final waitSeconds = minSeconds - duration.inSeconds;
+      final waitMins = waitSeconds ~/ 60;
+      final waitRemainder = waitSeconds % 60;
+      final waitLabel = waitMins > 0 ? '${waitMins}m ${waitRemainder}s' : '${waitRemainder}s';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Session finished too quickly to be realistic. Keep shooting for about $waitLabel longer.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
 
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     final service = ChallengerRoadService(firestore: firestore);
 
-    final duration = DateTime.now().difference(_startTime);
     // A session is passed when any single try met or exceeded the goal.
     final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
 

@@ -336,7 +336,7 @@ class _TryRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('MMM d, yyyy  h:mm a').format(try_.date),
+                  '${DateFormat('MMM d, yyyy  h:mm a').format(try_.date)}  •  ${_formatDuration(try_.duration)}',
                   style: TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 11,
@@ -377,5 +377,11 @@ class _TryRow extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final mins = d.inMinutes;
+    final secs = d.inSeconds.remainder(60);
+    return '${mins}m ${secs}s';
   }
 }
