@@ -382,6 +382,7 @@ class ChallengeDetailSheet extends StatelessWidget {
       levelDoc: levelDoc,
       attempt: attempt,
       userId: userId,
+      startedAt: DateTime.now(),
       onSessionComplete: onSessionComplete,
     );
     sessionPanelController.open();
