@@ -8,12 +8,6 @@ import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 Future<void> presentPaywallIfNeeded(BuildContext context) async {
-  final ciNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-  if (ciNotifier?.isPro == true) {
-    log('User already has pro subscription');
-    return;
-  }
-
   if (!RevenueCatConfig.configured) {
     log('RevenueCat not configured - cannot show paywall');
     Fluttertoast.showToast(
@@ -27,7 +21,21 @@ Future<void> presentPaywallIfNeeded(BuildContext context) async {
   if (!context.mounted) return;
 
   try {
-    await RevenueCatUI.presentPaywall();
+    // Fetch the specific "Pro Access Paywall" offering by its identifier.
+    Offering? proOffering;
+    try {
+      final offerings = await Purchases.getOfferings();
+      proOffering = offerings.all[RevenueCatConfig.proOfferingIdentifier];
+    } catch (e) {
+      log('Could not fetch offering "${RevenueCatConfig.proOfferingIdentifier}", will use default: $e');
+    }
+
+    // Only shows the paywall if the user does not already have the pro entitlement.
+    await RevenueCatUI.presentPaywallIfNeeded(
+      RevenueCatConfig.proEntitlementIdentifier,
+      offering: proOffering,
+      displayCloseButton: true,
+    );
   } catch (e) {
     log('Exception showing RevenueCat paywall: $e');
     Fluttertoast.showToast(

@@ -117,8 +117,13 @@ class _NavigationState extends State<Navigation> {
     });
   }
 
+  void _onSessionChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
+    sessionService.addListener(_onSessionChanged);
     try {
       versionCheck(context);
     } catch (e) {
@@ -284,6 +289,12 @@ class _NavigationState extends State<Navigation> {
     _onItemTapped(initialIndex);
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    sessionService.removeListener(_onSessionChanged);
+    super.dispose();
   }
 
   // Helper to select a tab by id
