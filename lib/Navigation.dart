@@ -17,6 +17,7 @@ import 'package:tenthousandshotchallenge/tabs/Friends.dart';
 import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui' show FontFeature;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
@@ -360,111 +361,38 @@ class _NavigationState extends State<Navigation> {
 
   // ── Challenge session panel header ────────────────────────────────────────
 
+  Future<void> _confirmCloseChallengeSession() async {
+    final shouldClose = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('End challenge session?'),
+        content: const Text(
+          'This will discard your current in-progress challenge session. You can still collapse the panel with the arrow icon.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep session'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('End session', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldClose == true) {
+      activeChallengeSession.value = null;
+      sessionPanelController.close();
+    }
+  }
+
   Widget _buildChallengeSessionHeader(ChallengeSessionConfig config) {
-    return Container(
-      decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-        tileColor: Theme.of(context).primaryColor,
-        title: Row(
-          children: [
-            const Icon(Icons.sports_hockey, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    config.challenge.name.toUpperCase(),
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'LEVEL ${config.levelDoc.level}  •  CHALLENGE IN PROGRESS',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StreamBuilder<int>(
-              stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
-              initialData: 0,
-              builder: (context, _) {
-                final elapsed = DateTime.now().difference(config.startedAt);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        printDuration(elapsed, true),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-            // Cancel challenge session
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                activeChallengeSession.value = null;
-                sessionPanelController.close();
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.close, color: Colors.white, size: 22),
-              ),
-            ),
-            // Collapse/expand panel
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                if (sessionPanelController.isPanelClosed) {
-                  sessionPanelController.open();
-                } else {
-                  sessionPanelController.close();
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Material(
+      color: Theme.of(context).primaryColor,
+      child: InkWell(
         onTap: () {
           if (sessionPanelController.isPanelClosed) {
             sessionPanelController.open();
@@ -472,6 +400,113 @@ class _NavigationState extends State<Navigation> {
             sessionPanelController.close();
           }
         },
+        child: SizedBox(
+          height: 74,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.sports_hockey, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        config.challenge.name.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'LEVEL ${config.levelDoc.level}  •  CHALLENGE IN PROGRESS',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                StreamBuilder<int>(
+                  stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
+                  initialData: 0,
+                  builder: (context, _) {
+                    final elapsed = DateTime.now().difference(config.startedAt);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 56,
+                            child: Text(
+                              printDuration(elapsed, true),
+                              textAlign: TextAlign.left,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 4),
+                // Cancel challenge session
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: _confirmCloseChallengeSession,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(Icons.close, color: Colors.white, size: 22),
+                  ),
+                ),
+                // Collapse/expand panel
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    if (sessionPanelController.isPanelClosed) {
+                      sessionPanelController.open();
+                    } else {
+                      sessionPanelController.close();
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
