@@ -112,8 +112,9 @@ service cloud.firestore {
 
     // ── Challenger Road ────────────────────────────────────────────────────────
     // Global challenge catalogue — all authenticated users can read;
-    // writes are admin-only (Firebase Console / PushTable).
-    match /challenger_road/challenges/{challengeId} {
+    // writes are admin-only (Firebase Console / Admin SDK).
+    // Firestore path: challenger_road (collection) / challenges (doc) / challenges (sub-collection) / {challengeId} / levels / {levelId}
+    match /challenger_road/challenges/challenges/{challengeId} {
       allow read: if request.auth != null;
       allow write: if false;
 
@@ -124,7 +125,7 @@ service cloud.firestore {
     }
 
     // Per-user Challenger Road state — owner read/write only.
-    match /users/{userId}/challenger_road {
+    match /users/{userId}/challenger_road/{docId} {
       allow read, write: if request.auth.uid == userId;
     }
     match /users/{userId}/challenger_road_attempts/{attemptId} {
