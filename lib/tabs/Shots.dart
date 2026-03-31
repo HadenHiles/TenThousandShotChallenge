@@ -26,9 +26,16 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import '../main.dart';
 
 class Shots extends StatefulWidget {
-  const Shots({super.key, required this.sessionPanelController});
+  const Shots({
+    super.key,
+    required this.sessionPanelController,
+    this.onChallengerRoadAvailabilityChanged,
+    this.onMainHeaderVisibilityChanged,
+  });
 
   final PanelController sessionPanelController;
+  final ValueChanged<bool>? onChallengerRoadAvailabilityChanged;
+  final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
   @override
   State<Shots> createState() => _ShotsState();
@@ -70,7 +77,10 @@ class _ShotsState extends State<Shots> {
 
   void _onSubscriptionChanged() {
     subscriptionLevel(context).then((level) {
-      if (mounted) setState(() => _subscriptionLevel = level);
+      if (!mounted) return;
+      setState(() => _subscriptionLevel = level);
+      final hasRoadAccess = level == 'pro' && Provider.of<FirebaseAuth>(context, listen: false).currentUser != null;
+      widget.onChallengerRoadAvailabilityChanged?.call(hasRoadAccess);
     });
   }
 
@@ -78,6 +88,8 @@ class _ShotsState extends State<Shots> {
     subscriptionLevel(context).then((level) {
       if (!mounted) return;
       setState(() => _subscriptionLevel = level);
+      final hasRoadAccess = level == 'pro' && Provider.of<FirebaseAuth>(context, listen: false).currentUser != null;
+      widget.onChallengerRoadAvailabilityChanged?.call(hasRoadAccess);
     });
   }
 
@@ -144,6 +156,7 @@ class _ShotsState extends State<Shots> {
               Expanded(
                 child: ChallengerRoadMapView(
                   userId: user.uid,
+                  onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
                 ),
               )
             else
