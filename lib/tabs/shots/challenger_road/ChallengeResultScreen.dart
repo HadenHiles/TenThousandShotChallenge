@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
@@ -9,7 +10,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 ///
 /// Pops all the way back to the map on "Back to Road", or re-starts via the
 /// "Try Again" button which pops back to the detail sheet.
-class ChallengeResultScreen extends StatelessWidget {
+class ChallengeResultScreen extends StatefulWidget {
   const ChallengeResultScreen({
     super.key,
     required this.session,
@@ -30,99 +31,183 @@ class ChallengeResultScreen extends StatelessWidget {
   /// level were completed).  Shows a "Level N Unlocked!" callout when true.
   final bool levelAdvanced;
 
-  bool get _passed => session.passed;
+  @override
+  State<ChallengeResultScreen> createState() => _ChallengeResultScreenState();
+}
+
+class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
+  late final ConfettiController _confettiController;
+
+  bool get _passed => widget.session.passed;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 4));
+    if (_passed) {
+      // Slight delay so the screen has time to render before confetti fires.
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _confettiController.play();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  // ── Message helpers ───────────────────────────────────────────────────────
+
+  String get _headline {
+    if (_passed && widget.levelAdvanced) return 'LEVEL UP! 🏒';
+    if (_passed) return 'CHALLENGE COMPLETE!';
+    final close = widget.session.shotsMade >= (widget.session.shotsToPass * 0.7).floor();
+    return close ? 'SO CLOSE!' : 'NOT QUITE...';
+  }
+
+  String get _subMessage {
+    if (_passed && widget.levelAdvanced) {
+      return 'You crushed the ${widget.challenge.name} challenge and unlocked Level ${widget.updatedAttempt.currentLevel}!';
+    }
+    if (_passed) {
+      return 'You completed the ${widget.challenge.name} challenge! You hit ${widget.session.shotsMade} / ${widget.session.shotsToPass} required on-target shots. Keep it up!';
+    }
+    final close = widget.session.shotsMade >= (widget.session.shotsToPass * 0.7).floor();
+    if (close) {
+      return 'Nice shooting! You hit ${widget.session.shotsMade} on target — you needed ${widget.session.shotsToPass}. You\'ve almost got it!';
+    }
+    return 'You hit ${widget.session.shotsMade} on target, but needed ${widget.session.shotsToPass}. Keep grinding — every rep counts!';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _passed ? _passBackground : _failBackground,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 48),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 48),
 
-              // ── Icon ───────────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+                  // ── Icon ───────────────────────────────────────────────
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _passed ? Icons.check_circle_rounded : Icons.close_rounded,
+                        size: 64,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  child: Icon(
-                    _passed ? Icons.check_circle_rounded : Icons.close_rounded,
-                    size: 64,
-                    color: Colors.white,
+                  const SizedBox(height: 24),
+
+                  // ── Headline ───────────────────────────────────────────────
+                  Text(
+                    _headline,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 36,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _subMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 17,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // ── Level unlocked callout (only when level advanced) ──────
+                  if (widget.levelAdvanced) ...[
+                    _buildLevelUnlockedBanner(context),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // ── Stats card ─────────────────────────────────────────────
+                  _buildStatsCard(context),
+                  const SizedBox(height: 24),
+
+                  // ── CR shot counter ────────────────────────────────────────
+                  _buildCRProgress(context),
+                  const Spacer(),
+
+                  // ── Buttons ────────────────────────────────────────────────
+                  if (_passed) ...[
+                    _BackToRoadButton(onPressed: () => _backToRoad(context)),
+                  ] else ...[
+                    _TryAgainButton(onPressed: () => _tryAgain(context)),
+                    const SizedBox(height: 12),
+                    _BackToRoadButton(
+                      onPressed: () => _backToRoad(context),
+                      outline: true,
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 24),
-
-              // ── Headline ───────────────────────────────────────────────
-              Text(
-                _passed ? 'CHALLENGE COMPLETE!' : 'NOT QUITE...',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 36,
-                  color: Colors.white,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _passed ? 'Great work! You hit ${session.shotsMade} of ${session.shotsToPass} required on-target shots.' : 'You hit ${session.shotsMade} on target — you needed ${session.shotsToPass}. Keep grinding!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 17,
-                  color: Colors.white.withValues(alpha: 0.85),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // ── Level unlocked callout (only when level advanced) ──────
-              if (levelAdvanced) ...[
-                _buildLevelUnlockedBanner(context),
-                const SizedBox(height: 16),
-              ],
-
-              // ── Stats card ─────────────────────────────────────────────
-              _buildStatsCard(context),
-              const SizedBox(height: 24),
-
-              // ── CR shot counter ────────────────────────────────────────
-              _buildCRProgress(context),
-              const Spacer(),
-
-              // ── Buttons ────────────────────────────────────────────────
-              if (_passed) ...[
-                _BackToRoadButton(onPressed: () => _backToRoad(context)),
-              ] else ...[
-                _TryAgainButton(onPressed: () => _tryAgain(context)),
-                const SizedBox(height: 12),
-                _BackToRoadButton(
-                  onPressed: () => _backToRoad(context),
-                  outline: true,
-                ),
-              ],
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
-        ),
+
+          // ── Confetti overlay (pass only) ─────────────────────────────────
+          if (_passed)
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                emissionFrequency: 0.06,
+                numberOfParticles: 18,
+                gravity: 0.3,
+                colors: const [
+                  Color(0xFFFFD700), // gold
+                  Colors.white,
+                  Color(0xFF4CAF50), // green
+                  Color(0xFF2196F3), // blue
+                  Color(0xFFFF5722), // orange-red
+                ],
+                createParticlePath: _drawHockeyPuck,
+              ),
+            ),
+        ],
       ),
     );
+  }
+
+  /// Draws a small puck-shaped ellipse for the confetti particles.
+  Path _drawHockeyPuck(Size size) {
+    final path = Path();
+    path.addOval(Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: size.width,
+      height: size.height * 0.55,
+    ));
+    return path;
   }
 
   // ── Level unlocked banner ─────────────────────────────────────────────────
 
   Widget _buildLevelUnlockedBanner(BuildContext context) {
-    final newLevel = updatedAttempt.currentLevel;
+    final newLevel = widget.updatedAttempt.currentLevel;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
@@ -176,9 +261,9 @@ class ChallengeResultScreen extends StatelessWidget {
   // ── Stats ─────────────────────────────────────────────────────────────────
 
   Widget _buildStatsCard(BuildContext context) {
-    final accuracy = session.totalShots > 0 ? ((session.shotsMade / session.totalShots) * 100).round() : 0;
-    final mins = session.duration.inMinutes;
-    final secs = session.duration.inSeconds.remainder(60);
+    final accuracy = widget.session.totalShots > 0 ? ((widget.session.shotsMade / widget.session.totalShots) * 100).round() : 0;
+    final mins = widget.session.duration.inMinutes;
+    final secs = widget.session.duration.inSeconds.remainder(60);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -191,7 +276,7 @@ class ChallengeResultScreen extends StatelessWidget {
         children: [
           // Challenge + level
           Text(
-            '${challenge.name}  •  LEVEL ${levelDoc.level}',
+            '${widget.challenge.name}  •  LEVEL ${widget.levelDoc.level}',
             style: const TextStyle(
               fontFamily: 'NovecentoSans',
               fontSize: 16,
@@ -203,8 +288,8 @@ class ChallengeResultScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _stat('${session.shotsMade} / ${session.shotsToPass}', 'ON TARGET'),
-              _stat('${session.totalShots}', 'TOTAL SHOTS'),
+              _stat('${widget.session.shotsMade} / ${widget.session.shotsToPass}', 'ON TARGET'),
+              _stat('${widget.session.totalShots}', 'TOTAL SHOTS'),
               _stat('$accuracy%', 'ACCURACY'),
               _stat('${mins}m ${secs}s', 'TIME'),
             ],
@@ -237,9 +322,9 @@ class ChallengeResultScreen extends StatelessWidget {
   // ── CR Progress bar ───────────────────────────────────────────────────────
 
   Widget _buildCRProgress(BuildContext context) {
-    final count = milestoneResult.newCount;
+    final count = widget.milestoneResult.newCount;
     final progress = (count / 10000).clamp(0.0, 1.0);
-    final resetCount = milestoneResult.resetCount;
+    final resetCount = widget.milestoneResult.resetCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

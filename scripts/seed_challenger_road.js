@@ -60,6 +60,7 @@ const CHALLENGES = [
         description:
             'Build muscle memory and wrist control with a focused set of wrist shots from the slot.',
         active: true,
+        shot_type: 'wrist',
         steps: [
             {
                 step_number: 1,
@@ -98,6 +99,7 @@ const CHALLENGES = [
         description:
             'Improve accuracy and release speed with snap shots from the top of the circles.',
         active: true,
+        shot_type: 'snap',
         steps: [
             {
                 step_number: 1,
@@ -154,6 +156,7 @@ const CHALLENGES = [
         description:
             'Develop a reliable backhand shot that goalies can\'t read by building consistent technique.',
         active: true,
+        shot_type: 'backhand',
         steps: [
             {
                 step_number: 1,
@@ -184,6 +187,7 @@ const CHALLENGES = [
         description:
             'Load up and rip it. Train your slap shot mechanics to generate maximum power while staying accurate.',
         active: true,
+        shot_type: 'slap',
         steps: [
             {
                 step_number: 1,
@@ -216,6 +220,7 @@ const CHALLENGES = [
         description:
             'Step it up with one-timers. Receive a cross-ice pass and rip a shot without stopping the puck.',
         active: true,
+        shot_type: 'wrist',
         steps: [
             {
                 step_number: 1,
