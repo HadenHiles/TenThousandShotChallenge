@@ -69,14 +69,21 @@ class ChallengerRoadService {
   /// Returns all [ChallengerRoadChallenge] objects that have an active level
   /// document at [level], ordered by that level's [sequence] field.
   Future<List<ChallengerRoadChallenge>> getChallengesForLevel(int level) async {
-    // Query the 'levels' collection group for all active level docs matching [level].
-    final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).orderBy('sequence').get();
+    // Query active level docs, then filter by level client-side to avoid
+    // requiring a composite collection-group index on (active, level).
+    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+    final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList()
+      ..sort((a, b) {
+        final aSeq = (a.data()['sequence'] as num?)?.toInt() ?? 0;
+        final bSeq = (b.data()['sequence'] as num?)?.toInt() ?? 0;
+        return aSeq.compareTo(bSeq);
+      });
 
-    if (levelSnaps.docs.isEmpty) return [];
+    if (levelSnapsDocs.isEmpty) return [];
 
     // For each level doc, fetch the parent challenge document.
     final results = await Future.wait(
-      levelSnaps.docs.map((levelDoc) async {
+      levelSnapsDocs.map((levelDoc) async {
         // Parent path: challenger_road/challenges/challenges/{challengeId}
         final challengeRef = levelDoc.reference.parent.parent;
         if (challengeRef == null) return null;
@@ -266,11 +273,12 @@ class ChallengerRoadService {
   /// a passing session in the given attempt.
   Future<bool> isLevelComplete(String userId, String attemptId, int level) async {
     // Get all active challenge IDs that have a level doc at this level.
-    final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).get();
+    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+    final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList();
 
-    if (levelSnaps.docs.isEmpty) return false;
+    if (levelSnapsDocs.isEmpty) return false;
 
-    for (final levelDoc in levelSnaps.docs) {
+    for (final levelDoc in levelSnapsDocs) {
       final challengeRef = levelDoc.reference.parent.parent;
       if (challengeRef == null) continue;
 
@@ -572,10 +580,11 @@ class ChallengerRoadService {
   /// [ChallengeLevelHistoryEntry] at this level in each progress entry.
   Future<bool> _isLevelPerfect(String userId, String attemptId, int level) async {
     try {
-      final levelSnaps = await _firestore.collectionGroup('levels').where('level', isEqualTo: level).where('active', isEqualTo: true).get();
-      if (levelSnaps.docs.isEmpty) return false;
+      final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+      final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList();
+      if (levelSnapsDocs.isEmpty) return false;
 
-      for (final levelDoc in levelSnaps.docs) {
+      for (final levelDoc in levelSnapsDocs) {
         final challengeRef = levelDoc.reference.parent.parent;
         if (challengeRef == null) continue;
         final challengeSnap = await challengeRef.get();
