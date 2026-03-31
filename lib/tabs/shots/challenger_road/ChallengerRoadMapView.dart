@@ -264,17 +264,19 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   // ── Confirm restart dialog ────────────────────────────────────────────────
 
-  void _confirmRestart(BuildContext context) {
+  void _confirmRestart(BuildContext context, ChallengerRoadAttempt attempt) {
+    final isDoOver = attempt.resetCount == 0;
+    final title = isDoOver ? 'Start Over?' : 'Restart Challenger Road?';
+    final body = isDoOver
+        ? 'Your shot count and challenge progress for this attempt will be cleared. '
+            'Your attempt number stays the same — this is a do-over, not a new attempt.'
+        : 'Your current attempt will end. Your next attempt will start one level below your current best.';
+
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text(
-          'Restart Challenger Road?',
-          style: TextStyle(fontFamily: 'NovecentoSans'),
-        ),
-        content: const Text(
-          'Your current attempt will end. Your next attempt will start one level below your current best.',
-        ),
+        title: Text(title, style: const TextStyle(fontFamily: 'NovecentoSans')),
+        content: Text(body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -602,7 +604,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             // ── Header (pinned) ──────────────────────────────────────────
             ChallengerRoadHeader(
               attempt: attempt,
-              onRestartTap: attempt != null ? () => _confirmRestart(context) : null,
+              onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
             ),
 
             // ── Map (scrollable) or first-time splash ─────────────────────

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, sessionPanelController, ChallengeSessionConfig;
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'ChallengeStepViewer.dart';
-import 'StartChallengeScreen.dart';
 
 /// Bottom sheet showing the details of a Challenger Road challenge at a
 /// specific level, with an action button to start or retry the challenge.
@@ -315,22 +315,14 @@ class ChallengeDetailSheet extends StatelessWidget {
   }
 
   Future<void> _launchChallenge(BuildContext context) async {
-    Navigator.of(context).pop(); // close the sheet
-
-    final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => StartChallengeScreen(
-          challenge: challenge,
-          levelDoc: levelDoc,
-          attempt: attempt,
-          userId: userId,
-        ),
-        fullscreenDialog: true,
-      ),
+    Navigator.of(context).pop(); // close the detail sheet
+    activeChallengeSession.value = ChallengeSessionConfig(
+      challenge: challenge,
+      levelDoc: levelDoc,
+      attempt: attempt,
+      userId: userId,
+      onSessionComplete: onSessionComplete,
     );
-
-    if (completed == true) {
-      onSessionComplete?.call();
-    }
+    sessionPanelController.open();
   }
 }

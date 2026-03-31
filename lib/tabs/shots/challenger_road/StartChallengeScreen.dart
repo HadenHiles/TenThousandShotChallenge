@@ -17,10 +17,12 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 
-/// Full-screen challenge shooting session.
+import 'package:tenthousandshotchallenge/Navigation.dart' show sessionPanelController;
+
+/// Challenge shooting session shown inside the sliding panel in Navigation.
 ///
-/// Pushed via [Navigator.push] from [ChallengeDetailSheet]. Returns [true]
-/// when the user completes a session so the caller can trigger a data reload.
+/// Set [activeChallengeSession] in Navigation.dart and open
+/// [sessionPanelController] instead of pushing this widget directly.
 class StartChallengeScreen extends StatefulWidget {
   const StartChallengeScreen({
     super.key,
@@ -28,12 +30,17 @@ class StartChallengeScreen extends StatefulWidget {
     required this.levelDoc,
     required this.attempt,
     required this.userId,
+    this.onDismiss,
   });
 
   final ChallengerRoadChallenge challenge;
   final ChallengerRoadLevel levelDoc;
   final ChallengerRoadAttempt attempt;
   final String userId;
+
+  /// Called when the session ends (pass/fail saved) or is cancelled so the
+  /// caller can clear [activeChallengeSession] and refresh the road.
+  final VoidCallback? onDismiss;
 
   @override
   State<StartChallengeScreen> createState() => _StartChallengeScreenState();
@@ -223,19 +230,23 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         if (!mounted) return;
         if (nextLevelChallenges.isEmpty) {
           // All currently available challenges conquered — show the all-clear screen.
-          Navigator.of(context).pushReplacement(
+          sessionPanelController.close();
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => ChallengerRoadAllClearScreen(
                 completedLevel: widget.levelDoc.level,
               ),
             ),
           );
+          widget.onDismiss?.call();
           return;
         }
       }
 
-      // Replace this screen with the result screen.
-      Navigator.of(context).pushReplacement(
+      // Close the panel, push the result screen above navigation, then clear
+      // the active challenge once the user dismisses the result screen.
+      sessionPanelController.close();
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => ChallengeResultScreen(
             session: session,
@@ -247,6 +258,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           ),
         ),
       );
+      if (!mounted) return;
+      widget.onDismiss?.call();
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
@@ -279,208 +292,171 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              widget.challenge.name.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 20,
-              ),
-            ),
-            Text(
-              'LEVEL ${widget.levelDoc.level}',
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+    // Rendered inside the SlidingUpPanel — no Scaffold, no AppBar.
+    return Column(
+      children: [
+        // Quota indicator – live updates as shots are logged.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: ChallengeQuotaIndicator(
+            shotsMade: _shotsMade,
+            shotsToPass: widget.levelDoc.shotsToPass,
+            shotsRequired: widget.levelDoc.shotsRequired,
+            totalShots: _totalShots,
+          ),
         ),
-        actions: [
-          if (!_saving)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'CANCEL',
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+
+        // Scrollable content
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              children: [
+                // ── Shot type selector ─────────────────────────────────
+                _buildShotSelector(),
+                const SizedBox(height: 16),
+
+                // ── Puck count ─────────────────────────────────────────
+                Text(
+                  '# OF SHOTS',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 24,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Quota indicator – live updates as shots are logged.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: ChallengeQuotaIndicator(
-              shotsMade: _shotsMade,
-              shotsToPass: widget.levelDoc.shotsToPass,
-              shotsRequired: widget.levelDoc.shotsRequired,
-              totalShots: _totalShots,
-            ),
-          ),
-
-          // Scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                children: [
-                  // ── Shot type selector ─────────────────────────────────
-                  _buildShotSelector(),
-                  const SizedBox(height: 16),
-
-                  // ── Puck count ─────────────────────────────────────────
-                  Text(
-                    '# OF SHOTS',
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 24,
-                      color: Theme.of(context).colorScheme.onSurface,
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onLongPress: _openShotCountNumpad,
+                  child: NumberPicker(
+                    value: _currentShotCount,
+                    minValue: 1,
+                    maxValue: 500,
+                    step: 1,
+                    itemHeight: 60,
+                    textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                    selectedTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20),
+                    axis: Axis.horizontal,
+                    haptics: true,
+                    infiniteLoop: true,
+                    onChanged: (v) => setState(() {
+                      _currentShotCount = v;
+                      _lastTargetsHit = (v * 0.5).round();
+                    }),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Theme.of(context).primaryColor, width: 2),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onLongPress: _openShotCountNumpad,
-                    child: NumberPicker(
-                      value: _currentShotCount,
-                      minValue: 1,
-                      maxValue: 500,
-                      step: 1,
-                      itemHeight: 60,
-                      textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                      selectedTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20),
-                      axis: Axis.horizontal,
-                      haptics: true,
-                      infiniteLoop: true,
-                      onChanged: (v) => setState(() {
-                        _currentShotCount = v;
-                        _lastTargetsHit = (v * 0.5).round();
-                      }),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Theme.of(context).primaryColor, width: 2),
-                      ),
-                    ),
+                ),
+                Text(
+                  'Long press for numpad',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
-                  Text(
-                    'Long press for numpad',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
 
-                  // ── Check (log shots) button ───────────────────────────
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _logShots,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                        backgroundColor: Colors.green.shade600,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Icons.sports_hockey, color: Colors.white, size: 22),
-                      label: const Text(
-                        'LOG A TRY',
-                        style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 20,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                // ── Check (log shots) button ───────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _logShots,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                      backgroundColor: Colors.green.shade600,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Records one try at the challenge',
-                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── Shot list ──────────────────────────────────────────
-                  if (_shots.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          'TRIES',
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 13,
-                            letterSpacing: 0.8,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${_shots.length} tr${_shots.length == 1 ? 'y' : 'ies'}',
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  ListView(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: _buildShotsList(),
-                  ),
-                  const SizedBox(height: 80), // padding for FAB
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      // Finish button
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _saving ? null : _finishSession,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text(
-                      'FINISH SESSION',
+                    icon: const Icon(Icons.sports_hockey, color: Colors.white, size: 22),
+                    label: const Text(
+                      'LOG A TRY',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
-                        fontSize: 18,
+                        fontSize: 20,
                         color: Colors.white,
+                        letterSpacing: 0.5,
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Records one try at the challenge',
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: 16),
+
+                // ── Shot list ──────────────────────────────────────────
+                if (_shots.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'TRIES',
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 13,
+                          letterSpacing: 0.8,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_shots.length} tr${_shots.length == 1 ? 'y' : 'ies'}',
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                ],
+                ListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _buildShotsList(),
+                ),
+                const SizedBox(height: 80),
+              ],
             ),
           ),
         ),
-      ),
+
+        // Finish button — sticky at the bottom of the panel.
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _saving ? null : _finishSession,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text(
+                        'FINISH SESSION',
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
