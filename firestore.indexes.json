@@ -97,6 +97,24 @@
       ]
     },
     {
+      "collectionGroup": "challenge_sessions",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "challenge_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "level",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "teams",
       "queryScope": "COLLECTION",
       "fields": [
