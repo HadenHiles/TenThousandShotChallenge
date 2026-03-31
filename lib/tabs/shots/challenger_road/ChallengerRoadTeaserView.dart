@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'ChallengeMapNode.dart';
 import 'LevelBannerWidget.dart';
 
@@ -307,8 +308,11 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () async {
-                      await presentPaywallIfNeeded(context);
-                    },
+                      await presentPaywallIfNeeded(context);                      if (!context.mounted) return;
+                      final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+                      if (notifier?.isPro == true) {
+                        Navigator.of(context).pop();
+                      }                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,

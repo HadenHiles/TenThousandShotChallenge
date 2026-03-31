@@ -98,22 +98,33 @@
     },
     {
       "collectionGroup": "levels",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
           "fieldPath": "level",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "sequence",
+          "fieldPath": "active",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "active",
+          "fieldPath": "sequence",
           "order": "ASCENDING"
         }
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "levels",
+      "fieldPath": "active",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION" },
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    }
+  ]
 }
