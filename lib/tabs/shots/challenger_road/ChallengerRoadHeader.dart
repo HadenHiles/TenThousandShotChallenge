@@ -25,7 +25,7 @@ class ChallengerRoadHeader extends StatelessWidget {
     final progress = shotCount / 10000.0;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 7, 16, 6),
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
         border: Border(
@@ -44,7 +44,7 @@ class ChallengerRoadHeader extends StatelessWidget {
             children: [
               // ── Level badge ──────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 13),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(20),
@@ -61,7 +61,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'NovecentoSans',
-                    fontSize: 20,
+                    fontSize: 18,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -86,7 +86,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: 'NovecentoSans',
-                      fontSize: 20,
+                      fontSize: 18,
                     ),
                   ),
                   if (resetCount > 0)
@@ -122,7 +122,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontFamily: 'NovecentoSans',
-                        fontSize: 24,
+                        fontSize: 22,
                       ),
                     ),
                     if (onRestartTap != null)
@@ -139,14 +139,14 @@ class ChallengerRoadHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
           // ── Progress bar (CR shot counter 0 → 10,000) ────────────────
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
-              minHeight: 6,
+              minHeight: 5,
               backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
               valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
             ),

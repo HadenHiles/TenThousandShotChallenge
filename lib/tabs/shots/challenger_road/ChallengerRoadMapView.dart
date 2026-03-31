@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
@@ -109,6 +110,7 @@ double _levelSectionHeight(int nodeCount) => _levelSectionExtraTop + _levelTopPa
 /// challenge node (Phase 6 detail sheet hook).
 class ChallengerRoadMapView extends StatefulWidget {
   final String userId;
+  final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
   /// Called when a tappable node is pressed.
   final void Function(
@@ -121,6 +123,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     super.key,
     required this.userId,
     this.onChallengeTap,
+    this.onMainHeaderVisibilityChanged,
   });
 
   @override
@@ -132,6 +135,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   Future<_CRMapData>? _dataFuture;
   final ScrollController _scrollController = ScrollController();
   bool _didScrollToCurrentLevel = false;
+  bool _mainHeaderVisible = true;
 
   // Track the height of each level section so we can scroll to the right level.
   // Key: level number, Value: cumulative top offset from the very top of scroll content.
@@ -144,6 +148,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   /// The last known current level before a data refresh, used to detect
   /// whether a level-unlock animation should fire.
   int? _previousCurrentLevel;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onMapScrolled);
+  }
 
   @override
   void didChangeDependencies() {
@@ -160,8 +170,34 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onMapScrolled);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _emitMainHeaderVisibility(bool visible) {
+    if (_mainHeaderVisible == visible) return;
+    _mainHeaderVisible = visible;
+    widget.onMainHeaderVisibilityChanged?.call(visible);
+  }
+
+  void _onMapScrolled() {
+    if (!_scrollController.hasClients) return;
+
+    final offset = _scrollController.offset;
+    if (offset <= 8) {
+      _emitMainHeaderVisibility(true);
+      return;
+    }
+
+    final direction = _scrollController.position.userScrollDirection;
+    if (direction == ScrollDirection.reverse) {
+      // Reversed behavior per UX tweak: scrolling up shows header.
+      _emitMainHeaderVisibility(true);
+    } else if (direction == ScrollDirection.forward) {
+      // Reversed behavior per UX tweak: scrolling down hides header.
+      _emitMainHeaderVisibility(false);
+    }
   }
 
   Future<_CRMapData> _loadMapData() async {
@@ -601,13 +637,20 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
         return Column(
           children: [
-            // ── Header (pinned) ──────────────────────────────────────────
-            ChallengerRoadHeader(
-              attempt: attempt,
-              onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
+            // ── Header (pinned below app header) ───────────────────────
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeInOutCubic,
+              padding: EdgeInsets.only(
+                top: _mainHeaderVisible ? 0 : MediaQuery.of(context).padding.top,
+              ),
+              child: ChallengerRoadHeader(
+                attempt: attempt,
+                onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
+              ),
             ),
 
-            // ── Map (scrollable) or first-time splash ─────────────────────
+            // ── Map (scrollable) or first-time splash ─────────────────
             Expanded(
               child: attempt != null ? _buildMapContent(context, data) : _buildNoAttemptSplash(context, data),
             ),
