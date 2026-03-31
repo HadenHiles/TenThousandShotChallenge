@@ -212,6 +212,18 @@ class ChallengerRoadService {
     return snap.docs.map(ChallengeSession.fromSnapshot).toList();
   }
 
+  /// Returns all [ChallengeSession] tries for a specific [challengeId] at a
+  /// specific [level] within one attempt, ordered by date descending.
+  Future<List<ChallengeSession>> getTriesForChallenge(
+    String userId,
+    String attemptId,
+    String challengeId,
+    int level,
+  ) async {
+    final snap = await _sessionsRef(userId, attemptId).where('challenge_id', isEqualTo: challengeId).where('level', isEqualTo: level).orderBy('date', descending: true).get();
+    return snap.docs.map(ChallengeSession.fromSnapshot).toList();
+  }
+
   /// Returns true if a passing session exists for [challengeId] at [level]
   /// within a given attempt.
   ///
