@@ -11,12 +11,10 @@ class ChallengerRoadTeaserView extends StatefulWidget {
     super.key,
     this.embedded = false,
     this.onCloseTap,
-    this.onMainHeaderVisibilityChanged,
   });
 
   final bool embedded;
   final VoidCallback? onCloseTap;
-  final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
   @override
   State<ChallengerRoadTeaserView> createState() => _ChallengerRoadTeaserViewState();
@@ -313,7 +311,6 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
               onPreviewLevelUnlockAttempted: _promptGoPro,
               mapBottomInset: 120 + bottomTabInset + sessionPanelInset,
               onCloseTap: widget.onCloseTap,
-              onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
             ),
             if (_showWalkthrough) _buildWalkthroughCard(context),
             _buildBottomBanner(
