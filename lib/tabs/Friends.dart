@@ -177,29 +177,26 @@ class _FriendsState extends State<Friends> {
               child: Column(
                 children: [
                   TabBar(
-                    indicatorColor: Theme.of(context).primaryColor,
-                    unselectedLabelColor: Colors.white70,
-                    labelColor: Colors.white70,
+                    indicatorColor: Colors.white70,
+                    indicatorWeight: 1.5,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    dividerColor: Colors.transparent,
+                    unselectedLabelColor: Colors.white54,
+                    labelColor: Colors.white,
                     labelStyle: const TextStyle(
                       fontFamily: 'NovecentoSans',
-                      fontSize: 18,
+                      fontSize: 14,
                     ),
-                    labelPadding: const EdgeInsets.all(0),
+                    unselectedLabelStyle: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 14,
+                    ),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                     tabs: [
                       Tab(
-                        icon: const Icon(
-                          Icons.people,
-                          color: Colors.white70,
-                        ),
-                        iconMargin: const EdgeInsets.all(0),
                         text: "Friends".toUpperCase(),
                       ),
                       Tab(
-                        icon: const Icon(
-                          Icons.person_add,
-                          color: Colors.white70,
-                        ),
-                        iconMargin: const EdgeInsets.all(0),
                         text: "Invites".toUpperCase(),
                       ),
                     ],
