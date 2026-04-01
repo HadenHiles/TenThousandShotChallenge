@@ -8,9 +8,9 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
-import 'package:go_router/go_router.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -43,7 +43,7 @@ class _IntroScreenState extends State<IntroScreen> {
     Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     // Routing to main app after intro (ensure navigation happens after UI updates)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      GoRouter.of(context).go('/app'); // Use GoRouter for navigation
+      context.go(AppRoutePaths.app);
     });
   }
 

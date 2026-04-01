@@ -1,23 +1,72 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/Login.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart';
-import 'package:tenthousandshotchallenge/IntroScreen.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/IntroScreen.dart';
+import 'package:tenthousandshotchallenge/Login.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
-import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
-import 'package:provider/provider.dart';
+
+/// Route path pattern for the player detail route (go_router syntax).
+const _playerRoutePath = '/player/:id';
+
+abstract final class AppRouteNames {
+  static const login = 'auth_login';
+  static const intro = 'auth_intro';
+  static const train = 'train_home';
+  static const communityFriends = 'community_friends';
+  static const communityTeam = 'community_team';
+  static const learn = 'learn_home';
+  static const me = 'me_home';
+  static const addFriend = 'community_add_friend';
+  static const player = 'community_player';
+  static const createTeam = 'community_create_team';
+  static const editTeam = 'community_edit_team';
+  static const joinTeam = 'community_join_team';
+  static const settings = 'me_settings';
+  static const editProfile = 'me_edit_profile';
+  static const editPuckCount = 'me_edit_puck_count';
+  static const history = 'me_history';
+  static const challengerRoad = 'train_challenger_road';
+}
+
+String _appShellRouteName(GoRouterState state) {
+  final tabId = state.uri.queryParameters['tab'];
+  final section = state.uri.queryParameters['section'];
+
+  switch (tabId) {
+    case 'friends':
+      return AppRouteNames.communityFriends;
+    case 'team':
+      return AppRouteNames.communityTeam;
+    case 'community':
+      return section == CommunitySection.team.name ? AppRouteNames.communityTeam : AppRouteNames.communityFriends;
+    case 'explore':
+    case 'learn':
+      return AppRouteNames.learn;
+    case 'profile':
+    case 'me':
+      return AppRouteNames.me;
+    case 'start':
+    case 'train':
+    default:
+      return AppRouteNames.train;
+  }
+}
 
 class AuthChangeNotifier extends ChangeNotifier {
   late final StreamSubscription<User?> _sub;
@@ -60,75 +109,122 @@ class IntroShownNotifier extends ChangeNotifier {
   }
 }
 
+List<RouteBase> _buildAuthRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutePaths.login,
+      name: AppRouteNames.login,
+      builder: (context, state) => const Login(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.intro,
+      name: AppRouteNames.intro,
+      builder: (context, state) => const IntroScreen(),
+    ),
+  ];
+}
+
+List<RouteBase> _buildShellRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutePaths.app,
+      pageBuilder: (context, state) {
+        final tabId = state.uri.queryParameters['tab'] ?? 'start';
+        final communitySection = state.uri.queryParameters['section'];
+        return MaterialPage<void>(
+          key: state.pageKey,
+          name: _appShellRouteName(state),
+          child: Navigation(tabId: tabId, communitySection: communitySection),
+        );
+      },
+    ),
+  ];
+}
+
+List<RouteBase> _buildCommunityRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutePaths.addFriend,
+      name: AppRouteNames.addFriend,
+      builder: (context, state) => const AddFriend(),
+    ),
+    GoRoute(
+      path: _playerRoutePath,
+      name: AppRouteNames.player,
+      builder: (context, state) {
+        final playerId = state.pathParameters['id'];
+        return Player(uid: playerId);
+      },
+    ),
+    GoRoute(
+      path: AppRoutePaths.createTeam,
+      name: AppRouteNames.createTeam,
+      builder: (context, state) => const CreateTeam(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.editTeam,
+      name: AppRouteNames.editTeam,
+      builder: (context, state) => const EditTeam(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.joinTeam,
+      name: AppRouteNames.joinTeam,
+      builder: (context, state) => const JoinTeam(),
+    ),
+  ];
+}
+
+List<RouteBase> _buildMeRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutePaths.settings,
+      name: AppRouteNames.settings,
+      builder: (context, state) => const ProfileSettings(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.editProfile,
+      name: AppRouteNames.editProfile,
+      builder: (context, state) => const EditProfile(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.editPuckCount,
+      name: AppRouteNames.editPuckCount,
+      builder: (context, state) => const EditPuckCount(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.history,
+      name: AppRouteNames.history,
+      builder: (context, state) => const History(),
+    ),
+  ];
+}
+
+List<RouteBase> _buildTrainRoutes() {
+  return [
+    GoRoute(
+      path: AppRoutePaths.challengerRoad,
+      name: AppRouteNames.challengerRoad,
+      builder: (context, state) => const ChallengerRoadTeaserView(),
+    ),
+  ];
+}
+
 GoRouter createAppRouter(
   FirebaseAnalytics analytics, {
   required AuthChangeNotifier authNotifier,
   required IntroShownNotifier introShownNotifier,
-  String initialLocation = '/app',
+  String initialLocation = AppRoutePaths.app,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
     refreshListenable: Listenable.merge([authNotifier, introShownNotifier]),
     observers: [FirebaseAnalyticsObserver(analytics: analytics)],
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const Login(),
-      ),
-      GoRoute(
-        path: '/intro',
-        builder: (context, state) => const IntroScreen(),
-      ),
-      GoRoute(
-        path: '/app',
-        builder: (context, state) {
-          final tabId = state.uri.queryParameters['tab'] ?? 'start';
-          return Navigation(tabId: tabId);
-        },
-      ),
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) => const ProfileSettings(),
-      ),
-      GoRoute(
-        path: '/edit-profile',
-        builder: (context, state) => const EditProfile(),
-      ),
-      GoRoute(
-        path: '/edit-puck-count',
-        builder: (context, state) => const EditPuckCount(),
-      ),
-      GoRoute(
-        path: '/add-friend',
-        builder: (context, state) => const AddFriend(),
-      ),
-      GoRoute(
-        path: '/player/:id',
-        builder: (context, state) {
-          final playerId = state.pathParameters['id'];
-          return Player(uid: playerId);
-        },
-      ),
-      GoRoute(
-        path: '/create-team',
-        builder: (context, state) => const CreateTeam(),
-      ),
-      GoRoute(
-        path: '/edit-team',
-        builder: (context, state) => const EditTeam(),
-      ),
-      GoRoute(
-        path: '/join-team',
-        builder: (context, state) => const JoinTeam(),
-      ),
-      GoRoute(
-        path: '/history',
-        builder: (context, state) => const History(),
-      ),
-      GoRoute(
-        path: '/challenger-road',
-        builder: (context, state) => const ChallengerRoadTeaserView(),
-      ),
+      ..._buildAuthRoutes(),
+      ..._buildShellRoutes(),
+      ..._buildTrainRoutes(),
+      ..._buildCommunityRoutes(),
+      ..._buildMeRoutes(),
     ],
     redirect: (context, state) {
       final auth = Provider.of<FirebaseAuth>(context, listen: false);
@@ -138,9 +234,13 @@ GoRouter createAppRouter(
       // If introShown is null, don't redirect yet (wait for async load)
       if (introShownNotifier._introShown == null) return null;
       // Only redirect to /app if on /login, and user is logged in
-      if (user != null && path == '/login') return '/app';
-      if (!introShown && path != '/intro') return '/intro';
-      if (user == null && path != '/login' && path != '/intro') return '/login';
+      if (user != null && path == AppRoutePaths.login) {
+        return appSectionLocation(AppSection.train);
+      }
+      if (!introShown && path != AppRoutePaths.intro) return AppRoutePaths.intro;
+      if (user == null && path != AppRoutePaths.login && path != AppRoutePaths.intro) {
+        return AppRoutePaths.login;
+      }
       return null;
     },
   );

@@ -24,6 +24,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dar
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileSection.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
@@ -1092,7 +1093,7 @@ class _ProfileState extends State<Profile> {
                                 ],
                                 onSelected: (value) {
                                   if (value == 'edit') {
-                                    context.push('/edit-profile');
+                                    context.push(AppRoutePaths.editProfile);
                                   } else if (value == 'qr_code') {
                                     showQRCode(context, currentUser);
                                   }
@@ -1108,7 +1109,7 @@ class _ProfileState extends State<Profile> {
                                 child: GestureDetector(
                                   onLongPress: () {
                                     Feedback.forLongPress(context);
-                                    context.push('/edit-profile');
+                                    context.push(AppRoutePaths.editProfile);
                                   },
                                   onTap: () {
                                     Feedback.forTap(context);
@@ -2682,7 +2683,7 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                       onPressed: () {
-                        context.push('/history');
+                        context.push(AppRoutePaths.history);
                       },
                     ),
                   ),

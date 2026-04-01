@@ -2,9 +2,9 @@ import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -109,7 +109,11 @@ class _EditTeamState extends State<EditTeam> {
   void _backToTeamPage() {
     // Use go_router to navigate back to team tab
     if (mounted) {
-      context.go('/app?tab=team');
+      goToAppSection(
+        context,
+        AppSection.community,
+        communitySection: CommunitySection.team,
+      );
     }
   }
 
@@ -463,7 +467,11 @@ class _EditTeamState extends State<EditTeam> {
 
                                   // Use go_router unified route
                                   if (context.mounted) {
-                                    context.go('/app?tab=team');
+                                    goToAppSection(
+                                      context,
+                                      AppSection.community,
+                                      communitySection: CommunitySection.team,
+                                    );
                                   }
                                 } else {
                                   Fluttertoast.showToast(

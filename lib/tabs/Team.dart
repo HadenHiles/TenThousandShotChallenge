@@ -12,6 +12,8 @@ import 'package:qr_flutter/qr_flutter.dart'; // For QRCodeDialog
 import 'package:rxdart/rxdart.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/ConfirmDialog.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -454,8 +456,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     width: 110,
                                     child: GestureDetector(
                                       onTap: () => mounted ? setState(() => _showShotsPerDay = !_showShotsPerDay) : null,
-                                      child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText,
-                                          maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
+                                      child: AutoSizeText(_showShotsPerDay ? displayShotsPerDayText : displayShotsPerWeekText, maxFontSize: 20, maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: "NovecentoSans", fontSize: 20)),
                                     ),
                                   ),
                                   InkWell(
@@ -468,9 +469,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                             ],
                           ),
                         ),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
                         const SizedBox(height: 5),
                         Column(children: [
                           Container(
@@ -500,8 +499,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                         ? totalShotsWidth - 175
                                         : totalShotsWidth,
                                 padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: AutoSizeText(numberFormat.format(currentTeamTotalShots),
-                                    textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                                child: AutoSizeText(numberFormat.format(currentTeamTotalShots), textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                               ),
                               Text(" / ${numberFormat.format(safeGoalTotal)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
                             ]),
@@ -550,7 +548,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     iconSize: 40,
                     icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
                     onPressed: () {
-                      context.push('/create-team');
+                      context.push(AppRoutePaths.createTeam);
                     })),
           ),
           const Divider(height: 30),
@@ -561,7 +559,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 color: Theme.of(context).cardTheme.color,
                 child: Text("Join Team".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
                 onPressed: () {
-                  context.push('/join-team');
+                  context.push(AppRoutePaths.joinTeam);
                 }),
           ),
         ],
@@ -606,9 +604,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   Widget _buildNoPlayersOnTeamUI(Team teamData) {
     // Removed unused local variables for auth/firestore
     return Column(children: [
-      Container(
-          margin: const EdgeInsets.only(top: 40),
-          child: Text("No Players on the Team (yet!)".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary))),
+      Container(margin: const EdgeInsets.only(top: 40), child: Text("No Players on the Team (yet!)".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary))),
       Container(
           margin: const EdgeInsets.only(top: 15),
           child: Center(
@@ -656,7 +652,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           : () {
               Feedback.forTap(context);
               if (playerUid.isNotEmpty) {
-                context.push('/player/$playerUid');
+                context.push(AppRoutePaths.playerPathFor(playerUid));
               }
             },
       child: (isCurrentUserOwner && user?.uid != playerUid && playerUid.isNotEmpty)
@@ -689,11 +685,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     false;
               },
               background: Container(
-                  color: Theme.of(context).primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
+                  color: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(horizontal: 15), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
               child: _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
             )
           : _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
@@ -706,15 +698,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       width: MediaQuery.of(context).size.width,
       child: TextButton(
         onPressed: () {
-          context.push('/edit-team');
+          context.push(AppRoutePaths.editTeam);
         },
-        style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
-        child: FittedBox(
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text("Edit Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
-          Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: Theme.of(context).primaryColor, size: 24))
-        ])),
+        style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        child: FittedBox(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Edit Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: Theme.of(context).primaryColor, size: 24))])),
       ),
     );
   }
@@ -901,8 +888,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         onPressed: () {
           dialog(
               context,
-              ConfirmDialog("Leave team ${currentTeam.name}?".toLowerCase(), Text("Are you sure you want to leave this team?", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)), "Cancel",
-                  () => Navigator.of(context).pop(), "Leave", () async {
+              ConfirmDialog("Leave team ${currentTeam.name}?".toLowerCase(), Text("Are you sure you want to leave this team?", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)), "Cancel", () => Navigator.of(context).pop(), "Leave", () async {
                 Navigator.of(context).pop();
                 // Use Provider to get firestore
                 final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
@@ -910,7 +896,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   if (r) {
                     Fluttertoast.showToast(msg: "You left team ${currentTeam.name}!".toLowerCase());
                     if (mounted) {
-                      context.go('/app?tab=team');
+                      goToAppSection(
+                        context,
+                        AppSection.community,
+                        communitySection: CommunitySection.team,
+                      );
                     }
                   } else {
                     Fluttertoast.showToast(msg: "Failed to leave team :(".toLowerCase());
@@ -918,13 +908,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 });
               }));
         },
-        style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text("Leave Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)),
-          Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))
-        ])),
+            child:
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Leave Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))])),
       ),
     );
   }

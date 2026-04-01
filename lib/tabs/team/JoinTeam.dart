@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -130,7 +132,11 @@ class _JoinTeamState extends State<JoinTeam> {
                                         });
                                         searchFieldController.text = "";
 
-                                        context.go('/app?tab=team');
+                                        goToAppSection(
+                                          context,
+                                          AppSection.community,
+                                          communitySection: CommunitySection.team,
+                                        );
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
@@ -234,14 +240,7 @@ class _JoinTeamState extends State<JoinTeam> {
 
                                           List<DocumentSnapshot> teams = [];
                                           if (value.isNotEmpty) {
-                                            await FirebaseFirestore.instance
-                                                .collection('teams')
-                                                .orderBy('name_lowercase', descending: false)
-                                                .where('public', isEqualTo: true)
-                                                .startAt([value.toLowerCase()])
-                                                .endAt(['${value.toLowerCase()}\uf8ff'])
-                                                .get()
-                                                .then((tSnaps) async {
+                                            await FirebaseFirestore.instance.collection('teams').orderBy('name_lowercase', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((tSnaps) async {
                                                   for (var tDoc in tSnaps.docs) {
                                                     if (tDoc.reference.id != user!.uid) {
                                                       teams.add(tDoc);
@@ -330,7 +329,11 @@ class _JoinTeamState extends State<JoinTeam> {
                                             ),
                                           );
 
-                                          context.go('/app?tab=team');
+                                          goToAppSection(
+                                            context,
+                                            AppSection.community,
+                                            communitySection: CommunitySection.team,
+                                          );
                                         }).onError((error, stackTrace) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -403,7 +406,7 @@ class _JoinTeamState extends State<JoinTeam> {
                                           margin: const EdgeInsets.only(top: 5),
                                           child: IconButton(
                                             onPressed: () {
-                                              context.push('/create-team'); // Replace with your desired route
+                                              context.push(AppRoutePaths.createTeam);
                                             },
                                             icon: Icon(
                                               Icons.add_circle_outline_rounded,

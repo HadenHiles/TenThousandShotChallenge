@@ -24,6 +24,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 
 class StartShooting extends StatefulWidget {
   const StartShooting({super.key, required this.sessionPanelController, this.shots});
@@ -299,7 +300,7 @@ class _StartShootingState extends State<StartShooting> {
                           },
                         ),
                         onTap: () {
-                          context.push('/settings');
+                          context.push(AppRoutePaths.settings);
                         },
                       ),
                     ),

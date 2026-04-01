@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/services/bootstrap.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -787,7 +788,7 @@ class _LoginState extends State<Login> {
             Navigator.of(context).pop();
           }
           // ignore: use_build_context_synchronously
-          GoRouter.of(context).go('/app');
+          context.go(AppRoutePaths.app);
         }
       });
     } on FirebaseAuthException catch (e) {
