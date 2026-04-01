@@ -331,6 +331,7 @@ class _ShotsState extends State<Shots> {
 
                 Widget buildSegment(int count, Color color) {
                   return Container(
+                    height: 8,
                     width: count > 0 ? (count / segmentTotal) * progressWidth : 0,
                     color: color,
                   );
@@ -410,7 +411,7 @@ class _ShotsState extends State<Shots> {
   Widget _buildChallengerRoadEntryCard(BuildContext context, User? user) {
     final theme = Theme.of(context);
     final isPro = _subscriptionLevel == 'pro';
-    final accent = theme.colorScheme.primary;
+    final accent = theme.primaryColor;
 
     return InkWell(
       borderRadius: BorderRadius.circular(24),
@@ -471,7 +472,7 @@ class _ShotsState extends State<Shots> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          isPro ? 'Pick up right where you left off.' : 'Level 1 is free. Unlock all levels to keep climbing.',
+                          isPro ? 'Can you make it to the end of the road?' : 'Think you can complete every challenge?',
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
@@ -506,14 +507,14 @@ class _ShotsState extends State<Shots> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: theme.colorScheme.primary,
+                      color: accent,
                     ),
                     child: Text(
-                      isPro ? 'VIEW ROAD' : 'PREVIEW ROAD',
-                      style: TextStyle(
+                      isPro ? 'CONTINUE' : 'START',
+                      style: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 14,
-                        color: theme.colorScheme.onPrimary,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -739,7 +740,7 @@ class _ShotsState extends State<Shots> {
                 countTile('Slap', iteration.totalSlap ?? 0, slapShotColor),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
             SizedBox(
               height: 220,
               child: iteration.total == null || iteration.total == 0
