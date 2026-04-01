@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeDetailSheet.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
@@ -381,6 +382,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     // Rendered inside the SlidingUpPanel — no Scaffold, no AppBar.
     return Column(
       children: [
+        _buildChallengeDetailsLauncher(),
+
         // Quota indicator – live updates as shots are logged.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -545,6 +548,58 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   }
 
   // ── Helper widgets ────────────────────────────────────────────────────────
+
+  Widget _buildChallengeDetailsLauncher() {
+    final detailsColor = Theme.of(context).colorScheme.onSurface;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: detailsColor.withValues(alpha: 0.12),
+          ),
+        ),
+        child: ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          onTap: () {
+            ChallengeDetailSheet.show(
+              context,
+              challenge: widget.challenge,
+              levelDoc: widget.levelDoc,
+              attempt: widget.attempt,
+              userId: widget.userId,
+              showStartCta: false,
+            );
+          },
+          title: Text(
+            'CHALLENGE DETAILS',
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 14,
+              letterSpacing: 0.8,
+              color: detailsColor.withValues(alpha: 0.8),
+            ),
+          ),
+          subtitle: Text(
+            'Tap to open how-to and steps',
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 10,
+              color: detailsColor.withValues(alpha: 0.55),
+            ),
+          ),
+          trailing: Icon(
+            Icons.expand_circle_down_rounded,
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.9),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildShotSelector() {
     final locked = widget.challenge.shotType != null;
