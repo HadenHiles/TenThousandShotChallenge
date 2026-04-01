@@ -118,6 +118,7 @@ class _NavigationState extends State<Navigation> {
   Widget? _leading;
   List<Widget>? _actions;
   int _selectedIndex = 0;
+  final ValueNotifier<int> _trainResetSignal = ValueNotifier<int>(0);
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
   double _bottomNavOffsetPercentage = 0;
@@ -327,10 +328,14 @@ class _NavigationState extends State<Navigation> {
           child: Image.asset('assets/images/logo-text-only.png'), // Use the correct logo asset
         ),
         actions: const [],
-        body: Shots(
-          sessionPanelController: sessionPanelController,
-          onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
-          onMainHeaderVisibilityChanged: _onMainHeaderVisibilityChanged,
+        body: ValueListenableBuilder<int>(
+          valueListenable: _trainResetSignal,
+          builder: (context, resetSignal, _) => Shots(
+            sessionPanelController: sessionPanelController,
+            resetSignal: resetSignal,
+            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
+            onMainHeaderVisibilityChanged: _onMainHeaderVisibilityChanged,
+          ),
         ),
       ),
       NavigationTab(
@@ -435,6 +440,7 @@ class _NavigationState extends State<Navigation> {
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
     _communitySectionNotifier.dispose();
+    _trainResetSignal.dispose();
     super.dispose();
   }
 
@@ -468,6 +474,12 @@ class _NavigationState extends State<Navigation> {
   }
 
   void _onItemTapped(int index) async {
+    final isTrainTab = _tabs[index].id == 'train';
+    if (isTrainTab) {
+      // Always reset inline Challenger Road when user navigates to/reselects Train.
+      _trainResetSignal.value++;
+    }
+
     if (_tabs[index].id == 'community') {
       // Legacy manual load retained for other side-effects; actions now stream-driven.
       _loadTeam();

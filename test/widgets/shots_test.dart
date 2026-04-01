@@ -99,7 +99,10 @@ void main() {
           home: Scaffold(
             body: SessionServiceProvider(
               service: mockSessionService,
-              child: Shots(sessionPanelController: mockPanelController),
+              child: Shots(
+                sessionPanelController: mockPanelController,
+                resetSignal: 0,
+              ),
             ),
           ),
         ),

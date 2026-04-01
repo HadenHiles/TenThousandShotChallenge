@@ -28,11 +28,13 @@ class Shots extends StatefulWidget {
   const Shots({
     super.key,
     required this.sessionPanelController,
+    required this.resetSignal,
     this.onChallengerRoadAvailabilityChanged,
     this.onMainHeaderVisibilityChanged,
   });
 
   final PanelController sessionPanelController;
+  final int resetSignal;
   final ValueChanged<bool>? onChallengerRoadAvailabilityChanged;
   final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
@@ -93,6 +95,14 @@ class _ShotsState extends State<Shots> {
     _customerInfoNotifier?.removeListener(_onSubscriptionChanged);
     _targetDateController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant Shots oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.resetSignal != widget.resetSignal) {
+      _closeChallengerRoad();
+    }
   }
 
   void _editTargetDate() {
