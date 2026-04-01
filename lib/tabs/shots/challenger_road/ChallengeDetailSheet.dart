@@ -30,6 +30,9 @@ class ChallengeDetailSheet extends StatelessWidget {
   final String userId;
   final ChallengeProgressEntry? progress;
   final VoidCallback? onSessionComplete;
+  final bool isPreviewMode;
+  final int previewMaxLevel;
+  final VoidCallback? onPreviewLevelUnlockAttempted;
 
   const ChallengeDetailSheet._({
     required this.challenge,
@@ -38,6 +41,9 @@ class ChallengeDetailSheet extends StatelessWidget {
     required this.userId,
     this.progress,
     this.onSessionComplete,
+    this.isPreviewMode = false,
+    this.previewMaxLevel = 1,
+    this.onPreviewLevelUnlockAttempted,
   });
 
   /// Presents the sheet modally. Returns true if a session was completed.
@@ -49,6 +55,9 @@ class ChallengeDetailSheet extends StatelessWidget {
     required String userId,
     ChallengeProgressEntry? progress,
     VoidCallback? onSessionComplete,
+    bool isPreviewMode = false,
+    int previewMaxLevel = 1,
+    VoidCallback? onPreviewLevelUnlockAttempted,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -61,6 +70,9 @@ class ChallengeDetailSheet extends StatelessWidget {
         userId: userId,
         progress: progress,
         onSessionComplete: onSessionComplete,
+        isPreviewMode: isPreviewMode,
+        previewMaxLevel: previewMaxLevel,
+        onPreviewLevelUnlockAttempted: onPreviewLevelUnlockAttempted,
       ),
     );
   }
@@ -72,7 +84,8 @@ class ChallengeDetailSheet extends StatelessWidget {
   }
 
   bool get _isLocked {
-    return levelDoc.level > attempt.currentLevel;
+    final effectiveLevel = isPreviewMode ? (attempt.currentLevel < previewMaxLevel ? attempt.currentLevel : previewMaxLevel) : attempt.currentLevel;
+    return levelDoc.level > effectiveLevel;
   }
 
   /// Steps to show: level-specific override if present, else parent challenge steps.
@@ -384,6 +397,9 @@ class ChallengeDetailSheet extends StatelessWidget {
       userId: userId,
       startedAt: DateTime.now(),
       onSessionComplete: onSessionComplete,
+      isPreviewMode: isPreviewMode,
+      previewMaxLevel: previewMaxLevel,
+      onPreviewLevelUnlockAttempted: onPreviewLevelUnlockAttempted,
     );
     sessionPanelController.open();
   }
