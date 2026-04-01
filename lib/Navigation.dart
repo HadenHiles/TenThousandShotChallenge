@@ -431,6 +431,70 @@ class _NavigationState extends State<Navigation> {
     }
   }
 
+  Widget _buildOnlineContent() {
+    // Explore owns its own NestedScrollView. Render it directly so it is never
+    // a child (even offstage) of the outer NestedScrollView used by other tabs.
+    if (_selectedIndex == 2) {
+      return _tabs[2];
+    }
+
+    final nonLearnTabs = <Widget>[
+      _tabs[0],
+      _tabs[1],
+      _tabs[3],
+    ];
+    final nonLearnIndex = _selectedIndex == 3 ? 2 : _selectedIndex;
+    final hideMainHeaderForTab = _selectedIndex == 0;
+
+    return NestedScrollView(
+      headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+        return hideMainHeaderForTab
+            ? []
+            : [
+                SliverAppBar(
+                  collapsedHeight: 65,
+                  expandedHeight: 85,
+                  automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
+                  backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                  iconTheme: Theme.of(context).iconTheme,
+                  actionsIconTheme: Theme.of(context).iconTheme,
+                  centerTitle: true,
+                  floating: true,
+                  pinned: true,
+                  snap: false,
+                  flexibleSpace: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: HomeTheme.darkTheme.colorScheme.primaryContainer,
+                    ),
+                    child: FlexibleSpaceBar(
+                      collapseMode: CollapseMode.parallax,
+                      centerTitle: true,
+                      titlePadding: const EdgeInsets.symmetric(vertical: 15),
+                      title: _tabs[_selectedIndex].title ??
+                          const SizedBox(
+                            height: 15,
+                          ),
+                      background: Container(
+                        color: HomeTheme.darkTheme.colorScheme.primaryContainer,
+                      ),
+                    ),
+                  ),
+                  leading: _leading,
+                  actions: _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions,
+                ),
+              ];
+      },
+      body: Container(
+        padding: const EdgeInsets.only(bottom: 0),
+        // Keep non-Learn tab bodies mounted to avoid gesture-related disposal churn.
+        child: IndexedStack(
+          index: nonLearnIndex,
+          children: nonLearnTabs,
+        ),
+      ),
+    );
+  }
+
   // ── Challenge session panel header ────────────────────────────────────────
 
   Future<void> _confirmCloseChallengeSession() async {
@@ -888,68 +952,7 @@ class _NavigationState extends State<Navigation> {
             },
             initialData: NetworkStatus.Online,
             child: NetworkAwareWidget(
-              onlineChild: Builder(
-                builder: (context) {
-                  final tabBody = Container(
-                    padding: const EdgeInsets.only(bottom: 0),
-                    // Use an IndexedStack so tab bodies remain mounted when not visible.
-                    // This prevents disposing scroll controllers while a user begins
-                    // a gesture then quickly switches tabs.
-                    child: IndexedStack(
-                      index: _selectedIndex,
-                      children: _tabs,
-                    ),
-                  );
-
-                  // Explore already owns its own NestedScrollView. Bypass the
-                  // outer one to avoid nested coordinator recursion.
-                  if (_selectedIndex == 2) {
-                    return tabBody;
-                  }
-
-                  final hideMainHeaderForTab = _selectedIndex == 0;
-                  return NestedScrollView(
-                    headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                      return hideMainHeaderForTab
-                          ? []
-                          : [
-                              SliverAppBar(
-                                collapsedHeight: 65,
-                                expandedHeight: 85,
-                                automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
-                                backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                                iconTheme: Theme.of(context).iconTheme,
-                                actionsIconTheme: Theme.of(context).iconTheme,
-                                centerTitle: true,
-                                floating: true,
-                                pinned: true,
-                                snap: false,
-                                flexibleSpace: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: HomeTheme.darkTheme.colorScheme.primaryContainer,
-                                  ),
-                                  child: FlexibleSpaceBar(
-                                    collapseMode: CollapseMode.parallax,
-                                    centerTitle: true,
-                                    titlePadding: const EdgeInsets.symmetric(vertical: 15),
-                                    title: _tabs[_selectedIndex].title ??
-                                        const SizedBox(
-                                          height: 15,
-                                        ),
-                                    background: Container(
-                                      color: HomeTheme.darkTheme.colorScheme.primaryContainer,
-                                    ),
-                                  ),
-                                ),
-                                leading: _leading,
-                                actions: _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions,
-                              ),
-                            ];
-                    },
-                    body: tabBody,
-                  );
-                },
-              ),
+              onlineChild: _buildOnlineContent(),
               offlineChild: Scaffold(
                 body: Container(
                   decoration: BoxDecoration(
