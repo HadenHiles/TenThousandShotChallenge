@@ -16,6 +16,10 @@ abstract final class AppRoutePaths {
   static const history = '/history';
   static const challengerRoad = '/challenger-road';
 
+  static const profileAccuracy = '/profile/accuracy';
+  static const profileAchievements = '/profile/achievements';
+  static const profileChallengerRoad = '/profile/challenger-road';
+
   /// Parameterised player-profile path: `/player/<id>`.
   static String playerPathFor(String id) => '/player/$id';
 }

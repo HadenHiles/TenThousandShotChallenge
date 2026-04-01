@@ -29,10 +29,12 @@ class Shots extends StatefulWidget {
     super.key,
     required this.sessionPanelController,
     required this.resetSignal,
+    this.onChallengerRoadAvailabilityChanged,
   });
 
   final PanelController sessionPanelController;
   final int resetSignal;
+  final ValueChanged<bool>? onChallengerRoadAvailabilityChanged;
 
   @override
   State<Shots> createState() => _ShotsState();
@@ -156,11 +158,13 @@ class _ShotsState extends State<Shots> {
       _subscriptionLevel = latestLevel;
       _showChallengerRoad = true;
     });
+    widget.onChallengerRoadAvailabilityChanged?.call(true);
   }
 
   void _closeChallengerRoad() {
     if (!_showChallengerRoad) return;
     setState(() => _showChallengerRoad = false);
+    widget.onChallengerRoadAvailabilityChanged?.call(false);
   }
 
   void _syncTargetDate(Iteration iteration) {

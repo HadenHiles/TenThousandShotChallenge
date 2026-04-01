@@ -276,15 +276,15 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         );
         _scrollController.animateTo(
           scrollTo,
-          duration: const Duration(milliseconds: 450),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeInOutCubic,
         );
       } else {
         // Fallback: scroll to the bottom where Level 1 lives.
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 450),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeInOutCubic,
         );
       }
     });
