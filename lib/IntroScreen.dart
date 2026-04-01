@@ -5,6 +5,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -29,7 +30,7 @@ class _IntroScreenState extends State<IntroScreen> {
   DateTime? _targetDate;
   int? _shotsPerDay;
 
-  Future<void> _onIntroEnd(dynamic context) async {
+  Future<void> _onIntroEnd(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setBool('intro_shown', true);
     Provider.of<IntroShownNotifier>(context, listen: false).setIntroShown(true); // Notify listeners immediately

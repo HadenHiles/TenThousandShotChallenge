@@ -111,6 +111,7 @@ double _levelSectionHeight(int nodeCount) => _levelSectionExtraTop + _levelTopPa
 class ChallengerRoadMapView extends StatefulWidget {
   final String userId;
   final ValueChanged<bool>? onMainHeaderVisibilityChanged;
+  final VoidCallback? onCloseTap;
   final bool isPreviewMode;
   final int previewMaxLevel;
   final ChallengerRoadAttempt? previewHeaderAttempt;
@@ -129,6 +130,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     required this.userId,
     this.onChallengeTap,
     this.onMainHeaderVisibilityChanged,
+    this.onCloseTap,
     this.isPreviewMode = false,
     this.previewMaxLevel = 1,
     this.previewHeaderAttempt,
@@ -667,6 +669,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               attempt: widget.isPreviewMode ? (widget.previewHeaderAttempt ?? attempt) : attempt,
               topPadding: _mainHeaderVisible ? 0 : MediaQuery.of(context).padding.top,
               onRestartTap: (!widget.isPreviewMode && attempt != null) ? () => _confirmRestart(context, attempt) : null,
+              onCloseTap: widget.onCloseTap,
             ),
 
             // ── Map (scrollable) or first-time splash ─────────────────
