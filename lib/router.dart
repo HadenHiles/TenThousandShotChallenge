@@ -12,6 +12,9 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/AccuracyScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/AchievementsScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
@@ -41,6 +44,9 @@ abstract final class AppRouteNames {
   static const editProfile = 'me_edit_profile';
   static const editPuckCount = 'me_edit_puck_count';
   static const history = 'me_history';
+  static const profileAccuracy = 'me_accuracy';
+  static const profileAchievements = 'me_achievements';
+  static const profileChallengerRoad = 'me_challenger_road';
   static const challengerRoad = 'train_challenger_road';
 }
 
@@ -194,7 +200,22 @@ List<RouteBase> _buildMeRoutes() {
     GoRoute(
       path: AppRoutePaths.history,
       name: AppRouteNames.history,
-      builder: (context, state) => const History(),
+      builder: (context, state) => History(initialIterationId: state.extra as String?),
+    ),
+    GoRoute(
+      path: AppRoutePaths.profileAccuracy,
+      name: AppRouteNames.profileAccuracy,
+      builder: (context, state) => AccuracyScreen(initialIterationId: state.extra as String?),
+    ),
+    GoRoute(
+      path: AppRoutePaths.profileAchievements,
+      name: AppRouteNames.profileAchievements,
+      builder: (context, state) => const AchievementsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.profileChallengerRoad,
+      name: AppRouteNames.profileChallengerRoad,
+      builder: (context, state) => const ChallengerRoadProfileScreen(),
     ),
   ];
 }

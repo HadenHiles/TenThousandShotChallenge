@@ -124,6 +124,7 @@ class _NavigationState extends State<Navigation> {
   double _bottomNavOffsetPercentage = 0;
   Team? team;
   UserProfile? userProfile;
+  bool _startTabHasChallengerRoadAccess = false;
 
   // Remove the field initializer for _tabs
   late List<NavigationTab> _tabs;
@@ -162,6 +163,13 @@ class _NavigationState extends State<Navigation> {
 
   void _onChallengeSessionChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _onChallengerRoadAvailabilityChanged(bool hasAccess) {
+    if (!mounted || _startTabHasChallengerRoadAccess == hasAccess) return;
+    setState(() {
+      _startTabHasChallengerRoadAccess = hasAccess;
+    });
   }
 
   CommunitySection _normalizeCommunitySection(String? rawSection) {
@@ -267,6 +275,7 @@ class _NavigationState extends State<Navigation> {
           builder: (context, resetSignal, _) => Shots(
             sessionPanelController: sessionPanelController,
             resetSignal: resetSignal,
+            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
           ),
         ),
       ),
@@ -444,7 +453,7 @@ class _NavigationState extends State<Navigation> {
       _tabs[3],
     ];
     final nonLearnIndex = _selectedIndex == 3 ? 2 : _selectedIndex;
-    final hideMainHeaderForTab = _selectedIndex == 0;
+    final hideMainHeaderForTab = _selectedIndex == 0 && _startTabHasChallengerRoadAccess;
 
     return NestedScrollView(
       headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {

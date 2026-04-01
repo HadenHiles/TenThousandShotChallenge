@@ -6,6 +6,7 @@ import 'SwapCooldownTimer.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
+import 'dart:async';
 
 class WeeklyAchievementsWidget extends StatefulWidget {
   final bool showResetCountdown;
@@ -149,11 +150,22 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   User? _user;
+  StreamSubscription<User?>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _user = FirebaseAuth.instance.currentUser;
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+      setState(() => _user = user);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   DateTime _nextMondayEST() {
@@ -752,6 +764,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
             }).toList();
             // Copy statsRaw and replace sessions with filtered list
             final stats = Map<String, dynamic>.from(statsRaw);
+            stats['sessions'] = sessions;
             return StreamBuilder<QuerySnapshot>(
               stream: achievementsRef.snapshots(),
               builder: (context, snapshot) {

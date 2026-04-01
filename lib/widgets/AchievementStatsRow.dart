@@ -15,6 +15,15 @@ class AchievementStatsRow extends StatelessWidget {
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: historyRef.snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+            return const SizedBox(
+              height: 42,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            );
+          }
           final data = snapshot.data?.data() ?? const <String, dynamic>{};
           final totalCompleted = (data['totalAchievementsCompleted'] is num) ? (data['totalAchievementsCompleted'] as num).toInt() : 0;
           final streak = (data['weeklyAllCompletedStreak'] is num) ? (data['weeklyAllCompletedStreak'] as num).toInt() : 0;

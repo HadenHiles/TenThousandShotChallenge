@@ -21,10 +21,11 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
-  const History({super.key, this.sessionPanelController, this.updateSessionShotsCB});
+  const History({super.key, this.sessionPanelController, this.updateSessionShotsCB, this.initialIterationId});
 
   final PanelController? sessionPanelController;
   final Function? updateSessionShotsCB;
+  final String? initialIterationId;
 
   @override
   State<History> createState() => _HistoryState();
@@ -183,7 +184,9 @@ class _HistoryState extends State<History> {
                   builder: (context, snapshot) {
                     List<DropdownMenuItem<String>> items = [];
                     if (snapshot.hasData) {
+                      final ids = <String>{};
                       snapshot.data!.docs.asMap().forEach((i, iDoc) {
+                        ids.add(iDoc.reference.id);
                         items.add(DropdownMenuItem<String>(
                           value: iDoc.reference.id,
                           child: Text(
@@ -199,8 +202,10 @@ class _HistoryState extends State<History> {
                       // Set default if not set
                       if (_selectedIterationId == null && items.isNotEmpty) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final initial = widget.initialIterationId;
+                          final selected = (initial != null && ids.contains(initial)) ? initial : items.last.value;
                           setState(() {
-                            _selectedIterationId = items.last.value;
+                            _selectedIterationId = selected;
                             _loadFirstLastSession(_selectedIterationId);
                           });
                         });
@@ -330,14 +335,7 @@ class _HistoryState extends State<History> {
                           builder: (context, iterationSnapshot) {
                             final iterationCompleted = _isCurrentIterationCompleted(iterationSnapshot);
                             return StreamBuilder<QuerySnapshot>(
-                              stream: Provider.of<FirebaseFirestore>(context, listen: false)
-                                  .collection('iterations')
-                                  .doc(user!.uid)
-                                  .collection('iterations')
-                                  .doc(_selectedIterationId)
-                                  .collection('sessions')
-                                  .orderBy('date', descending: true)
-                                  .snapshots(),
+                              stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('iterations').doc(user!.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
                                   return const Center(child: CircularProgressIndicator());
