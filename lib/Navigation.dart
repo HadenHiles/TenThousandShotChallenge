@@ -124,8 +124,6 @@ class _NavigationState extends State<Navigation> {
   double _bottomNavOffsetPercentage = 0;
   Team? team;
   UserProfile? userProfile;
-  bool _startTabHasChallengerRoadAccess = false;
-  bool _startHeaderVisibleForRoad = true;
 
   // Remove the field initializer for _tabs
   late List<NavigationTab> _tabs;
@@ -164,22 +162,6 @@ class _NavigationState extends State<Navigation> {
 
   void _onChallengeSessionChanged() {
     if (mounted) setState(() {});
-  }
-
-  void _onChallengerRoadAvailabilityChanged(bool hasAccess) {
-    if (!mounted) return;
-    setState(() {
-      _startTabHasChallengerRoadAccess = hasAccess;
-      if (!hasAccess) {
-        // Ensure header is visible when Road mode is not active.
-        _startHeaderVisibleForRoad = true;
-      }
-    });
-  }
-
-  void _onMainHeaderVisibilityChanged(bool visible) {
-    if (!mounted || _startHeaderVisibleForRoad == visible) return;
-    setState(() => _startHeaderVisibleForRoad = visible);
   }
 
   CommunitySection _normalizeCommunitySection(String? rawSection) {
@@ -254,54 +236,6 @@ class _NavigationState extends State<Navigation> {
     return _buildDynamicTeamActions(context);
   }
 
-  Widget _buildAnimatedRoadDrivenMainHeader(BuildContext context) {
-    final isVisible = _startHeaderVisibleForRoad;
-    final actions = _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions;
-    final topInset = MediaQuery.of(context).padding.top;
-    const toolbarHeight = 85.0;
-    final visibleHeight = topInset + toolbarHeight;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 360),
-      curve: Curves.easeInOutCubic,
-      height: isVisible ? visibleHeight : 0,
-      color: isVisible ? HomeTheme.darkTheme.colorScheme.primaryContainer : HomeTheme.darkTheme.colorScheme.primaryContainer.withOpacity(0),
-      child: ClipRect(
-        child: IgnorePointer(
-          ignoring: !isVisible,
-          child: AnimatedOpacity(
-            opacity: isVisible ? 1 : 0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: AnimatedSlide(
-              offset: isVisible ? Offset.zero : const Offset(0, -0.2),
-              duration: const Duration(milliseconds: 360),
-              curve: isVisible ? Curves.easeOutCubic : Curves.easeInCubic,
-              child: AppBar(
-                primary: true,
-                toolbarHeight: toolbarHeight,
-                automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
-                backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                surfaceTintColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                iconTheme: Theme.of(context).iconTheme,
-                actionsIconTheme: Theme.of(context).iconTheme,
-                centerTitle: true,
-                elevation: 0,
-                title: _tabs[_selectedIndex].title ??
-                    const SizedBox(
-                      height: 15,
-                    ),
-                leading: _leading,
-                actions: actions,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   void initState() {
     sessionService.addListener(_onSessionChanged);
@@ -333,8 +267,6 @@ class _NavigationState extends State<Navigation> {
           builder: (context, resetSignal, _) => Shots(
             sessionPanelController: sessionPanelController,
             resetSignal: resetSignal,
-            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
-            onMainHeaderVisibilityChanged: _onMainHeaderVisibilityChanged,
           ),
         ),
       ),
@@ -956,17 +888,30 @@ class _NavigationState extends State<Navigation> {
             },
             initialData: NetworkStatus.Online,
             child: NetworkAwareWidget(
-              onlineChild: NestedScrollView(
-                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  final roadControlsHeader = _selectedIndex == 0 && _startTabHasChallengerRoadAccess;
-                  return [2].contains(_selectedIndex)
-                      ? []
-                      : roadControlsHeader
-                          ? [
-                              SliverToBoxAdapter(
-                                child: _buildAnimatedRoadDrivenMainHeader(context),
-                              ),
-                            ]
+              onlineChild: Builder(
+                builder: (context) {
+                  final tabBody = Container(
+                    padding: const EdgeInsets.only(bottom: 0),
+                    // Use an IndexedStack so tab bodies remain mounted when not visible.
+                    // This prevents disposing scroll controllers while a user begins
+                    // a gesture then quickly switches tabs.
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: _tabs,
+                    ),
+                  );
+
+                  // Explore already owns its own NestedScrollView. Bypass the
+                  // outer one to avoid nested coordinator recursion.
+                  if (_selectedIndex == 2) {
+                    return tabBody;
+                  }
+
+                  final hideMainHeaderForTab = _selectedIndex == 0;
+                  return NestedScrollView(
+                    headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                      return hideMainHeaderForTab
+                          ? []
                           : [
                               SliverAppBar(
                                 collapsedHeight: 65,
@@ -1000,18 +945,10 @@ class _NavigationState extends State<Navigation> {
                                 actions: _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions,
                               ),
                             ];
+                    },
+                    body: tabBody,
+                  );
                 },
-                body: Container(
-                  padding: const EdgeInsets.only(bottom: 0),
-                  // Use an IndexedStack so tab bodies remain mounted when not visible.
-                  // This prevents disposing scroll controllers (e.g. Explore's NestedScrollView)
-                  // while a user begins a gesture then quickly switches tabs, which was
-                  // triggering disposed RenderObject / semantics assertions.
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: _tabs,
-                  ),
-                ),
               ),
               offlineChild: Scaffold(
                 body: Container(

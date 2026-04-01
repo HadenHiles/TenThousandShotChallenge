@@ -29,14 +29,10 @@ class Shots extends StatefulWidget {
     super.key,
     required this.sessionPanelController,
     required this.resetSignal,
-    this.onChallengerRoadAvailabilityChanged,
-    this.onMainHeaderVisibilityChanged,
   });
 
   final PanelController sessionPanelController;
   final int resetSignal;
-  final ValueChanged<bool>? onChallengerRoadAvailabilityChanged;
-  final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
   @override
   State<Shots> createState() => _ShotsState();
@@ -160,15 +156,11 @@ class _ShotsState extends State<Shots> {
       _subscriptionLevel = latestLevel;
       _showChallengerRoad = true;
     });
-    widget.onChallengerRoadAvailabilityChanged?.call(true);
-    widget.onMainHeaderVisibilityChanged?.call(true);
   }
 
   void _closeChallengerRoad() {
     if (!_showChallengerRoad) return;
     setState(() => _showChallengerRoad = false);
-    widget.onChallengerRoadAvailabilityChanged?.call(false);
-    widget.onMainHeaderVisibilityChanged?.call(true);
   }
 
   void _syncTargetDate(Iteration iteration) {
@@ -862,7 +854,6 @@ class _ShotsState extends State<Shots> {
     if (_subscriptionLevel == 'pro') {
       return ChallengerRoadMapView(
         userId: user.uid,
-        onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
         onCloseTap: _closeChallengerRoad,
       );
     }
@@ -870,7 +861,6 @@ class _ShotsState extends State<Shots> {
     return ChallengerRoadTeaserView(
       embedded: true,
       onCloseTap: _closeChallengerRoad,
-      onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
     );
   }
 
