@@ -33,6 +33,7 @@ class ChallengeDetailSheet extends StatelessWidget {
   final bool isPreviewMode;
   final int previewMaxLevel;
   final VoidCallback? onPreviewLevelUnlockAttempted;
+  final bool showStartCta;
 
   const ChallengeDetailSheet._({
     required this.challenge,
@@ -44,6 +45,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     this.isPreviewMode = false,
     this.previewMaxLevel = 1,
     this.onPreviewLevelUnlockAttempted,
+    this.showStartCta = true,
   });
 
   /// Presents the sheet modally. Returns true if a session was completed.
@@ -58,6 +60,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     bool isPreviewMode = false,
     int previewMaxLevel = 1,
     VoidCallback? onPreviewLevelUnlockAttempted,
+    bool showStartCta = true,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -73,6 +76,7 @@ class ChallengeDetailSheet extends StatelessWidget {
         isPreviewMode: isPreviewMode,
         previewMaxLevel: previewMaxLevel,
         onPreviewLevelUnlockAttempted: onPreviewLevelUnlockAttempted,
+        showStartCta: showStartCta,
       ),
     );
   }
@@ -100,8 +104,8 @@ class ChallengeDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.88,
-      minChildSize: 0.5,
+      initialChildSize: 0.5,
+      minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
@@ -220,7 +224,7 @@ class ChallengeDetailSheet extends StatelessWidget {
               ),
 
               // ── Pinned CTA footer ──────────────────────────────────────
-              _buildCTA(context),
+              if (showStartCta) _buildCTA(context),
             ],
           ),
         );
