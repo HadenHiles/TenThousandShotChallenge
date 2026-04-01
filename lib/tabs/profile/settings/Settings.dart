@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
@@ -164,7 +166,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         size: 28,
                       ),
                       onPressed: () {
-                        context.push('/app?tab=profile');
+                        goToAppSection(context, AppSection.me);
                       },
                     ),
                   ),
@@ -342,8 +344,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         onPressed: () async {
                                           // Open the correct subscription management page
                                           final platform = Theme.of(context).platform;
-                                          final url =
-                                              platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
+                                          final url = platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
                                           if (await canLaunchUrlString(url)) {
                                             await launchUrlString(url);
                                           }
@@ -437,7 +438,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             onPressed: (BuildContext context) {
                               // Use push so that edit puck count screen is added on top of the stack and pop returns here.
-                              GoRouter.of(context).push('/edit-puck-count');
+                              context.push(AppRoutePaths.editPuckCount);
                             },
                           ),
                           SettingsTile.switchTile(
@@ -608,7 +609,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             ),
                             onPressed: (BuildContext context) {
                               // Use absolute path matching router.dart definition
-                              context.push('/edit-profile');
+                              context.push(AppRoutePaths.editProfile);
                             },
                           ),
                           SettingsTile(
@@ -675,12 +676,11 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                         onPressed: () {
                                           FirebaseAuth.instance.currentUser!.delete().then((_) {
                                             context.pop();
-                                            context.push("/login");
+                                            context.push(AppRoutePaths.login);
 
                                             SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                                           }).onError((FirebaseAuthException error, stackTrace) {
-                                            String msg =
-                                                error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                            String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
                                             Fluttertoast.showToast(
                                               msg: msg,
                                               toastLength: Toast.LENGTH_LONG,

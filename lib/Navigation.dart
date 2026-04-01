@@ -4,17 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/Community.dart';
 import 'package:tenthousandshotchallenge/tabs/Explore.dart';
 import 'package:tenthousandshotchallenge/tabs/Shots.dart';
 import 'package:tenthousandshotchallenge/tabs/Profile.dart';
-import 'package:tenthousandshotchallenge/tabs/Friends.dart';
-import 'package:tenthousandshotchallenge/tabs/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -65,10 +66,11 @@ final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotif
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  const Navigation({super.key, this.selectedIndex, this.tabId, this.actions});
+  const Navigation({super.key, this.selectedIndex, this.tabId, this.communitySection, this.actions});
 
   final int? selectedIndex;
   final String? tabId;
+  final String? communitySection;
   final List<Widget>? actions;
 
   @override
@@ -77,6 +79,8 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
+  final ValueNotifier<CommunitySection> _communitySectionNotifier = ValueNotifier(CommunitySection.friends);
+
   // Update last_seen in Firestore if not already set to today
   Future<void> updateLastSeenIfNeeded(BuildContext context) async {
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
@@ -141,10 +145,11 @@ class _NavigationState extends State<Navigation> {
           Provider.of<FirebaseFirestore>(context, listen: false),
         ).then((success) {
           if (success == true && mounted) {
+            _communitySectionNotifier.value = CommunitySection.team;
             setState(() {
-              _selectedIndex = 2;
-              _leading = _tabs[2].leading;
-              _actions = widget.actions ?? _tabs[2].actions;
+              _selectedIndex = 1;
+              _leading = _tabs[1].leading;
+              _actions = widget.actions ?? _tabs[1].actions;
             });
           }
         });
@@ -176,9 +181,81 @@ class _NavigationState extends State<Navigation> {
     setState(() => _startHeaderVisibleForRoad = visible);
   }
 
+  CommunitySection _normalizeCommunitySection(String? rawSection) {
+    return rawSection == CommunitySection.team.name ? CommunitySection.team : CommunitySection.friends;
+  }
+
+  void _onCommunitySectionChanged(CommunitySection section) {
+    if (_communitySectionNotifier.value == section) return;
+    _communitySectionNotifier.value = section;
+    if (mounted) {
+      setState(() {
+        _actions = _selectedIndex == 1 ? _buildCommunityActions(context) : _actions;
+      });
+    }
+  }
+
+  Widget _buildCommunityTitle(BuildContext context) {
+    if (_communitySectionNotifier.value == CommunitySection.friends) {
+      return NavigationTitle(title: 'Friends');
+    }
+
+    final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    if (user == null) {
+      return NavigationTitle(title: 'Team');
+    }
+
+    final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userProfileStream,
+      builder: (context, userSnapshot) {
+        if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+          return NavigationTitle(title: 'Team');
+        }
+        final userProfile = userSnapshot.data!.data();
+        final teamId = userProfile != null ? userProfile['team_id'] as String? : null;
+        if (teamId == null || teamId.isEmpty) {
+          return NavigationTitle(title: 'Team');
+        }
+        final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: teamStream,
+          builder: (context, teamSnapshot) {
+            if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
+              return NavigationTitle(title: 'Team');
+            }
+            final teamData = teamSnapshot.data!.data();
+            final teamName = teamData != null && teamData['name'] != null ? teamData['name'] as String : 'Team';
+            return NavigationTitle(title: teamName);
+          },
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildCommunityActions(BuildContext context) {
+    if (_communitySectionNotifier.value == CommunitySection.friends) {
+      return [
+        Container(
+          margin: const EdgeInsets.only(top: 10),
+          child: IconButton(
+            icon: Icon(
+              Icons.add,
+              color: HomeTheme.darkTheme.colorScheme.onPrimary,
+              size: 28,
+            ),
+            onPressed: () => context.push(AppRoutePaths.addFriend),
+          ),
+        ),
+      ];
+    }
+
+    return _buildDynamicTeamActions(context);
+  }
+
   Widget _buildAnimatedRoadDrivenMainHeader(BuildContext context) {
     final isVisible = _startHeaderVisibleForRoad;
-    final actions = _tabs[_selectedIndex].id == 'team' ? _buildDynamicTeamActions(context) : _actions;
+    final actions = _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions;
     final topInset = MediaQuery.of(context).padding.top;
     const toolbarHeight = 85.0;
     final visibleHeight = topInset + toolbarHeight;
@@ -202,7 +279,7 @@ class _NavigationState extends State<Navigation> {
               child: AppBar(
                 primary: true,
                 toolbarHeight: toolbarHeight,
-                automaticallyImplyLeading: [4].contains(_selectedIndex) ? true : false,
+                automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
                 backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                 surfaceTintColor: Colors.transparent,
                 shadowColor: Colors.transparent,
@@ -228,6 +305,7 @@ class _NavigationState extends State<Navigation> {
   void initState() {
     sessionService.addListener(_onSessionChanged);
     activeChallengeSession.addListener(_onChallengeSessionChanged);
+    _communitySectionNotifier.value = _normalizeCommunitySection(widget.communitySection);
     try {
       versionCheck(context);
     } catch (e) {
@@ -242,7 +320,7 @@ class _NavigationState extends State<Navigation> {
 
     _tabs = [
       NavigationTab(
-        id: 'start',
+        id: 'train',
         title: Container(
           height: 40,
           padding: const EdgeInsets.only(top: 6),
@@ -256,93 +334,30 @@ class _NavigationState extends State<Navigation> {
         ),
       ),
       NavigationTab(
-        id: 'friends',
-        title: NavigationTitle(title: "Friends".toUpperCase()),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: Icon(
-                  Icons.add,
-                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                  size: 28,
-                ),
-                onPressed: () {
-                  // Ensure context is from a builder, not from the class field initializer
-                  context.push('/add-friend');
-                },
-              ),
-            ),
-          ),
-        ],
-        body: const Friends(),
-      ),
-      NavigationTab(
-        id: 'team',
+        id: 'community',
         title: Builder(
-          builder: (context) {
-            return Builder(
-              builder: (context) {
-                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-                if (user == null) {
-                  return NavigationTitle(title: "Team");
-                }
-                final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
-                return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                  stream: userProfileStream,
-                  builder: (context, userSnapshot) {
-                    if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                      return NavigationTitle(title: "Team");
-                    }
-                    final userProfile = userSnapshot.data!.data();
-                    final teamId = userProfile != null ? userProfile['team_id'] as String? : null;
-                    if (teamId == null || teamId.isEmpty) {
-                      return NavigationTitle(title: "Team");
-                    }
-                    final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
-                    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                      stream: teamStream,
-                      builder: (context, teamSnapshot) {
-                        if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
-                          return NavigationTitle(title: "Team");
-                        }
-                        final teamData = teamSnapshot.data!.data();
-                        final teamName = teamData != null && teamData['name'] != null ? teamData['name'] as String : "Team";
-                        return NavigationTitle(title: teamName);
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
-        body: const TeamPage(),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: Icon(
-                  Icons.qr_code_2_rounded,
-                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                  size: 28,
-                ),
-                onPressed: () => _handleJoinTeamQRCode(context),
-              ),
-            ),
+          builder: (context) => ValueListenableBuilder<CommunitySection>(
+            valueListenable: _communitySectionNotifier,
+            builder: (context, _, __) => _buildCommunityTitle(context),
           ),
-        ],
+        ),
+        actions: const [],
+        body: ValueListenableBuilder<CommunitySection>(
+          valueListenable: _communitySectionNotifier,
+          builder: (context, section, _) => Community(
+            selectedSection: section,
+            onSectionChanged: _onCommunitySectionChanged,
+          ),
+        ),
       ),
       NavigationTab(
-        id: 'explore',
+        id: 'learn',
         title: null,
         body: const Explore(),
       ),
       NavigationTab(
-        id: 'profile',
-        title: NavigationTitle(title: "Profile".toUpperCase()),
+        id: 'me',
+        title: NavigationTitle(title: "Me".toUpperCase()),
         leading: Container(
           margin: const EdgeInsets.only(top: 10),
           child: Builder(
@@ -370,7 +385,7 @@ class _NavigationState extends State<Navigation> {
                   size: 28,
                 ),
                 onPressed: () {
-                  context.push('/settings');
+                  context.push(AppRoutePaths.settings);
                 },
               ),
             ),
@@ -382,7 +397,8 @@ class _NavigationState extends State<Navigation> {
 
     int initialIndex = 0;
     if (widget.tabId != null) {
-      final idx = _tabs.indexWhere((tab) => tab.id == widget.tabId);
+      final normalized = _normalizeTabId(widget.tabId);
+      final idx = _tabs.indexWhere((tab) => tab.id == normalized);
       if (idx != -1) initialIndex = idx;
     } else if (widget.selectedIndex != null) {
       initialIndex = widget.selectedIndex!;
@@ -400,29 +416,66 @@ class _NavigationState extends State<Navigation> {
   }
 
   @override
+  void didUpdateWidget(covariant Navigation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.communitySection != widget.communitySection) {
+      final nextSection = _normalizeCommunitySection(widget.communitySection);
+      _communitySectionNotifier.value = nextSection;
+      if (_selectedIndex == 1) {
+        setState(() {
+          _actions = _buildCommunityActions(context);
+        });
+      }
+    }
+  }
+
+  @override
   void dispose() {
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
+    _communitySectionNotifier.dispose();
     super.dispose();
   }
 
   // Helper to select a tab by id
   void selectTabById(String id) {
-    final index = _tabs.indexWhere((tab) => tab.id == id);
+    final normalized = _normalizeTabId(id);
+    final index = _tabs.indexWhere((tab) => tab.id == normalized);
     if (index != -1) {
       _onItemTapped(index);
     }
   }
 
+  String _normalizeTabId(String? rawId) {
+    switch (rawId) {
+      case 'start':
+      case 'train':
+        return 'train';
+      case 'friends':
+      case 'team':
+      case 'community':
+        return 'community';
+      case 'explore':
+      case 'learn':
+        return 'learn';
+      case 'profile':
+      case 'me':
+        return 'me';
+      default:
+        return 'train';
+    }
+  }
+
   void _onItemTapped(int index) async {
-    if (_tabs[index].id == 'team') {
+    if (_tabs[index].id == 'community') {
       // Legacy manual load retained for other side-effects; actions now stream-driven.
       _loadTeam();
     }
     setState(() {
       _selectedIndex = index;
       _leading = _tabs[index].leading;
-      _actions = widget.actions ?? _tabs[index].actions;
+      _actions = widget.actions ?? (_tabs[index].id == 'community' ? _buildCommunityActions(context) : _tabs[index].actions);
     });
     if (sessionPanelController.isAttached) {
       if (!sessionPanelController.isPanelClosed) {
@@ -700,7 +753,7 @@ class _NavigationState extends State<Navigation> {
                               color: HomeTheme.darkTheme.colorScheme.onPrimary,
                               size: 28,
                             ),
-                            onPressed: () => context.push('/edit-team'),
+                            onPressed: () => context.push(AppRoutePaths.editTeam),
                           ),
                         ),
                       Container(
@@ -894,7 +947,7 @@ class _NavigationState extends State<Navigation> {
               onlineChild: NestedScrollView(
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
                   final roadControlsHeader = _selectedIndex == 0 && _startTabHasChallengerRoadAccess;
-                  return [3].contains(_selectedIndex)
+                  return [2].contains(_selectedIndex)
                       ? []
                       : roadControlsHeader
                           ? [
@@ -906,7 +959,7 @@ class _NavigationState extends State<Navigation> {
                               SliverAppBar(
                                 collapsedHeight: 65,
                                 expandedHeight: 85,
-                                automaticallyImplyLeading: [4].contains(_selectedIndex) ? true : false,
+                                automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
                                 backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                                 iconTheme: Theme.of(context).iconTheme,
                                 actionsIconTheme: Theme.of(context).iconTheme,
@@ -932,7 +985,7 @@ class _NavigationState extends State<Navigation> {
                                   ),
                                 ),
                                 leading: _leading,
-                                actions: _tabs[_selectedIndex].id == 'team' ? _buildDynamicTeamActions(context) : _actions,
+                                actions: _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions,
                               ),
                             ];
                 },
@@ -995,23 +1048,19 @@ class _NavigationState extends State<Navigation> {
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(
                 icon: Icon(Icons.play_arrow_rounded),
-                label: 'Start',
+                label: 'Train',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.people_rounded),
-                label: 'Friends',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.emoji_events_rounded),
-                label: 'Team',
+                icon: Icon(Icons.groups_rounded),
+                label: 'Community',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.dashboard_rounded),
-                label: 'Explore',
+                label: 'Learn',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
-                label: 'Profile',
+                label: 'Me',
               ),
             ],
             currentIndex: _selectedIndex,

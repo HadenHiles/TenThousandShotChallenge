@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -355,7 +356,7 @@ class _FriendsState extends State<Friends> {
                                           child: IconButton(
                                             color: Theme.of(context).cardTheme.color,
                                             onPressed: () {
-                                              context.push('/add-friend');
+                                              context.push(AppRoutePaths.addFriend);
                                             },
                                             iconSize: 40,
                                             icon: Icon(
@@ -494,7 +495,7 @@ class _FriendsState extends State<Friends> {
 
         final ref = friend.reference;
         if (ref != null) {
-          context.push('/player/${ref.id}');
+          context.push(AppRoutePaths.playerPathFor(ref.id));
         }
       },
       child: Container(
@@ -774,7 +775,7 @@ class _FriendsState extends State<Friends> {
                       onTap: () {
                         Feedback.forTap(context);
                         if (friend.reference != null) {
-                          context.push('/player/${friend.reference!.id}');
+                          context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
                         }
                       },
                       child: UserAvatar(

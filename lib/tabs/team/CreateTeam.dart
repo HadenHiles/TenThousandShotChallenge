@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
@@ -109,7 +109,11 @@ class _CreateTeamState extends State<CreateTeam> {
         });
 
         // Navigate to team tab using canonical /app route with tab query param
-        context.go('/app?tab=team');
+        goToAppSection(
+          context,
+          AppSection.community,
+          communitySection: CommunitySection.team,
+        );
       }).onError((error, stackTrace) {
         Fluttertoast.showToast(
           msg: 'There was an error creating team "${team!.name}" :('.toLowerCase(),

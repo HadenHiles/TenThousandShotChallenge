@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -244,15 +245,7 @@ class _AddFriendState extends State<AddFriend> {
 
                                       List<DocumentSnapshot> users = [];
                                       if (value.isNotEmpty) {
-                                        await FirebaseFirestore.instance
-                                            .collection('users')
-                                            .orderBy('display_name_lowercase', descending: false)
-                                            .orderBy('display_name', descending: false)
-                                            .where('public', isEqualTo: true)
-                                            .startAt([value.toLowerCase()])
-                                            .endAt(['${value.toLowerCase()}\uf8ff'])
-                                            .get()
-                                            .then((uSnaps) async {
+                                        await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
                                               for (var uDoc in uSnaps.docs) {
                                                 if (uDoc.reference.id != user!.uid) {
                                                   users.add(uDoc);
@@ -260,14 +253,7 @@ class _AddFriendState extends State<AddFriend> {
                                               }
                                             });
                                         if (users.isEmpty) {
-                                          await FirebaseFirestore.instance
-                                              .collection('users')
-                                              .orderBy('email', descending: false)
-                                              .where('public', isEqualTo: true)
-                                              .startAt([value.toLowerCase()])
-                                              .endAt(['${value.toLowerCase()}\uf8ff'])
-                                              .get()
-                                              .then((uSnaps) async {
+                                          await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
                                                 for (var uDoc in uSnaps.docs) {
                                                   if (uDoc.reference.id != user!.uid) {
                                                     users.add(uDoc);
@@ -351,7 +337,11 @@ class _AddFriendState extends State<AddFriend> {
                                           ),
                                         );
 
-                                        context.go('/app?tab=friends');
+                                        goToAppSection(
+                                          context,
+                                          AppSection.community,
+                                          communitySection: CommunitySection.friends,
+                                        );
                                       },
                                     ).onError((error, stackTrace) {
                                       ScaffoldMessenger.of(context).showSnackBar(

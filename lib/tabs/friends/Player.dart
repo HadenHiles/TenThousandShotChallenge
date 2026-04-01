@@ -9,6 +9,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -284,7 +285,11 @@ class _PlayerState extends State<Player> {
                                         "Continue",
                                         () {
                                           // Use go_router for navigation instead of pushReplacement
-                                          context.go('/app?tab=friends');
+                                          goToAppSection(
+                                            context,
+                                            AppSection.community,
+                                            communitySection: CommunitySection.friends,
+                                          );
 
                                           removePlayerFromFriends(
                                             _userPlayer!.reference!.id,
@@ -757,16 +762,7 @@ class _PlayerState extends State<Player> {
                         ),
                         Expanded(
                           child: StreamBuilder<QuerySnapshot>(
-                            stream: _selectedIterationId == null
-                                ? null
-                                : FirebaseFirestore.instance
-                                    .collection('iterations')
-                                    .doc(widget.uid)
-                                    .collection('iterations')
-                                    .doc(_selectedIterationId)
-                                    .collection('sessions')
-                                    .orderBy('date', descending: true)
-                                    .snapshots(),
+                            stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) {
                                 return const Center(child: CircularProgressIndicator());

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -62,7 +63,7 @@ class _ShotsState extends State<Shots> {
     if (user == null) {
       _activeIterationStream = const Stream.empty();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) GoRouter.of(context).go('/login');
+        if (mounted) context.go(AppRoutePaths.login);
       });
     } else {
       _activeIterationStream = firestore.collection('iterations').doc(user.uid).collection('iterations').where('complete', isEqualTo: false).snapshots();
