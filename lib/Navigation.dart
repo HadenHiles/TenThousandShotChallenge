@@ -524,7 +524,7 @@ class _NavigationState extends State<Navigation> {
             child: const Text('Keep session'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('End session', style: TextStyle(color: Colors.white)),
           ),
