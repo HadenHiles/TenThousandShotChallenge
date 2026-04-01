@@ -37,80 +37,66 @@ const List<_BadgeDef> _kBadges = [
   ),
   _BadgeDef(
     id: 'cr_attempts_10',
-    name: 'Relentless',
+    name: 'Road Grinder',
     description: '10 Challenger Road attempts',
-    icon: Icons.repeat_on_rounded,
+    icon: Icons.military_tech_rounded,
     color: Color(0xFF7E57C2),
   ),
   _BadgeDef(
-    id: 'cr_attempts_25',
-    name: 'Iron Will',
-    description: '25 Challenger Road attempts',
-    icon: Icons.military_tech_rounded,
+    id: 'cr_level1_all_clear',
+    name: 'Level 1 Clear',
+    description: 'Pass every active Level 1 challenge at least once',
+    icon: Icons.route_rounded,
     color: Color(0xFF26A69A),
   ),
   _BadgeDef(
-    id: 'cr_attempts_50',
-    name: 'Road Warrior',
-    description: '50 Challenger Road attempts',
+    id: 'cr_wrist_l1_x3',
+    name: 'Wrist Work',
+    description: 'Pass any wrist-shot Level 1 challenge 3 times',
+    icon: Icons.sports_hockey_rounded,
+    color: Color(0xFF4FC3F7),
+  ),
+  _BadgeDef(
+    id: 'cr_snap_l1_x3',
+    name: 'Snap Skills',
+    description: 'Pass any snap-shot Level 1 challenge 3 times',
+    icon: Icons.bolt_rounded,
+    color: Color(0xFF64B5F6),
+  ),
+  _BadgeDef(
+    id: 'cr_backhand_l1_x3',
+    name: 'Backhand Builder',
+    description: 'Pass any backhand Level 1 challenge 3 times',
+    icon: Icons.undo_rounded,
+    color: Color(0xFF9575CD),
+  ),
+  _BadgeDef(
+    id: 'cr_slap_l1_x3',
+    name: 'Slap Specialist',
+    description: 'Pass any slap-shot Level 1 challenge 3 times',
+    icon: Icons.flash_on_rounded,
+    color: Color(0xFFFFB74D),
+  ),
+  _BadgeDef(
+    id: 'cr_wrist_warmup_l1_x3',
+    name: 'Warmup Wizard',
+    description: 'Pass "Wrist Shot Warmup" Level 1 three times',
+    icon: Icons.adjust_rounded,
+    color: Color(0xFF81C784),
+  ),
+  _BadgeDef(
+    id: 'cr_outperform_plus2_x5',
+    name: 'Clutch Finisher',
+    description: 'Outperform challenge target by +2 hits, 5 times',
     icon: Icons.emoji_events_rounded,
-    color: Color(0xFFFFD700),
+    color: Color(0xFFFF8A65),
   ),
   _BadgeDef(
     id: 'cr_10k_x1',
     name: 'First 10,000',
     description: 'Hit 10,000 Challenger Road shots',
-    icon: Icons.my_location_rounded,
+    icon: Icons.workspace_premium_rounded,
     color: Color(0xFFFF7043),
-  ),
-  _BadgeDef(
-    id: 'cr_10k_x3',
-    name: 'Triple Threat',
-    description: 'Hit 10,000 shots 3× on the Challenger Road',
-    icon: Icons.star_rounded,
-    color: Color(0xFFFFCA28),
-  ),
-  _BadgeDef(
-    id: 'cr_10k_x10',
-    name: 'Shot Machine',
-    description: 'Hit 10,000 shots 10× on the Challenger Road',
-    icon: Icons.bolt_rounded,
-    color: Color(0xFFEF5350),
-  ),
-  _BadgeDef(
-    id: 'cr_level_5',
-    name: 'Level 5 Reached',
-    description: 'Complete Level 5 in any attempt',
-    icon: Icons.looks_5_rounded,
-    color: Color(0xFF26C6DA),
-  ),
-  _BadgeDef(
-    id: 'cr_level_10',
-    name: 'Double Digits',
-    description: 'Complete Level 10 in any attempt',
-    icon: Icons.filter_none_rounded,
-    color: Color(0xFFAB47BC),
-  ),
-  _BadgeDef(
-    id: 'cr_perfect_level',
-    name: 'Flawless',
-    description: 'Complete an entire level with no retries',
-    icon: Icons.verified_rounded,
-    color: Color(0xFF42A5F5),
-  ),
-  _BadgeDef(
-    id: 'cr_comeback',
-    name: 'The Comeback',
-    description: 'Start at Level 1 and complete Level 5+',
-    icon: Icons.trending_up_rounded,
-    color: Color(0xFFFF8F00),
-  ),
-  _BadgeDef(
-    id: 'cr_all_challenges_v1',
-    name: 'Road Complete',
-    description: 'Complete all available Challenger Road challenges',
-    icon: Icons.route_rounded,
-    color: Color(0xFFFFD700),
   ),
 ];
 
@@ -173,7 +159,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _BadgeScrollRow(earnedBadges: summary.badges, summary: summary),
+          _BadgeWrapGrid(earnedBadges: summary.badges, summary: summary),
           const SizedBox(height: 12),
         ],
       ),
@@ -406,26 +392,31 @@ class _StatsRow extends StatelessWidget {
 
 // ── Badge scroll row ────────────────────────────────────────────────────────
 
-class _BadgeScrollRow extends StatelessWidget {
-  const _BadgeScrollRow({required this.earnedBadges, required this.summary});
+class _BadgeWrapGrid extends StatelessWidget {
+  const _BadgeWrapGrid({required this.earnedBadges, required this.summary});
   final List<String> earnedBadges;
   final ChallengerRoadUserSummary summary;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 110,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        itemCount: _kBadges.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final def = _kBadges[index];
-          final earned = earnedBadges.contains(def.id);
-          return _BadgeChip(def: def, earned: earned, summary: summary);
-        },
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _kBadges.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.95,
       ),
+      itemBuilder: (context, index) {
+        final def = _kBadges[index];
+        final earned = earnedBadges.contains(def.id);
+        return Align(
+          alignment: Alignment.topCenter,
+          child: _BadgeChip(def: def, earned: earned, summary: summary),
+        );
+      },
     );
   }
 }
@@ -444,26 +435,22 @@ class _BadgeChip extends StatelessWidget {
         return 'Start 3 Challenger Road attempts.';
       case 'cr_attempts_10':
         return 'Start 10 Challenger Road attempts.';
-      case 'cr_attempts_25':
-        return 'Start 25 Challenger Road attempts.';
-      case 'cr_attempts_50':
-        return 'Start 50 Challenger Road attempts.';
+      case 'cr_level1_all_clear':
+        return 'Pass every active Level 1 challenge at least once.';
+      case 'cr_wrist_l1_x3':
+        return 'Pass wrist-shot Level 1 challenges 3 times total.';
+      case 'cr_snap_l1_x3':
+        return 'Pass snap-shot Level 1 challenges 3 times total.';
+      case 'cr_backhand_l1_x3':
+        return 'Pass backhand Level 1 challenges 3 times total.';
+      case 'cr_slap_l1_x3':
+        return 'Pass slap-shot Level 1 challenges 3 times total.';
+      case 'cr_wrist_warmup_l1_x3':
+        return 'Complete Wrist Shot Warmup (Level 1) three times.';
+      case 'cr_outperform_plus2_x5':
+        return 'Outperform any challenge by 2+ target hits, five times.';
       case 'cr_10k_x1':
         return 'Reach 10,000 total Challenger Road shots.';
-      case 'cr_10k_x3':
-        return 'Reach 30,000 total Challenger Road shots (10,000 x 3).';
-      case 'cr_10k_x10':
-        return 'Reach 100,000 total Challenger Road shots (10,000 x 10).';
-      case 'cr_level_5':
-        return 'Complete Level 5 in any Challenger Road attempt.';
-      case 'cr_level_10':
-        return 'Complete Level 10 in any Challenger Road attempt.';
-      case 'cr_perfect_level':
-        return 'Complete one full level with zero retries.';
-      case 'cr_comeback':
-        return 'Start from Level 1 and complete Level 5 or higher in that attempt.';
-      case 'cr_all_challenges_v1':
-        return 'Complete all currently available Challenger Road challenges.';
       default:
         return def.description;
     }
@@ -605,7 +592,7 @@ class _BadgeChip extends StatelessWidget {
         child: Opacity(
           opacity: earned ? 1.0 : 0.45,
           child: SizedBox(
-            width: 72,
+            width: 104,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -638,11 +625,11 @@ class _BadgeChip extends StatelessWidget {
                 Text(
                   def.name,
                   textAlign: TextAlign.center,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'NovecentoSans',
-                    fontSize: 10,
+                    fontSize: 11,
                     color: earned ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                     height: 1.2,
                   ),

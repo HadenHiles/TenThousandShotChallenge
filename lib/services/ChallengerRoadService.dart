@@ -593,6 +593,75 @@ class ChallengerRoadService {
   // Internal: badge helpers
   // ---------------------------------------------------------------------------
 
+  Future<_RoadBadgeStats> _loadRoadBadgeStats(String userId) async {
+    final challengeSnap = await _challengesRef.where('active', isEqualTo: true).get();
+    final challenges = challengeSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).toList();
+    final challengeById = <String, ChallengerRoadChallenge>{
+      for (final challenge in challenges)
+        if (challenge.id != null) challenge.id!: challenge,
+    };
+
+    final levelOneChallenges = await getChallengesForLevel(1);
+    final levelOneChallengeIds = levelOneChallenges.map((c) => c.id).whereType<String>().toSet();
+
+    final levelOnePassesByChallenge = <String, int>{};
+    var outperformPlusTwoPasses = 0;
+
+    final attemptsSnap = await _attemptsRef(userId).get();
+    for (final attemptDoc in attemptsSnap.docs) {
+      final attemptId = attemptDoc.id;
+
+      final progressSnap = await _progressRef(userId, attemptId).get();
+      for (final progressDoc in progressSnap.docs) {
+        final progress = ChallengeProgressEntry.fromSnapshot(progressDoc);
+        final levelOnePasses = progress.levelHistory.where((h) => h.level == 1 && h.passed).length;
+        if (levelOnePasses > 0) {
+          levelOnePassesByChallenge[progress.challengeId] = (levelOnePassesByChallenge[progress.challengeId] ?? 0) + levelOnePasses;
+        }
+      }
+
+      final passedSessionsSnap = await _sessionsRef(userId, attemptId).where('passed', isEqualTo: true).get();
+      for (final sessionDoc in passedSessionsSnap.docs) {
+        final session = ChallengeSession.fromSnapshot(sessionDoc);
+        if (session.shotsMade >= (session.shotsToPass + 2)) {
+          outperformPlusTwoPasses++;
+        }
+      }
+    }
+
+    int levelOnePassesForShotType(String shotType) {
+      var total = 0;
+      levelOnePassesByChallenge.forEach((challengeId, passes) {
+        if ((challengeById[challengeId]?.shotType ?? '') == shotType) {
+          total += passes;
+        }
+      });
+      return total;
+    }
+
+    int passesForChallengeNameContaining(String query) {
+      final normalized = query.toLowerCase();
+      final matchingIds = challengeById.values.where((c) => c.name.toLowerCase().contains(normalized)).map((c) => c.id).whereType<String>();
+      var total = 0;
+      for (final id in matchingIds) {
+        total += levelOnePassesByChallenge[id] ?? 0;
+      }
+      return total;
+    }
+
+    final levelOneAllClear = levelOneChallengeIds.isNotEmpty && levelOneChallengeIds.every((id) => (levelOnePassesByChallenge[id] ?? 0) > 0);
+
+    return _RoadBadgeStats(
+      levelOneWristPasses: levelOnePassesForShotType('wrist'),
+      levelOneSnapPasses: levelOnePassesForShotType('snap'),
+      levelOneBackhandPasses: levelOnePassesForShotType('backhand'),
+      levelOneSlapPasses: levelOnePassesForShotType('slap'),
+      wristWarmupLevelOnePasses: passesForChallengeNameContaining('wrist shot warmup'),
+      outperformPlusTwoPasses: outperformPlusTwoPasses,
+      levelOneAllClear: levelOneAllClear,
+    );
+  }
+
   /// Returns true if every active challenge at [level] was completed on the
   /// first try within [attemptId] — i.e., there is exactly one
   /// [ChallengeLevelHistoryEntry] at this level in each progress entry.
@@ -631,6 +700,7 @@ class ChallengerRoadService {
   }) async {
     final earned = List<String>.from(summary.badges);
     final newBadges = <String>[];
+    final stats = await _loadRoadBadgeStats(userId);
 
     void maybeAward(String badgeId) {
       if (!earned.contains(badgeId)) {
@@ -644,26 +714,46 @@ class ChallengerRoadService {
       (1, 'cr_attempts_1'),
       (3, 'cr_attempts_3'),
       (10, 'cr_attempts_10'),
-      (25, 'cr_attempts_25'),
-      (50, 'cr_attempts_50'),
     ];
     for (final (threshold, id) in attemptTiers) {
       if (summary.totalAttempts >= threshold) maybeAward(id);
     }
 
-    // 10K milestone badges (based on cumulative resets across all attempts).
-    // We approximate from allTimeTotalChallengerRoadShots / 10000.
+    // 10K milestone badge (first milestone).
     final milestoneCount = summary.allTimeTotalChallengerRoadShots ~/ 10000;
     if (milestoneCount >= 1) maybeAward('cr_10k_x1');
-    if (milestoneCount >= 3) maybeAward('cr_10k_x3');
-    if (milestoneCount >= 10) maybeAward('cr_10k_x10');
 
-    // All-time best level badges.
-    if (summary.allTimeBestLevel >= 5) maybeAward('cr_level_5');
-    if (summary.allTimeBestLevel >= 10) maybeAward('cr_level_10');
+    // Challenge / shot-type progression badges.
+    if (stats.levelOneAllClear) maybeAward('cr_level1_all_clear');
+    if (stats.levelOneWristPasses >= 3) maybeAward('cr_wrist_l1_x3');
+    if (stats.levelOneSnapPasses >= 3) maybeAward('cr_snap_l1_x3');
+    if (stats.levelOneBackhandPasses >= 3) maybeAward('cr_backhand_l1_x3');
+    if (stats.levelOneSlapPasses >= 3) maybeAward('cr_slap_l1_x3');
+    if (stats.wristWarmupLevelOnePasses >= 3) maybeAward('cr_wrist_warmup_l1_x3');
+    if (stats.outperformPlusTwoPasses >= 5) maybeAward('cr_outperform_plus2_x5');
 
     if (newBadges.isEmpty) return;
 
     await updateUserSummary(userId, {'badges': earned});
   }
+}
+
+class _RoadBadgeStats {
+  final int levelOneWristPasses;
+  final int levelOneSnapPasses;
+  final int levelOneBackhandPasses;
+  final int levelOneSlapPasses;
+  final int wristWarmupLevelOnePasses;
+  final int outperformPlusTwoPasses;
+  final bool levelOneAllClear;
+
+  const _RoadBadgeStats({
+    required this.levelOneWristPasses,
+    required this.levelOneSnapPasses,
+    required this.levelOneBackhandPasses,
+    required this.levelOneSlapPasses,
+    required this.wristWarmupLevelOnePasses,
+    required this.outperformPlusTwoPasses,
+    required this.levelOneAllClear,
+  });
 }
