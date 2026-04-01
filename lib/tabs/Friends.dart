@@ -24,6 +24,8 @@ class Friends extends StatefulWidget {
 class _FriendsState extends State<Friends> {
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
+  static const double _inviteTabSwipeTriggerDistance = 56;
+
   bool _isLoadingFriends = false;
   List<DocumentSnapshot> _friends = [];
   final TextEditingController _friendSearchController = TextEditingController();
@@ -32,6 +34,9 @@ class _FriendsState extends State<Friends> {
   bool _isLoadingInvites = false;
   List<DocumentSnapshot> _invites = [];
   List<Invite> _inviteDates = [];
+  int? _inviteSwipePointer;
+  Offset? _inviteSwipeStartPosition;
+  bool _inviteSwipeTriggered = false;
 
   @override
   void initState() {
@@ -138,6 +143,38 @@ class _FriendsState extends State<Friends> {
     }
   }
 
+  void _resetInviteSwipeTracking() {
+    _inviteSwipePointer = null;
+    _inviteSwipeStartPosition = null;
+    _inviteSwipeTriggered = false;
+  }
+
+  void _handleInviteSwipePointerDown(PointerDownEvent event) {
+    _inviteSwipePointer = event.pointer;
+    _inviteSwipeStartPosition = event.position;
+    _inviteSwipeTriggered = false;
+  }
+
+  void _handleInviteSwipePointerMove(PointerMoveEvent event, TabController tabController) {
+    if (_inviteSwipeTriggered || _inviteSwipePointer != event.pointer || _inviteSwipeStartPosition == null) {
+      return;
+    }
+
+    if (tabController.index != 1 || tabController.indexIsChanging) {
+      return;
+    }
+
+    final Offset delta = event.position - _inviteSwipeStartPosition!;
+    if (delta.dx <= 0 || delta.dx.abs() <= delta.dy.abs()) {
+      return;
+    }
+
+    if (delta.dx >= _inviteTabSwipeTriggerDistance) {
+      _inviteSwipeTriggered = true;
+      tabController.animateTo(0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // If auth state not yet available, show a lightweight loader to avoid null assertions.
@@ -210,14 +247,25 @@ class _FriendsState extends State<Friends> {
                         builder: (context, child) {
                           if (tabController.index == 1 && _invites.isNotEmpty) {
                             return Container(
-                              alignment: Alignment.centerRight,
-                              margin: const EdgeInsets.only(right: 16, top: 8, bottom: 4),
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(16, 25, 16, 8),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  backgroundColor: Color.alphaBlend(
+                                    Colors.white.withOpacity(0.06),
+                                    HomeTheme.darkTheme.colorScheme.primaryContainer,
+                                  ),
+                                  foregroundColor: const Color(0xFFF1EEE6),
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
+                                  surfaceTintColor: Colors.transparent,
+                                  minimumSize: const Size.fromHeight(48),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  side: BorderSide(
+                                    color: Colors.white.withOpacity(0.05),
+                                    width: 1,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
                                 onPressed: () async {
                                   for (int i = 0; i < _invites.length; i++) {
@@ -247,7 +295,11 @@ class _FriendsState extends State<Friends> {
                                 },
                                 child: const Text(
                                   "Accept All",
-                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16),
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 16,
+                                    color: Color(0xFFF1EEE6),
+                                  ),
                                 ),
                               ),
                             );
@@ -271,17 +323,20 @@ class _FriendsState extends State<Friends> {
                               child: TextField(
                                 controller: _friendSearchController,
                                 onChanged: (val) => setState(() => _friendSearchQuery = val.trim()),
-                                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                                style: const TextStyle(color: Color(0xFFF1EEE6)),
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                   filled: true,
-                                  fillColor: Theme.of(context).cardTheme.color?.withOpacity(0.6),
+                                  fillColor: Color.alphaBlend(
+                                    Colors.white.withOpacity(0.06),
+                                    HomeTheme.darkTheme.colorScheme.primaryContainer,
+                                  ),
                                   hintText: 'Search friends',
-                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.6)),
-                                  prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)),
+                                  hintStyle: const TextStyle(color: Color(0xFFF1EEE6)),
+                                  prefixIcon: Icon(Icons.search, color: const Color(0xFFF1EEE6).withOpacity(0.8)),
                                   suffixIcon: _friendSearchQuery.isNotEmpty
                                       ? IconButton(
-                                          icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)),
+                                          icon: Icon(Icons.clear, color: const Color(0xFFF1EEE6).withOpacity(0.8)),
                                           onPressed: () {
                                             _friendSearchController.clear();
                                             setState(() => _friendSearchQuery = '');
@@ -290,7 +345,24 @@ class _FriendsState extends State<Friends> {
                                       : null,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide.none,
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.05),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.05),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.12),
+                                      width: 1,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -622,266 +694,279 @@ class _FriendsState extends State<Friends> {
   Widget _buildFriendInviteItem(UserProfile friend, Invite invite, bool bg) {
     User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
-    return Dismissible(
-      key: UniqueKey(),
-      onDismissed: (direction) async {
-        final currentUser = user;
-        if (currentUser == null || friend.reference == null) return;
-        final ref = friend.reference;
-        if (ref == null) return;
-        await deleteInvite(
-          ref.id,
-          currentUser.uid,
-          Provider.of<FirebaseAuth>(context, listen: false),
-          Provider.of<FirebaseFirestore>(context, listen: false),
-        ).then((deleted) {
-          if (!mounted) return;
-          if (!deleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).cardTheme.color,
-                content: Text(
-                  "The invite couldn't be deleted",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-                duration: const Duration(milliseconds: 1500),
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).cardTheme.color,
-                content: Text(
-                  "Invite from ${friend.displayName} deleted",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-                duration: const Duration(milliseconds: 1500),
-              ),
-            );
-          }
-          if (!mounted) return;
-          _invites.clear();
-          _loadInvites();
-        });
-      },
-      confirmDismiss: (DismissDirection direction) async {
-        return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                "Delete Invite from ${friend.displayName}?".toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 24,
-                ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Are you sure you want to delete this friend's invite?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    "Cancel".toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(
-                    "Delete".toUpperCase(),
-                    style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-      background: Container(
-        color: Theme.of(context).primaryColor,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(left: 15),
-              child: Text(
-                "Delete".toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(right: 15),
-              child: const Icon(
-                Icons.delete,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                  width: 60,
-                  height: 60,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(60),
-                  ),
-                  child: SizedBox(
-                    height: 60,
-                    child: GestureDetector(
-                      onTap: () {
-                        Feedback.forTap(context);
-                        if (friend.reference != null) {
-                          context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
-                        }
-                      },
-                      child: UserAvatar(
-                        user: friend,
-                        backgroundColor: Colors.transparent,
+    return Builder(
+      builder: (tabContext) {
+        final TabController tabController = DefaultTabController.of(tabContext);
+
+        return Listener(
+          onPointerDown: _handleInviteSwipePointerDown,
+          onPointerMove: (event) => _handleInviteSwipePointerMove(event, tabController),
+          onPointerUp: (_) => _resetInviteSwipeTracking(),
+          onPointerCancel: (_) => _resetInviteSwipeTracking(),
+          child: Dismissible(
+            key: UniqueKey(),
+            direction: DismissDirection.endToStart,
+            onDismissed: (direction) async {
+              final currentUser = user;
+              if (currentUser == null || friend.reference == null) return;
+              final ref = friend.reference;
+              if (ref == null) return;
+              await deleteInvite(
+                ref.id,
+                currentUser.uid,
+                Provider.of<FirebaseAuth>(context, listen: false),
+                Provider.of<FirebaseFirestore>(context, listen: false),
+              ).then((deleted) {
+                if (!mounted) return;
+                if (!deleted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Theme.of(context).cardTheme.color,
+                      content: Text(
+                        "The invite couldn't be deleted",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
                       ),
+                      duration: const Duration(milliseconds: 1500),
                     ),
-                  ),
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    friend.displayName != null
-                        ? SizedBox(
-                            width: MediaQuery.of(context).size.width - 255,
-                            child: AutoSizeText(
-                              friend.displayName!,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyLarge!.color,
-                              ),
-                            ),
-                          )
-                        : Container(),
-                  ],
-                ),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                SizedBox(
-                  width: 40,
-                  child: AutoSizeText(
-                    printDuration(DateTime.now().difference(invite.date!), false),
-                    maxLines: 1,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextButton(
-                    onPressed: () {
-                      if (friend.reference == null) return;
-                      acceptInvite(
-                        Invite(friend.reference!.id, DateTime.now()),
-                        Provider.of<FirebaseAuth>(context, listen: false),
-                        Provider.of<FirebaseFirestore>(context, listen: false),
-                      ).then((accepted) {
-                        if (!mounted) return;
-                        if (!accepted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              content: Text(
-                                "Error accepting invite from ${friend.displayName} :(",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                              duration: const Duration(milliseconds: 2500),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              content: Text(
-                                "Invite from ${friend.displayName} accepted!",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                              duration: const Duration(milliseconds: 1500),
-                            ),
-                          );
-                          if (!mounted) return;
-                          _loadFriends();
-                          _loadInvites();
-                        }
-                      });
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(Colors.blue.shade600),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Theme.of(context).cardTheme.color,
+                      content: Text(
+                        "Invite from ${friend.displayName} deleted",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                      duration: const Duration(milliseconds: 1500),
                     ),
-                    child: Text(
-                      "Accept".toUpperCase(),
+                  );
+                }
+                if (!mounted) return;
+                _invites.clear();
+                _loadInvites();
+              });
+            },
+            confirmDismiss: (DismissDirection direction) async {
+              return await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      "Delete Invite from ${friend.displayName}?".toUpperCase(),
                       style: const TextStyle(
                         fontFamily: 'NovecentoSans',
-                        fontSize: 20,
+                        fontSize: 24,
+                      ),
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Are you sure you want to delete this friend's invite?",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text(
+                          "Cancel".toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text(
+                          "Delete".toUpperCase(),
+                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            background: Container(
+              color: Theme.of(context).primaryColor,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(left: 15),
+                    child: Text(
+                      "Delete".toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 16,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Container(
+                    margin: const EdgeInsets.only(right: 15),
+                    child: const Icon(
+                      Icons.delete,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 15),
+                        width: 60,
+                        height: 60,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(60),
+                        ),
+                        child: SizedBox(
+                          height: 60,
+                          child: GestureDetector(
+                            onTap: () {
+                              Feedback.forTap(context);
+                              if (friend.reference != null) {
+                                context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                              }
+                            },
+                            child: UserAvatar(
+                              user: friend,
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          friend.displayName != null
+                              ? SizedBox(
+                                  width: MediaQuery.of(context).size.width - 255,
+                                  child: AutoSizeText(
+                                    friend.displayName!,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).textTheme.bodyLarge!.color,
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        child: AutoSizeText(
+                          printDuration(DateTime.now().difference(invite.date!), false),
+                          maxLines: 1,
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        child: TextButton(
+                          onPressed: () {
+                            if (friend.reference == null) return;
+                            acceptInvite(
+                              Invite(friend.reference!.id, DateTime.now()),
+                              Provider.of<FirebaseAuth>(context, listen: false),
+                              Provider.of<FirebaseFirestore>(context, listen: false),
+                            ).then((accepted) {
+                              if (!mounted) return;
+                              if (!accepted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    content: Text(
+                                      "Error accepting invite from ${friend.displayName} :(",
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    duration: const Duration(milliseconds: 2500),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    content: Text(
+                                      "Invite from ${friend.displayName} accepted!",
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    duration: const Duration(milliseconds: 1500),
+                                  ),
+                                );
+                                if (!mounted) return;
+                                _loadFriends();
+                                _loadInvites();
+                              }
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(Colors.blue.shade600),
+                          ),
+                          child: Text(
+                            "Accept".toUpperCase(),
+                            style: const TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
