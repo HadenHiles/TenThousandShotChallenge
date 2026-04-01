@@ -115,6 +115,7 @@ class ChallengerRoadMapView extends StatefulWidget {
   final int previewMaxLevel;
   final ChallengerRoadAttempt? previewHeaderAttempt;
   final VoidCallback? onPreviewLevelUnlockAttempted;
+  final double mapBottomInset;
 
   /// Called when a tappable node is pressed.
   final void Function(
@@ -132,6 +133,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     this.previewMaxLevel = 1,
     this.previewHeaderAttempt,
     this.onPreviewLevelUnlockAttempted,
+    this.mapBottomInset = 32,
   });
 
   @override
@@ -449,7 +451,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       child: Column(
         children: [
           for (final lvl in levels) _buildLevelSection(context, lvl, data, interactive: interactive),
-          const SizedBox(height: 32),
+          SizedBox(height: widget.mapBottomInset),
         ],
       ),
     );
@@ -473,10 +475,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final centres = _computeNodeCentres(challenges.length, width);
         final sectionHeight = _levelSectionHeight(challenges.length);
 
-        // Determine the first incomplete challenge index for the "current" state.
+        // Determine the next incomplete challenge index for the "current" state.
+        // We advance from the bottom-most node upward within a level.
         int firstIncompleteIdx = -1;
         if (isCurrentLevel) {
-          for (int i = 0; i < challenges.length; i++) {
+          for (int i = challenges.length - 1; i >= 0; i--) {
             final cid = challenges[i].id ?? '';
             final best = data.progress[cid]?.bestLevel ?? 0;
             if (best < level) {
