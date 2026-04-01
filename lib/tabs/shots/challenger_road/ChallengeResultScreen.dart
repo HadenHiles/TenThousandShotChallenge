@@ -99,12 +99,12 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
       return 'You crushed the ${widget.challenge.name} challenge and unlocked Level ${widget.updatedAttempt.currentLevel}!';
     }
     if (_passed) {
-      return 'You completed the ${widget.challenge.name} challenge! Your best try was $_bestTryHits / ${widget.session.shotsToPass} required on-target shots. Keep it up!';
+      return 'You completed the ${widget.challenge.name} challenge! Your best try was $_bestTryHits / ${widget.session.shotsRequired}, and you needed ${widget.session.shotsToPass} on target to pass. Keep it up!';
     }
     if (_bestTryClose) {
-      return 'Nice shooting! Your best try hit $_bestTryHits on target — you needed ${widget.session.shotsToPass}. You\'ve almost got it!';
+      return 'Nice shooting! Your best try was $_bestTryHits / ${widget.session.shotsRequired}, and you needed ${widget.session.shotsToPass} on target. You\'ve almost got it!';
     }
-    return 'Your best try hit $_bestTryHits on target, but you needed ${widget.session.shotsToPass}. Keep grinding — every rep counts!';
+    return 'Your best try was $_bestTryHits / ${widget.session.shotsRequired}, but you needed ${widget.session.shotsToPass} on target. Keep grinding. Every rep counts!';
   }
 
   @override
@@ -314,7 +314,7 @@ class _ChallengeResultScreenState extends State<ChallengeResultScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _stat('$_bestTryHits / ${widget.session.shotsToPass}', 'BEST TRY'),
+              _stat('$_bestTryHits / ${widget.session.shotsRequired}', 'BEST TRY'),
               _stat('$_tryCount', 'TRIES'),
               _stat('$avgScore / ${widget.session.shotsRequired}', 'AVG SCORE'),
               _stat('${mins}m ${secs}s', 'TIME'),

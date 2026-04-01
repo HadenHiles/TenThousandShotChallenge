@@ -413,8 +413,8 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                GestureDetector(
-                  onLongPress: _openShotCountNumpad,
+                IgnorePointer(
+                  ignoring: true,
                   child: NumberPicker(
                     value: _currentShotCount,
                     minValue: 1,
@@ -424,12 +424,9 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                     textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                     selectedTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20),
                     axis: Axis.horizontal,
-                    haptics: true,
+                    haptics: false,
                     infiniteLoop: true,
-                    onChanged: (v) => setState(() {
-                      _currentShotCount = v;
-                      _lastTargetsHit = (v * 0.5).round();
-                    }),
+                    onChanged: (_) {},
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Theme.of(context).primaryColor, width: 2),
@@ -437,7 +434,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                   ),
                 ),
                 Text(
-                  'Long press for numpad',
+                  'Locked to required shots for this challenge',
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
@@ -600,14 +597,17 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   Future<void> _logShots() async {
     Feedback.forLongPress(context);
 
-    final targetsHit = await _showAccuracyDialog(_currentShotCount);
+    // Enforce challenge integrity by locking each try to the level requirement.
+    final shotCount = widget.levelDoc.shotsRequired;
+    final targetsHit = await _showAccuracyDialog(shotCount);
     if (targetsHit == null) return;
 
     setState(() {
+      _currentShotCount = shotCount;
       _lastTargetsHit = targetsHit;
       _shots.insert(
         0,
-        Shots(DateTime.now(), _selectedShotType, _currentShotCount, targetsHit),
+        Shots(DateTime.now(), _selectedShotType, shotCount, targetsHit),
       );
     });
 
@@ -627,50 +627,6 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) _finishSession();
     }
-  }
-
-  Future<void> _openShotCountNumpad() async {
-    Feedback.forLongPress(context);
-    final controller = TextEditingController(text: _currentShotCount.toString());
-    final value = await showDialog<int>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Enter # of shots'),
-        content: Center(
-          child: Container(
-            decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: TextField(
-              controller: controller,
-              autofocus: true,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: '1 - 500',
-                hintStyle: TextStyle(color: Colors.black38),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final entered = int.tryParse(controller.text);
-              if (entered != null && entered > 0 && entered <= 500) Navigator.of(ctx).pop(entered);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-    if (value != null) setState(() => _currentShotCount = value);
   }
 
   List<Widget> _buildShotsList() {

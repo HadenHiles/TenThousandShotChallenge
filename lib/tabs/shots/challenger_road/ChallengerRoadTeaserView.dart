@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show ChallengeSessionConfig, activeChallengeSession;
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'ChallengerRoadMapView.dart';
 
@@ -23,6 +24,7 @@ class ChallengerRoadTeaserView extends StatefulWidget {
 
 class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
   static const String _walkthroughSeenKey = 'challenger_road_preview_walkthrough_seen';
+  static const double _collapsedSessionPanelHeight = 65;
   bool _showWalkthrough = true;
   final PageController _walkthroughController = PageController();
   int _walkthroughPage = 0;
@@ -199,13 +201,14 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
     );
   }
 
-  Widget _buildBottomBanner(BuildContext context) {
+  Widget _buildBottomBanner(BuildContext context, {required bool hasCollapsedChallengeSession}) {
     final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+    final sessionPanelInset = hasCollapsedChallengeSession ? _collapsedSessionPanelHeight : 0.0;
 
     return Positioned(
       left: 14,
       right: 14,
-      bottom: 16 + bottomTabInset,
+      bottom: 16 + bottomTabInset + sessionPanelInset,
       child: SafeArea(
         top: false,
         child: Card(
@@ -293,23 +296,33 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
       );
     }
 
-    final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+    final body = ValueListenableBuilder<ChallengeSessionConfig?>(
+      valueListenable: activeChallengeSession,
+      builder: (context, activeSession, _) {
+        final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+        final hasCollapsedChallengeSession = widget.embedded && activeSession != null;
+        final sessionPanelInset = hasCollapsedChallengeSession ? _collapsedSessionPanelHeight : 0.0;
 
-    final body = Stack(
-      fit: StackFit.expand,
-      children: [
-        ChallengerRoadMapView(
-          userId: userId,
-          isPreviewMode: true,
-          previewMaxLevel: 1,
-          onPreviewLevelUnlockAttempted: _promptGoPro,
-          mapBottomInset: 120 + bottomTabInset,
-          onCloseTap: widget.onCloseTap,
-          onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
-        ),
-        if (_showWalkthrough) _buildWalkthroughCard(context),
-        _buildBottomBanner(context),
-      ],
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ChallengerRoadMapView(
+              userId: userId,
+              isPreviewMode: true,
+              previewMaxLevel: 1,
+              onPreviewLevelUnlockAttempted: _promptGoPro,
+              mapBottomInset: 120 + bottomTabInset + sessionPanelInset,
+              onCloseTap: widget.onCloseTap,
+              onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
+            ),
+            if (_showWalkthrough) _buildWalkthroughCard(context),
+            _buildBottomBanner(
+              context,
+              hasCollapsedChallengeSession: hasCollapsedChallengeSession,
+            ),
+          ],
+        );
+      },
     );
 
     if (widget.embedded) {
