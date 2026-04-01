@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChalleng
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
@@ -252,8 +253,25 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           widget.levelDoc.level,
         );
         if (levelComplete) {
-          updatedAttempt = await service.advanceLevel(widget.userId, widget.attempt.id!);
-          levelAdvanced = true;
+          final current = activeChallengeSession.value;
+          final isPreviewMode = current?.isPreviewMode == true;
+          final previewMaxLevel = current?.previewMaxLevel ?? 1;
+
+          if (isPreviewMode && widget.levelDoc.level >= previewMaxLevel) {
+            // Free preview gate: users can play level 1 but cannot unlock level 2.
+            await presentPaywallIfNeeded(context);
+            if (mounted) {
+              final unlockLevel = widget.levelDoc.level + 1;
+              Fluttertoast.showToast(
+                msg: 'Level $unlockLevel is a Pro feature. Upgrade to continue your run.',
+                toastLength: Toast.LENGTH_LONG,
+                gravity: ToastGravity.CENTER,
+              );
+            }
+          } else {
+            updatedAttempt = await service.advanceLevel(widget.userId, widget.attempt.id!);
+            levelAdvanced = true;
+          }
         }
       }
 
@@ -308,6 +326,9 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
             userId: current.userId,
             startedAt: DateTime.now(),
             onSessionComplete: current.onSessionComplete,
+            isPreviewMode: current.isPreviewMode,
+            previewMaxLevel: current.previewMaxLevel,
+            onPreviewLevelUnlockAttempted: current.onPreviewLevelUnlockAttempted,
           );
         }
 

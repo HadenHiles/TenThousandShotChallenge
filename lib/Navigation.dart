@@ -43,6 +43,9 @@ class ChallengeSessionConfig {
   final String userId;
   final DateTime startedAt;
   final VoidCallback? onSessionComplete;
+  final bool isPreviewMode;
+  final int previewMaxLevel;
+  final VoidCallback? onPreviewLevelUnlockAttempted;
 
   const ChallengeSessionConfig({
     required this.challenge,
@@ -51,6 +54,9 @@ class ChallengeSessionConfig {
     required this.userId,
     required this.startedAt,
     this.onSessionComplete,
+    this.isPreviewMode = false,
+    this.previewMaxLevel = 1,
+    this.onPreviewLevelUnlockAttempted,
   });
 }
 

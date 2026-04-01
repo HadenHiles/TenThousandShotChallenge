@@ -111,6 +111,10 @@ double _levelSectionHeight(int nodeCount) => _levelSectionExtraTop + _levelTopPa
 class ChallengerRoadMapView extends StatefulWidget {
   final String userId;
   final ValueChanged<bool>? onMainHeaderVisibilityChanged;
+  final bool isPreviewMode;
+  final int previewMaxLevel;
+  final ChallengerRoadAttempt? previewHeaderAttempt;
+  final VoidCallback? onPreviewLevelUnlockAttempted;
 
   /// Called when a tappable node is pressed.
   final void Function(
@@ -124,6 +128,10 @@ class ChallengerRoadMapView extends StatefulWidget {
     required this.userId,
     this.onChallengeTap,
     this.onMainHeaderVisibilityChanged,
+    this.isPreviewMode = false,
+    this.previewMaxLevel = 1,
+    this.previewHeaderAttempt,
+    this.onPreviewLevelUnlockAttempted,
   });
 
   @override
@@ -208,7 +216,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   Future<_CRMapData> _loadMapData() async {
     final levels = await _service!.getAllActiveLevels();
-    final attempt = await _service!.getActiveAttempt(widget.userId);
+    ChallengerRoadAttempt? attempt = await _service!.getActiveAttempt(widget.userId);
+
+    if (widget.isPreviewMode && attempt == null) {
+      // Ensure free preview users can actually try level 1 challenges.
+      attempt = await _service!.createAttempt(widget.userId, 1);
+    }
 
     final challengesByLevel = <int, List<ChallengerRoadChallenge>>{};
     for (final lvl in levels) {
@@ -261,7 +274,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final attempt = data.activeAttempt;
     if (attempt == null) return ChallengeNodeState.locked;
 
-    final currentLevel = attempt.currentLevel;
+    final currentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
     if (level < currentLevel) return ChallengeNodeState.completed;
     if (level > currentLevel) return ChallengeNodeState.locked;
 
@@ -278,7 +291,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      final currentLevel = data.activeAttempt?.currentLevel ?? 1;
+      final currentLevel = widget.isPreviewMode ? math.min(data.activeAttempt?.currentLevel ?? 1, widget.previewMaxLevel) : (data.activeAttempt?.currentLevel ?? 1);
 
       // Levels are rendered highest-first (top), Level 1 last (bottom).
       // We want to scroll so the current level is near the top of the viewport.
@@ -450,7 +463,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   }) {
     final challenges = data.challengesByLevel[level] ?? [];
     final attempt = data.activeAttempt;
-    final currentLevel = attempt?.currentLevel ?? 1;
+    final currentLevel = widget.isPreviewMode ? math.min(attempt?.currentLevel ?? 1, widget.previewMaxLevel) : (attempt?.currentLevel ?? 1);
     final isCurrentLevel = level == currentLevel;
     final isLocked = level > currentLevel;
 
@@ -579,6 +592,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       userId: widget.userId,
       progress: data.progress[challenge.id],
       onSessionComplete: _refreshData,
+      isPreviewMode: widget.isPreviewMode,
+      previewMaxLevel: widget.previewMaxLevel,
+      onPreviewLevelUnlockAttempted: widget.onPreviewLevelUnlockAttempted,
     );
   }
 
@@ -645,9 +661,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           children: [
             // ── Header (pinned below app header) ───────────────────────
             ChallengerRoadHeader(
-              attempt: attempt,
+              attempt: widget.isPreviewMode ? (widget.previewHeaderAttempt ?? attempt) : attempt,
               topPadding: _mainHeaderVisible ? 0 : MediaQuery.of(context).padding.top,
-              onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
+              onRestartTap: (!widget.isPreviewMode && attempt != null) ? () => _confirmRestart(context, attempt) : null,
             ),
 
             // ── Map (scrollable) or first-time splash ─────────────────
