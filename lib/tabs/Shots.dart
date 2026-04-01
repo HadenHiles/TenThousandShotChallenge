@@ -101,7 +101,12 @@ class _ShotsState extends State<Shots> {
   void didUpdateWidget(covariant Shots oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.resetSignal != widget.resetSignal) {
-      _closeChallengerRoad();
+      // Reset can happen while parent is rebuilding; defer to next frame to
+      // avoid triggering parent setState during build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _closeChallengerRoad();
+      });
     }
   }
 
@@ -147,9 +152,14 @@ class _ShotsState extends State<Shots> {
 
   bool _achievementsCollapsed = false;
 
-  void _openChallengerRoad() {
+  Future<void> _openChallengerRoad() async {
     if (_showChallengerRoad) return;
-    setState(() => _showChallengerRoad = true);
+    final latestLevel = await subscriptionLevel(context);
+    if (!mounted) return;
+    setState(() {
+      _subscriptionLevel = latestLevel;
+      _showChallengerRoad = true;
+    });
     widget.onChallengerRoadAvailabilityChanged?.call(true);
     widget.onMainHeaderVisibilityChanged?.call(true);
   }

@@ -103,9 +103,12 @@ class ChallengeDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final initialSize = showStartCta ? 0.9 : 0.5;
+    final minSize = showStartCta ? 0.5 : 0.4;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.4,
+      initialChildSize: initialSize,
+      minChildSize: minSize,
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
