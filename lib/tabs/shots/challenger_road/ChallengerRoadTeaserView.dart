@@ -105,7 +105,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  height: 230,
+                  height: 270,
                   child: PageView.builder(
                     controller: _walkthroughController,
                     itemCount: _walkthroughSlides.length,
@@ -117,24 +117,24 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(slide.icon, size: 34, color: Theme.of(context).primaryColor),
-                            const SizedBox(height: 10),
+                            Icon(slide.icon, size: 44, color: Theme.of(context).primaryColor),
+                            const SizedBox(height: 14),
                             Text(
                               slide.title,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
-                                fontSize: 18,
+                                fontSize: 22,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
                             Text(
                               slide.body,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
-                                fontSize: 13,
+                                fontSize: 16,
                                 height: 1.35,
                                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
                               ),
@@ -170,7 +170,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                         foregroundColor: Theme.of(context).colorScheme.onSurface,
                         textStyle: const TextStyle(
                           fontFamily: 'NovecentoSans',
-                          fontSize: 15,
+                          fontSize: 17,
                         ),
                       ),
                       child: const Text('Skip'),
@@ -181,6 +181,11 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
+                        textStyle: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 17,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                       ),
                       child: Text(isLast ? 'Get Started' : 'Next'),
                     ),
@@ -195,10 +200,12 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
   }
 
   Widget _buildBottomBanner(BuildContext context) {
+    final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+
     return Positioned(
       left: 14,
       right: 14,
-      bottom: 16,
+      bottom: 16 + bottomTabInset,
       child: SafeArea(
         top: false,
         child: Card(
@@ -286,6 +293,8 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
       );
     }
 
+    final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+
     final body = Stack(
       fit: StackFit.expand,
       children: [
@@ -294,7 +303,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
           isPreviewMode: true,
           previewMaxLevel: 1,
           onPreviewLevelUnlockAttempted: _promptGoPro,
-          mapBottomInset: 120,
+          mapBottomInset: 120 + bottomTabInset,
           onCloseTap: widget.onCloseTap,
           onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
         ),
