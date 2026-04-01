@@ -295,6 +295,24 @@ class ChallengerRoadService {
     return true;
   }
 
+  /// Replays any missed level unlocks for the active attempt by checking
+  /// contiguous level completion from the persisted current level onward.
+  ///
+  /// This is forward-only: it advances stale attempts that should already have
+  /// unlocked additional levels, but it does not downgrade stored progress.
+  Future<ChallengerRoadAttempt?> syncActiveAttemptProgress(String userId) async {
+    final activeAttempt = await getActiveAttempt(userId);
+    if (activeAttempt == null) return null;
+
+    var attempt = activeAttempt;
+
+    while (await isLevelComplete(userId, attempt.id!, attempt.currentLevel)) {
+      attempt = await advanceLevel(userId, attempt.id!);
+    }
+
+    return attempt;
+  }
+
   /// Advances the user's current level by 1, updating [ChallengerRoadAttempt]
   /// and [ChallengerRoadUserSummary] as needed. Call this after confirming
   /// [isLevelComplete] returns true.

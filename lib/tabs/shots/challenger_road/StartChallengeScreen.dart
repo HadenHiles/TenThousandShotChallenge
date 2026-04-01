@@ -261,7 +261,16 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           if (isPreviewMode && widget.levelDoc.level >= previewMaxLevel) {
             // Free preview gate: users can play level 1 but cannot unlock level 2.
             await presentPaywallIfNeeded(context);
-            if (mounted) {
+            if (!mounted) return;
+
+            // If user upgraded in the paywall, continue progression immediately.
+            final updatedSubscriptionLevel = await subscriptionLevel(context);
+            if (!mounted) return;
+
+            if (updatedSubscriptionLevel == 'pro') {
+              updatedAttempt = await service.advanceLevel(widget.userId, widget.attempt.id!);
+              levelAdvanced = true;
+            } else {
               final unlockLevel = widget.levelDoc.level + 1;
               Fluttertoast.showToast(
                 msg: 'Level $unlockLevel is a Pro feature. Upgrade to continue your run.',

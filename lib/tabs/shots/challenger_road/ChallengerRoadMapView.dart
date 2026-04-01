@@ -220,7 +220,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   Future<_CRMapData> _loadMapData() async {
     final levels = await _service!.getAllActiveLevels();
-    ChallengerRoadAttempt? attempt = await _service!.getActiveAttempt(widget.userId);
+    ChallengerRoadAttempt? attempt;
+
+    if (widget.isPreviewMode) {
+      attempt = await _service!.getActiveAttempt(widget.userId);
+    } else {
+      attempt = await _service!.syncActiveAttemptProgress(widget.userId);
+    }
 
     if (widget.isPreviewMode && attempt == null) {
       // Ensure free preview users can actually try level 1 challenges.
