@@ -981,6 +981,7 @@ class _ShotsState extends State<Shots> {
                               if (!sessionService.isRunning) {
                                 Feedback.forTap(context);
                                 sessionService.start();
+                                widget.sessionPanelController.show();
                                 widget.sessionPanelController.open();
                               } else {
                                 dialog(
@@ -1004,6 +1005,7 @@ class _ShotsState extends State<Shots> {
                                       Navigator.of(context).pop();
                                       sessionService.start();
                                       widget.sessionPanelController.show();
+                                      widget.sessionPanelController.open();
                                     },
                                   ),
                                 );
@@ -1034,15 +1036,19 @@ class _ShotsState extends State<Shots> {
         final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
         final showingRoad = _showChallengerRoad && user != null;
 
-        return Column(
+        return Stack(
           key: const Key('shots_tab_body'),
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
           children: [
-            Expanded(
+            Positioned.fill(
               child: showingRoad ? _buildInlineChallengerRoad(user) : _buildTrainDashboard(user),
             ),
-            if (!showingRoad) _buildSessionControls(),
+            if (!showingRoad)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildSessionControls(),
+              ),
           ],
         );
       },

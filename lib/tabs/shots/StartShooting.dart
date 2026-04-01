@@ -1306,8 +1306,8 @@ class _StartShootingState extends State<StartShooting> {
                       ? TextButton(
                           onPressed: () async {
                             Feedback.forLongPress(context);
-                            // Hide the panel fully, then reset session
-                            await widget.sessionPanelController.hide();
+                            // Close the panel before reset; avoid hidden state that blocks reopening.
+                            await widget.sessionPanelController.close();
                             sessionService.reset();
                             if (mounted) {
                               setState(() {
@@ -1356,8 +1356,8 @@ class _StartShootingState extends State<StartShooting> {
                               Provider.of<FirebaseAuth>(context, listen: false),
                               Provider.of<FirebaseFirestore>(context, listen: false),
                             ).then((success) async {
-                              // Hide the panel fully before resetting
-                              await widget.sessionPanelController.hide();
+                              // Close the panel before reset; avoid hidden state that blocks reopening.
+                              await widget.sessionPanelController.close();
                               sessionService.reset();
                               if (mounted) {
                                 setState(() {
