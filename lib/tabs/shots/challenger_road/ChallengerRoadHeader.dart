@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 
-/// Sticky header shown at the top of the Challenger Road Start tab (pro users only).
+/// Sticky header shown at the top of the Challenger Road Start tab.
 /// Displays the current level badge, the rolling Challenger Road shot counter,
 /// and the current attempt number.
 class ChallengerRoadHeader extends StatelessWidget {
   final ChallengerRoadAttempt? attempt;
   final double topPadding;
   final VoidCallback? onRestartTap;
+  final VoidCallback? onCloseTap;
 
   const ChallengerRoadHeader({
     super.key,
     this.attempt,
     this.topPadding = 0,
     this.onRestartTap,
+    this.onCloseTap,
   });
 
   @override
@@ -46,7 +48,6 @@ class ChallengerRoadHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ── Level badge ──────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 13),
                 decoration: BoxDecoration(
@@ -70,8 +71,6 @@ class ChallengerRoadHeader extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // ── Shot counter ─────────────────────────────────────────
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -104,48 +103,61 @@ class ChallengerRoadHeader extends StatelessWidget {
                     ),
                 ],
               ),
-
-              // ── Attempt badge ────────────────────────────────────────
-              GestureDetector(
-                onTap: onRestartTap,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'TRY',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 10,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    Text(
-                      '#$attemptNum',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 22,
-                      ),
-                    ),
-                    if (onRestartTap != null)
-                      Text(
-                        'RESTART',
-                        style: TextStyle(
-                          color: Theme.of(context).primaryColor,
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 10,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: onRestartTap,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'TRY',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                          ),
                         ),
+                        Text(
+                          '#$attemptNum',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 22,
+                          ),
+                        ),
+                        if (onRestartTap != null)
+                          Text(
+                            'RESTART',
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (onCloseTap != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      splashRadius: 20,
+                      onPressed: onCloseTap,
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.82),
                       ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 6),
-
-          // ── Progress bar (CR shot counter 0 → 10,000) ────────────────
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

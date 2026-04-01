@@ -6,7 +6,16 @@ import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'ChallengerRoadMapView.dart';
 
 class ChallengerRoadTeaserView extends StatefulWidget {
-  const ChallengerRoadTeaserView({super.key});
+  const ChallengerRoadTeaserView({
+    super.key,
+    this.embedded = false,
+    this.onCloseTap,
+    this.onMainHeaderVisibilityChanged,
+  });
+
+  final bool embedded;
+  final VoidCallback? onCloseTap;
+  final ValueChanged<bool>? onMainHeaderVisibilityChanged;
 
   @override
   State<ChallengerRoadTeaserView> createState() => _ChallengerRoadTeaserViewState();
@@ -246,6 +255,21 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
     final userId = Provider.of<FirebaseAuth>(context, listen: false).currentUser?.uid;
 
     if (userId == null || userId.isEmpty) {
+      final body = Center(
+        child: Text(
+          'Sign in to try the Challenger Road preview.',
+          style: TextStyle(
+            fontFamily: 'NovecentoSans',
+            fontSize: 16,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      );
+
+      if (widget.embedded) {
+        return body;
+      }
+
       return Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -258,17 +282,29 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
             ),
           ),
         ),
-        body: Center(
-          child: Text(
-            'Sign in to try the Challenger Road preview.',
-            style: TextStyle(
-              fontFamily: 'NovecentoSans',
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
+        body: body,
       );
+    }
+
+    final body = Stack(
+      fit: StackFit.expand,
+      children: [
+        ChallengerRoadMapView(
+          userId: userId,
+          isPreviewMode: true,
+          previewMaxLevel: 1,
+          onPreviewLevelUnlockAttempted: _promptGoPro,
+          mapBottomInset: 120,
+          onCloseTap: widget.onCloseTap,
+          onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
+        ),
+        if (_showWalkthrough) _buildWalkthroughCard(context),
+        _buildBottomBanner(context),
+      ],
+    );
+
+    if (widget.embedded) {
+      return body;
     }
 
     return Scaffold(
@@ -285,20 +321,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
           ),
         ),
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          ChallengerRoadMapView(
-            userId: userId,
-            isPreviewMode: true,
-            previewMaxLevel: 1,
-            onPreviewLevelUnlockAttempted: _promptGoPro,
-            mapBottomInset: 120,
-          ),
-          if (_showWalkthrough) _buildWalkthroughCard(context),
-          _buildBottomBanner(context),
-        ],
-      ),
+      body: body,
     );
   }
 }

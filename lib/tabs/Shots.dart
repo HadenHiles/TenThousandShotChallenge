@@ -1,5 +1,4 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,7 +16,6 @@ import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
-import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
@@ -46,10 +44,10 @@ class _ShotsState extends State<Shots> {
   // Static variables
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
-  bool _showShotsPerDay = true;
   Iteration? currentIteration;
   String _subscriptionLevel = 'free';
   CustomerInfoNotifier? _customerInfoNotifier;
+  bool _showChallengerRoad = false;
 
   // Real-time stream of the active (incomplete) iteration for live updates
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _activeIterationStream;
@@ -80,8 +78,6 @@ class _ShotsState extends State<Shots> {
     subscriptionLevel(context).then((level) {
       if (!mounted) return;
       setState(() => _subscriptionLevel = level);
-      final hasRoadAccess = level == 'pro' && Provider.of<FirebaseAuth>(context, listen: false).currentUser != null;
-      widget.onChallengerRoadAvailabilityChanged?.call(hasRoadAccess);
     });
   }
 
@@ -89,8 +85,6 @@ class _ShotsState extends State<Shots> {
     subscriptionLevel(context).then((level) {
       if (!mounted) return;
       setState(() => _subscriptionLevel = level);
-      final hasRoadAccess = level == 'pro' && Provider.of<FirebaseAuth>(context, listen: false).currentUser != null;
-      widget.onChallengerRoadAvailabilityChanged?.call(hasRoadAccess);
     });
   }
 
@@ -141,1021 +135,899 @@ class _ShotsState extends State<Shots> {
     );
   }
 
-  bool _achievementsCollapsed = true;
+  bool _achievementsCollapsed = false;
+
+  void _openChallengerRoad() {
+    if (_showChallengerRoad) return;
+    setState(() => _showChallengerRoad = true);
+    widget.onChallengerRoadAvailabilityChanged?.call(true);
+    widget.onMainHeaderVisibilityChanged?.call(true);
+  }
+
+  void _closeChallengerRoad() {
+    if (!_showChallengerRoad) return;
+    setState(() => _showChallengerRoad = false);
+    widget.onChallengerRoadAvailabilityChanged?.call(false);
+    widget.onMainHeaderVisibilityChanged?.call(true);
+  }
+
+  void _syncTargetDate(Iteration iteration) {
+    if (_targetDate != null) return;
+    _targetDate = iteration.targetDate;
+    final fallbackDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day + 100,
+    );
+    _targetDateController.text = DateFormat('MMMM d, y').format(
+      iteration.targetDate ?? fallbackDate,
+    );
+  }
+
+  _TrainProgressMetrics _metricsForIteration(Iteration? iteration) {
+    final total = ((iteration?.total ?? 0) >= 10000) ? 10000 : (iteration?.total ?? 0);
+    final shotsRemaining = 10000 - total;
+    final targetDate = _targetDate ?? iteration?.targetDate;
+    int daysRemaining = targetDate != null ? targetDate.difference(DateTime.now()).inDays : 0;
+    final weeksRemaining = daysRemaining > 0 ? (daysRemaining / 7) : 0;
+
+    int shotsPerDay;
+    if (shotsRemaining < 1) {
+      shotsPerDay = 0;
+    } else if (daysRemaining <= 1) {
+      shotsPerDay = shotsRemaining;
+    } else {
+      shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
+    }
+
+    int shotsPerWeek;
+    if (shotsRemaining < 1) {
+      shotsPerWeek = 0;
+    } else if (weeksRemaining <= 1) {
+      shotsPerWeek = shotsRemaining;
+    } else {
+      shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining / weeksRemaining).round();
+    }
+
+    final isPastGoal = targetDate != null && targetDate.compareTo(DateTime.now()) < 0;
+    if (isPastGoal) {
+      daysRemaining = DateTime.now().difference(targetDate).inDays * -1;
+    }
+
+    final dailyText = shotsRemaining < 1
+        ? 'Done'
+        : isPastGoal
+            ? '${daysRemaining.abs()} days past goal'
+            : '${numberFormat.format(shotsPerDay)} / day';
+    final weeklyText = shotsRemaining < 1
+        ? 'Done'
+        : isPastGoal
+            ? '${numberFormat.format(shotsRemaining)} remaining'
+            : '${numberFormat.format(shotsPerWeek)} / week';
+
+    final goalDateLabel = targetDate != null ? DateFormat('MMM d, y').format(targetDate) : 'Set a goal date';
+    final statusLabel = shotsRemaining < 1
+        ? 'Challenge complete'
+        : isPastGoal
+            ? 'Past due'
+            : '${numberFormat.format(shotsRemaining)} shots remaining';
+
+    return _TrainProgressMetrics(
+      total: total,
+      shotsRemaining: shotsRemaining,
+      shotsPerDay: shotsPerDay,
+      shotsPerWeek: shotsPerWeek,
+      isPastGoal: isPastGoal,
+      dailyText: dailyText,
+      weeklyText: weeklyText,
+      goalDateLabel: goalDateLabel,
+      statusLabel: statusLabel,
+      progress: total / 10000,
+    );
+  }
+
+  Widget _buildSeasonOverviewCard(BuildContext context, Iteration? iteration) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.primaryContainer;
+    final metrics = _metricsForIteration(iteration);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer.withValues(alpha: 0.94),
+            cardColor.withValues(alpha: 0.98),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withValues(alpha: 0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    '10,000 Shot Challenge',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 20,
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Text(
+                    '${(metrics.progress * 100).round()}%',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 16,
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AutoSizeText(
+                  numberFormat.format(metrics.total),
+                  maxLines: 1,
+                  maxFontSize: 32,
+                  minFontSize: 20,
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 32,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 6, bottom: 3),
+                  child: Text(
+                    '/ 10,000',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 16,
+                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.72),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final totalWrist = iteration?.totalWrist ?? 0;
+                final totalSnap = iteration?.totalSnap ?? 0;
+                final totalBackhand = iteration?.totalBackhand ?? 0;
+                final totalSlap = iteration?.totalSlap ?? 0;
+                final progressWidth = constraints.maxWidth * metrics.progress;
+                final segmentTotal = metrics.total == 0 ? 1 : metrics.total;
+
+                Widget buildSegment(int count, Color color) {
+                  return Container(
+                    width: count > 0 ? (count / segmentTotal) * progressWidth : 0,
+                    color: color,
+                  );
+                }
+
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 8,
+                        width: constraints.maxWidth,
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.12),
+                      ),
+                      Row(
+                        children: [
+                          buildSegment(totalWrist, wristShotColor),
+                          buildSegment(totalSnap, snapShotColor),
+                          buildSegment(totalBackhand, backhandShotColor),
+                          buildSegment(totalSlap, slapShotColor),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    metrics.statusLabel,
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 13,
+                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: iteration == null ? null : _editTargetDate,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calendar_month_rounded,
+                        size: 14,
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.64),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        metrics.goalDateLabel,
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 13,
+                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 12,
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.52),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChallengerRoadEntryCard(BuildContext context, User? user) {
+    final theme = Theme.of(context);
+    final isPro = _subscriptionLevel == 'pro';
+    final accent = theme.colorScheme.primary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: user == null ? null : _openChallengerRoad,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: [
+              accent.withValues(alpha: 0.24),
+              theme.cardTheme.color?.withValues(alpha: 0.98) ?? theme.colorScheme.primaryContainer,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: accent.withValues(alpha: 0.7), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent.withValues(alpha: 0.14),
+                      border: Border.all(color: accent.withValues(alpha: 0.75), width: 1.5),
+                    ),
+                    child: Icon(
+                      Icons.route_rounded,
+                      color: accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Challenger Road',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 24,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isPro ? 'Pick up right where you left off.' : 'Level 1 is free. Unlock all levels to keep climbing.',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 13,
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.68),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: accent.withValues(alpha: 0.15),
+                    ),
+                    child: Text(
+                      isPro ? 'PRO MEMBER' : 'LEVEL 1 FREE',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 12,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: theme.colorScheme.primary,
+                    ),
+                    child: Text(
+                      isPro ? 'VIEW ROAD' : 'PREVIEW ROAD',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 14,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyAchievementsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      color: theme.cardTheme.color,
+      margin: EdgeInsets.zero,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: Colors.amberAccent.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: () {
+              setState(() {
+                _achievementsCollapsed = !_achievementsCollapsed;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.amberAccent.withValues(alpha: 0.16),
+                    ),
+                    child: const Icon(Icons.star_rounded, color: Colors.amberAccent, size: 26),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Weekly Achievements',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 22,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Track your weekly goals and stay on pace.',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _achievementsCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
+                    color: theme.colorScheme.onSurface,
+                    size: 28,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _achievementsCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Tap to see your weekly shooting targets.',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 14),
+              child: WeeklyAchievementsWidget(showResetCountdown: true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShotMixCard(BuildContext context, Iteration? iteration) {
+    final theme = Theme.of(context);
+    if (iteration == null) {
+      return Card(
+        color: theme.cardTheme.color,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Shot Mix',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 22,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Log a session to see how your shots break down.',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final shotCounts = [
+      ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
+      ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
+      ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
+      ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
+    ];
+
+    Widget countTile(String label, int total, Color color) {
+      return Expanded(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 14,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 34,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 8),
+            AutoSizeText(
+              numberFormat.format(total),
+              maxFontSize: 18,
+              maxLines: 1,
+              minFontSize: 12,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 18,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Card(
+      color: theme.cardTheme.color,
+      margin: EdgeInsets.zero,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Shot Mix',
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 22,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              iteration.total == null || iteration.total == 0 ? 'Log your first session to see your breakdown.' : 'See how your shots break down this season.',
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                fontSize: 13,
+                fontFamily: 'NovecentoSans',
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                countTile('Wrist', iteration.totalWrist ?? 0, wristShotColor),
+                countTile('Snap', iteration.totalSnap ?? 0, snapShotColor),
+                countTile('Backhand', iteration.totalBackhand ?? 0, backhandShotColor),
+                countTile('Slap', iteration.totalSlap ?? 0, slapShotColor),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 220,
+              child: iteration.total == null || iteration.total == 0
+                  ? Center(
+                      child: Text(
+                        'Hit the ice. Your breakdown will fill in here.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 16,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                        ),
+                      ),
+                    )
+                  : Stack(
+                      children: [
+                        Positioned(
+                          top: 96,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(
+                                  FontAwesomeIcons.hockeyPuck,
+                                  size: 26,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                Positioned(
+                                  left: -11,
+                                  top: -11,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 14,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                Positioned(
+                                  right: -11,
+                                  bottom: -11,
+                                  child: Icon(
+                                    FontAwesomeIcons.hockeyPuck,
+                                    size: 14,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        ShotBreakdownDonut(context, shotCounts),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrainDashboard(User? user) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _activeIterationStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+          );
+        }
+
+        final iteration = snapshot.data!.docs.isNotEmpty ? Iteration.fromSnapshot(snapshot.data!.docs[0]) : null;
+        if (iteration != null) {
+          _syncTargetDate(iteration);
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSeasonOverviewCard(context, iteration),
+              const SizedBox(height: 16),
+              _buildChallengerRoadEntryCard(context, user),
+              const SizedBox(height: 16),
+              _buildWeeklyAchievementsCard(context),
+              const SizedBox(height: 16),
+              _buildShotMixCard(context, iteration),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInlineChallengerRoad(User user) {
+    if (_subscriptionLevel == 'pro') {
+      return ChallengerRoadMapView(
+        userId: user.uid,
+        onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
+        onCloseTap: _closeChallengerRoad,
+      );
+    }
+
+    return ChallengerRoadTeaserView(
+      embedded: true,
+      onCloseTap: _closeChallengerRoad,
+      onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
+    );
+  }
+
+  Widget _buildSessionControls() {
+    return SessionServiceProvider(
+      service: sessionService,
+      child: AnimatedBuilder(
+        animation: sessionService,
+        builder: (context, child) {
+          return SafeArea(
+            top: false,
+            child: Container(
+              padding: EdgeInsets.only(
+                bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _activeIterationStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                        Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                        return iteration.total! < 10000
+                            ? Container()
+                            : SizedBox(
+                                width: MediaQuery.of(context).size.width - 30,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.all(10),
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                  ),
+                                  onPressed: () {
+                                    dialog(
+                                      context,
+                                      ConfirmDialog(
+                                        'Start a new challenge?',
+                                        Text(
+                                          'Your current challenge data will remain in your profile.\n\nWould you like to continue?',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        'Cancel',
+                                        () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        'Continue',
+                                        () {
+                                          startNewIteration(
+                                            Provider.of<FirebaseAuth>(context, listen: false),
+                                            Provider.of<FirebaseFirestore>(context, listen: false),
+                                          ).then((success) {
+                                            if (success!) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 1200),
+                                                  content: Text(
+                                                    'Challenge restarted!',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 1200),
+                                                  content: Text(
+                                                    'There was an error restarting the challenge :(',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                          context.pop();
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Start New Challenge'.toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                              );
+                      }
+                      return Container();
+                    },
+                  ),
+                  sessionService.isRunning
+                      ? Container()
+                      : Container(
+                          padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + kBottomNavigationBarHeight) : const EdgeInsets.only(bottom: 15),
+                          width: MediaQuery.of(context).size.width - 30,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.all(10),
+                              backgroundColor: Theme.of(context).primaryColor,
+                            ),
+                            onPressed: () {
+                              if (!sessionService.isRunning) {
+                                Feedback.forTap(context);
+                                sessionService.start();
+                                widget.sessionPanelController.open();
+                              } else {
+                                dialog(
+                                  context,
+                                  ConfirmDialog(
+                                    'Override current session?',
+                                    Text(
+                                      'Starting a new session will override your existing one.\n\nWould you like to continue?',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    'Cancel',
+                                    () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    'Continue',
+                                    () {
+                                      Feedback.forTap(context);
+                                      sessionService.reset();
+                                      Navigator.of(context).pop();
+                                      sessionService.start();
+                                      widget.sessionPanelController.show();
+                                    },
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text(
+                              'Start Shooting'.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Builder(
       builder: (context) {
         final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+        final showingRoad = _showChallengerRoad && user != null;
+
         return Column(
           key: const Key('shots_tab_body'),
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           children: [
-            if (_subscriptionLevel == 'pro' && user != null)
-              Expanded(
-                child: ChallengerRoadMapView(
-                  userId: user.uid,
-                  onMainHeaderVisibilityChanged: widget.onMainHeaderVisibilityChanged,
-                ),
-              )
-            else
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      if (_subscriptionLevel != 'pro') ...[
-                        SizedBox(height: 10),
-                        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          stream: _activeIterationStream,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              );
-                            } else if (snapshot.data!.docs.isNotEmpty) {
-                              Iteration i = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                              // Only update _targetDate and controller if they are null (first load)
-                              if (_targetDate == null) {
-                                _targetDate = i.targetDate;
-                                _targetDateController.text = DateFormat('MMMM d, y').format(i.targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100));
-                              }
-                              return Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Goal".toUpperCase(),
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 26,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                  Stack(
-                                    children: [
-                                      SizedBox(
-                                        width: 150,
-                                        child: AutoSizeTextField(
-                                          controller: _targetDateController,
-                                          style: const TextStyle(fontSize: 20),
-                                          maxLines: 1,
-                                          maxFontSize: 20,
-                                          decoration: InputDecoration(
-                                            labelText: "10,000 Shots By:".toLowerCase(),
-                                            labelStyle: TextStyle(
-                                              color: (preferences?.darkMode == true) ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                            ),
-                                            focusColor: Theme.of(context).colorScheme.primary,
-                                            border: null,
-                                            disabledBorder: InputBorder.none,
-                                            enabledBorder: InputBorder.none,
-                                            contentPadding: const EdgeInsets.all(2),
-                                            fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                          ),
-                                          readOnly: true,
-                                          onTap: () {
-                                            _editTargetDate();
-                                          },
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: -8,
-                                        right: 0,
-                                        child: InkWell(
-                                          enableFeedback: true,
-                                          focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                          onTap: _editTargetDate,
-                                          borderRadius: BorderRadius.circular(30),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(10),
-                                            child: Icon(
-                                              Icons.edit,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      SizedBox(
-                                        width: 80,
-                                        child: user == null
-                                            ? Container()
-                                            : Builder(
-                                                builder: (context) {
-                                                  int? total = i.total! >= 10000 ? 10000 : i.total;
-                                                  int shotsRemaining = 10000 - total!;
-                                                  // Use _targetDate if set, otherwise fallback to i.targetDate
-                                                  DateTime? targetDate = _targetDate ?? i.targetDate;
-                                                  int daysRemaining = targetDate != null ? targetDate.difference(DateTime.now()).inDays : 0;
-                                                  double weeksRemaining = daysRemaining > 0 ? double.parse((daysRemaining / 7).toStringAsFixed(4)) : 0;
-                                                  int shotsPerDay = 0;
-                                                  if (daysRemaining <= 1) {
-                                                    shotsPerDay = shotsRemaining;
-                                                  } else {
-                                                    shotsPerDay = shotsRemaining <= daysRemaining ? 1 : (shotsRemaining / daysRemaining).round();
-                                                  }
-                                                  int shotsPerWeek = 0;
-                                                  if (weeksRemaining <= 1) {
-                                                    shotsPerWeek = shotsRemaining;
-                                                  } else {
-                                                    shotsPerWeek = shotsRemaining <= weeksRemaining ? 1 : (shotsRemaining.toDouble() / weeksRemaining).round().toInt();
-                                                  }
-                                                  String shotsPerDayText = shotsRemaining < 1
-                                                      ? "Done!".toLowerCase()
-                                                      : shotsPerDay <= 999
-                                                          ? shotsPerDay.toString() + " / Day".toLowerCase()
-                                                          : numberFormat.format(shotsPerDay) + " / Day".toLowerCase();
-                                                  String shotsPerWeekText = shotsRemaining < 1
-                                                      ? "Done!".toLowerCase()
-                                                      : shotsPerWeek <= 999
-                                                          ? shotsPerWeek.toString() + " / Week".toLowerCase()
-                                                          : numberFormat.format(shotsPerWeek) + " / Week".toLowerCase();
-                                                  if (targetDate != null && targetDate.compareTo(DateTime.now()) < 0) {
-                                                    daysRemaining = DateTime.now().difference(targetDate).inDays * -1;
-                                                    shotsPerDayText = "${daysRemaining.abs()} Days Past Goal".toLowerCase();
-                                                    shotsPerWeekText = shotsRemaining <= 999 ? shotsRemaining.toString() + " remaining".toLowerCase() : numberFormat.format(shotsRemaining) + " remaining".toLowerCase();
-                                                  }
-                                                  return GestureDetector(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        _showShotsPerDay = !_showShotsPerDay;
-                                                      });
-                                                    },
-                                                    child: AutoSizeText(
-                                                      _showShotsPerDay ? shotsPerDayText : shotsPerWeekText,
-                                                      maxFontSize: 26,
-                                                      maxLines: 1,
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 26,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                      ),
-                                      InkWell(
-                                        enableFeedback: true,
-                                        focusColor: Theme.of(context).colorScheme.primaryContainer,
-                                        onTap: () {
-                                          setState(() {
-                                            _showShotsPerDay = !_showShotsPerDay;
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.circular(30),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(10),
-                                          child: Icon(
-                                            Icons.swap_vert,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              );
-                            } else {
-                              return Container();
-                            }
-                          },
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Progress".toUpperCase(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 22,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ],
-                        ),
-                        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          stream: _activeIterationStream,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const Center(
-                                child: LinearProgressIndicator(),
-                              );
-                            } else if (snapshot.data!.docs.isNotEmpty) {
-                              Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                              int maxIterationTotalForWidth = (iteration.total ?? 0) <= 10000 ? (iteration.total ?? 0) : 10000;
-                              int iterationTotal = iteration.total ?? 0;
-                              double totalShotsWidth = (maxIterationTotalForWidth / 10000) * (MediaQuery.of(context).size.width - 60);
-                              return Column(
-                                children: [
-                                  Container(
-                                    width: (MediaQuery.of(context).size.width),
-                                    margin: const EdgeInsets.symmetric(horizontal: 30),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      color: Theme.of(context).cardTheme.color,
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Builder(
-                                          builder: (context) => Tooltip(
-                                            message: "${iteration.totalWrist ?? 0} Wrist Shots".toLowerCase(),
-                                            preferBelow: false,
-                                            textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                            child: Container(
-                                              height: 40,
-                                              width: (iteration.totalWrist ?? 0) > 0 ? ((iteration.totalWrist ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              decoration: const BoxDecoration(
-                                                color: wristShotColor,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Builder(
-                                          builder: (context) => Tooltip(
-                                            message: "${iteration.totalSnap ?? 0} Snap Shots".toLowerCase(),
-                                            preferBelow: false,
-                                            textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                            child: Container(
-                                              height: 40,
-                                              width: (iteration.totalSnap ?? 0) > 0 ? ((iteration.totalSnap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              decoration: const BoxDecoration(
-                                                color: snapShotColor,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Builder(
-                                          builder: (context) => Tooltip(
-                                            message: "${iteration.totalBackhand ?? 0} Backhands".toLowerCase(),
-                                            preferBelow: false,
-                                            textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                            child: Container(
-                                              height: 40,
-                                              width: (iteration.totalBackhand ?? 0) > 0 ? ((iteration.totalBackhand ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              decoration: const BoxDecoration(
-                                                color: backhandShotColor,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Builder(
-                                          builder: (context) => Tooltip(
-                                            message: "${iteration.totalSlap ?? 0} Slap Shots".toLowerCase(),
-                                            preferBelow: false,
-                                            textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                            child: Container(
-                                              height: 40,
-                                              width: (iteration.totalSlap ?? 0) > 0 ? ((iteration.totalSlap ?? 0) / (iterationTotal == 0 ? 1 : iterationTotal)) * totalShotsWidth : 0,
-                                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              decoration: const BoxDecoration(
-                                                color: slapShotColor,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    width: (MediaQuery.of(context).size.width - 30),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          height: 40,
-                                          width: totalShotsWidth < 35
-                                              ? 40
-                                              : totalShotsWidth > (MediaQuery.of(context).size.width - 140)
-                                                  ? totalShotsWidth - 65
-                                                  : totalShotsWidth,
-                                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                                          child: Text(
-                                            iterationTotal <= 999 ? iterationTotal.toString() : numberFormat.format(iterationTotal),
-                                            textAlign: TextAlign.right,
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 22,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Container(
-                                              height: 40,
-                                              padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              child: Text(
-                                                " / ${numberFormat.format(10000)}",
-                                                textAlign: TextAlign.right,
-                                                style: TextStyle(
-                                                  fontFamily: 'NovecentoSans',
-                                                  fontSize: 22,
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              );
-                            } else {
-                              return Container();
-                            }
-                          },
-                        ),
-
-                        // Weekly Achievements collapsible section below progress bar
-                        Card(
-                          color: Theme.of(context).cardTheme.color,
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          child: Column(
-                            children: [
-                              InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () {
-                                  setState(() {
-                                    _achievementsCollapsed = !_achievementsCollapsed;
-                                  });
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.star, color: Colors.amberAccent, size: 28),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            'Weekly Achievements',
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                              fontFamily: 'NovecentoSans',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Icon(
-                                        _achievementsCollapsed ? Icons.expand_more : Icons.expand_less,
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                        size: 28,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              AnimatedCrossFade(
-                                duration: const Duration(milliseconds: 250),
-                                crossFadeState: _achievementsCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                                firstChild: Container(),
-                                secondChild: Padding(
-                                  padding: const EdgeInsets.only(left: 8, right: 8, top: 0, bottom: 10),
-                                  child: WeeklyAchievementsWidget(showResetCountdown: true),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Challenger Road teaser banner for free users
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const ChallengerRoadTeaserView(),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            color: Theme.of(context).cardTheme.color,
-                            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(
-                                color: Color(0xFFFFD700),
-                                width: 1.2,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(0xFFFFD700).withValues(alpha: 0.12),
-                                      border: Border.all(
-                                        color: const Color(0xFFFFD700),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.route_rounded,
-                                      color: Color(0xFFFFD700),
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Challenger Road',
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 20,
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Pro feature — tap to preview',
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            fontSize: 13,
-                                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          stream: _activeIterationStream,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  SizedBox(
-                                    height: 150,
-                                    width: 150,
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                ],
-                              );
-                            } else if (snapshot.data!.docs.isNotEmpty) {
-                              Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                              List<ShotCount> shotCounts = [
-                                ShotCount('Wrist'.toUpperCase(), iteration.totalWrist ?? 0, Colors.cyan),
-                                ShotCount('Snap'.toUpperCase(), iteration.totalSnap ?? 0, Colors.blue),
-                                ShotCount('Backhand'.toUpperCase(), iteration.totalBackhand ?? 0, Colors.indigo),
-                                ShotCount('Slap'.toUpperCase(), iteration.totalSlap ?? 0, Colors.teal),
-                              ];
-
-                              return Column(
-                                children: [
-                                  Container(
-                                    margin: EdgeInsets.only(
-                                      left: MediaQuery.of(context).size.width * .1,
-                                      right: MediaQuery.of(context).size.width * .1,
-                                      bottom: 5,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Flexible(
-                                          fit: FlexFit.loose,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "Wrist".toUpperCase(),
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 18,
-                                                  fontFamily: 'NovecentoSans',
-                                                ),
-                                              ),
-                                              Container(
-                                                width: 30,
-                                                margin: const EdgeInsets.only(top: 2),
-                                                decoration: const BoxDecoration(color: wristShotColor),
-                                                child: const Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    Opacity(
-                                                      opacity: 0.75,
-                                                      child: Text(
-                                                        "W",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontFamily: 'NovecentoSans',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                width: 50,
-                                                child: AutoSizeText(
-                                                  iteration.totalWrist! > 999 ? numberFormat.format(iteration.totalWrist).toLowerCase() : iteration.totalWrist.toString().toLowerCase(),
-                                                  maxFontSize: 18,
-                                                  maxLines: 1,
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 18,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Flexible(
-                                          fit: FlexFit.loose,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "Snap".toUpperCase(),
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 18,
-                                                  fontFamily: 'NovecentoSans',
-                                                ),
-                                              ),
-                                              Container(
-                                                width: 30,
-                                                margin: const EdgeInsets.only(top: 2),
-                                                decoration: const BoxDecoration(color: snapShotColor),
-                                                child: const Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    Opacity(
-                                                      opacity: 0.75,
-                                                      child: Text(
-                                                        "SN",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontFamily: 'NovecentoSans',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                width: 50,
-                                                child: AutoSizeText(
-                                                  iteration.totalSnap! > 999 ? numberFormat.format(iteration.totalSnap).toLowerCase() : iteration.totalSnap.toString().toLowerCase(),
-                                                  maxFontSize: 18,
-                                                  maxLines: 1,
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 18,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Flexible(
-                                          fit: FlexFit.loose,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "Backhand".toUpperCase(),
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 18,
-                                                  fontFamily: 'NovecentoSans',
-                                                ),
-                                              ),
-                                              Container(
-                                                width: 30,
-                                                margin: const EdgeInsets.only(top: 2),
-                                                decoration: const BoxDecoration(color: backhandShotColor),
-                                                child: const Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    Opacity(
-                                                      opacity: 0.75,
-                                                      child: Text(
-                                                        "B",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontFamily: 'NovecentoSans',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                width: 50,
-                                                child: AutoSizeText(
-                                                  iteration.totalBackhand! > 999 ? numberFormat.format(iteration.totalBackhand).toLowerCase() : iteration.totalBackhand.toString().toLowerCase(),
-                                                  maxFontSize: 18,
-                                                  maxLines: 1,
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 18,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Flexible(
-                                          fit: FlexFit.loose,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "Slap".toUpperCase(),
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                  fontSize: 18,
-                                                  fontFamily: 'NovecentoSans',
-                                                ),
-                                              ),
-                                              Container(
-                                                width: 30,
-                                                margin: const EdgeInsets.only(top: 2),
-                                                decoration: const BoxDecoration(color: slapShotColor),
-                                                child: const Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    Opacity(
-                                                      opacity: 0.75,
-                                                      child: Text(
-                                                        "SL",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontFamily: 'NovecentoSans',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                width: 50,
-                                                child: AutoSizeText(
-                                                  iteration.totalSlap! > 999 ? numberFormat.format(iteration.totalSlap).toLowerCase() : iteration.totalSlap.toString().toLowerCase(),
-                                                  maxFontSize: 18,
-                                                  maxLines: 1,
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onPrimary,
-                                                    fontSize: 18,
-                                                    fontFamily: 'NovecentoSans',
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.3,
-                                    width: MediaQuery.of(context).size.width * 0.7,
-                                    child: iteration.total! < 1
-                                        ? Text(
-                                            "Tap \"Start Shooting\" to record a shooting session!".toUpperCase(),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 16,
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
-                                          )
-                                        : Container(
-                                            margin: const EdgeInsets.only(top: 50),
-                                            child: Stack(
-                                              children: [
-                                                Positioned(
-                                                  top: MediaQuery.of(context).size.height * (0.3 / 2),
-                                                  left: MediaQuery.of(context).size.width * (0.7 / 2),
-                                                  child: Transform.translate(
-                                                    offset: const Offset(-14, -40),
-                                                    child: Stack(
-                                                      clipBehavior: Clip.none,
-                                                      children: [
-                                                        Icon(
-                                                          FontAwesomeIcons.hockeyPuck,
-                                                          size: 30,
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                        ),
-                                                        // Top Left
-                                                        Positioned(
-                                                          left: -13,
-                                                          top: -13,
-                                                          child: Icon(
-                                                            FontAwesomeIcons.hockeyPuck,
-                                                            size: 18,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                        // Bottom Left
-                                                        Positioned(
-                                                          left: -12,
-                                                          bottom: -12,
-                                                          child: Icon(
-                                                            FontAwesomeIcons.hockeyPuck,
-                                                            size: 14,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                        // Top right
-                                                        Positioned(
-                                                          right: -12,
-                                                          top: -12,
-                                                          child: Icon(
-                                                            FontAwesomeIcons.hockeyPuck,
-                                                            size: 14,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                        // Bottom right
-                                                        Positioned(
-                                                          right: -12,
-                                                          bottom: -14,
-                                                          child: Icon(
-                                                            FontAwesomeIcons.hockeyPuck,
-                                                            size: 18,
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                ShotBreakdownDonut(context, shotCounts),
-                                              ],
-                                            ),
-                                          ),
-                                  ),
-                                  isThreeButtonAndroidNavigation(context)
-                                      ? SizedBox(
-                                          height: MediaQuery.paddingOf(context).bottom + kBottomNavigationBarHeight,
-                                        )
-                                      : const SizedBox(height: 30),
-                                ],
-                              );
-                            } else {
-                              return Column(
-                                children: [
-                                  Text(
-                                    "You haven't taken any shots yet".toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    "Tap \"Start Shooting\" to begin!".toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 28,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }
-                          },
-                        ),
-                      ], // end if (_subscriptionLevel != 'pro')
-                    ],
-                  ),
-                ),
-              ),
-            // Only wrap the session controls in SessionServiceProvider/AnimatedBuilder
-            SessionServiceProvider(
-              service: sessionService,
-              child: AnimatedBuilder(
-                animation: sessionService,
-                builder: (context, child) {
-                  return SafeArea(
-                    top: false,
-                    child: Container(
-                      padding: EdgeInsets.only(
-                        bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                            stream: _activeIterationStream,
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                                Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                                return iteration.total! < 10000
-                                    ? Container()
-                                    : SizedBox(
-                                        width: MediaQuery.of(context).size.width - 30,
-                                        child: TextButton(
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.all(10),
-                                            backgroundColor: Theme.of(context).cardTheme.color,
-                                          ),
-                                          onPressed: () {
-                                            dialog(
-                                              context,
-                                              ConfirmDialog(
-                                                "Start a new challenge?",
-                                                Text(
-                                                  "Your current challenge data will remain in your profile.\n\nWould you like to continue?",
-                                                  style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onSurface,
-                                                  ),
-                                                ),
-                                                "Cancel",
-                                                () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                "Continue",
-                                                () {
-                                                  startNewIteration(
-                                                    Provider.of<FirebaseAuth>(context, listen: false),
-                                                    Provider.of<FirebaseFirestore>(context, listen: false),
-                                                  ).then((success) {
-                                                    if (success!) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          duration: const Duration(milliseconds: 1200),
-                                                          content: Text(
-                                                            'Challenge restarted!',
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    } else {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                                          duration: const Duration(milliseconds: 1200),
-                                                          content: Text(
-                                                            'There was an error restarting the challenge :(',
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  });
-                                                  context.pop();
-                                                },
-                                              ),
-                                            );
-                                          },
-                                          child: Text(
-                                            'Start New Challenge'.toUpperCase(),
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                              }
-                              return Container();
-                            },
-                          ),
-                          sessionService.isRunning
-                              ? Container()
-                              : Container(
-                                  padding: isThreeButtonAndroidNavigation(context)
-                                      ? EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + kBottomNavigationBarHeight)
-                                      : EdgeInsets.only(
-                                          bottom: 15,
-                                        ),
-                                  width: MediaQuery.of(context).size.width - 30,
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.all(10),
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                    ),
-                                    onPressed: () {
-                                      if (!sessionService.isRunning) {
-                                        Feedback.forTap(context);
-                                        sessionService.start();
-                                        widget.sessionPanelController.open();
-                                      } else {
-                                        dialog(
-                                          context,
-                                          ConfirmDialog(
-                                            "Override current session?",
-                                            Text(
-                                              "Starting a new session will override your existing one.\n\nWould you like to continue?",
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            "Cancel",
-                                            () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            "Continue",
-                                            () {
-                                              Feedback.forTap(context);
-                                              sessionService.reset();
-                                              Navigator.of(context).pop();
-                                              sessionService.start();
-                                              widget.sessionPanelController.show();
-                                            },
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    child: Text(
-                                      'Start Shooting'.toUpperCase(),
-                                      style: const TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+            Expanded(
+              child: showingRoad ? _buildInlineChallengerRoad(user) : _buildTrainDashboard(user),
             ),
+            if (!showingRoad) _buildSessionControls(),
           ],
         );
       },
@@ -1163,14 +1035,28 @@ class _ShotsState extends State<Shots> {
   }
 }
 
-// Minimal fake QuerySnapshot for empty state
-class FakeQuerySnapshot implements QuerySnapshot<Map<String, dynamic>> {
-  @override
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> get docs => [];
-  @override
-  List<DocumentChange<Map<String, dynamic>>> get docChanges => [];
-  @override
-  int get size => 0;
-  @override
-  SnapshotMetadata get metadata => throw UnimplementedError();
+class _TrainProgressMetrics {
+  const _TrainProgressMetrics({
+    required this.total,
+    required this.shotsRemaining,
+    required this.shotsPerDay,
+    required this.shotsPerWeek,
+    required this.isPastGoal,
+    required this.dailyText,
+    required this.weeklyText,
+    required this.goalDateLabel,
+    required this.statusLabel,
+    required this.progress,
+  });
+
+  final int total;
+  final int shotsRemaining;
+  final int shotsPerDay;
+  final int shotsPerWeek;
+  final bool isPastGoal;
+  final String dailyText;
+  final String weeklyText;
+  final String goalDateLabel;
+  final String statusLabel;
+  final double progress;
 }
