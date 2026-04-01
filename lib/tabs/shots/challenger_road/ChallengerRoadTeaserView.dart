@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'ChallengerRoadMapView.dart';
 
@@ -16,11 +15,37 @@ class ChallengerRoadTeaserView extends StatefulWidget {
 class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
   static const String _walkthroughSeenKey = 'challenger_road_preview_walkthrough_seen';
   bool _showWalkthrough = true;
+  final PageController _walkthroughController = PageController();
+  int _walkthroughPage = 0;
+
+  final List<({String title, String body, IconData icon})> _walkthroughSlides = const [
+    (
+      title: 'How Challenger Road Works',
+      body: 'Tap a challenge to open it. Then press Start to try the challenge.',
+      icon: Icons.route_rounded,
+    ),
+    (
+      title: 'Level 1 Is Free',
+      body: 'You can try Level 1 challenges for free.',
+      icon: Icons.sports_hockey,
+    ),
+    (
+      title: 'Level 2 Requires Pro',
+      body: 'When you finish Level 1, you can upgrade to unlock more levels.',
+      icon: Icons.lock_open_rounded,
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadWalkthroughPreference();
+  }
+
+  @override
+  void dispose() {
+    _walkthroughController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadWalkthroughPreference() async {
@@ -38,99 +63,122 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
     await prefs.setBool(_walkthroughSeenKey, true);
   }
 
+  Future<void> _nextWalkthroughPage() async {
+    if (_walkthroughPage >= _walkthroughSlides.length - 1) {
+      await _dismissWalkthrough();
+      return;
+    }
+    await _walkthroughController.nextPage(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+    );
+  }
+
   Future<void> _promptGoPro() async {
     await presentPaywallIfNeeded(context);
   }
 
-  ChallengerRoadAttempt _previewHeaderAttempt() {
-    return ChallengerRoadAttempt(
-      id: 'preview-attempt',
-      attemptNumber: 1,
-      startingLevel: 1,
-      currentLevel: 1,
-      challengerRoadShotCount: 920,
-      totalShotsThisAttempt: 920,
-      resetCount: 0,
-      highestLevelReachedThisAttempt: 1,
-      status: 'active',
-      startDate: DateTime.now().subtract(const Duration(days: 2)),
-    );
-  }
-
   Widget _buildWalkthroughCard(BuildContext context) {
-    return Positioned(
-      top: 10,
-      left: 12,
-      right: 12,
+    final isLast = _walkthroughPage == _walkthroughSlides.length - 1;
+    return Positioned.fill(
       child: Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.35),
+        color: Colors.black.withValues(alpha: 0.25),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.98),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.35)),
             ),
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Quick Walkthrough',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 15,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 230,
+                  child: PageView.builder(
+                    controller: _walkthroughController,
+                    itemCount: _walkthroughSlides.length,
+                    onPageChanged: (index) => setState(() => _walkthroughPage = index),
+                    itemBuilder: (context, index) {
+                      final slide = _walkthroughSlides[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(slide.icon, size: 34, color: Theme.of(context).primaryColor),
+                            const SizedBox(height: 10),
+                            Text(
+                              slide.title,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 18,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              slide.body,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 13,
+                                height: 1.35,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                  InkWell(
-                    onTap: _dismissWalkthrough,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.close,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_walkthroughSlides.length, (i) {
+                    final selected = i == _walkthroughPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: selected ? 18 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: selected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(99),
                       ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: _dismissWalkthrough,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        textStyle: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 15,
+                        ),
+                      ),
+                      child: const Text('Skip'),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '1) Tap any Level 1 challenge to open details and start.',
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: _nextWalkthroughPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(isLast ? 'Get Started' : 'Next'),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '2) Complete Level 1 challenges to learn the flow and track attempts.',
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '3) Unlock Level 2+ with Pro when you are ready to continue.',
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -244,8 +292,8 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
             userId: userId,
             isPreviewMode: true,
             previewMaxLevel: 1,
-            previewHeaderAttempt: _previewHeaderAttempt(),
             onPreviewLevelUnlockAttempted: _promptGoPro,
+            mapBottomInset: 120,
           ),
           if (_showWalkthrough) _buildWalkthroughCard(context),
           _buildBottomBanner(context),
