@@ -634,7 +634,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final title = isDoOver ? 'Start Over?' : 'Restart Challenger Road?';
     final body = isDoOver
         ? 'Your shot count and challenge progress for this attempt will be cleared. '
-            'Your attempt number stays the same — this is a do-over, not a new attempt.'
+            'Your attempt number stays the same.\n\nThis is a do-over, not a new attempt.'
         : 'Your current attempt will end. Your next attempt will start one level below your current best.';
 
     showDialog<void>(

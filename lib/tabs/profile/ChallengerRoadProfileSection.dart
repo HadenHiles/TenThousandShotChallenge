@@ -2,104 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
-// ── Badge metadata ─────────────────────────────────────────────────────────
-
-class _BadgeDef {
-  final String id;
-  final String name;
-  final String description;
-  final IconData icon;
-  final Color color;
-
-  const _BadgeDef({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.icon,
-    required this.color,
-  });
-}
-
-const List<_BadgeDef> _kBadges = [
-  _BadgeDef(
-    id: 'cr_attempts_1',
-    name: 'First Step',
-    description: 'Start your first Challenger Road attempt',
-    icon: Icons.flag_rounded,
-    color: Color(0xFF66BB6A),
-  ),
-  _BadgeDef(
-    id: 'cr_attempts_3',
-    name: 'Committed',
-    description: '3 Challenger Road attempts',
-    icon: Icons.repeat_rounded,
-    color: Color(0xFF29B6F6),
-  ),
-  _BadgeDef(
-    id: 'cr_attempts_10',
-    name: 'Road Grinder',
-    description: '10 Challenger Road attempts',
-    icon: Icons.military_tech_rounded,
-    color: Color(0xFF7E57C2),
-  ),
-  _BadgeDef(
-    id: 'cr_level1_all_clear',
-    name: 'Level 1 Clear',
-    description: 'Pass every active Level 1 challenge at least once',
-    icon: Icons.route_rounded,
-    color: Color(0xFF26A69A),
-  ),
-  _BadgeDef(
-    id: 'cr_wrist_l1_x3',
-    name: 'Wrist Work',
-    description: 'Pass any wrist-shot Level 1 challenge 3 times',
-    icon: Icons.sports_hockey_rounded,
-    color: Color(0xFF4FC3F7),
-  ),
-  _BadgeDef(
-    id: 'cr_snap_l1_x3',
-    name: 'Snap Skills',
-    description: 'Pass any snap-shot Level 1 challenge 3 times',
-    icon: Icons.bolt_rounded,
-    color: Color(0xFF64B5F6),
-  ),
-  _BadgeDef(
-    id: 'cr_backhand_l1_x3',
-    name: 'Backhand Builder',
-    description: 'Pass any backhand Level 1 challenge 3 times',
-    icon: Icons.undo_rounded,
-    color: Color(0xFF9575CD),
-  ),
-  _BadgeDef(
-    id: 'cr_slap_l1_x3',
-    name: 'Slap Specialist',
-    description: 'Pass any slap-shot Level 1 challenge 3 times',
-    icon: Icons.flash_on_rounded,
-    color: Color(0xFFFFB74D),
-  ),
-  _BadgeDef(
-    id: 'cr_wrist_warmup_l1_x3',
-    name: 'Warmup Wizard',
-    description: 'Pass "Wrist Shot Warmup" Level 1 three times',
-    icon: Icons.adjust_rounded,
-    color: Color(0xFF81C784),
-  ),
-  _BadgeDef(
-    id: 'cr_outperform_plus2_x5',
-    name: 'Clutch Finisher',
-    description: 'Outperform challenge target by +2 hits, 5 times',
-    icon: Icons.emoji_events_rounded,
-    color: Color(0xFFFF8A65),
-  ),
-  _BadgeDef(
-    id: 'cr_10k_x1',
-    name: 'First 10,000',
-    description: 'Hit 10,000 Challenger Road shots',
-    icon: Icons.workspace_premium_rounded,
-    color: Color(0xFFFF7043),
-  ),
-];
-
 // ── Main widget ────────────────────────────────────────────────────────────
 
 /// Drop-in Challenger Road section for the Profile tab.
@@ -162,7 +64,24 @@ class ChallengerRoadProfileSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _BadgeWrapGrid(earnedBadges: summary.badges, summary: summary),
+          FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+            future: ChallengerRoadService().getBadgeCatalogForUser(userId),
+            builder: (context, badgeSnap) {
+              final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
+              if (badgeDefs.isEmpty && summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              return _BadgeWrapGrid(
+                earnedBadges: summary.badges,
+                summary: summary,
+                badgeDefs: badgeDefs,
+              );
+            },
+          ),
           const SizedBox(height: 12),
         ],
       ),
@@ -420,16 +339,56 @@ class _StatsRow extends StatelessWidget {
 // ── Badge scroll row ────────────────────────────────────────────────────────
 
 class _BadgeWrapGrid extends StatelessWidget {
-  const _BadgeWrapGrid({required this.earnedBadges, required this.summary});
+  const _BadgeWrapGrid({
+    required this.earnedBadges,
+    required this.summary,
+    required this.badgeDefs,
+  });
+
   final List<String> earnedBadges;
   final ChallengerRoadUserSummary summary;
+  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+
+  List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
+    final knownById = <String, ChallengerRoadBadgeDefinition>{
+      for (final badge in badgeDefs) badge.id: badge,
+    };
+
+    final unknownEarned = earnedBadges.where((id) => !knownById.containsKey(id)).map((id) {
+      return ChallengerRoadBadgeDefinition(
+        id: id,
+        name: _titleFromBadgeId(id),
+        description: 'Legacy Challenger Road badge.',
+        category: ChallengerRoadBadgeCategory.special,
+      );
+    }).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+
+    return [...badgeDefs, ...unknownEarned];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final displayDefs = _buildDisplayDefs();
+
+    if (displayDefs.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          'No badge definitions available yet.',
+          style: TextStyle(
+            fontFamily: 'NovecentoSans',
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      );
+    }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _kBadges.length,
+      itemCount: displayDefs.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 8,
@@ -437,7 +396,7 @@ class _BadgeWrapGrid extends StatelessWidget {
         childAspectRatio: 0.95,
       ),
       itemBuilder: (context, index) {
-        final def = _kBadges[index];
+        final def = displayDefs[index];
         final earned = earnedBadges.contains(def.id);
         return Align(
           alignment: Alignment.topCenter,
@@ -450,93 +409,79 @@ class _BadgeWrapGrid extends StatelessWidget {
 
 class _BadgeChip extends StatelessWidget {
   const _BadgeChip({required this.def, required this.earned, required this.summary});
-  final _BadgeDef def;
+  final ChallengerRoadBadgeDefinition def;
   final bool earned;
   final ChallengerRoadUserSummary summary;
 
-  String _requirementText() {
-    switch (def.id) {
-      case 'cr_attempts_1':
-        return 'Start 1 Challenger Road attempt.';
-      case 'cr_attempts_3':
-        return 'Start 3 Challenger Road attempts.';
-      case 'cr_attempts_10':
-        return 'Start 10 Challenger Road attempts.';
-      case 'cr_level1_all_clear':
-        return 'Pass every active Level 1 challenge at least once.';
-      case 'cr_wrist_l1_x3':
-        return 'Pass wrist-shot Level 1 challenges 3 times total.';
-      case 'cr_snap_l1_x3':
-        return 'Pass snap-shot Level 1 challenges 3 times total.';
-      case 'cr_backhand_l1_x3':
-        return 'Pass backhand Level 1 challenges 3 times total.';
-      case 'cr_slap_l1_x3':
-        return 'Pass slap-shot Level 1 challenges 3 times total.';
-      case 'cr_wrist_warmup_l1_x3':
-        return 'Complete Wrist Shot Warmup (Level 1) three times.';
-      case 'cr_outperform_plus2_x5':
-        return 'Outperform any challenge by 2+ target hits, five times.';
-      case 'cr_10k_x1':
-        return 'Reach 10,000 total Challenger Road shots.';
-      default:
-        return def.description;
+  IconData _iconForBadge() {
+    switch (def.category) {
+      case ChallengerRoadBadgeCategory.attempts:
+        return Icons.repeat_rounded;
+      case ChallengerRoadBadgeCategory.shotsMilestone:
+        return Icons.workspace_premium_rounded;
+      case ChallengerRoadBadgeCategory.levelAllClear:
+        return Icons.route_rounded;
+      case ChallengerRoadBadgeCategory.shotTypeLevelMastery:
+        switch ((def.shotType ?? '').toLowerCase()) {
+          case 'snap':
+            return Icons.bolt_rounded;
+          case 'backhand':
+            return Icons.undo_rounded;
+          case 'slap':
+            return Icons.flash_on_rounded;
+          case 'wrist':
+          default:
+            return Icons.sports_hockey_rounded;
+        }
+      case ChallengerRoadBadgeCategory.outperform:
+        return Icons.emoji_events_rounded;
+      case ChallengerRoadBadgeCategory.special:
+        if (def.id == 'cr_comeback') return Icons.trending_up_rounded;
+        if (def.id == 'cr_perfect_level') return Icons.stars_rounded;
+        return Icons.military_tech_rounded;
     }
   }
 
+  Color _colorForBadge() {
+    switch (def.category) {
+      case ChallengerRoadBadgeCategory.attempts:
+        return const Color(0xFF29B6F6);
+      case ChallengerRoadBadgeCategory.shotsMilestone:
+        return const Color(0xFFFF7043);
+      case ChallengerRoadBadgeCategory.levelAllClear:
+        return const Color(0xFF26A69A);
+      case ChallengerRoadBadgeCategory.shotTypeLevelMastery:
+        switch ((def.shotType ?? '').toLowerCase()) {
+          case 'snap':
+            return const Color(0xFF64B5F6);
+          case 'backhand':
+            return const Color(0xFF9575CD);
+          case 'slap':
+            return const Color(0xFFFFB74D);
+          case 'wrist':
+          default:
+            return const Color(0xFF4FC3F7);
+        }
+      case ChallengerRoadBadgeCategory.outperform:
+        return const Color(0xFFFF8A65);
+      case ChallengerRoadBadgeCategory.special:
+        return const Color(0xFF8D6E63);
+    }
+  }
+
+  String _requirementText() {
+    return def.description;
+  }
+
   String? _progressText() {
-    int targetAttempts(String id) {
-      switch (id) {
-        case 'cr_attempts_1':
-          return 1;
-        case 'cr_attempts_3':
-          return 3;
-        case 'cr_attempts_10':
-          return 10;
-        case 'cr_attempts_25':
-          return 25;
-        case 'cr_attempts_50':
-          return 50;
-        default:
-          return 0;
-      }
+    if (def.category == ChallengerRoadBadgeCategory.attempts && def.threshold != null) {
+      return 'Progress: ${summary.totalAttempts}/${def.threshold} attempts';
     }
 
-    int targetShots(String id) {
-      switch (id) {
-        case 'cr_10k_x1':
-          return 10000;
-        case 'cr_10k_x3':
-          return 30000;
-        case 'cr_10k_x10':
-          return 100000;
-        default:
-          return 0;
-      }
+    if (def.category == ChallengerRoadBadgeCategory.shotsMilestone && def.threshold != null) {
+      return 'Progress: ${summary.allTimeTotalChallengerRoadShots}/${def.threshold} Challenger Road shots';
     }
 
-    int targetLevels(String id) {
-      switch (id) {
-        case 'cr_level_5':
-          return 5;
-        case 'cr_level_10':
-          return 10;
-        default:
-          return 0;
-      }
-    }
-
-    final attemptTarget = targetAttempts(def.id);
-    if (attemptTarget > 0) {
-      return 'Progress: ${summary.totalAttempts}/$attemptTarget attempts';
-    }
-    final shotsTarget = targetShots(def.id);
-    if (shotsTarget > 0) {
-      return 'Progress: ${summary.allTimeTotalChallengerRoadShots}/$shotsTarget Challenger Road shots';
-    }
-    final levelTarget = targetLevels(def.id);
-    if (levelTarget > 0) {
-      return 'Progress: best level ${summary.allTimeBestLevel}/$levelTarget';
-    }
     return null;
   }
 
@@ -558,7 +503,7 @@ class _BadgeChip extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(def.icon, color: earned ? def.color : scheme.onSurface.withValues(alpha: 0.6), size: 22),
+                    Icon(_iconForBadge(), color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6), size: 22),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -628,24 +573,24 @@ class _BadgeChip extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: earned ? def.color.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
+                    color: earned ? _colorForBadge().withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
                     border: Border.all(
-                      color: earned ? def.color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                      color: earned ? _colorForBadge() : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
                       width: earned ? 2.0 : 1.2,
                     ),
                     boxShadow: earned
                         ? [
                             BoxShadow(
-                              color: def.color.withValues(alpha: 0.3),
+                              color: _colorForBadge().withValues(alpha: 0.3),
                               blurRadius: 8,
                             )
                           ]
                         : null,
                   ),
                   child: Icon(
-                    def.icon,
+                    _iconForBadge(),
                     size: 26,
-                    color: earned ? def.color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    color: earned ? _colorForBadge() : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -668,4 +613,8 @@ class _BadgeChip extends StatelessWidget {
       ),
     );
   }
+}
+
+String _titleFromBadgeId(String id) {
+  return id.replaceAll('cr_', '').split('_').where((p) => p.isNotEmpty).map((part) => '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
 }

@@ -28,6 +28,35 @@ class ChallengerRoadMilestoneResult {
   });
 }
 
+enum ChallengerRoadBadgeCategory {
+  attempts,
+  shotsMilestone,
+  levelAllClear,
+  shotTypeLevelMastery,
+  outperform,
+  special,
+}
+
+class ChallengerRoadBadgeDefinition {
+  final String id;
+  final String name;
+  final String description;
+  final ChallengerRoadBadgeCategory category;
+  final int? threshold;
+  final int? level;
+  final String? shotType;
+
+  const ChallengerRoadBadgeDefinition({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.category,
+    this.threshold,
+    this.level,
+    this.shotType,
+  });
+}
+
 class ChallengerRoadService {
   final FirebaseFirestore _firestore;
 
@@ -61,6 +90,148 @@ class ChallengerRoadService {
 
   /// Cross-attempt per-challenge history sub-collection.
   CollectionReference _allTimeHistoryRef(String userId) => _firestore.collection('users').doc(userId).collection('challenger_road_challenge_history');
+
+  String _shotTypeLevelKey(String shotType, int level) => '${shotType.toLowerCase()}|$level';
+
+  String _shotTypeLabel(String shotType) {
+    switch (shotType.toLowerCase()) {
+      case 'wrist':
+        return 'Wrist Shot';
+      case 'snap':
+        return 'Snap Shot';
+      case 'backhand':
+        return 'Backhand';
+      case 'slap':
+        return 'Slap Shot';
+      default:
+        return shotType;
+    }
+  }
+
+  List<ChallengerRoadBadgeDefinition> _buildBadgeDefinitions(_RoadBadgeStats stats) {
+    final levels = stats.activeChallengeIdsByLevel.keys.toList()..sort();
+    final maxLevel = levels.isEmpty ? 0 : levels.last;
+
+    final badges = <ChallengerRoadBadgeDefinition>[
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_attempts_1',
+        name: 'First Step',
+        description: 'Start your first Challenger Road attempt.',
+        category: ChallengerRoadBadgeCategory.attempts,
+        threshold: 1,
+      ),
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_attempts_3',
+        name: 'Committed',
+        description: 'Start 3 Challenger Road attempts.',
+        category: ChallengerRoadBadgeCategory.attempts,
+        threshold: 3,
+      ),
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_attempts_10',
+        name: 'Road Grinder',
+        description: 'Start 10 Challenger Road attempts.',
+        category: ChallengerRoadBadgeCategory.attempts,
+        threshold: 10,
+      ),
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_10k_x1',
+        name: 'First 10,000',
+        description: 'Hit 10,000 Challenger Road shots.',
+        category: ChallengerRoadBadgeCategory.shotsMilestone,
+        threshold: 10000,
+      ),
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_outperform_plus2_x5',
+        name: 'Clutch Finisher',
+        description: 'Beat the passing target by 2+ shots in 5 sessions.',
+        category: ChallengerRoadBadgeCategory.outperform,
+        threshold: 5,
+      ),
+      const ChallengerRoadBadgeDefinition(
+        id: 'cr_perfect_level',
+        name: 'Perfect Level',
+        description: 'In one attempt, pass every active challenge at a level on your first try.',
+        category: ChallengerRoadBadgeCategory.special,
+      ),
+    ];
+
+    if (maxLevel >= 5) {
+      badges.add(
+        const ChallengerRoadBadgeDefinition(
+          id: 'cr_comeback',
+          name: 'Comeback Kid',
+          description: 'After previously reaching above Level 1, restart at Level 1 and reach Level 5 in that new attempt.',
+          category: ChallengerRoadBadgeCategory.special,
+        ),
+      );
+    }
+
+    if (maxLevel >= 6) {
+      badges.add(
+        const ChallengerRoadBadgeDefinition(
+          id: 'cr_attempts_25',
+          name: 'Road Veteran',
+          description: 'Start 25 Challenger Road attempts.',
+          category: ChallengerRoadBadgeCategory.attempts,
+          threshold: 25,
+        ),
+      );
+    }
+
+    if (maxLevel >= 10) {
+      badges.add(
+        const ChallengerRoadBadgeDefinition(
+          id: 'cr_attempts_50',
+          name: 'Road Legend',
+          description: 'Start 50 Challenger Road attempts.',
+          category: ChallengerRoadBadgeCategory.attempts,
+          threshold: 50,
+        ),
+      );
+    }
+
+    for (final level in levels) {
+      badges.add(
+        ChallengerRoadBadgeDefinition(
+          id: 'cr_level_${level}_all_clear',
+          name: level == 1 ? 'Level 1 Clear' : 'Level $level Conqueror',
+          description: 'Pass every active Level $level challenge at least once.',
+          category: ChallengerRoadBadgeCategory.levelAllClear,
+          level: level,
+        ),
+      );
+
+      for (final shotType in const ['wrist', 'snap', 'backhand', 'slap']) {
+        final activeCount = stats.activeShotTypeChallengeCountByLevel[_shotTypeLevelKey(shotType, level)] ?? 0;
+        if (activeCount == 0) continue;
+
+        final threshold = min(8, max(2, activeCount + ((level + 1) ~/ 2)));
+        final shotLabel = _shotTypeLabel(shotType);
+
+        badges.add(
+          ChallengerRoadBadgeDefinition(
+            id: 'cr_${shotType}_l${level}_x$threshold',
+            name: '$shotLabel L$level Specialist',
+            description: 'Complete Level $level $shotLabel challenges $threshold times total.',
+            category: ChallengerRoadBadgeCategory.shotTypeLevelMastery,
+            threshold: threshold,
+            level: level,
+            shotType: shotType,
+          ),
+        );
+      }
+    }
+
+    return badges;
+  }
+
+  /// Returns the profile badge catalog generated from the current active
+  /// Challenger Road levels/challenges.
+  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
+    final stats = await _loadRoadBadgeStats(userId);
+    return _buildBadgeDefinitions(stats);
+  }
 
   // ---------------------------------------------------------------------------
   // 1. Global challenge data
@@ -639,10 +810,31 @@ class ChallengerRoadService {
         if (challenge.id != null) challenge.id!: challenge,
     };
 
-    final levelOneChallenges = await getChallengesForLevel(1);
-    final levelOneChallengeIds = levelOneChallenges.map((c) => c.id).whereType<String>().toSet();
+    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+    final activeChallengeIdsByLevel = <int, Set<String>>{};
+    final activeShotTypeChallengeCountByLevel = <String, int>{};
 
-    final levelOnePassesByChallenge = <String, int>{};
+    for (final levelDoc in allActiveLevelSnaps.docs) {
+      final level = (levelDoc.data()['level'] as num?)?.toInt();
+      if (level == null) continue;
+
+      final challengeId = levelDoc.reference.parent.parent?.id;
+      if (challengeId == null) continue;
+
+      final challenge = challengeById[challengeId];
+      if (challenge == null || !challenge.active) continue;
+
+      activeChallengeIdsByLevel.putIfAbsent(level, () => <String>{}).add(challengeId);
+
+      final shotType = challenge.shotType?.toLowerCase();
+      if (shotType != null && shotType.isNotEmpty) {
+        final key = _shotTypeLevelKey(shotType, level);
+        activeShotTypeChallengeCountByLevel[key] = (activeShotTypeChallengeCountByLevel[key] ?? 0) + 1;
+      }
+    }
+
+    final clearedChallengeIdsByLevel = <int, Set<String>>{};
+    final passesByShotTypeAndLevel = <String, int>{};
     var outperformPlusTwoPasses = 0;
 
     final attemptsSnap = await _attemptsRef(userId).get();
@@ -652,9 +844,19 @@ class ChallengerRoadService {
       final progressSnap = await _progressRef(userId, attemptId).get();
       for (final progressDoc in progressSnap.docs) {
         final progress = ChallengeProgressEntry.fromSnapshot(progressDoc);
-        final levelOnePasses = progress.levelHistory.where((h) => h.level == 1 && h.passed).length;
-        if (levelOnePasses > 0) {
-          levelOnePassesByChallenge[progress.challengeId] = (levelOnePassesByChallenge[progress.challengeId] ?? 0) + levelOnePasses;
+
+        final challenge = challengeById[progress.challengeId];
+        final shotType = challenge?.shotType?.toLowerCase();
+
+        for (final history in progress.levelHistory) {
+          if (!history.passed) continue;
+
+          clearedChallengeIdsByLevel.putIfAbsent(history.level, () => <String>{}).add(progress.challengeId);
+
+          if (shotType != null && shotType.isNotEmpty) {
+            final key = _shotTypeLevelKey(shotType, history.level);
+            passesByShotTypeAndLevel[key] = (passesByShotTypeAndLevel[key] ?? 0) + 1;
+          }
         }
       }
 
@@ -667,36 +869,15 @@ class ChallengerRoadService {
       }
     }
 
-    int levelOnePassesForShotType(String shotType) {
-      var total = 0;
-      levelOnePassesByChallenge.forEach((challengeId, passes) {
-        if ((challengeById[challengeId]?.shotType ?? '') == shotType) {
-          total += passes;
-        }
-      });
-      return total;
-    }
-
-    int passesForChallengeNameContaining(String query) {
-      final normalized = query.toLowerCase();
-      final matchingIds = challengeById.values.where((c) => c.name.toLowerCase().contains(normalized)).map((c) => c.id).whereType<String>();
-      var total = 0;
-      for (final id in matchingIds) {
-        total += levelOnePassesByChallenge[id] ?? 0;
-      }
-      return total;
-    }
-
-    final levelOneAllClear = levelOneChallengeIds.isNotEmpty && levelOneChallengeIds.every((id) => (levelOnePassesByChallenge[id] ?? 0) > 0);
+    final highestActiveLevel = activeChallengeIdsByLevel.keys.isEmpty ? 0 : (activeChallengeIdsByLevel.keys.toList()..sort()).last;
 
     return _RoadBadgeStats(
-      levelOneWristPasses: levelOnePassesForShotType('wrist'),
-      levelOneSnapPasses: levelOnePassesForShotType('snap'),
-      levelOneBackhandPasses: levelOnePassesForShotType('backhand'),
-      levelOneSlapPasses: levelOnePassesForShotType('slap'),
-      wristWarmupLevelOnePasses: passesForChallengeNameContaining('wrist shot warmup'),
+      highestActiveLevel: highestActiveLevel,
+      activeChallengeIdsByLevel: activeChallengeIdsByLevel,
+      activeShotTypeChallengeCountByLevel: activeShotTypeChallengeCountByLevel,
+      clearedChallengeIdsByLevel: clearedChallengeIdsByLevel,
+      passesByShotTypeAndLevel: passesByShotTypeAndLevel,
       outperformPlusTwoPasses: outperformPlusTwoPasses,
-      levelOneAllClear: levelOneAllClear,
     );
   }
 
@@ -739,6 +920,7 @@ class ChallengerRoadService {
     final earned = List<String>.from(summary.badges);
     final newBadges = <String>[];
     final stats = await _loadRoadBadgeStats(userId);
+    final badgeDefs = _buildBadgeDefinitions(stats);
 
     void maybeAward(String badgeId) {
       if (!earned.contains(badgeId)) {
@@ -747,28 +929,48 @@ class ChallengerRoadService {
       }
     }
 
-    // Attempt count badges.
-    const attemptTiers = [
-      (1, 'cr_attempts_1'),
-      (3, 'cr_attempts_3'),
-      (10, 'cr_attempts_10'),
-    ];
-    for (final (threshold, id) in attemptTiers) {
-      if (summary.totalAttempts >= threshold) maybeAward(id);
+    for (final badge in badgeDefs) {
+      switch (badge.category) {
+        case ChallengerRoadBadgeCategory.attempts:
+          if (summary.totalAttempts >= (badge.threshold ?? 0)) {
+            maybeAward(badge.id);
+          }
+          break;
+        case ChallengerRoadBadgeCategory.shotsMilestone:
+          if (summary.allTimeTotalChallengerRoadShots >= (badge.threshold ?? 0)) {
+            maybeAward(badge.id);
+          }
+          break;
+        case ChallengerRoadBadgeCategory.levelAllClear:
+          final level = badge.level;
+          if (level == null) break;
+          final activeCount = stats.activeChallengeIdsByLevel[level]?.length ?? 0;
+          final clearedCount = stats.clearedChallengeIdsByLevel[level]?.length ?? 0;
+          if (activeCount > 0 && clearedCount >= activeCount) {
+            maybeAward(badge.id);
+          }
+          break;
+        case ChallengerRoadBadgeCategory.shotTypeLevelMastery:
+          final level = badge.level;
+          final shotType = badge.shotType;
+          final threshold = badge.threshold;
+          if (level == null || shotType == null || threshold == null) break;
+
+          final passes = stats.passesByShotTypeAndLevel[_shotTypeLevelKey(shotType, level)] ?? 0;
+          if (passes >= threshold) {
+            maybeAward(badge.id);
+          }
+          break;
+        case ChallengerRoadBadgeCategory.outperform:
+          if (stats.outperformPlusTwoPasses >= (badge.threshold ?? 0)) {
+            maybeAward(badge.id);
+          }
+          break;
+        case ChallengerRoadBadgeCategory.special:
+          // Awarded via separate context-aware checks.
+          break;
+      }
     }
-
-    // 10K milestone badge (first milestone).
-    final milestoneCount = summary.allTimeTotalChallengerRoadShots ~/ 10000;
-    if (milestoneCount >= 1) maybeAward('cr_10k_x1');
-
-    // Challenge / shot-type progression badges.
-    if (stats.levelOneAllClear) maybeAward('cr_level1_all_clear');
-    if (stats.levelOneWristPasses >= 3) maybeAward('cr_wrist_l1_x3');
-    if (stats.levelOneSnapPasses >= 3) maybeAward('cr_snap_l1_x3');
-    if (stats.levelOneBackhandPasses >= 3) maybeAward('cr_backhand_l1_x3');
-    if (stats.levelOneSlapPasses >= 3) maybeAward('cr_slap_l1_x3');
-    if (stats.wristWarmupLevelOnePasses >= 3) maybeAward('cr_wrist_warmup_l1_x3');
-    if (stats.outperformPlusTwoPasses >= 5) maybeAward('cr_outperform_plus2_x5');
 
     if (newBadges.isEmpty) return;
 
@@ -777,21 +979,19 @@ class ChallengerRoadService {
 }
 
 class _RoadBadgeStats {
-  final int levelOneWristPasses;
-  final int levelOneSnapPasses;
-  final int levelOneBackhandPasses;
-  final int levelOneSlapPasses;
-  final int wristWarmupLevelOnePasses;
+  final int highestActiveLevel;
+  final Map<int, Set<String>> activeChallengeIdsByLevel;
+  final Map<String, int> activeShotTypeChallengeCountByLevel;
+  final Map<int, Set<String>> clearedChallengeIdsByLevel;
+  final Map<String, int> passesByShotTypeAndLevel;
   final int outperformPlusTwoPasses;
-  final bool levelOneAllClear;
 
   const _RoadBadgeStats({
-    required this.levelOneWristPasses,
-    required this.levelOneSnapPasses,
-    required this.levelOneBackhandPasses,
-    required this.levelOneSlapPasses,
-    required this.wristWarmupLevelOnePasses,
+    required this.highestActiveLevel,
+    required this.activeChallengeIdsByLevel,
+    required this.activeShotTypeChallengeCountByLevel,
+    required this.clearedChallengeIdsByLevel,
+    required this.passesByShotTypeAndLevel,
     required this.outperformPlusTwoPasses,
-    required this.levelOneAllClear,
   });
 }
