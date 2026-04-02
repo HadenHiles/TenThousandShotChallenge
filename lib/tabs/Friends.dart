@@ -248,7 +248,7 @@ class _FriendsState extends State<Friends> {
                           if (tabController.index == 1 && _invites.isNotEmpty) {
                             return Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.fromLTRB(16, 25, 16, 8),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color.alphaBlend(
@@ -319,7 +319,7 @@ class _FriendsState extends State<Friends> {
                         builder: (context, child) {
                           if (tabController.index == 0) {
                             return Container(
-                              padding: const EdgeInsets.fromLTRB(16, 25, 16, 8),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                               child: TextField(
                                 controller: _friendSearchController,
                                 onChanged: (val) => setState(() => _friendSearchQuery = val.trim()),

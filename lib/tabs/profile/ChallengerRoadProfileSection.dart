@@ -215,7 +215,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
                 onPressed: onGoProTap,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
