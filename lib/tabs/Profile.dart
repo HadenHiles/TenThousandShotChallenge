@@ -787,8 +787,9 @@ class _ProfileState extends State<Profile> {
                       stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
                       builder: (context, snap) {
                         final summary = snap.data ?? ChallengerRoadUserSummary.empty();
+                        final bestLabel = summary.allTimeBestLevelShots == null ? 'Best: Level ${summary.allTimeBestLevel}' : 'Best: Level ${summary.allTimeBestLevel} in ${summary.allTimeBestLevelShots} shots';
                         return Text(
-                          'Best: Level ${summary.allTimeBestLevel}  \u00b7  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
+                          '$bestLabel  ·  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
                           style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
                         );
                       },

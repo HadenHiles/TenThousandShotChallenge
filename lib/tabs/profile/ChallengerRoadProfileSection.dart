@@ -143,7 +143,10 @@ class ChallengerRoadProfileSection extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           // Personal Best Badge
-          _PersonalBestBadge(level: summary.allTimeBestLevel),
+          _PersonalBestBadge(
+            level: summary.allTimeBestLevel,
+            shots: summary.allTimeBestLevelShots,
+          ),
           const SizedBox(height: 20),
           // Stats row
           _StatsRow(summary: summary),
@@ -234,8 +237,9 @@ class ChallengerRoadProfileSection extends StatelessWidget {
 // ── Personal Best Badge widget ──────────────────────────────────────────────
 
 class _PersonalBestBadge extends StatelessWidget {
-  const _PersonalBestBadge({required this.level});
+  const _PersonalBestBadge({required this.level, required this.shots});
   final int level;
+  final int? shots;
 
   @override
   Widget build(BuildContext context) {
@@ -308,9 +312,32 @@ class _PersonalBestBadge extends StatelessWidget {
             color: hasLevel ? primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
+        if (hasLevel && shots != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Set in ${_formatShotCount(shots!)} shots',
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+        ],
       ],
     );
   }
+}
+
+String _formatShotCount(int shots) {
+  final digits = shots.toString();
+  final buffer = StringBuffer();
+  for (int i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) {
+      buffer.write(',');
+    }
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
 }
 
 // ── Stats row ───────────────────────────────────────────────────────────────

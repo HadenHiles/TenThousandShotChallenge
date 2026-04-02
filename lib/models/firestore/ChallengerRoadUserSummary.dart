@@ -11,6 +11,10 @@ class ChallengerRoadUserSummary {
   /// Used to display the Personal Best badge on their profile.
   final int allTimeBestLevel;
 
+  /// Shots taken when the current personal-best level record was set.
+  /// Lower is better when comparing attempts that reached the same level.
+  final int? allTimeBestLevelShots;
+
   /// Cumulative Challenger Road shots across all attempts and milestone resets.
   /// Used for "× 10,000" badge calculations.
   final int allTimeTotalChallengerRoadShots;
@@ -24,6 +28,7 @@ class ChallengerRoadUserSummary {
     this.currentAttemptId,
     required this.totalAttempts,
     required this.allTimeBestLevel,
+    this.allTimeBestLevelShots,
     required this.allTimeTotalChallengerRoadShots,
     required this.badges,
     this.reference,
@@ -33,6 +38,7 @@ class ChallengerRoadUserSummary {
       : currentAttemptId = null,
         totalAttempts = 0,
         allTimeBestLevel = 0,
+        allTimeBestLevelShots = null,
         allTimeTotalChallengerRoadShots = 0,
         badges = [];
 
@@ -40,6 +46,7 @@ class ChallengerRoadUserSummary {
       : currentAttemptId = map['current_attempt_id'],
         totalAttempts = map['total_attempts'] ?? 0,
         allTimeBestLevel = map['all_time_best_level'] ?? 0,
+        allTimeBestLevelShots = (map['all_time_best_level_shots'] as num?)?.toInt(),
         allTimeTotalChallengerRoadShots = map['all_time_total_challenger_road_shots'] ?? 0,
         badges = List<String>.from(map['badges'] ?? []);
 
@@ -48,6 +55,7 @@ class ChallengerRoadUserSummary {
       'current_attempt_id': currentAttemptId,
       'total_attempts': totalAttempts,
       'all_time_best_level': allTimeBestLevel,
+      'all_time_best_level_shots': allTimeBestLevelShots,
       'all_time_total_challenger_road_shots': allTimeTotalChallengerRoadShots,
       'badges': badges,
     };
@@ -63,6 +71,7 @@ class ChallengerRoadUserSummary {
     String? currentAttemptId,
     int? totalAttempts,
     int? allTimeBestLevel,
+    int? allTimeBestLevelShots,
     int? allTimeTotalChallengerRoadShots,
     List<String>? badges,
   }) {
@@ -70,6 +79,7 @@ class ChallengerRoadUserSummary {
       currentAttemptId: currentAttemptId ?? this.currentAttemptId,
       totalAttempts: totalAttempts ?? this.totalAttempts,
       allTimeBestLevel: allTimeBestLevel ?? this.allTimeBestLevel,
+      allTimeBestLevelShots: allTimeBestLevelShots ?? this.allTimeBestLevelShots,
       allTimeTotalChallengerRoadShots: allTimeTotalChallengerRoadShots ?? this.allTimeTotalChallengerRoadShots,
       badges: badges ?? this.badges,
       reference: reference,

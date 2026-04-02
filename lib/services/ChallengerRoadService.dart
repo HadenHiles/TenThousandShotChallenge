@@ -335,8 +335,13 @@ class ChallengerRoadService {
     // Capture pre-advancement best level for comeback badge check.
     final summary = await getUserSummary(userId);
     final prevBestLevel = summary.allTimeBestLevel;
-    if (newHighest > summary.allTimeBestLevel) {
-      await updateUserSummary(userId, {'all_time_best_level': newHighest});
+    final bestAttemptUpdate = _buildBestAttemptSummaryUpdate(
+      summary: summary,
+      completedLevel: completedLevel,
+      totalShotsThisAttempt: attempt.totalShotsThisAttempt,
+    );
+    if (bestAttemptUpdate.isNotEmpty) {
+      await updateUserSummary(userId, bestAttemptUpdate);
     }
 
     final updatedSummary = await getUserSummary(userId);
@@ -495,6 +500,39 @@ class ChallengerRoadService {
   /// does not exist it will be created (merge: true behaviour via [SetOptions]).
   Future<void> updateUserSummary(String userId, Map<String, dynamic> data) async {
     await _userSummaryRef(userId).set(data, SetOptions(merge: true));
+  }
+
+  Map<String, dynamic> _buildBestAttemptSummaryUpdate({
+    required ChallengerRoadUserSummary summary,
+    required int completedLevel,
+    required int totalShotsThisAttempt,
+  }) {
+    if (!_isBetterBestAttempt(
+      summary: summary,
+      completedLevel: completedLevel,
+      totalShotsThisAttempt: totalShotsThisAttempt,
+    )) {
+      return const <String, dynamic>{};
+    }
+
+    return {
+      'all_time_best_level': completedLevel,
+      'all_time_best_level_shots': totalShotsThisAttempt,
+    };
+  }
+
+  bool _isBetterBestAttempt({
+    required ChallengerRoadUserSummary summary,
+    required int completedLevel,
+    required int totalShotsThisAttempt,
+  }) {
+    if (completedLevel <= 0) return false;
+    if (completedLevel > summary.allTimeBestLevel) return true;
+    if (completedLevel < summary.allTimeBestLevel) return false;
+
+    final bestShots = summary.allTimeBestLevelShots;
+    if (bestShots == null) return true;
+    return totalShotsThisAttempt < bestShots;
   }
 
   // ---------------------------------------------------------------------------
