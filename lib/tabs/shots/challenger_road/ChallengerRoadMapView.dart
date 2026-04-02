@@ -767,12 +767,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           ),
           const SizedBox(height: 6),
           if (isFinish)
-            Container(
+            SizedBox(
               height: 18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: accent.withValues(alpha: 0.85), width: 1),
-              ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: CustomPaint(
