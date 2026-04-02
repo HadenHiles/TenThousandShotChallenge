@@ -21,6 +21,9 @@ class ChallengerRoadHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const headerBg = Color(0xFF12161C);
+    final mutedText = Colors.white.withValues(alpha: 0.68);
+    const mainText = Colors.white;
     final shotCount = attempt?.challengerRoadShotCount ?? 0;
     final level = attempt?.currentLevel ?? 1;
     final attemptNum = attempt?.attemptNumber ?? 1;
@@ -33,10 +36,10 @@ class ChallengerRoadHeader extends StatelessWidget {
       curve: Curves.easeInOutCubic,
       padding: EdgeInsets.fromLTRB(16, 7 + topPadding, 16, 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
+        color: headerBg,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+            color: Colors.white.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
@@ -78,7 +81,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                   Text(
                     'CHALLENGER ROAD',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                      color: mutedText,
                       fontFamily: 'NovecentoSans',
                       fontSize: 10,
                       letterSpacing: 0.8,
@@ -87,7 +90,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                   Text(
                     '${numberFormat.format(shotCount)} / 10,000',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: mainText,
                       fontFamily: 'NovecentoSans',
                       fontSize: 18,
                     ),
@@ -115,7 +118,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                         Text(
                           'ATTEMPT',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            color: mutedText,
                             fontFamily: 'NovecentoSans',
                             fontSize: 10,
                             letterSpacing: 0.8,
@@ -124,7 +127,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                         Text(
                           '#$attemptNum',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: mainText,
                             fontFamily: 'NovecentoSans',
                             fontSize: 22,
                           ),
@@ -145,15 +148,15 @@ class ChallengerRoadHeader extends StatelessWidget {
                     const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                        color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.35),
+                          color: Colors.white.withValues(alpha: 0.16),
                           width: 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).primaryColor.withValues(alpha: 0.16),
+                            color: Colors.black.withValues(alpha: 0.32),
                             blurRadius: 6,
                             offset: const Offset(0, 1),
                           ),
@@ -167,7 +170,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                         icon: Icon(
                           Icons.close_rounded,
                           size: 22,
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                          color: Colors.white.withValues(alpha: 0.88),
                         ),
                       ),
                     ),
@@ -182,7 +185,7 @@ class ChallengerRoadHeader extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 5,
-              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+              backgroundColor: Colors.white.withValues(alpha: 0.16),
               valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
             ),
           ),
