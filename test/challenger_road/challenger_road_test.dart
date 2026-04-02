@@ -5,6 +5,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengeAllTimeHistor
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
 // ---------------------------------------------------------------------------
@@ -87,6 +88,24 @@ Future<String> _seedAttempt(
     'end_date': null,
   });
   return ref.id;
+}
+
+Future<void> _seedSummary(
+  FakeFirebaseFirestore db, {
+  required String userId,
+  int totalAttempts = 0,
+  int allTimeBestLevel = 0,
+  int? allTimeBestLevelShots,
+  int allTimeTotalChallengerRoadShots = 0,
+  List<String> badges = const [],
+}) async {
+  await db.collection('users').doc(userId).collection('challenger_road').doc('summary').set({
+    'total_attempts': totalAttempts,
+    'all_time_best_level': allTimeBestLevel,
+    'all_time_best_level_shots': allTimeBestLevelShots,
+    'all_time_total_challenger_road_shots': allTimeTotalChallengerRoadShots,
+    'badges': badges,
+  });
 }
 
 ChallengeSession _makeSession({
@@ -272,6 +291,39 @@ void main() {
     });
   });
 
+  group('ChallengerRoadUserSummary fromMap / toMap round-trip', () {
+    test('preserves best-attempt shots metadata', () {
+      final summary = ChallengerRoadUserSummary.fromMap({
+        'current_attempt_id': 'attempt_1',
+        'total_attempts': 3,
+        'all_time_best_level': 6,
+        'all_time_best_level_shots': 2450,
+        'all_time_total_challenger_road_shots': 12000,
+        'badges': ['cr_attempts_1'],
+      });
+
+      expect(summary.currentAttemptId, 'attempt_1');
+      expect(summary.allTimeBestLevel, 6);
+      expect(summary.allTimeBestLevelShots, 2450);
+
+      final roundTrip = ChallengerRoadUserSummary.fromMap(summary.toMap());
+      expect(roundTrip.allTimeBestLevel, 6);
+      expect(roundTrip.allTimeBestLevelShots, 2450);
+    });
+
+    test('defaults best-attempt shots to null for older docs', () {
+      final summary = ChallengerRoadUserSummary.fromMap({
+        'total_attempts': 1,
+        'all_time_best_level': 4,
+        'all_time_total_challenger_road_shots': 5000,
+        'badges': <String>[],
+      });
+
+      expect(summary.allTimeBestLevel, 4);
+      expect(summary.allTimeBestLevelShots, isNull);
+    });
+  });
+
   // ── Service tests using FakeFirebaseFirestore ─────────────────────────────
 
   group('ChallengerRoadService.isLevelComplete()', () {
@@ -426,6 +478,68 @@ void main() {
       await _seedAttempt(db, userId: uid, highestLevel: 4);
       final newAttempt = await service.restartChallengerRoad(uid);
       expect(newAttempt.status, 'active');
+    });
+  });
+
+  group('ChallengerRoadService.advanceLevel() best-attempt comparator', () {
+    late FakeFirebaseFirestore db;
+    late ChallengerRoadService service;
+    const uid = 'test_user';
+
+    setUp(() {
+      db = FakeFirebaseFirestore();
+      service = ChallengerRoadService(firestore: db);
+    });
+
+    test('stores total shots when setting a new personal-best level', () async {
+      final attemptId = await _seedAttempt(
+        db,
+        userId: uid,
+        currentLevel: 4,
+        highestLevel: 3,
+        totalShots: 1875,
+      );
+      await _seedSummary(db, userId: uid, allTimeBestLevel: 3, allTimeBestLevelShots: 1600);
+
+      await service.advanceLevel(uid, attemptId);
+
+      final summarySnap = await db.collection('users').doc(uid).collection('challenger_road').doc('summary').get();
+      expect(summarySnap.data()!['all_time_best_level'], 4);
+      expect(summarySnap.data()!['all_time_best_level_shots'], 1875);
+    });
+
+    test('uses fewer shots as tie-breaker for the same best level', () async {
+      final attemptId = await _seedAttempt(
+        db,
+        userId: uid,
+        currentLevel: 5,
+        highestLevel: 4,
+        totalShots: 2210,
+      );
+      await _seedSummary(db, userId: uid, allTimeBestLevel: 5, allTimeBestLevelShots: 2400);
+
+      await service.advanceLevel(uid, attemptId);
+
+      final summarySnap = await db.collection('users').doc(uid).collection('challenger_road').doc('summary').get();
+      expect(summarySnap.data()!['all_time_best_level'], 5);
+      expect(summarySnap.data()!['all_time_best_level_shots'], 2210);
+    });
+
+    test('does not replace the best attempt when the same level took more shots', () async {
+      final attemptId = await _seedAttempt(
+        db,
+        userId: uid,
+        currentLevel: 5,
+        highestLevel: 4,
+        totalShots: 2600,
+      );
+      await _seedSummary(db, userId: uid, allTimeBestLevel: 5, allTimeBestLevelShots: 2400);
+
+      await service.advanceLevel(uid, attemptId);
+
+      final summarySnap = await db.collection('users').doc(uid).collection('challenger_road').doc('summary').get();
+      expect(summarySnap.data()!['all_time_best_level'], 5);
+      expect(summarySnap.data()!['all_time_best_level_shots'], 2400);
     });
   });
 
