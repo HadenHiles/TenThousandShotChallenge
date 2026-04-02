@@ -94,9 +94,12 @@ class ChallengerRoadService {
   String _shotTypeLevelKey(String shotType, int level) => '${shotType.toLowerCase()}|$level';
 
   Future<QueryDocumentSnapshot?> _findActiveLevelSnapshot(int level) async {
-    final snap = await _levelsRef.where('active', isEqualTo: true).where('level', isEqualTo: level).limit(1).get();
-    if (snap.docs.isEmpty) return null;
-    return snap.docs.first;
+    final snap = await _levelsRef.where('active', isEqualTo: true).get();
+    for (final doc in snap.docs) {
+      final levelValue = ((doc.data() as Map<String, dynamic>?)?['level'] as num?)?.toInt();
+      if (levelValue == level) return doc;
+    }
+    return null;
   }
 
   String _shotTypeLabel(String shotType) {
@@ -249,8 +252,8 @@ class ChallengerRoadService {
     final levelSnap = await _findActiveLevelSnapshot(level);
     if (levelSnap == null) return [];
 
-    final challengesSnap = await _challengesRef(levelSnap.id).where('active', isEqualTo: true).orderBy('sequence').get();
-    return challengesSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).toList();
+    final challengesSnap = await _challengesRef(levelSnap.id).orderBy('sequence').get();
+    return challengesSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).where((c) => c.active).toList();
   }
 
   /// Returns the [ChallengerRoadLevel] document for a specific challenge at a
