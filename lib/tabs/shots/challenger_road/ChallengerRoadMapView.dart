@@ -1003,12 +1003,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   final rawTop = (nodeCenter.dy - (thumbHeight / 2)) + (offsetUp ? verticalUpOffset : 0.0) + nonEdgeExtraUpOffset;
                   final thumbTop = rawTop.clamp(minTop, maxTop);
 
-                  double _clampedLeftForSide(bool sideRight) {
+                  double clampedLeftForSide(bool sideRight) {
                     final rawLeft = sideRight ? (nodeCenter.dx + sideGap) : (nodeCenter.dx - thumbWidth - sideGap);
                     return rawLeft.clamp(minLeft, maxLeft);
                   }
 
-                  double _horizontalOverlap(double thumbLeft) {
+                  double horizontalOverlap(double thumbLeft) {
                     final thumbRight = thumbLeft + thumbWidth;
                     final nodeLeft = nodeCenter.dx - (_nodeDiameter / 2);
                     final nodeRight = nodeCenter.dx + (_nodeDiameter / 2);
@@ -1016,17 +1016,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     return math.max(0, overlap);
                   }
 
-                  final preferredLeft = _clampedLeftForSide(revealOnRight);
-                  final oppositeLeft = _clampedLeftForSide(!revealOnRight);
-                  final preferredOverlap = _horizontalOverlap(preferredLeft);
-                  final oppositeOverlap = _horizontalOverlap(oppositeLeft);
+                  final preferredLeft = clampedLeftForSide(revealOnRight);
+                  final oppositeLeft = clampedLeftForSide(!revealOnRight);
+                  final preferredOverlap = horizontalOverlap(preferredLeft);
+                  final oppositeOverlap = horizontalOverlap(oppositeLeft);
 
                   // If the preferred side tucks under the node, flip sides.
                   if (preferredOverlap > 8 && oppositeOverlap + 2 < preferredOverlap) {
                     revealOnRight = !revealOnRight;
                   }
 
-                  final thumbLeft = _clampedLeftForSide(revealOnRight);
+                  final thumbLeft = clampedLeftForSide(revealOnRight);
 
                   return [
                     Positioned(
