@@ -69,8 +69,8 @@ class ChallengerRoadService {
   // ---------------------------------------------------------------------------
 
   /// Root of the Challenger Road levels collection.
-  /// Firestore path: challenger_road/levels/levels
-  CollectionReference get _levelsRef => _firestore.collection('challenger_road').doc('levels').collection('levels');
+  /// Firestore path: challenger_road_levels/{levelId}
+  CollectionReference get _levelsRef => _firestore.collection('challenger_road_levels');
 
   /// Challenge docs owned by a specific level.
   CollectionReference _challengesRef(String levelDocId) => _levelsRef.doc(levelDocId).collection('challenges');
