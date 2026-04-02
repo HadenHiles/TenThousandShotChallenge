@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 /// The four visual states a challenge node can appear in on the snake map.
 enum ChallengeNodeState {
@@ -166,17 +167,26 @@ class _ChallengeMapNodeState extends State<ChallengeMapNode> with SingleTickerPr
         children: [
           circle,
           const SizedBox(height: 5),
-          SizedBox(
-            width: 82,
-            child: Text(
-              widget.challengeName,
+          Container(
+            width: 112,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.76),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: AutoSizeText(
+              widget.challengeName.toUpperCase(),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+              minFontSize: 10,
+              stepGranularity: 0.5,
               style: TextStyle(
                 color: widget.state == ChallengeNodeState.locked ? Colors.grey.shade500 : Theme.of(context).colorScheme.onSurface,
                 fontFamily: 'NovecentoSans',
-                fontSize: 11,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
                 height: 1.2,
               ),
             ),

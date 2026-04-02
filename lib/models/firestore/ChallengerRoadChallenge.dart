@@ -7,6 +7,13 @@ class ChallengerRoadChallenge {
   final String description;
   final bool active;
 
+  /// Optional dedicated preview media shown in Challenger Road map focus card.
+  final String? previewThumbnailUrl;
+
+  /// Optional media type for [previewThumbnailUrl] ('image', 'gif', 'video').
+  /// Defaults to 'image' when omitted and url is provided.
+  final String? previewThumbnailMediaType;
+
   /// The shot type this challenge focuses on: 'wrist', 'snap', 'slap', or
   /// 'backhand'. Null means no specific shot type is required.
   final String? shotType;
@@ -21,6 +28,8 @@ class ChallengerRoadChallenge {
     required this.name,
     required this.description,
     required this.active,
+    this.previewThumbnailUrl,
+    this.previewThumbnailMediaType,
     this.shotType,
     required this.steps,
     this.createdAt,
@@ -33,6 +42,8 @@ class ChallengerRoadChallenge {
         name = map['name'] ?? '',
         description = map['description'] ?? '',
         active = map['active'] ?? true,
+        previewThumbnailUrl = map['preview_thumbnail_url'] as String?,
+        previewThumbnailMediaType = map['preview_thumbnail_media_type'] as String?,
         shotType = map['shot_type'] as String?,
         steps = (map['steps'] as List<dynamic>?)?.map((s) => ChallengeStep.fromMap(s as Map<String, dynamic>)).toList() ?? [],
         createdAt = (map['created_at'] as Timestamp?)?.toDate(),
@@ -44,6 +55,8 @@ class ChallengerRoadChallenge {
       'name': name,
       'description': description,
       'active': active,
+      'preview_thumbnail_url': previewThumbnailUrl,
+      'preview_thumbnail_media_type': previewThumbnailMediaType,
       'shot_type': shotType,
       'steps': steps.map((s) => s.toMap()).toList(),
       'created_at': createdAt,
