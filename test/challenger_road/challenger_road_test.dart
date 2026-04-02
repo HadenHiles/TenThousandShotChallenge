@@ -25,14 +25,14 @@ Future<String> _seedChallenge(
   final id = challengeId ?? 'ch_$level';
   final levelId = 'level_$level';
 
-  await db.collection('challenger_road').doc('levels').collection('levels').doc(levelId).set({
+  await db.collection('challenger_road_levels').doc(levelId).set({
     'level': level,
     'level_name': 'Level $level',
     'active': levelActive,
     ...?levelData,
   });
 
-  await db.collection('challenger_road').doc('levels').collection('levels').doc(levelId).collection('challenges').doc(id).set({
+  await db.collection('challenger_road_levels').doc(levelId).collection('challenges').doc(id).set({
     'level': level,
     'level_name': 'Level $level',
     'sequence': 1,

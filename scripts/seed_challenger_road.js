@@ -353,7 +353,7 @@ async function seedChallenge(challenge) {
     const { levels, ...challengeData } = challenge;
 
     for (const level of levels) {
-        const levelRef = db.collection('challenger_road').doc('levels').collection('levels').doc(level.id);
+        const levelRef = db.collection('challenger_road_levels').doc(level.id);
         const levelSnap = await levelRef.get();
 
         if (!levelSnap.exists) {
@@ -410,7 +410,7 @@ async function main() {
     console.log('  Level 2 → 5 repeated challenges (1–5)');
     console.log('  Level 3 → 5 repeated challenges (1–5)');
     console.log('  Level 4 → 5 new challenges (6–10)');
-    console.log('\nVerify in Firebase Console: challenger_road/levels/levels/{levelId}/challenges/{challengeId}\n');
+    console.log('\nVerify in Firebase Console: challenger_road_levels/{levelId}/challenges/{challengeId}\n');
 }
 
 main()

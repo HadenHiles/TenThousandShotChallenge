@@ -111,21 +111,9 @@ service cloud.firestore {
     }
 
     // ── Challenger Road ────────────────────────────────────────────────────────
-    // Legacy structure (kept read-only for compatibility during migration).
-    // Firestore path: challenger_road/challenges/challenges/{challengeId}/levels/{levelId}
-    match /challenger_road/challenges/challenges/{challengeId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-
-      match /levels/{levelId} {
-        allow read: if request.auth != null;
-        allow write: if false;
-      }
-    }
-
     // Current structure: level docs own challenge docs.
-    // Firestore path: challenger_road/levels/levels/{levelId}/challenges/{challengeId}
-    match /challenger_road/levels/levels/{levelId} {
+    // Firestore path: challenger_road_levels/{levelId}/challenges/{challengeId}
+    match /challenger_road_levels/{levelId} {
       allow read: if request.auth != null;
       allow write: if false;
 
