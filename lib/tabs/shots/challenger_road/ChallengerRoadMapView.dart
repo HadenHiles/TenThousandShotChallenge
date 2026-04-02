@@ -1134,8 +1134,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     ChallengerRoadAttempt attempt,
     _CRMapData data,
   ) async {
-    final levelDoc = await _service!.getLevelDoc(challenge.id!, level);
-    if (levelDoc == null || !mounted) return;
+    final levelDoc = challenge.toLevelDoc();
+    if (!mounted) return;
 
     if (widget.onChallengeTap != null) {
       widget.onChallengeTap!(challenge, levelDoc, attempt);

@@ -2,11 +2,8 @@
 /**
  * Seed Challenger Road test data into Firestore.
  *
- * Creates 5 challenges × up to 3 levels = 14 challenge/level combinations.
- * "One-Timer Challenge" intentionally has NO Level 1 doc to test that
- * the map correctly hides it at Level 1 and only shows it at Level 2+.
- * "Snap Shot Precision" Level 2 has its own step overrides to test
- * the level-specific step fallback logic.
+ * Creates level documents that each own their challenge documents directly.
+ * Repeated challenges across levels are duplicated as separate challenge docs.
  *
  * Idempotent — skips any document that already exists.
  *
@@ -46,10 +43,10 @@ const db = admin.firestore();
 // ---------------------------------------------------------------------------
 
 const IMG = 'https://placehold.co/600x400/1a1a2e/ffffff?text=Challenge+Step';
-const IMG_OVERRIDE = 'https://placehold.co/600x400/0f3460/ffffff?text=Level+Override+Step';
+const IMG_LEVEL4 = 'https://placehold.co/600x400/402218/ffffff?text=Level+4+Challenge';
 
 // ---------------------------------------------------------------------------
-// Challenge data
+// Source data used to seed duplicated challenge docs into each level.
 // ---------------------------------------------------------------------------
 
 const CHALLENGES = [
@@ -119,32 +116,7 @@ const CHALLENGES = [
         ],
         levels: [
             { id: 'level_1', level: 1, level_name: 'Level 1', sequence: 2, shots_required: 10, shots_to_pass: 6, active: true, steps: null },
-            {
-                // Level 2 has its own step overrides — tests the fallback logic.
-                id: 'level_2',
-                level: 2,
-                level_name: 'Level 2',
-                sequence: 2,
-                shots_required: 15,
-                shots_to_pass: 10,
-                active: true,
-                steps: [
-                    {
-                        step_number: 1,
-                        title: 'Advanced Positioning (Level 2)',
-                        media_type: 'image',
-                        media_url: IMG_OVERRIDE,
-                        summary: 'Move to the high slot. Receive a pass and shoot in one motion.',
-                    },
-                    {
-                        step_number: 2,
-                        title: 'One-Touch Release (Level 2)',
-                        media_type: 'image',
-                        media_url: IMG_OVERRIDE,
-                        summary: 'The puck should leave your stick within 0.5 seconds of receiving the pass.',
-                    },
-                ],
-            },
+            { id: 'level_2', level: 2, level_name: 'Level 2', sequence: 2, shots_required: 15, shots_to_pass: 10, active: true, steps: null },
             { id: 'level_3', level: 3, level_name: 'Level 3', sequence: 2, shots_required: 20, shots_to_pass: 14, active: true, steps: null },
         ],
     },
@@ -213,7 +185,6 @@ const CHALLENGES = [
     },
 
     // ── Challenge 5 ──────────────────────────────────────────────────────────
-    // Intentionally has NO Level 1 doc. Tests that the map hides it at Level 1.
     {
         id: 'seed_challenge_5',
         name: 'One-Timer Challenge',
@@ -239,11 +210,138 @@ const CHALLENGES = [
                     'Begin your swing as the puck arrives. Let the pass power contribute to your shot — don\'t over-swing.',
             },
         ],
-        // NO level_1 — this challenge only appears on Level 2 and above.
         levels: [
+            { id: 'level_1', level: 1, level_name: 'Level 1', sequence: 5, shots_required: 10, shots_to_pass: 6, active: true, steps: null },
             { id: 'level_2', level: 2, level_name: 'Level 2', sequence: 5, shots_required: 15, shots_to_pass: 10, active: true, steps: null },
             { id: 'level_3', level: 3, level_name: 'Level 3', sequence: 5, shots_required: 20, shots_to_pass: 14, active: true, steps: null },
         ],
+    },
+
+    // ── Level 4 Challenge Set ───────────────────────────────────────────────
+    {
+        id: 'seed_challenge_6',
+        name: 'Rapid Release Ladder',
+        description:
+            'String together fast releases from five puck positions without letting your mechanics break down.',
+        active: true,
+        shot_type: 'snap',
+        steps: [
+            {
+                step_number: 1,
+                title: 'Five-Puck Setup',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Set five pucks in a shallow arc across the high slot so each shot changes the release angle.',
+            },
+            {
+                step_number: 2,
+                title: 'Catch and Fire',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Move from puck to puck without resetting fully. Release each shot in rhythm.',
+            },
+        ],
+        levels: [{ id: 'level_4', level: 4, level_name: 'Level 4', sequence: 1, shots_required: 25, shots_to_pass: 18, active: true, steps: null }],
+    },
+    {
+        id: 'seed_challenge_7',
+        name: 'Backhand Under Pressure',
+        description:
+            'Train your backhand finish while moving your feet and protecting the puck through contact pressure.',
+        active: true,
+        shot_type: 'backhand',
+        steps: [
+            {
+                step_number: 1,
+                title: 'Protect the Lane',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Approach from the hashmarks with the puck on your backhand side and shoulders over the puck.',
+            },
+            {
+                step_number: 2,
+                title: 'Lift Through the Finish',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Keep the blade cupped and finish high with a quick upward pull.',
+            },
+        ],
+        levels: [{ id: 'level_4', level: 4, level_name: 'Level 4', sequence: 2, shots_required: 25, shots_to_pass: 18, active: true, steps: null }],
+    },
+    {
+        id: 'seed_challenge_8',
+        name: 'Slap Shot Reload',
+        description:
+            'Develop the ability to reload quickly and strike repeated slap shots without losing power.',
+        active: true,
+        shot_type: 'slap',
+        steps: [
+            {
+                step_number: 1,
+                title: 'Reload Position',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Reset your bottom hand and weight transfer after every rep instead of rushing the setup.',
+            },
+            {
+                step_number: 2,
+                title: 'Strike Cleanly',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Hit the ice just behind the puck and finish with your chest facing the net.',
+            },
+        ],
+        levels: [{ id: 'level_4', level: 4, level_name: 'Level 4', sequence: 3, shots_required: 25, shots_to_pass: 17, active: true, steps: null }],
+    },
+    {
+        id: 'seed_challenge_9',
+        name: 'Corner Pick Wrist Shots',
+        description:
+            'Pick small targets from changing puck positions and hold accuracy under a heavier shot volume.',
+        active: true,
+        shot_type: 'wrist',
+        steps: [
+            {
+                step_number: 1,
+                title: 'Target Sequence',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Alternate corners every shot so you have to reset your aim line before each release.',
+            },
+            {
+                step_number: 2,
+                title: 'Quiet Upper Body',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Keep your head still and let the hands load and release without over-rotating your shoulders.',
+            },
+        ],
+        levels: [{ id: 'level_4', level: 4, level_name: 'Level 4', sequence: 4, shots_required: 25, shots_to_pass: 19, active: true, steps: null }],
+    },
+    {
+        id: 'seed_challenge_10',
+        name: 'Cross-Ice One-Timer Finish',
+        description:
+            'Simulate a game-speed one-timer by opening up to a pass and finishing in one motion.',
+        active: true,
+        shot_type: 'wrist',
+        steps: [
+            {
+                step_number: 1,
+                title: 'Open Up Early',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Present the blade before the puck arrives so the shot starts from your setup, not after the catch.',
+            },
+            {
+                step_number: 2,
+                title: 'Drive Through Contact',
+                media_type: 'image',
+                media_url: IMG_LEVEL4,
+                summary: 'Transfer through the pass and keep the stick moving through the target line.',
+            },
+        ],
+        levels: [{ id: 'level_4', level: 4, level_name: 'Level 4', sequence: 5, shots_required: 25, shots_to_pass: 18, active: true, steps: null }],
     },
 ];
 
@@ -254,36 +352,49 @@ const CHALLENGES = [
 async function seedChallenge(challenge) {
     const { levels, ...challengeData } = challenge;
 
-    const ref = db
-        .collection('challenger_road')
-        .doc('challenges')
-        .collection('challenges')
-        .doc(challenge.id);
-
-    const snap = await ref.get();
-    if (snap.exists) {
-        console.log(`  ↷  Skipped  ${challenge.id} (already exists)`);
-        return;
-    }
-
-    const { id: _id, ...dataWithoutId } = challengeData;
-    await ref.set({
-        ...dataWithoutId,
-        created_at: admin.firestore.FieldValue.serverTimestamp(),
-        updated_at: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
     for (const level of levels) {
-        const { steps, ...levelData } = level;
-        await ref.collection('levels').doc(level.id).set({
-            ...levelData,
-            // Only include steps if this level has its own overrides.
-            ...(steps != null ? { steps } : {}),
-        });
-    }
+        const levelRef = db.collection('challenger_road').doc('levels').collection('levels').doc(level.id);
+        const levelSnap = await levelRef.get();
 
-    const levelIds = levels.map((l) => l.id).join(', ');
-    console.log(`  ✓  Seeded   ${challenge.id} — "${challenge.name}" [levels: ${levelIds}]`);
+        if (!levelSnap.exists) {
+            await levelRef.set({
+                level: level.level,
+                level_name: level.level_name,
+                active: level.active,
+                created_at: admin.firestore.FieldValue.serverTimestamp(),
+                updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+
+        const challengeDocId = `${challenge.id}_l${level.level}`;
+        const challengeRef = levelRef.collection('challenges').doc(challengeDocId);
+        const challengeSnap = await challengeRef.get();
+
+        if (challengeSnap.exists) {
+            console.log(`  ↷  Skipped  ${challengeDocId} (already exists)`);
+            continue;
+        }
+
+        const challengeSteps = level.steps != null ? level.steps : challenge.steps;
+        await challengeRef.set({
+            level: level.level,
+            level_name: level.level_name,
+            sequence: level.sequence,
+            shots_required: level.shots_required,
+            shots_to_pass: level.shots_to_pass,
+            name: level.name || challengeData.name,
+            description: level.description || challengeData.description,
+            active: challengeData.active && level.active,
+            shot_type: level.shot_type || challengeData.shot_type,
+            preview_thumbnail_url: level.preview_thumbnail_url || null,
+            preview_thumbnail_media_type: level.preview_thumbnail_media_type || null,
+            steps: challengeSteps,
+            created_at: admin.firestore.FieldValue.serverTimestamp(),
+            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`  ✓  Seeded   ${challengeDocId} — "${level.name || challenge.name}" [Level ${level.level}]`);
+    }
 }
 
 async function main() {
@@ -295,10 +406,11 @@ async function main() {
 
     console.log('\n✅  Done.\n');
     console.log('Expected map layout:');
-    console.log('  Level 1 → 4 challenges (1–4)  [seed_challenge_5 has no L1 doc]');
-    console.log('  Level 2 → 5 challenges (1–5)');
-    console.log('  Level 3 → 5 challenges (1–5)');
-    console.log('\nVerify in Firebase Console: challenger_road/challenges/{id}/levels\n');
+    console.log('  Level 1 → 5 repeated challenges (1–5)');
+    console.log('  Level 2 → 5 repeated challenges (1–5)');
+    console.log('  Level 3 → 5 repeated challenges (1–5)');
+    console.log('  Level 4 → 5 new challenges (6–10)');
+    console.log('\nVerify in Firebase Console: challenger_road/levels/levels/{levelId}/challenges/{challengeId}\n');
 }
 
 main()

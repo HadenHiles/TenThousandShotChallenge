@@ -2,8 +2,9 @@
 /**
  * Remove all seed Challenger Road data from Firestore.
  *
- * Deletes every document under challenger_road/challenges whose ID starts
- * with "seed_", including its "levels" subcollection.
+ * Deletes every seed level-owned challenge document under the
+ * challenger_road/levels/levels/{levelId}/challenges path and removes any now-empty
+ * level documents created by the seed script.
  *
  * Run this before promoting real challenge data to production, or to
  * reset your dev/emulator environment cleanly.
@@ -57,33 +58,37 @@ async function deleteSubcollection(docRef, subcollectionName) {
 async function main() {
     console.log('\n🗑️   Removing Challenger Road seed data...\n');
 
-    const challengesRef = db
-        .collection('challenger_road')
-        .doc('challenges')
-        .collection('challenges');
+    const levelsRef = db.collection('challenger_road').doc('levels').collection('levels');
+    const levelSnap = await levelsRef.get();
 
-    const snap = await challengesRef.get();
-
-    if (snap.empty) {
-        console.log('  Nothing to delete — collection is empty.\n');
+    if (levelSnap.empty) {
+        console.log('  Nothing to delete — no seeded levels found.\n');
         return;
     }
 
-    const seedDocs = snap.docs.filter((d) => d.id.startsWith('seed_'));
+    let deletedChallenges = 0;
+    let deletedLevels = 0;
 
-    if (seedDocs.length === 0) {
-        console.log('  No seed_ documents found — nothing to delete.\n');
-        return;
+    for (const levelDoc of levelSnap.docs) {
+        const challengesSnap = await levelDoc.ref.collection('challenges').get();
+        const seedChallengeDocs = challengesSnap.docs.filter((d) => d.id.startsWith('seed_'));
+
+        for (const doc of seedChallengeDocs) {
+            console.log(`  Deleting ${levelDoc.id}/${doc.id}…`);
+            await doc.ref.delete();
+            deletedChallenges += 1;
+            console.log(`  ✓  Deleted ${doc.id}`);
+        }
+
+        const remainingChallengesSnap = await levelDoc.ref.collection('challenges').get();
+        if (remainingChallengesSnap.empty && levelDoc.id.startsWith('level_')) {
+            await levelDoc.ref.delete();
+            deletedLevels += 1;
+            console.log(`  ✓  Deleted empty level doc ${levelDoc.id}`);
+        }
     }
 
-    for (const doc of seedDocs) {
-        console.log(`  Deleting ${doc.id}…`);
-        await deleteSubcollection(doc.ref, 'levels');
-        await doc.ref.delete();
-        console.log(`  ✓  Deleted ${doc.id}`);
-    }
-
-    console.log(`\n✅  Done. Removed ${seedDocs.length} seed challenge(s).\n`);
+    console.log(`\n✅  Done. Removed ${deletedChallenges} seed challenge(s) and ${deletedLevels} empty seed level doc(s).\n`);
 }
 
 main()
