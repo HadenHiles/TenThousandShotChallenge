@@ -26,11 +26,12 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
 
   String? _selectedIterationId;
   String? _loadedIterationId;
-  String _selectedShotType = 'wrist';
+  final ValueNotifier<String> _selectedShotType = ValueNotifier<String>('wrist');
   bool _isInitialLoading = true;
-  bool _isChartLoading = false;
   List<ShootingSession> _sessions = const [];
-  bool _chartTransitionPending = false;
+  bool _isFetchingSessions = false;
+  String? _fetchingIterationId;
+  bool _didAutoSelectLatest = false;
 
   final Map<String, Color> _shotTypeColors = {
     'wrist': wristShotColor,
@@ -51,7 +52,10 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
   }
 
   @override
-  void dispose() => super.dispose();
+  void dispose() {
+    _selectedShotType.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,12 +106,15 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
     final iterationId = _selectedIterationId;
     if (user == null || iterationId == null) return;
 
+    if (_isFetchingSessions && _fetchingIterationId == iterationId) return;
+
+    _isFetchingSessions = true;
+    _fetchingIterationId = iterationId;
+
     if (mounted) {
       setState(() {
         if (_sessions.isEmpty) {
           _isInitialLoading = true;
-        } else if (showChartLoader) {
-          _isChartLoading = true;
         }
       });
     }
@@ -123,27 +130,17 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
         _sessions = sessions;
         _loadedIterationId = iterationId;
         _isInitialLoading = false;
-        _isChartLoading = showChartLoader;
-        _chartTransitionPending = showChartLoader;
       });
-      if (showChartLoader) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(() {
-            _isChartLoading = false;
-            _chartTransitionPending = false;
-          });
-        });
-      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _sessions = const [];
         _loadedIterationId = iterationId;
         _isInitialLoading = false;
-        _isChartLoading = false;
-        _chartTransitionPending = false;
       });
+    } finally {
+      _isFetchingSessions = false;
+      _fetchingIterationId = null;
     }
   }
 
@@ -180,15 +177,18 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
           latestId = doc.reference.id;
         }
 
-        if (_selectedIterationId == null && latestId != null) {
+        if (_selectedIterationId == null && latestId != null && !_didAutoSelectLatest) {
+          _didAutoSelectLatest = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            setState(() => _selectedIterationId = latestId);
+            setState(() {
+              _selectedIterationId = latestId;
+            });
             _refreshSessionsForSelectedIteration(showChartLoader: false);
           });
         }
 
-        if (_selectedIterationId != null && _loadedIterationId != _selectedIterationId) {
+        if (_selectedIterationId != null && _loadedIterationId != _selectedIterationId && !_isFetchingSessions) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _refreshSessionsForSelectedIteration(showChartLoader: true);
           });
@@ -221,34 +221,32 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
                         onChanged: (value) {
                           if (value == null || value == _selectedIterationId) return;
                           setState(() => _selectedIterationId = value);
+                          _refreshSessionsForSelectedIteration(showChartLoader: true);
                         },
                       ),
                     ),
 
-                  Stack(
-                    children: [
-                      _buildRadialAccuracyChart(context, _selectedIterationId, docs),
-                      if (_isChartLoading || _chartTransitionPending)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: _buildChartLoader(context),
-                          ),
-                        ),
-                    ],
+                  _buildRadialAccuracyChart(context, _selectedIterationId, docs),
+                  const SizedBox(height: 20),
+                  ValueListenableBuilder<String>(
+                    valueListenable: _selectedShotType,
+                    builder: (context, selectedShotType, _) {
+                      return _buildShotTypeAccuracyVisualizers(
+                        context,
+                        selectedShotType: selectedShotType,
+                        onShotTypeSelected: (type) {
+                          if (_selectedShotType.value == type) return;
+                          _selectedShotType.value = type;
+                        },
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
-                  _buildShotTypeAccuracyVisualizers(context),
-                  const SizedBox(height: 20),
-                  Stack(
-                    children: [
-                      _buildAccuracyScatterChart(context, _selectedIterationId),
-                      if (_isChartLoading || _chartTransitionPending)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: _buildChartLoader(context),
-                          ),
-                        ),
-                    ],
+                  ValueListenableBuilder<String>(
+                    valueListenable: _selectedShotType,
+                    builder: (context, selectedShotType, _) {
+                      return _buildAccuracyScatterChart(context, _selectedIterationId, selectedShotType);
+                    },
                   ),
                 ],
               ),
@@ -256,24 +254,6 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildChartLoader(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 46,
-        height: 46,
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-        ),
-        child: CircularProgressIndicator(
-          strokeWidth: 3,
-          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
-        ),
-      ),
     );
   }
 
@@ -437,7 +417,11 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
 
   // ── Target visualizers ────────────────────────────────────────────────────
 
-  Widget _buildShotTypeAccuracyVisualizers(BuildContext context) {
+  Widget _buildShotTypeAccuracyVisualizers(
+    BuildContext context, {
+    required String selectedShotType,
+    required ValueChanged<String> onShotTypeSelected,
+  }) {
     final shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
 
     if (_sessions.isEmpty) return const SizedBox.shrink();
@@ -457,22 +441,10 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: shotTypes.map((type) {
         final color = _shotTypeColors[type]!;
-        final isActive = _selectedShotType == type;
+        final isActive = selectedShotType == type;
         return GestureDetector(
           onTap: () {
-            if (_selectedShotType == type) return;
-            setState(() {
-              _selectedShotType = type;
-              _isChartLoading = true;
-              _chartTransitionPending = true;
-            });
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              setState(() {
-                _isChartLoading = false;
-                _chartTransitionPending = false;
-              });
-            });
+            onShotTypeSelected(type);
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -499,8 +471,7 @@ class _AccuracyScreenState extends State<AccuracyScreen> {
 
   // ── Scatter / trend chart ─────────────────────────────────────────────────
 
-  Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId) {
-    final shotType = _selectedShotType;
+  Widget _buildAccuracyScatterChart(BuildContext context, String? iterationId, String shotType) {
     if (iterationId == null) return const SizedBox.shrink();
 
     final sessions = _loadSessionsWithShotsForType(_sessions, shotType);
