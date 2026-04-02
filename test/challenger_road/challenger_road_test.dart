@@ -19,18 +19,31 @@ Future<String> _seedChallenge(
   String? challengeId,
   bool active = true,
   bool levelActive = true,
+  Map<String, dynamic>? challengeData,
+  Map<String, dynamic>? levelData,
 }) async {
   final id = challengeId ?? 'ch_$level';
-  await db.collection('challenger_road').doc('challenges').collection('challenges').doc(id).set({'name': 'Challenge $level', 'active': active});
+  final levelId = 'level_$level';
 
-  await db.collection('challenger_road').doc('challenges').collection('challenges').doc(id).collection('levels').doc('lvl_$level').set({
+  await db.collection('challenger_road').doc('levels').collection('levels').doc(levelId).set({
+    'level': level,
+    'level_name': 'Level $level',
+    'active': levelActive,
+    ...?levelData,
+  });
+
+  await db.collection('challenger_road').doc('levels').collection('levels').doc(levelId).collection('challenges').doc(id).set({
     'level': level,
     'level_name': 'Level $level',
     'sequence': 1,
     'shots_required': 10,
     'shots_to_pass': 6,
-    'active': levelActive,
-    'steps': null,
+    'name': 'Challenge $level',
+    'description': 'Description $level',
+    'active': active,
+    'shot_type': 'wrist',
+    'steps': const <Map<String, dynamic>>[],
+    ...?challengeData,
   });
   return id;
 }
@@ -157,6 +170,9 @@ void main() {
       expect(obj.sequence, 3);
       expect(obj.shotsRequired, 15);
       expect(obj.shotsToPass, 10);
+      expect(obj.challengeName, isNull);
+      expect(obj.challengeDescription, isNull);
+      expect(obj.challengeShotType, isNull);
       expect(obj.active, true);
       expect(obj.steps, isNull);
 
@@ -165,7 +181,42 @@ void main() {
       expect(rt.levelName, obj.levelName);
       expect(rt.shotsRequired, obj.shotsRequired);
       expect(rt.shotsToPass, obj.shotsToPass);
+      expect(rt.challengeName, obj.challengeName);
+      expect(rt.challengeDescription, obj.challengeDescription);
+      expect(rt.challengeShotType, obj.challengeShotType);
       expect(rt.active, obj.active);
+    });
+
+    test('preserves per-level challenge overrides', () {
+      final map = {
+        'id': 'lvl_2',
+        'level': 2,
+        'level_name': 'Level 2',
+        'sequence': 4,
+        'shots_required': 15,
+        'shots_to_pass': 10,
+        'name': 'Custom Level Challenge',
+        'description': 'Level-specific description',
+        'shot_type': 'snap',
+        'preview_thumbnail_url': 'https://example.com/thumb.png',
+        'preview_thumbnail_media_type': 'image',
+        'active': true,
+        'steps': null,
+      };
+
+      final obj = ChallengerRoadLevel.fromMap(map);
+      expect(obj.challengeName, 'Custom Level Challenge');
+      expect(obj.challengeDescription, 'Level-specific description');
+      expect(obj.challengeShotType, 'snap');
+      expect(obj.previewThumbnailUrl, 'https://example.com/thumb.png');
+      expect(obj.previewThumbnailMediaType, 'image');
+
+      final rt = ChallengerRoadLevel.fromMap(obj.toMap());
+      expect(rt.challengeName, obj.challengeName);
+      expect(rt.challengeDescription, obj.challengeDescription);
+      expect(rt.challengeShotType, obj.challengeShotType);
+      expect(rt.previewThumbnailUrl, obj.previewThumbnailUrl);
+      expect(rt.previewThumbnailMediaType, obj.previewThumbnailMediaType);
     });
 
     test('uses defaults when fields are absent', () {
@@ -174,7 +225,83 @@ void main() {
       expect(obj.levelName, 'Level 1');
       expect(obj.shotsRequired, 10);
       expect(obj.shotsToPass, 6);
+      expect(obj.challengeName, isNull);
       expect(obj.active, true);
+    });
+  });
+
+  group('ChallengerRoadService.getChallengesForLevel()', () {
+    late FakeFirebaseFirestore db;
+    late ChallengerRoadService service;
+
+    setUp(() {
+      db = FakeFirebaseFirestore();
+      service = ChallengerRoadService(firestore: db);
+    });
+
+    test('returns level-owned challenge documents with their final UI fields', () async {
+      await _seedChallenge(
+        db,
+        level: 2,
+        challengeId: 'ch_custom',
+        challengeData: {
+          'name': 'Custom Level Challenge',
+          'description': 'Level-specific description',
+          'shot_type': 'snap',
+          'preview_thumbnail_url': 'https://example.com/level.png',
+          'preview_thumbnail_media_type': 'image',
+          'steps': [
+            {
+              'step_number': 1,
+              'title': 'Level Step',
+              'media_type': 'image',
+              'media_url': 'https://example.com/level-step.png',
+              'summary': 'Level summary',
+            }
+          ],
+        },
+      );
+
+      final challenges = await service.getChallengesForLevel(2);
+
+      expect(challenges, hasLength(1));
+      expect(challenges.first.id, 'ch_custom');
+      expect(challenges.first.name, 'Custom Level Challenge');
+      expect(challenges.first.description, 'Level-specific description');
+      expect(challenges.first.shotType, 'snap');
+      expect(challenges.first.previewThumbnailUrl, 'https://example.com/level.png');
+      expect(challenges.first.steps, hasLength(1));
+      expect(challenges.first.steps.first.title, 'Level Step');
+    });
+
+    test('falls back to parent challenge fields when no level overrides exist', () async {
+      await _seedChallenge(
+        db,
+        level: 1,
+        challengeId: 'ch_base',
+        challengeData: {
+          'name': 'Base Challenge',
+          'description': 'Base description',
+          'shot_type': 'backhand',
+          'steps': [
+            {
+              'step_number': 1,
+              'title': 'Base Step',
+              'media_type': 'image',
+              'media_url': 'https://example.com/base.png',
+              'summary': 'Base summary',
+            }
+          ],
+        },
+      );
+
+      final challenges = await service.getChallengesForLevel(1);
+
+      expect(challenges, hasLength(1));
+      expect(challenges.first.name, 'Base Challenge');
+      expect(challenges.first.description, 'Base description');
+      expect(challenges.first.shotType, 'backhand');
+      expect(challenges.first.steps.first.title, 'Base Step');
     });
   });
 
@@ -366,10 +493,9 @@ void main() {
       expect(result, true);
     });
 
-    test('ignores inactive challenge level docs when checking completion', () async {
+    test('ignores inactive challenge docs when checking completion', () async {
       await _seedChallenge(db, level: 1, challengeId: 'ch_active');
-      // Inactive level entry — should be excluded from completion check.
-      await _seedChallenge(db, level: 1, challengeId: 'ch_inactive', levelActive: false);
+      await _seedChallenge(db, level: 1, challengeId: 'ch_inactive', active: false);
       final attemptId = await _seedAttempt(db, userId: uid);
 
       await _seedPassingProgress(db, userId: uid, attemptId: attemptId, challengeId: 'ch_active', level: 1);
@@ -466,12 +592,12 @@ void main() {
       expect(newAttempt.startingLevel, 1);
     });
 
-    test('marks the old attempt as completed', () async {
+    test('marks the old attempt as cancelled for a mid-attempt do-over', () async {
       final oldId = await _seedAttempt(db, userId: uid, highestLevel: 3);
       await service.restartChallengerRoad(uid);
 
       final snap = await db.collection('users').doc(uid).collection('challenger_road_attempts').doc(oldId).get();
-      expect(snap.data()!['status'], 'completed');
+      expect(snap.data()!['status'], 'cancelled');
     });
 
     test('new attempt is set to active', () async {

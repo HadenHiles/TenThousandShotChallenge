@@ -19,6 +19,13 @@ class ChallengerRoadLevel {
   /// Minimum on-target shots needed to pass.
   final int shotsToPass;
 
+  /// Optional challenge-level UI override fields for this level.
+  final String? challengeName;
+  final String? challengeDescription;
+  final String? challengeShotType;
+  final String? previewThumbnailUrl;
+  final String? previewThumbnailMediaType;
+
   final bool active;
 
   /// Optional step override for this level.
@@ -34,6 +41,11 @@ class ChallengerRoadLevel {
     required this.sequence,
     required this.shotsRequired,
     required this.shotsToPass,
+    this.challengeName,
+    this.challengeDescription,
+    this.challengeShotType,
+    this.previewThumbnailUrl,
+    this.previewThumbnailMediaType,
     required this.active,
     this.steps,
     this.reference,
@@ -46,6 +58,11 @@ class ChallengerRoadLevel {
         sequence = map['sequence'] ?? 0,
         shotsRequired = map['shots_required'] ?? 10,
         shotsToPass = map['shots_to_pass'] ?? 6,
+        challengeName = map['name'] as String?,
+        challengeDescription = map['description'] as String?,
+        challengeShotType = map['shot_type'] as String?,
+        previewThumbnailUrl = map['preview_thumbnail_url'] as String?,
+        previewThumbnailMediaType = map['preview_thumbnail_media_type'] as String?,
         active = map['active'] ?? true,
         steps = (map['steps'] as List<dynamic>?)?.map((s) => ChallengeStep.fromMap(s as Map<String, dynamic>)).toList();
 
@@ -57,6 +74,11 @@ class ChallengerRoadLevel {
       'sequence': sequence,
       'shots_required': shotsRequired,
       'shots_to_pass': shotsToPass,
+      'name': challengeName,
+      'description': challengeDescription,
+      'shot_type': challengeShotType,
+      'preview_thumbnail_url': previewThumbnailUrl,
+      'preview_thumbnail_media_type': previewThumbnailMediaType,
       'active': active,
       'steps': steps?.map((s) => s.toMap()).toList(),
     };

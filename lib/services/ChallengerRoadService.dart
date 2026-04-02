@@ -68,12 +68,12 @@ class ChallengerRoadService {
   // Internal path helpers
   // ---------------------------------------------------------------------------
 
-  /// Root of the global challenges sub-collection.
-  /// Firestore path: challenger_road/challenges/challenges
-  CollectionReference get _challengesRef => _firestore.collection('challenger_road').doc('challenges').collection('challenges');
+  /// Root of the Challenger Road levels collection.
+  /// Firestore path: challenger_road/levels/levels
+  CollectionReference get _levelsRef => _firestore.collection('challenger_road').doc('levels').collection('levels');
 
-  /// Levels sub-collection for a given challenge.
-  CollectionReference _levelsRef(String challengeId) => _challengesRef.doc(challengeId).collection('levels');
+  /// Challenge docs owned by a specific level.
+  CollectionReference _challengesRef(String levelDocId) => _levelsRef.doc(levelDocId).collection('challenges');
 
   /// Per-user Challenger Road summary document.
   /// Firestore path: users/{uid}/challenger_road/summary
@@ -92,6 +92,12 @@ class ChallengerRoadService {
   CollectionReference _allTimeHistoryRef(String userId) => _firestore.collection('users').doc(userId).collection('challenger_road_challenge_history');
 
   String _shotTypeLevelKey(String shotType, int level) => '${shotType.toLowerCase()}|$level';
+
+  Future<QueryDocumentSnapshot?> _findActiveLevelSnapshot(int level) async {
+    final snap = await _levelsRef.where('active', isEqualTo: true).where('level', isEqualTo: level).limit(1).get();
+    if (snap.docs.isEmpty) return null;
+    return snap.docs.first;
+  }
 
   String _shotTypeLabel(String shotType) {
     switch (shotType.toLowerCase()) {
@@ -240,48 +246,23 @@ class ChallengerRoadService {
   /// Returns all [ChallengerRoadChallenge] objects that have an active level
   /// document at [level], ordered by that level's [sequence] field.
   Future<List<ChallengerRoadChallenge>> getChallengesForLevel(int level) async {
-    // Query active level docs, then filter by level client-side to avoid
-    // requiring a composite collection-group index on (active, level).
-    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
-    final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList()
-      ..sort((a, b) {
-        final aSeq = (a.data()['sequence'] as num?)?.toInt() ?? 0;
-        final bSeq = (b.data()['sequence'] as num?)?.toInt() ?? 0;
-        return aSeq.compareTo(bSeq);
-      });
+    final levelSnap = await _findActiveLevelSnapshot(level);
+    if (levelSnap == null) return [];
 
-    if (levelSnapsDocs.isEmpty) return [];
-
-    // For each level doc, fetch the parent challenge document.
-    final results = await Future.wait(
-      levelSnapsDocs.map((levelDoc) async {
-        // Parent path: challenger_road/challenges/challenges/{challengeId}
-        final challengeRef = levelDoc.reference.parent.parent;
-        if (challengeRef == null) return null;
-        final challengeSnap = await challengeRef.get();
-        if (!challengeSnap.exists) return null;
-        final data = challengeSnap.data() ?? {};
-        if (data['active'] != true) return null;
-        return ChallengerRoadChallenge.fromSnapshot(challengeSnap);
-      }),
-    );
-
-    return results.whereType<ChallengerRoadChallenge>().toList();
-  }
-
-  /// Returns all [ChallengerRoadLevel] documents for a given challenge,
-  /// ordered by [level] ascending.
-  Future<List<ChallengerRoadLevel>> getLevelsForChallenge(String challengeId) async {
-    final snap = await _levelsRef(challengeId).orderBy('level').get();
-    return snap.docs.map(ChallengerRoadLevel.fromSnapshot).toList();
+    final challengesSnap = await _challengesRef(levelSnap.id).where('active', isEqualTo: true).orderBy('sequence').get();
+    return challengesSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).toList();
   }
 
   /// Returns the [ChallengerRoadLevel] document for a specific challenge at a
   /// specific level, or null if the challenge does not participate at that level.
   Future<ChallengerRoadLevel?> getLevelDoc(String challengeId, int level) async {
-    final snap = await _levelsRef(challengeId).where('level', isEqualTo: level).limit(1).get();
-    if (snap.docs.isEmpty) return null;
-    return ChallengerRoadLevel.fromSnapshot(snap.docs.first);
+    final challenges = await getChallengesForLevel(level);
+    for (final challenge in challenges) {
+      if (challenge.id == challengeId) {
+        return challenge.toLevelDoc();
+      }
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -291,9 +272,9 @@ class ChallengerRoadService {
   /// Returns a sorted list of all distinct active level numbers across all challenges.
   /// Used to build the full snake map without loading every challenge.
   Future<List<int>> getAllActiveLevels() async {
-    final snap = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+    final snap = await _levelsRef.where('active', isEqualTo: true).get();
 
-    final levels = snap.docs.map((d) => d.data()['level'] as num?).whereType<num>().map((n) => n.toInt()).toSet().toList()..sort();
+    final levels = snap.docs.map((d) => (d.data() as Map<String, dynamic>?)?['level'] as num?).whereType<num>().map((n) => n.toInt()).toSet().toList()..sort();
 
     return levels;
   }
@@ -443,23 +424,14 @@ class ChallengerRoadService {
   /// Returns true when every active challenge that participates at [level] has
   /// a passing session in the given attempt.
   Future<bool> isLevelComplete(String userId, String attemptId, int level) async {
-    // Get all active challenge IDs that have a level doc at this level.
-    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
-    final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList();
+    final challenges = await getChallengesForLevel(level);
+    if (challenges.isEmpty) return false;
 
-    if (levelSnapsDocs.isEmpty) return false;
+    for (final challenge in challenges) {
+      final challengeId = challenge.id;
+      if (challengeId == null) continue;
 
-    for (final levelDoc in levelSnapsDocs) {
-      final challengeRef = levelDoc.reference.parent.parent;
-      if (challengeRef == null) continue;
-
-      // Verify the parent challenge itself is active.
-      final challengeSnap = await challengeRef.get();
-      if (!challengeSnap.exists) continue;
-      final data = challengeSnap.data() ?? {};
-      if (data['active'] != true) continue;
-
-      final passed = await isChallengePassedAtLevel(userId, attemptId, challengeRef.id, level);
+      final passed = await isChallengePassedAtLevel(userId, attemptId, challengeId, level);
       if (!passed) return false;
     }
 
@@ -803,33 +775,29 @@ class ChallengerRoadService {
   // ---------------------------------------------------------------------------
 
   Future<_RoadBadgeStats> _loadRoadBadgeStats(String userId) async {
-    final challengeSnap = await _challengesRef.where('active', isEqualTo: true).get();
-    final challenges = challengeSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).toList();
-    final challengeById = <String, ChallengerRoadChallenge>{
-      for (final challenge in challenges)
-        if (challenge.id != null) challenge.id!: challenge,
-    };
-
-    final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
+    final levelSnaps = await _levelsRef.where('active', isEqualTo: true).get();
     final activeChallengeIdsByLevel = <int, Set<String>>{};
     final activeShotTypeChallengeCountByLevel = <String, int>{};
+    final challengeById = <String, ChallengerRoadChallenge>{};
 
-    for (final levelDoc in allActiveLevelSnaps.docs) {
-      final level = (levelDoc.data()['level'] as num?)?.toInt();
+    for (final levelDoc in levelSnaps.docs) {
+      final level = ((levelDoc.data() as Map<String, dynamic>?)?['level'] as num?)?.toInt();
       if (level == null) continue;
 
-      final challengeId = levelDoc.reference.parent.parent?.id;
-      if (challengeId == null) continue;
+      final challengeSnaps = await _challengesRef(levelDoc.id).where('active', isEqualTo: true).get();
+      for (final challengeSnap in challengeSnaps.docs) {
+        final challenge = ChallengerRoadChallenge.fromSnapshot(challengeSnap);
+        final challengeId = challenge.id;
+        if (challengeId == null) continue;
 
-      final challenge = challengeById[challengeId];
-      if (challenge == null || !challenge.active) continue;
+        challengeById[challengeId] = challenge;
+        activeChallengeIdsByLevel.putIfAbsent(level, () => <String>{}).add(challengeId);
 
-      activeChallengeIdsByLevel.putIfAbsent(level, () => <String>{}).add(challengeId);
-
-      final shotType = challenge.shotType?.toLowerCase();
-      if (shotType != null && shotType.isNotEmpty) {
-        final key = _shotTypeLevelKey(shotType, level);
-        activeShotTypeChallengeCountByLevel[key] = (activeShotTypeChallengeCountByLevel[key] ?? 0) + 1;
+        final shotType = challenge.shotType?.toLowerCase();
+        if (shotType != null && shotType.isNotEmpty) {
+          final key = _shotTypeLevelKey(shotType, level);
+          activeShotTypeChallengeCountByLevel[key] = (activeShotTypeChallengeCountByLevel[key] ?? 0) + 1;
+        }
       }
     }
 
@@ -886,19 +854,14 @@ class ChallengerRoadService {
   /// [ChallengeLevelHistoryEntry] at this level in each progress entry.
   Future<bool> _isLevelPerfect(String userId, String attemptId, int level) async {
     try {
-      final allActiveLevelSnaps = await _firestore.collectionGroup('levels').where('active', isEqualTo: true).get();
-      final levelSnapsDocs = allActiveLevelSnaps.docs.where((d) => (d.data()['level'] as num?)?.toInt() == level).toList();
-      if (levelSnapsDocs.isEmpty) return false;
+      final challenges = await getChallengesForLevel(level);
+      if (challenges.isEmpty) return false;
 
-      for (final levelDoc in levelSnapsDocs) {
-        final challengeRef = levelDoc.reference.parent.parent;
-        if (challengeRef == null) continue;
-        final challengeSnap = await challengeRef.get();
-        if (!challengeSnap.exists) continue;
-        final data = challengeSnap.data() ?? {};
-        if (data['active'] != true) continue;
+      for (final challenge in challenges) {
+        final challengeId = challenge.id;
+        if (challengeId == null) continue;
 
-        final progressSnap = await _progressRef(userId, attemptId).doc(challengeRef.id).get();
+        final progressSnap = await _progressRef(userId, attemptId).doc(challengeId).get();
         if (!progressSnap.exists) return false;
         final entry = ChallengeProgressEntry.fromSnapshot(progressSnap);
         final attemptsAtLevel = entry.levelHistory.where((h) => h.level == level).length;
