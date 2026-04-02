@@ -383,7 +383,7 @@ class _ShotsState extends State<Shots> {
                     metrics.statusLabel,
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
-                      fontSize: 13,
+                      fontSize: 15,
                       color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
                     ),
                   ),
@@ -403,14 +403,14 @@ class _ShotsState extends State<Shots> {
                         metrics.goalDateLabel,
                         style: TextStyle(
                           fontFamily: 'NovecentoSans',
-                          fontSize: 13,
+                          fontSize: 15,
                           color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.edit_outlined,
-                        size: 12,
+                        size: 14,
                         color: theme.colorScheme.onPrimary.withValues(alpha: 0.52),
                       ),
                     ],
