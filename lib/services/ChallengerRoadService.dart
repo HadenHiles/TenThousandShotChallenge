@@ -252,8 +252,18 @@ class ChallengerRoadService {
     final levelSnap = await _findActiveLevelSnapshot(level);
     if (levelSnap == null) return [];
 
+    // level_name is authoritative on the parent level document — override
+    // whatever the challenge sub-docs carry so a single field update is enough.
+    final parentData = levelSnap.data() as Map<String, dynamic>?;
+    final parentLevelName = (parentData?['level_name'] as String?)?.trim();
+
     final challengesSnap = await _challengesRef(levelSnap.id).orderBy('sequence').get();
-    return challengesSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).where((c) => c.active).toList();
+    return challengesSnap.docs.map(ChallengerRoadChallenge.fromSnapshot).where((c) => c.active).map((c) {
+      if (parentLevelName != null && parentLevelName.isNotEmpty && parentLevelName != c.levelName) {
+        return c.copyWith(levelName: parentLevelName);
+      }
+      return c;
+    }).toList();
   }
 
   /// Returns the [ChallengerRoadLevel] document for a specific challenge at a

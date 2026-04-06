@@ -156,10 +156,12 @@ int _colForIndex(int i) {
 /// [count]      — number of challenges
 /// [stackWidth] — pixel width of the containing Stack
 /// Nodes are laid out top-to-bottom (seq 0 at top).
+/// The level banner now sits at the *bottom* of the section, so nodes start
+/// from the top with only the top padding offset.
 List<Offset> _computeNodeCentres(int count, double stackWidth) {
   return List.generate(count, (i) {
     final x = stackWidth * _xFractions[_colForIndex(i)];
-    final y = _levelTopPad + _bannerHeight + 16.0 + (_nodeDiameter / 2) + i * _nodeSpacing;
+    final y = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2) + i * _nodeSpacing;
     return Offset(x, y);
   });
 }
@@ -926,9 +928,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   ),
                 ),
 
-              // ── Level banner ────────────────────────────────────────────
+              // ── Level banner (at bottom — acts as threshold into this level
+              // when scrolling upward through the map) ──────────────────────
               Positioned(
-                top: _levelSectionExtraTop,
+                bottom: _levelBottomPad,
                 left: 0,
                 right: 0,
                 child: Center(
