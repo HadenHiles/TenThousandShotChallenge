@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Horizontal banner separating level groups on the Challenger Road snake map.
 class LevelBannerWidget extends StatelessWidget {
-  final int level;
+  final String levelName;
 
   /// True if this is the level the player is currently on.
   final bool isCurrentLevel;
@@ -12,7 +12,7 @@ class LevelBannerWidget extends StatelessWidget {
 
   const LevelBannerWidget({
     super.key,
-    required this.level,
+    required this.levelName,
     required this.isCurrentLevel,
     required this.isLocked,
   });
@@ -70,7 +70,7 @@ class LevelBannerWidget extends StatelessWidget {
                   const SizedBox(width: 5),
                 ],
                 Text(
-                  'LEVEL $level',
+                  levelName.toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'NovecentoSans',
