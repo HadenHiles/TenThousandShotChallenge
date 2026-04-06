@@ -932,7 +932,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: _buildLevelBanner(context, level, isCurrentLevel, isLocked),
+                  child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked),
                 ),
               ),
 
@@ -1103,11 +1103,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   Widget _buildLevelBanner(
     BuildContext context,
     int level,
+    String levelName,
     bool isCurrentLevel,
     bool isLocked,
   ) {
     final banner = LevelBannerWidget(
-      level: level,
+      levelName: levelName,
       isCurrentLevel: isCurrentLevel,
       isLocked: isLocked,
     );
