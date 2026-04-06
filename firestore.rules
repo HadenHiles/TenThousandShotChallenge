@@ -1,19 +1,27 @@
 rules_version = '2';
+// Reference copy — deploy from the Flutter app repo:
+//   firebase deploy --only firestore:rules
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+    function isContentAdmin() {
+      return request.auth != null && request.auth.token.isContentAdmin == true;
+    }
+
     match /users {
       allow read, create: if request.auth != null
-      
+
       match /{userId}/{document=**} {
-      	allow read: if request.auth != null
+        allow read: if request.auth != null
         allow write, delete: if request.auth.uid == userId;
-        
+
         match /claims {
-        	allow read: if request.auth.uid == resource.data.app_user_id
+          allow read: if request.auth.uid == resource.data.app_user_id
         }
-        
+
         match /achievements {
-        	allow read: if request.auth != null
+          allow read: if request.auth != null
           allow write, delete: if request.auth.uid == userId
 
           match /{achievementId} {
@@ -21,34 +29,34 @@ service cloud.firestore {
             allow write, delete: if request.auth != null && request.auth.uid == userId;
           }
         }
-        
+
         match /stats {
-        	allow read: if request.auth != null
+          allow read: if request.auth != null
           allow write, delete: if request.auth.uid == userId
         }
-        
+
         match /meta {
-        	allow read: if request.auth != null
+          allow read: if request.auth != null
           allow write, delete: if request.auth.uid == userId
         }
       }
     }
     match /iterations {
       allow read, create: if request.auth != null
-      
+
       match /{userId} {
-      	allow read: if request.auth != null
-        
+        allow read: if request.auth != null
+
         match /{document=**} {
           allow read: if request.auth != null
           allow write: if request.auth.uid == userId
         }
-        
+
         match /iterations {
-        	match /{document=**} {
-          	allow read: if request.auth != null
+          match /{document=**} {
+            allow read: if request.auth != null
           }
-          
+
           match /sessions/{document=**} {
             allow read: if request.auth != null
           }
@@ -57,69 +65,70 @@ service cloud.firestore {
     }
     match /teams {
       allow read, create: if request.auth != null
-        
+
       match /{document=**} {
         allow read, write, update, create: if request.auth != null
-        // allow write, update: if request.auth.uid == resource.data.owner_id
       }
     }
     match /teammates {
       allow read, create: if request.auth != null
-      
+
       match /{userId} {
-      	allow read: if request.auth != null
-        
+        allow read: if request.auth != null
+
         match /{document=**} {
           allow read, write: if request.auth != null
         }
-        
+
         match /teammates {
-        	match /{document=**} {
-          	allow read: if request.auth != null
+          match /{document=**} {
+            allow read: if request.auth != null
           }
         }
       }
     }
     match /invites {
       allow read, create: if request.auth != null
-      
+
       match /{userId} {
-      	allow read: if request.auth != null
-        
+        allow read: if request.auth != null
+
         match /{document=**} {
           allow read, write: if request.auth != null
         }
-        
+
         match /invites {
-        	match /{document=**} {
-          	allow read: if request.auth != null
+          match /{document=**} {
+            allow read: if request.auth != null
           }
         }
       }
     }
     match /merch/{document=**} {
-    	allow read: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write, delete: if isContentAdmin();
     }
     match /trainingPrograms/{document=**} {
-    	allow read: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write, delete: if isContentAdmin();
     }
     match /learn_to_play/{document=**} {
-    	allow read: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write, delete: if isContentAdmin();
     }
     match /learn_videos/{document=**} {
-    	allow read: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write, delete: if isContentAdmin();
     }
 
     // ── Challenger Road ────────────────────────────────────────────────────────
-    // Current structure: level docs own challenge docs.
-    // Firestore path: challenger_road_levels/{levelId}/challenges/{challengeId}
     match /challenger_road_levels/{levelId} {
       allow read: if request.auth != null;
-      allow write: if false;
+      allow write, delete: if isContentAdmin();
 
       match /challenges/{challengeId} {
         allow read: if request.auth != null;
-        allow write: if false;
+        allow write, delete: if isContentAdmin();
       }
     }
 
