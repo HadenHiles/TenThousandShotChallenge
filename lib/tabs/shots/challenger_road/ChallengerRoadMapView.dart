@@ -23,9 +23,9 @@ const double _focusedSectionExtraHeight = 96.0;
 const double _focusExpandPerStep = 16.0;
 const double _focusMaxNodeShift = 48.0;
 const double _roadBoundaryLineHeight = 82.0;
-const double _edgeFocusBufferMin = 44.0;
-const double _edgeFocusBufferMax = 120.0;
-const double _edgeFocusBufferFactor = 0.15;
+const double _edgeFocusBufferMin = 100.0;
+const double _edgeFocusBufferMax = 200.0;
+const double _edgeFocusBufferFactor = 0.22;
 // Column x-fractions for the 3-column zigzag
 const List<double> _xFractions = [0.18, 0.50, 0.82];
 
@@ -203,7 +203,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     this.previewMaxLevel = 1,
     this.previewHeaderAttempt,
     this.onPreviewLevelUnlockAttempted,
-    this.mapBottomInset = 32,
+    this.mapBottomInset = 16,
   });
 
   @override
@@ -860,7 +860,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 label: 'START LINE',
                 isFinish: false,
               ),
-              SizedBox(height: edgeFocusBuffer + widget.mapBottomInset),
+              SizedBox(height: (edgeFocusBuffer * 0.30) + widget.mapBottomInset),
             ],
           ),
         );
