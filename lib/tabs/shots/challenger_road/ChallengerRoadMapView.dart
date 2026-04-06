@@ -275,7 +275,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
     final challengesByLevel = <int, List<ChallengerRoadChallenge>>{};
     for (final lvl in levels) {
-      challengesByLevel[lvl] = await _service!.getChallengesForLevel(lvl);
+      // Reverse so sequence 1 appears at the bottom of the level section and
+      // the highest sequence appears at the top (bottom-up progression).
+      challengesByLevel[lvl] = (await _service!.getChallengesForLevel(lvl)).reversed.toList();
     }
 
     final progress = <String, ChallengeProgressEntry>{};
