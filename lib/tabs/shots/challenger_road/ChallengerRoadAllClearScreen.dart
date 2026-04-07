@@ -92,7 +92,7 @@ class ChallengerRoadAllClearScreen extends StatelessWidget {
               // ── Body copy ───────────────────────────────────────────────
               Text(
                 "You've completed every available challenge on the Challenger Road. "
-                "New challenges are coming soon — keep grinding your regular sessions "
+                "New challenges are coming soon. Keep grinding your regular sessions "
                 "and check back for updates.",
                 textAlign: TextAlign.center,
                 style: TextStyle(

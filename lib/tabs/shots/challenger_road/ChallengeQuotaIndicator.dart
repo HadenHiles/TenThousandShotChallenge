@@ -114,7 +114,7 @@ class ChallengeQuotaIndicator extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 5),
               child: Text(
-                'Try complete — quota not met yet',
+                'Try complete - quota not met yet',
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 11,
