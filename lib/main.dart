@@ -274,6 +274,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Re-enable Firestore network now that the app is foregrounded.
+      FirebaseFirestore.instance.enableNetwork().catchError((_) {});
       if (RevenueCatConfig.configured) {
         // On resume, invalidate cache and refresh entitlements
         Purchases.invalidateCustomerInfoCache();
@@ -283,6 +285,11 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           notifier.refresh();
         } catch (_) {}
       }
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      // Disable Firestore's persistent connection while the app is in the
+      // background so the SDK doesn't spam DNS-failure warnings when Android
+      // restricts network access for background processes.
+      FirebaseFirestore.instance.disableNetwork().catchError((_) {});
     }
   }
 

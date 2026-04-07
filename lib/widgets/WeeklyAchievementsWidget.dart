@@ -737,7 +737,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     if (_user == null) {
       return const Center(child: Text('Sign in to view achievements'));
     }
-    final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements');
+    final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').where('time_frame', isEqualTo: 'week');
     final statsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('stats').doc('weekly');
 
     return Column(

@@ -1371,9 +1371,10 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
             }
             await Promise.all(movePromises);
 
-            // --- Delete all previous week achievements (completed and incomplete) ---
+            // --- Delete ALL achievements (no time_frame filter) to ensure stale docs without the field are also removed ---
+            const allAchievementsFullSnap = await db.collection('users').doc(userId).collection('achievements').get();
             const deletePromises: Promise<any>[] = [];
-            allAchievementsSnap.forEach(doc => {
+            allAchievementsFullSnap.forEach(doc => {
                 deletePromises.push(doc.ref.delete());
             });
             await Promise.all(deletePromises);
