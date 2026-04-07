@@ -930,7 +930,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           _edgeFocusBufferMin,
           _edgeFocusBufferMax,
         );
-        final topStaticHeight = edgeFocusBuffer + _roadBoundaryLineHeight;
+        final roadComplete = _isRoadComplete(data);
+        final topStaticHeight = edgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0) + _roadBoundaryLineHeight;
 
         // Compute cumulative offsets for scroll-to-level after top buffer + finish line.
         double cumulativeOffset = topStaticHeight;
@@ -949,7 +950,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
         // Store the finish line scroll position so the confetti listener knows
         // when the user has crossed it. Victory banner sits above the line.
-        final roadComplete = _isRoadComplete(data);
         final finishLineY = edgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0);
         _finishLineContentY = finishLineY;
 
@@ -1272,7 +1272,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Every challenge. Every level. Think you can do it again?',
+              'Every challenge. Every level. Think you can do it with less shots?',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
