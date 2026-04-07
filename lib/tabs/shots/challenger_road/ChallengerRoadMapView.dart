@@ -991,11 +991,15 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     lvl,
                     interactive: interactive,
                   );
-                  // Pass the challenge count of the section immediately below
-                  // so this section can draw a connector going downward into it.
+                  // Pass info about the section immediately below so this
+                  // section can draw an accurate cross-level connector into it.
                   // Rendering downward means the lower section (painted later)
                   // naturally covers the connector with its own nodes. ✓
-                  final int? belowLevelChallengeCount = lvlIdx < levels.length - 1 ? (data.challengesByLevel[levels[lvlIdx + 1]] ?? const <ChallengerRoadChallenge>[]).length : null;
+                  final List<ChallengerRoadChallenge>? belowChallenges = lvlIdx < levels.length - 1 ? (data.challengesByLevel[levels[lvlIdx + 1]] ?? const <ChallengerRoadChallenge>[]) : null;
+                  final int? belowLevelChallengeCount = belowChallenges?.length;
+                  // The focused index of the below-level is needed so the
+                  // connector endpoint tracks the exit node's expanded position.
+                  final int? belowFocusedIndex = (belowChallenges != null && interactive) ? _focusedIndexForLevel(belowChallenges, levels[lvlIdx + 1]) : null;
                   return _buildLevelSection(
                     context,
                     lvl,
@@ -1004,6 +1008,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     focusTargets: focusTargets,
                     interactive: interactive,
                     belowLevelChallengeCount: belowLevelChallengeCount,
+                    belowFocusedIndex: belowFocusedIndex,
                   );
                 })(),
               _buildRoadBoundaryLine(
@@ -1027,6 +1032,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     required List<_ChallengeFocusTarget> focusTargets,
     bool interactive = true,
     int? belowLevelChallengeCount,
+    int? belowFocusedIndex,
   }) {
     final challenges = data.challengesByLevel[level] ?? [];
     final attempt = data.activeAttempt;
@@ -1068,9 +1074,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 ? const Color(0xFF2E7D32).withValues(alpha: 0.70)
                 : const Color(0xFFCC2200).withValues(alpha: 0.75);
         // Connector is always a traveled bridge (green) unless locked.
-        final connectorColor = isLocked
-            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
-            : const Color(0xFF2E7D32).withValues(alpha: 0.70);
+        final connectorColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFF2E7D32).withValues(alpha: 0.70);
 
         // ── Cross-level connector ─────────────────────────────────────────
         // Connects this section's BOTTOM node (first challenge the user enters
@@ -1086,9 +1090,19 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0) {
           // The exit node of the level below is its index-0 node (top of that section).
           final belowExitX = width * _xFractions[_colForIndex(0)];
-          // Y of the exit node in the below section's local coords (always unexpanded
-          // — the below section manages its own expansion independently).
-          final belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
+          // Compute the Y of the below section's index-0 node using the same
+          // centering + per-node shift logic as _expandedNodeCentres so the
+          // connector endpoint tracks the node even when it's focused/expanded.
+          double belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
+          final int bfi = belowFocusedIndex ?? -1;
+          if (bfi >= 0) {
+            // Centering offset applied to all nodes when any node is focused.
+            // For index 0: shiftY = 0 when focused itself, negative when another node is.
+            final shiftForTopNode = bfi == 0
+                ? 0.0
+                : -math.min(_focusMaxNodeShift, bfi * _focusExpandPerStep);
+            belowExitLocalY += _focusedSectionExtraHeight / 2 + shiftForTopNode;
+          }
           // Start from THIS section's bottom node using the EXPANDED position so
           // the connector stays glued to the node during focus expansion.
           // Offset down by node radius so the circle fully hides the path start.
