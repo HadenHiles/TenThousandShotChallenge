@@ -1078,8 +1078,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           final belowExitX = width * _xFractions[_colForIndex(0)];
           // Y of the exit node in the below section's local coords.
           final belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
-          // Start from THIS section's bottom node (entry point into this level).
-          final connStartY = baseCentres.last.dy;
+          // Start from THIS section's bottom node (entry point into this level),
+          // offset down by the node radius so the circle fully covers the
+          // connector's start and it doesn't peek out above the bottom edge.
+          final connStartY = baseCentres.last.dy + (_nodeDiameter / 2);
           // End at the below section's top node, offset by this section's full height.
           final connEndY = _levelSectionHeight(challenges.length) + belowExitLocalY;
           final connHeight = connEndY - connStartY;
