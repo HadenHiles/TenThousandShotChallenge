@@ -1060,8 +1060,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           }
         }
 
-        // Road colour: red-toned for active/completed; desaturated for locked.
-        final pathColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
+        // Road colour: green for completed levels, red for current, gray for locked.
+        final isCompletedLevel = !isLocked && !isCurrentLevel; // level < currentLevel
+        final pathColor = isLocked
+            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
+            : isCompletedLevel
+                ? const Color(0xFF2E7D32).withValues(alpha: 0.70)
+                : const Color(0xFFCC2200).withValues(alpha: 0.75);
+        // Connector is always a traveled bridge (green) unless locked.
+        final connectorColor = isLocked
+            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
+            : const Color(0xFF2E7D32).withValues(alpha: 0.70);
 
         // ── Cross-level connector ─────────────────────────────────────────
         // Connects this section's BOTTOM node (first challenge the user enters
@@ -1069,21 +1078,24 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         // challenge the user completed before advancing here).
         // Layout is bottom-up: within each section, index 0 = highest seq =
         // painted at the TOP; last index = seq 1 = painted at the BOTTOM.
-        // Entry into this level  → baseCentres.last (bottom of this section)
+        // Entry into this level  → centres.last (bottom of this section, expanded)
         // Exit from below level  → index 0 of the below section (their top node)
-        // Uses baseCentres (not focus-expanded) so position is stable.
+        // Uses expanded centres + sectionHeight so the connector stays anchored
+        // to the actual node position during focus expansion.
         Widget? connectorPaint;
         if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0) {
           // The exit node of the level below is its index-0 node (top of that section).
           final belowExitX = width * _xFractions[_colForIndex(0)];
-          // Y of the exit node in the below section's local coords.
+          // Y of the exit node in the below section's local coords (always unexpanded
+          // — the below section manages its own expansion independently).
           final belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
-          // Start from THIS section's bottom node (entry point into this level),
-          // offset down by the node radius so the circle fully covers the
-          // connector's start and it doesn't peek out above the bottom edge.
-          final connStartY = baseCentres.last.dy + (_nodeDiameter / 2);
-          // End at the below section's top node, offset by this section's full height.
-          final connEndY = _levelSectionHeight(challenges.length) + belowExitLocalY;
+          // Start from THIS section's bottom node using the EXPANDED position so
+          // the connector stays glued to the node during focus expansion.
+          // Offset down by node radius so the circle fully hides the path start.
+          final connStartY = centres.last.dy + (_nodeDiameter / 2);
+          // End at the below section's top node. Use expanded sectionHeight so
+          // the connector length adapts when this section grows with focus.
+          final connEndY = sectionHeight + belowExitLocalY;
           final connHeight = connEndY - connStartY;
           if (connHeight > 0) {
             connectorPaint = Positioned(
@@ -1094,10 +1106,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               child: CustomPaint(
                 painter: _LevelPathPainter(
                   centres: [
-                    Offset(baseCentres.last.dx, 0),
+                    Offset(centres.last.dx, 0),
                     Offset(belowExitX, connHeight),
                   ],
-                  color: pathColor,
+                  color: connectorColor,
                 ),
               ),
             );
