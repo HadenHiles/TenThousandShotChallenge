@@ -30,9 +30,9 @@ class _CreateTeamState extends State<CreateTeam> {
   final TextEditingController teamNameTextFieldController = TextEditingController();
   final TextEditingController teamShotGoalTextFieldController = TextEditingController(text: "100000");
   int? _goalTotal = 100000;
-  final TextEditingController startDateController = TextEditingController();
+  final TextEditingController startDateController = TextEditingController(text: DateFormat('MMMM d, y').format(DateTime.now()));
   DateTime? _startDate = DateTime.now();
-  final TextEditingController targetDateController = TextEditingController();
+  final TextEditingController targetDateController = TextEditingController(text: DateFormat('MMMM d, y').format(DateTime.now().add(const Duration(days: 100))));
   DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
   bool _public = false;
   Team? team;
@@ -321,98 +321,74 @@ class _CreateTeamState extends State<CreateTeam> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Starting From:".toLowerCase(),
-                                            style: TextStyle(
-                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 14,
-                                            ),
-                                            textAlign: TextAlign.left,
-                                          ),
-                                          Text(
-                                            "By Target Completion Date:".toLowerCase(),
-                                            style: TextStyle(
-                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 14,
-                                            ),
-                                            textAlign: TextAlign.left,
-                                          ),
-                                        ],
+                                      Text(
+                                        "Start Date:".toLowerCase(),
+                                        style: TextStyle(
+                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.left,
                                       ),
-                                      Row(
-                                        children: [
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.4,
-                                            child: AutoSizeTextField(
-                                              controller: startDateController,
-                                              style: const TextStyle(fontSize: 12),
-                                              maxLines: 1,
-                                              maxFontSize: 18,
-                                              decoration: InputDecoration(
-                                                focusColor: Theme.of(context).colorScheme.primary,
-                                                contentPadding: const EdgeInsets.all(15),
-                                                fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                              ),
-                                              readOnly: true,
-                                              onTap: () async {
-                                                await _editDate(
-                                                  startDateController,
-                                                  team!.startDate!,
-                                                  DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
-                                                  DateTime.now(),
-                                                ).then((date) {
-                                                  setState(() {
-                                                    _startDate = date;
-                                                  });
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.1,
-                                            child: Text(
-                                              'To'.toUpperCase(),
-                                              style: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 14,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.4,
-                                            child: AutoSizeTextField(
-                                              controller: targetDateController,
-                                              style: const TextStyle(fontSize: 12),
-                                              maxLines: 1,
-                                              maxFontSize: 18,
-                                              decoration: InputDecoration(
-                                                focusColor: Theme.of(context).colorScheme.primary,
-                                                contentPadding: const EdgeInsets.all(15),
-                                                fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                              ),
-                                              readOnly: true,
-                                              onTap: () async {
-                                                await _editDate(
-                                                  targetDateController,
-                                                  team!.targetDate!,
-                                                  _startDate!,
-                                                  DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-                                                ).then((date) {
-                                                  setState(() {
-                                                    _targetDate = date;
-                                                  });
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                        ],
+                                      AutoSizeTextField(
+                                        controller: startDateController,
+                                        style: const TextStyle(fontSize: 16),
+                                        maxLines: 1,
+                                        maxFontSize: 18,
+                                        decoration: InputDecoration(
+                                          focusColor: Theme.of(context).colorScheme.primary,
+                                          contentPadding: const EdgeInsets.all(15),
+                                          fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                          suffixIcon: const Icon(Icons.calendar_today, size: 20),
+                                        ),
+                                        readOnly: true,
+                                        onTap: () async {
+                                          await _editDate(
+                                            startDateController,
+                                            _startDate!,
+                                            DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
+                                            DateTime.now(),
+                                          ).then((date) {
+                                            setState(() {
+                                              _startDate = date;
+                                            });
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        "Target Completion Date:".toLowerCase(),
+                                        style: TextStyle(
+                                          color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+                                          fontFamily: "NovecentoSans",
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      AutoSizeTextField(
+                                        controller: targetDateController,
+                                        style: const TextStyle(fontSize: 16),
+                                        maxLines: 1,
+                                        maxFontSize: 18,
+                                        decoration: InputDecoration(
+                                          focusColor: Theme.of(context).colorScheme.primary,
+                                          contentPadding: const EdgeInsets.all(15),
+                                          fillColor: Theme.of(context).colorScheme.primaryContainer,
+                                          suffixIcon: const Icon(Icons.calendar_today, size: 20),
+                                        ),
+                                        readOnly: true,
+                                        onTap: () async {
+                                          await _editDate(
+                                            targetDateController,
+                                            _targetDate!,
+                                            _startDate!,
+                                            DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                                          ).then((date) {
+                                            setState(() {
+                                              _targetDate = date;
+                                            });
+                                          });
+                                        },
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(vertical: 10),
