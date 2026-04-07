@@ -632,6 +632,23 @@ class ChallengerRoadService {
     return createAttempt(userId, startingLevel);
   }
 
+  /// Called when the user taps "RUN IT BACK" after completing the full road.
+  ///
+  /// Marks the current attempt as `completed` and creates a genuine new attempt
+  /// starting from level 1. Unlike [restartChallengerRoad] this path is always
+  /// a fresh start — the road was finished, not abandoned.
+  Future<ChallengerRoadAttempt> runItBack(String userId) async {
+    final active = await getActiveAttempt(userId);
+    if (active != null) {
+      await updateAttempt(userId, active.id!, {
+        'status': 'completed',
+        'end_date': Timestamp.fromDate(DateTime.now()),
+      });
+    }
+    // Always start from level 1 — the user beat the whole road.
+    return createAttempt(userId, 1);
+  }
+
   // ---------------------------------------------------------------------------
   // 8. User summary
   // ---------------------------------------------------------------------------
