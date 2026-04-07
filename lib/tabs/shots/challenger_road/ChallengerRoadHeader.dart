@@ -7,6 +7,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.
 /// and the current attempt number.
 class ChallengerRoadHeader extends StatelessWidget {
   final ChallengerRoadAttempt? attempt;
+  final String? levelLabel;
   final double topPadding;
   final VoidCallback? onRestartTap;
   final VoidCallback? onCloseTap;
@@ -14,6 +15,7 @@ class ChallengerRoadHeader extends StatelessWidget {
   const ChallengerRoadHeader({
     super.key,
     this.attempt,
+    this.levelLabel,
     this.topPadding = 0,
     this.onRestartTap,
     this.onCloseTap,
@@ -30,6 +32,7 @@ class ChallengerRoadHeader extends StatelessWidget {
     final resetCount = attempt?.resetCount ?? 0;
     final numberFormat = NumberFormat('#,###');
     final progress = shotCount / 10000.0;
+    final displayLabel = levelLabel ?? 'LVL $level';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 360),
@@ -65,7 +68,7 @@ class ChallengerRoadHeader extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  'LVL $level',
+                  displayLabel,
                   style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'NovecentoSans',
