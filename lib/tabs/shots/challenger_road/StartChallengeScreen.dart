@@ -15,7 +15,6 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeDetailSheet.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 
@@ -294,15 +293,9 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         );
         if (!mounted) return;
         if (nextLevelChallenges.isEmpty) {
-          // All currently available challenges conquered — show the all-clear screen.
+          // All currently available challenges conquered — return to the map
+          // which will auto-scroll to the victory banner and fire confetti.
           sessionPanelController.close();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ChallengerRoadAllClearScreen(
-                completedLevel: widget.levelDoc.level,
-              ),
-            ),
-          );
           widget.onDismiss?.call();
           return;
         }
