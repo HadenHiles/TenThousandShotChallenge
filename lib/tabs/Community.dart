@@ -32,14 +32,14 @@ class Community extends StatelessWidget {
     final dividerColor = Colors.white.withValues(alpha: 0.08);
     const tabs = [
       _CommunityTabConfig(
-        section: CommunitySection.friends,
-        label: 'Friends',
-        icon: Icons.people_rounded,
-      ),
-      _CommunityTabConfig(
         section: CommunitySection.team,
         label: 'Team',
         icon: Icons.groups_rounded,
+      ),
+      _CommunityTabConfig(
+        section: CommunitySection.friends,
+        label: 'Friends',
+        icon: Icons.people_rounded,
       ),
     ];
 
@@ -94,10 +94,10 @@ class Community extends StatelessWidget {
         ),
         Expanded(
           child: IndexedStack(
-            index: selectedSection == CommunitySection.team ? 1 : 0,
+            index: selectedSection == CommunitySection.friends ? 1 : 0,
             children: const [
-              Friends(),
               TeamPage(),
+              Friends(),
             ],
           ),
         ),
