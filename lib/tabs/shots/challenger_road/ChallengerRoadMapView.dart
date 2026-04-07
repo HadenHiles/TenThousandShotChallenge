@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
@@ -26,6 +27,7 @@ const double _roadBoundaryLineHeight = 82.0;
 const double _edgeFocusBufferMin = 100.0;
 const double _edgeFocusBufferMax = 200.0;
 const double _edgeFocusBufferFactor = 0.22;
+const double _victoryBannerHeight = 290.0;
 // Column x-fractions for the 3-column zigzag
 const List<double> _xFractions = [0.18, 0.50, 0.82];
 
@@ -234,9 +236,19 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   /// whether a level-unlock animation should fire.
   int? _previousCurrentLevel;
 
+  // Confetti fired when the user scrolls past the finish line after completing
+  // all available levels. Stores the last resolved data for scroll-listener access.
+  late final ConfettiController _confettiController;
+  bool _confettiFired = false;
+  _CRMapData? _lastData;
+  // Approximate scroll offset (from content top) of the finish line;
+  // updated during layout so the scroll listener knows when to fire.
+  double _finishLineContentY = 100.0;
+
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 4));
     _scrollController.addListener(_handleScrollForFocusUpdate);
   }
 
@@ -257,6 +269,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   void dispose() {
     _scrollController.removeListener(_handleScrollForFocusUpdate);
     _scrollController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -291,17 +304,27 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       }
     }
 
-    return _CRMapData(
+    final result = _CRMapData(
       levels: levels,
       challengesByLevel: challengesByLevel,
       activeAttempt: attempt,
       progress: progress,
     );
+    _lastData = result;
+    return result;
+  }
+
+  bool _isRoadComplete(_CRMapData data) {
+    if (widget.isPreviewMode) return false;
+    if (data.activeAttempt == null || data.levels.isEmpty) return false;
+    return data.activeAttempt!.currentLevel > data.levels.last;
   }
 
   void _refreshData() {
     setState(() {
       _didScrollToCurrentLevel = false;
+      _confettiFired = false;
+      _lastData = null;
       _levelTopOffsets.clear();
       _focusTargets.clear();
       _focusedTarget = null;
@@ -371,6 +394,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
+
+      // Road complete — glide to the victory banner at the top.
+      if (_isRoadComplete(data)) {
+        _scrollController.animateTo(
+          _scrollController.position.minScrollExtent,
+          duration: const Duration(milliseconds: 1400),
+          curve: Curves.easeInOutCubic,
+        );
+        return;
+      }
+
       final nextIncomplete = _findNextIncompleteTarget(data);
 
       if (nextIncomplete != null) {
@@ -421,6 +455,18 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   void _handleScrollForFocusUpdate() {
     _updateFocusedTarget();
+    _checkConfettiTrigger();
+  }
+
+  void _checkConfettiTrigger() {
+    if (_confettiFired) return;
+    final data = _lastData;
+    if (data == null || !_isRoadComplete(data)) return;
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.offset <= _finishLineContentY) {
+      _confettiFired = true;
+      _confettiController.play();
+    }
   }
 
   void _scheduleFocusTargets(List<_ChallengeFocusTarget> targets) {
@@ -823,6 +869,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final focusTargets = <_ChallengeFocusTarget>[];
         double sectionTopOffset = topStaticHeight;
 
+        // Store the finish line scroll position so the confetti listener knows
+        // when the user has crossed it. Victory banner sits above the line.
+        final roadComplete = _isRoadComplete(data);
+        final finishLineY = edgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0);
+        _finishLineContentY = finishLineY;
+
         if (interactive) {
           _scheduleFocusTargets(focusTargets);
         }
@@ -832,6 +884,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           child: Column(
             children: [
               SizedBox(height: edgeFocusBuffer),
+              if (roadComplete) _buildVictoryBanner(context, data),
               _buildRoadBoundaryLine(
                 context,
                 label: 'FINISH LINE',
@@ -1101,6 +1154,85 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     );
   }
 
+  // ── Victory banner (shown above FINISH LINE when all levels complete) ──────
+
+  Widget _buildVictoryBanner(BuildContext context, _CRMapData data) {
+    final attempt = data.activeAttempt!;
+    return SizedBox(
+      height: _victoryBannerHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Trophy icon
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                gradient: const RadialGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFF4A400)],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.45),
+                    blurRadius: 28,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.emoji_events_rounded, size: 52, color: Colors.white),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'YOU\'VE CONQUERED\nCHALLENGER ROAD!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 26,
+                color: Color(0xFFFFD700),
+                height: 1.2,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Every challenge. Every level. Think you can do it again?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+              ),
+            ),
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
+              onPressed: () => _confirmRestart(context, attempt),
+              icon: const Icon(Icons.replay_rounded, size: 20),
+              label: const Text(
+                'RUN IT BACK',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 18,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Level banner (with optional unlock animation) ─────────────────────────
 
   Widget _buildLevelBanner(
@@ -1230,7 +1362,33 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
             // ── Map (scrollable) or first-time splash ─────────────────
             Expanded(
-              child: attempt != null ? _buildMapContent(context, data) : _buildNoAttemptSplash(context, data),
+              child: Stack(
+                children: [
+                  attempt != null ? _buildMapContent(context, data) : _buildNoAttemptSplash(context, data),
+                  // Confetti burst when the user crosses the finish line
+                  if (_isRoadComplete(data))
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: ConfettiWidget(
+                        confettiController: _confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        maxBlastForce: 55,
+                        minBlastForce: 18,
+                        emissionFrequency: 0.04,
+                        numberOfParticles: 28,
+                        gravity: 0.35,
+                        shouldLoop: false,
+                        colors: const [
+                          Color(0xFFFFD700),
+                          Color(0xFF4CAF50),
+                          Colors.white,
+                          Color(0xFF2196F3),
+                          Color(0xFFFF5722),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         );
