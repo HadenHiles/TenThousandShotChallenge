@@ -778,7 +778,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       builder: (_) => AlertDialog(
         title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans')),
         content: const Text(
-          'You conquered the full road — nice work! '
+          'You conquered the full road. Nice work! '
           'This will complete your current attempt and start a fresh new one from Level 1.',
         ),
         actions: [
