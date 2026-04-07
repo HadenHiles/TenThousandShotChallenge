@@ -1098,9 +1098,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           if (bfi >= 0) {
             // Centering offset applied to all nodes when any node is focused.
             // For index 0: shiftY = 0 when focused itself, negative when another node is.
-            final shiftForTopNode = bfi == 0
-                ? 0.0
-                : -math.min(_focusMaxNodeShift, bfi * _focusExpandPerStep);
+            final shiftForTopNode = bfi == 0 ? 0.0 : -math.min(_focusMaxNodeShift, bfi * _focusExpandPerStep);
             belowExitLocalY += _focusedSectionExtraHeight / 2 + shiftForTopNode;
           }
           // Start from THIS section's bottom node using the EXPANDED position so
