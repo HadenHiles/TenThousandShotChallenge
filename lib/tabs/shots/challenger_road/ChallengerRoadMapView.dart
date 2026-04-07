@@ -388,6 +388,19 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       activeAttempt: attempt,
       progress: progress,
     );
+
+    // Lock in completed levels: only show challenges that the user actually
+    // completed (have a progress entry). This prevents newly-added challenges
+    // from appearing as completed for levels the user has already passed.
+    if (attempt != null) {
+      final effectiveCurrentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
+      for (final lvl in challengesByLevel.keys.toList()) {
+        if (lvl < effectiveCurrentLevel) {
+          challengesByLevel[lvl] = challengesByLevel[lvl]!.where((c) => c.id != null && progress.containsKey(c.id)).toList();
+        }
+      }
+    }
+
     _lastData = result;
     return result;
   }
@@ -968,8 +981,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 label: 'FINISH LINE',
                 isFinish: true,
               ),
-              for (final lvl in levels)
+              for (int lvlIdx = 0; lvlIdx < levels.length; lvlIdx++)
                 (() {
+                  final lvl = levels[lvlIdx];
                   final sectionTop = sectionTopOffset;
                   final challenges = data.challengesByLevel[lvl] ?? const <ChallengerRoadChallenge>[];
                   sectionTopOffset += _effectiveLevelSectionHeight(
@@ -977,6 +991,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     lvl,
                     interactive: interactive,
                   );
+                  // Pass the challenge count of the section immediately below
+                  // so this section can draw a connector going downward into it.
+                  // Rendering downward means the lower section (painted later)
+                  // naturally covers the connector with its own nodes. ✓
+                  final int? belowLevelChallengeCount = lvlIdx < levels.length - 1 ? (data.challengesByLevel[levels[lvlIdx + 1]] ?? const <ChallengerRoadChallenge>[]).length : null;
                   return _buildLevelSection(
                     context,
                     lvl,
@@ -984,6 +1003,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     sectionTopOffset: sectionTop,
                     focusTargets: focusTargets,
                     interactive: interactive,
+                    belowLevelChallengeCount: belowLevelChallengeCount,
                   );
                 })(),
               _buildRoadBoundaryLine(
@@ -1006,6 +1026,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     required double sectionTopOffset,
     required List<_ChallengeFocusTarget> focusTargets,
     bool interactive = true,
+    int? belowLevelChallengeCount,
   }) {
     final challenges = data.challengesByLevel[level] ?? [];
     final attempt = data.activeAttempt;
@@ -1042,11 +1063,47 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         // Road colour: red-toned for active/completed; desaturated for locked.
         final pathColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
 
+        // ── Cross-level connector ─────────────────────────────────────────
+        // Drawn from this section's TOP node downward into the section below.
+        // Uses baseCentres (not focus-expanded) so position is stable.
+        Widget? connectorPaint;
+        if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0) {
+          final belowLastIdx = belowLevelChallengeCount - 1;
+          final belowEntryX = width * _xFractions[_colForIndex(belowLastIdx)];
+          // Below section's entry node in its own local coords (unexpanded).
+          final belowEntryLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2) + belowLastIdx * _nodeSpacing;
+          // Gap between sections = sectionHeight measured with no focus expansion,
+          // i.e. only the base height of this section (banner + nodes + pads).
+          final connStartY = baseCentres[0].dy;
+          final connEndY = _levelSectionHeight(challenges.length) + belowEntryLocalY;
+          final connHeight = connEndY - connStartY;
+          if (connHeight > 0) {
+            connectorPaint = Positioned(
+              top: connStartY,
+              left: 0,
+              right: 0,
+              height: connHeight,
+              child: CustomPaint(
+                painter: _LevelPathPainter(
+                  centres: [
+                    Offset(baseCentres[0].dx, 0),
+                    Offset(belowEntryX, connHeight),
+                  ],
+                  color: pathColor,
+                ),
+              ),
+            );
+          }
+        }
+
         return SizedBox(
           height: sectionHeight,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              // ── Cross-level connector (extends above this section) ────────
+              if (connectorPaint != null) connectorPaint,
+
               // ── Path ────────────────────────────────────────────────────
               if (challenges.length > 1)
                 Positioned.fill(
@@ -1424,11 +1481,22 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           );
         }
 
+        // Resolve the display label for the current level in the header.
+        String levelLabel;
+        if (_isRoadComplete(data)) {
+          levelLabel = 'COMPLETE';
+        } else {
+          final currentLevel = widget.isPreviewMode ? math.min(attempt?.currentLevel ?? 1, widget.previewMaxLevel) : (attempt?.currentLevel ?? 1);
+          final currentChallenges = data.challengesByLevel[currentLevel];
+          levelLabel = (currentChallenges != null && currentChallenges.isNotEmpty) ? currentChallenges.first.levelName.toUpperCase() : 'LVL $currentLevel';
+        }
+
         return Column(
           children: [
             // ── Header (pinned below app header) ───────────────────────
             ChallengerRoadHeader(
               attempt: widget.isPreviewMode ? (widget.previewHeaderAttempt ?? attempt) : attempt,
+              levelLabel: levelLabel,
               topPadding: MediaQuery.of(context).padding.top,
               onRestartTap: (!widget.isPreviewMode && attempt != null) ? () => _confirmRestart(context, attempt) : null,
               onCloseTap: widget.onCloseTap,
