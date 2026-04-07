@@ -160,7 +160,7 @@ class ChallengerRoadService {
       const ChallengerRoadBadgeDefinition(
         id: 'cr_perfect_level',
         name: 'Perfect Level',
-        description: 'In one attempt, hit the target score for every active challenge at a level on your first try.',
+        description: 'In one attempt, hit the target score on your first try for every challenge in a level.',
         category: ChallengerRoadBadgeCategory.special,
       ),
     ];
