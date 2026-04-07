@@ -1064,18 +1064,24 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final pathColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
 
         // ── Cross-level connector ─────────────────────────────────────────
-        // Drawn from this section's TOP node downward into the section below.
+        // Connects this section's BOTTOM node (first challenge the user enters
+        // when arriving from below) to the section-below's TOP node (last
+        // challenge the user completed before advancing here).
+        // Layout is bottom-up: within each section, index 0 = highest seq =
+        // painted at the TOP; last index = seq 1 = painted at the BOTTOM.
+        // Entry into this level  → baseCentres.last (bottom of this section)
+        // Exit from below level  → index 0 of the below section (their top node)
         // Uses baseCentres (not focus-expanded) so position is stable.
         Widget? connectorPaint;
         if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0) {
-          final belowLastIdx = belowLevelChallengeCount - 1;
-          final belowEntryX = width * _xFractions[_colForIndex(belowLastIdx)];
-          // Below section's entry node in its own local coords (unexpanded).
-          final belowEntryLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2) + belowLastIdx * _nodeSpacing;
-          // Gap between sections = sectionHeight measured with no focus expansion,
-          // i.e. only the base height of this section (banner + nodes + pads).
-          final connStartY = baseCentres[0].dy;
-          final connEndY = _levelSectionHeight(challenges.length) + belowEntryLocalY;
+          // The exit node of the level below is its index-0 node (top of that section).
+          final belowExitX = width * _xFractions[_colForIndex(0)];
+          // Y of the exit node in the below section's local coords.
+          final belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
+          // Start from THIS section's bottom node (entry point into this level).
+          final connStartY = baseCentres.last.dy;
+          // End at the below section's top node, offset by this section's full height.
+          final connEndY = _levelSectionHeight(challenges.length) + belowExitLocalY;
           final connHeight = connEndY - connStartY;
           if (connHeight > 0) {
             connectorPaint = Positioned(
@@ -1086,8 +1092,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               child: CustomPaint(
                 painter: _LevelPathPainter(
                   centres: [
-                    Offset(baseCentres[0].dx, 0),
-                    Offset(belowEntryX, connHeight),
+                    Offset(baseCentres.last.dx, 0),
+                    Offset(belowExitX, connHeight),
                   ],
                   color: pathColor,
                 ),
