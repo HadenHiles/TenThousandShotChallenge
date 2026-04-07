@@ -219,12 +219,12 @@ class _JoinTeamState extends State<JoinTeam> {
                                         alignLabelWithHint: true,
                                         labelStyle: TextStyle(
                                           fontFamily: 'NovecentoSans',
-                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                         hintStyle: TextStyle(
                                           fontFamily: 'NovecentoSans',
                                           fontSize: 20,
-                                          color: Theme.of(context).cardTheme.color,
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                                         ),
                                       ),
                                       style: TextStyle(
