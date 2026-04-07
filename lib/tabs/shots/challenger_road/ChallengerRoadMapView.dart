@@ -318,6 +318,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   // all available levels. Stores the last resolved data for scroll-listener access.
   late final ConfettiController _confettiController;
   bool _confettiFired = false;
+  bool _runItBackLoading = false;
   _CRMapData? _lastData;
   // Approximate scroll offset (from content top) of the finish line;
   // updated during layout so the scroll listener knows when to fire.
@@ -411,7 +412,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     return data.activeAttempt!.currentLevel > data.levels.last;
   }
 
-  void _refreshData() {
+  void _refreshData({bool scrollToBottom = false}) {
     setState(() {
       _didScrollToCurrentLevel = false;
       _confettiFired = false;
@@ -428,6 +429,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           });
         }
         _previousCurrentLevel = newLevel;
+        if (scrollToBottom) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        }
         return data;
       });
     });
@@ -789,8 +801,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
+              setState(() => _runItBackLoading = true);
               await _service!.runItBack(widget.userId);
-              _refreshData();
+              if (mounted) setState(() => _runItBackLoading = false);
+              _refreshData(scrollToBottom: true);
             },
             child: Text(
               'Let\'s Go',
@@ -1590,6 +1604,18 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                           Color(0xFF2196F3),
                           Color(0xFFFF5722),
                         ],
+                      ),
+                    ),
+                  // Loading overlay shown while "Run It Back" processes.
+                  if (_runItBackLoading)
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: Colors.black54,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
                       ),
                     ),
                 ],
