@@ -88,28 +88,109 @@ class _LevelPathPainter extends CustomPainter {
 
   const _LevelPathPainter({required this.centres, required this.color});
 
+  /// Walks a cubic bezier at [t] ∈ [0,1].
+  static Offset _cubicPoint(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
+    final mt = 1 - t;
+    return p0 * (mt * mt * mt) +
+        p1 * (3 * mt * mt * t) +
+        p2 * (3 * mt * t * t) +
+        p3 * (t * t * t);
+  }
+
+  /// Samples [segments] points along the cubic bezier and draws them as
+  /// individual dash strokes of [dashLen] with gap [gapLen].
+  void _drawDashedCubic(
+    Canvas canvas,
+    Paint paint,
+    Offset from,
+    Offset cp1,
+    Offset cp2,
+    Offset to, {
+    int segments = 80,
+    double dashLen = 6.0,
+    double gapLen = 9.0,
+  }) {
+    // Estimate the path length via sampled points so dashes scale naturally.
+    double totalLength = 0;
+    final pts = List.generate(segments + 1, (i) => _cubicPoint(from, cp1, cp2, to, i / segments));
+    for (int i = 1; i <= segments; i++) {
+      totalLength += (pts[i] - pts[i - 1]).distance;
+    }
+
+    final cycleLen = dashLen + gapLen;
+    double drawn = 0;
+    double distAccum = 0;
+    int ptIdx = 1;
+
+    while (ptIdx <= segments) {
+      final segStart = pts[ptIdx - 1];
+      final segEnd = pts[ptIdx];
+      final segLen = (segEnd - segStart).distance;
+      double segConsumed = 0;
+
+      while (segConsumed < segLen) {
+        final posInCycle = drawn % cycleLen;
+        final remaining = segLen - segConsumed;
+
+        if (posInCycle < dashLen) {
+          // Inside a dash — draw up to the end of this dash or end of segment.
+          final dashRemaining = dashLen - posInCycle;
+          final stepDist = math.min(dashRemaining, remaining);
+          final t0 = (distAccum + segConsumed) / totalLength;
+          final t1 = (distAccum + segConsumed + stepDist) / totalLength;
+          final a = _cubicPoint(from, cp1, cp2, to, t0.clamp(0.0, 1.0));
+          final b = _cubicPoint(from, cp1, cp2, to, t1.clamp(0.0, 1.0));
+          canvas.drawLine(a, b, paint);
+          segConsumed += stepDist;
+          drawn += stepDist;
+        } else {
+          // Inside a gap — skip.
+          final gapRemaining = cycleLen - posInCycle;
+          final stepDist = math.min(gapRemaining, remaining);
+          segConsumed += stepDist;
+          drawn += stepDist;
+        }
+      }
+
+      distAccum += segLen;
+      ptIdx++;
+    }
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (centres.length < 2) return;
 
-    final paint = Paint()
+    // Road surface — wide semi-transparent band follows the bezier.
+    final roadPaint = Paint()
+      ..color = color.withValues(alpha: 0.13)
+      ..strokeWidth = 18.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Centre dashed line — red, subtle.
+    final dashPaint = Paint()
       ..color = color
-      ..strokeWidth = 3.5
+      ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    path.moveTo(centres[0].dx, centres[0].dy);
 
     for (int i = 1; i < centres.length; i++) {
       final from = centres[i - 1];
       final to = centres[i];
-      // Cubic bezier: control points bend the path smoothly between columns.
       final midY = (from.dy + to.dy) / 2.0;
-      path.cubicTo(from.dx, midY, to.dx, midY, to.dx, to.dy);
-    }
+      final cp1 = Offset(from.dx, midY);
+      final cp2 = Offset(to.dx, midY);
 
-    canvas.drawPath(path, paint);
+      // Draw road surface first, then dashes on top.
+      final roadPath = Path()
+        ..moveTo(from.dx, from.dy)
+        ..cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, to.dx, to.dy);
+      canvas.drawPath(roadPath, roadPaint);
+
+      _drawDashedCubic(canvas, dashPaint, from, cp1, cp2, to, dashLen: 7.0, gapLen: 10.0);
+    }
   }
 
   @override
@@ -961,12 +1042,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           }
         }
 
-        // Path color
+        // Road colour: red-toned for active/completed; desaturated for locked.
         final pathColor = isLocked
-            ? Colors.grey.shade700.withValues(alpha: 0.4)
-            : isCurrentLevel
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
-                : Colors.green.shade600.withValues(alpha: 0.5);
+            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
+            : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
 
         return SizedBox(
           height: sectionHeight,
