@@ -770,6 +770,38 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
   // ── Confirm restart dialog ────────────────────────────────────────────────
 
+  /// Shown when the user taps "RUN IT BACK" on the victory banner.
+  /// Completes the current attempt and starts a brand-new one from level 1.
+  void _confirmRunItBack(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans')),
+        content: const Text(
+          'You conquered the full road — nice work! '
+          'This will complete your current attempt and start a fresh new one from Level 1.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _service!.runItBack(widget.userId);
+              _refreshData();
+            },
+            child: Text(
+              'Let\'s Go',
+              style: TextStyle(color: Theme.of(context).primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmRestart(BuildContext context, ChallengerRoadAttempt attempt) {
     final isDoOver = attempt.resetCount == 0;
     final title = isDoOver ? 'Start Over?' : 'Restart Challenger Road?';
@@ -1320,7 +1352,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   // ── Victory banner (shown above FINISH LINE when all levels complete) ──────
 
   Widget _buildVictoryBanner(BuildContext context, _CRMapData data) {
-    final attempt = data.activeAttempt!;
     return SizedBox(
       height: _victoryBannerHeight,
       child: Padding(
@@ -1371,7 +1402,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             ),
             const SizedBox(height: 18),
             ElevatedButton.icon(
-              onPressed: () => _confirmRestart(context, attempt),
+              onPressed: () => _confirmRunItBack(context),
               icon: const Icon(Icons.replay_rounded, size: 20),
               label: const Text(
                 'RUN IT BACK',
