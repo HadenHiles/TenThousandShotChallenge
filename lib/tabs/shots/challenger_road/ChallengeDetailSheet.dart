@@ -252,7 +252,7 @@ class ChallengeDetailSheet extends StatelessWidget {
         children: [
           _quotaStat(context, '${levelDoc.shotsRequired}', 'SHOTS / TRY'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-          _quotaStat(context, '${levelDoc.shotsToPass}', 'ON TARGET TO PASS'),
+          _quotaStat(context, '${levelDoc.shotsToPass}', 'TARGET SCORE'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           _quotaStat(
             context,
@@ -325,7 +325,7 @@ class ChallengeDetailSheet extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '$tryCount ${tryCount == 1 ? 'TRY' : 'TRIES'} LOGGED  ·  $passCount PASSED',
+                '$tryCount ${tryCount == 1 ? 'TRY' : 'TRIES'} LOGGED  ·  $passCount MET TARGET',
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 13,

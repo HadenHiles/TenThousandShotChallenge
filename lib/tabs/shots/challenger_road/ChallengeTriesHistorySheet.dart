@@ -124,7 +124,7 @@ class _ChallengeTriesHistorySheetState extends State<ChallengeTriesHistorySheet>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'PASS: ${widget.levelDoc.shotsToPass}/${widget.levelDoc.shotsRequired}',
+                        'TARGET SCORE: ${widget.levelDoc.shotsToPass}/${widget.levelDoc.shotsRequired}',
                         style: TextStyle(
                           fontFamily: 'NovecentoSans',
                           fontSize: 12,

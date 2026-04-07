@@ -153,14 +153,14 @@ class ChallengerRoadService {
       const ChallengerRoadBadgeDefinition(
         id: 'cr_outperform_plus2_x5',
         name: 'Clutch Finisher',
-        description: 'Beat the passing target by 2+ shots in 5 sessions.',
+        description: 'Exceed the target score by 2+ shots in 5 sessions.',
         category: ChallengerRoadBadgeCategory.outperform,
         threshold: 5,
       ),
       const ChallengerRoadBadgeDefinition(
         id: 'cr_perfect_level',
         name: 'Perfect Level',
-        description: 'In one attempt, pass every active challenge at a level on your first try.',
+        description: 'In one attempt, hit the target score for every active challenge at a level on your first try.',
         category: ChallengerRoadBadgeCategory.special,
       ),
     ];
