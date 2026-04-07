@@ -91,10 +91,7 @@ class _LevelPathPainter extends CustomPainter {
   /// Walks a cubic bezier at [t] ∈ [0,1].
   static Offset _cubicPoint(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
     final mt = 1 - t;
-    return p0 * (mt * mt * mt) +
-        p1 * (3 * mt * mt * t) +
-        p2 * (3 * mt * t * t) +
-        p3 * (t * t * t);
+    return p0 * (mt * mt * mt) + p1 * (3 * mt * mt * t) + p2 * (3 * mt * t * t) + p3 * (t * t * t);
   }
 
   /// Samples [segments] points along the cubic bezier and draws them as
@@ -1043,9 +1040,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         }
 
         // Road colour: red-toned for active/completed; desaturated for locked.
-        final pathColor = isLocked
-            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
-            : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
+        final pathColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFFCC2200).withValues(alpha: isCurrentLevel ? 0.75 : 0.50);
 
         return SizedBox(
           height: sectionHeight,
