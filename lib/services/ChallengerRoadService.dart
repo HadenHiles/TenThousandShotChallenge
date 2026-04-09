@@ -117,21 +117,21 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_fresh_laces',
       name: 'Fresh Laces',
-      description: 'Geared up and stepped onto the Road. The real work starts here.',
+      description: 'Geared up and stepped onto the Challenger Road. The real work starts here.',
       category: ChallengerRoadBadgeCategory.firstSteps,
       tier: ChallengerRoadBadgeTier.common,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_drop_the_biscuit',
       name: 'Drop the Biscuit',
-      description: 'First rep on the Road in the books. Now let\'s see what you\'ve got.',
+      description: 'First session on the Challenger Road in the books. Now let\'s see what you\'ve got.',
       category: ChallengerRoadBadgeCategory.firstSteps,
       tier: ChallengerRoadBadgeTier.common,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_clean_read',
       name: 'Clean Read',
-      description: 'Passed your first challenge. You belong on this Road.',
+      description: 'Passed your first challenge on the Road. You belong here.',
       category: ChallengerRoadBadgeCategory.firstSteps,
       tier: ChallengerRoadBadgeTier.common,
     ),
@@ -143,23 +143,9 @@ class ChallengerRoadService {
       tier: ChallengerRoadBadgeTier.common,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_called_up',
-      name: 'Called Up',
-      description: 'Level 2. You earned the promotion.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.common,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_made_the_show',
       name: 'Made the Show',
-      description: 'Level 3. Not a warmup anymore.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_the_tape_is_on',
-      name: 'The Tape Is On',
-      description: 'Started your second attempt. The Road doesn\'t care what happened last time.',
+      description: 'Level 3 complete. Not a warmup anymore — you\'re running real shifts now.',
       category: ChallengerRoadBadgeCategory.firstSteps,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
@@ -168,35 +154,28 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_no_warmup_needed',
       name: 'No Warmup Needed',
-      description: 'Cleared a full level without a single failed session.',
+      description: 'Cleared a full level without a single failed challenge session. First try every time.',
       category: ChallengerRoadBadgeCategory.withinRunEfficiency,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_sharp',
       name: 'Sharp',
-      description: 'Four straight challenge passes with zero failures between them.',
+      description: 'Four consecutive challenge passes in a row with zero failures between them.',
       category: ChallengerRoadBadgeCategory.withinRunEfficiency,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_greasy_but_goes_in',
-      name: 'Greasy But Goes In',
-      description: 'Passed a challenge at exactly the minimum shots-to-pass threshold.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.common,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_breakaway',
       name: 'Breakaway',
-      description: 'Cleared every challenge in a level in a single calendar day.',
+      description: 'Cleared every challenge in a level in a single calendar day. No days off.',
       category: ChallengerRoadBadgeCategory.withinRunEfficiency,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_freight_train',
       name: 'Freight Train',
-      description: 'Two consecutive levels cleared without a single failed session in either.',
+      description: 'Two consecutive levels cleared without a single failed session in either. Unstoppable.',
       category: ChallengerRoadBadgeCategory.withinRunEfficiency,
       tier: ChallengerRoadBadgeTier.epic,
     ),
@@ -207,19 +186,12 @@ class ChallengerRoadService {
       category: ChallengerRoadBadgeCategory.withinRunEfficiency,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_barnburner_run',
-      name: 'Barnburner Run',
-      description: 'Flew through a full level — zero failures and 80%+ average accuracy.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.epic,
-    ),
 
     // ── CROSS-ATTEMPT IMPROVEMENT ─────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
       id: 'cr_scouting_report',
       name: 'Scouting Report',
-      description: 'Passed a challenge first try in a new attempt that took multiple tries last run.',
+      description: 'Passed a challenge first try in a new attempt that took multiple tries in your last run.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
       tier: ChallengerRoadBadgeTier.rare,
     ),
@@ -231,174 +203,104 @@ class ChallengerRoadService {
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_better_than_before',
-      name: 'Better Than Before',
-      description: 'Hit a new personal best accuracy on a specific challenge. Growth.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_dug_deep',
-      name: 'Dug Deep',
-      description: 'Cleared a level in a new attempt that you failed to finish in a prior attempt.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_second_nature',
-      name: 'Second Nature',
-      description: 'Five challenges in a single level — all first-try — that you previously failed at least once.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.epic,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_dialed_in',
       name: 'Dialed In',
-      description: 'Personal best accuracy on your own most-failed challenge. You cracked it.',
+      description: 'Personal best accuracy on your own most-failed challenge. You finally cracked it.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
       tier: ChallengerRoadBadgeTier.epic,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_chip_on_your_shoulder',
-      name: 'Chip on Your Shoulder',
-      description: 'Started at a lower level than last time. Climbed higher than ever. Say less.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_comeback_season',
       name: 'Comeback Season',
-      description: 'Beat your best level from the previous attempt. The restart wasn\'t a setback.',
+      description: 'Reached a higher level in your new attempt than you did in the previous one. The restart wasn\'t a setback.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_redemption_arc',
       name: 'Redemption Arc',
-      description: 'First-attempt pass in a new run on a challenge you failed 5+ times previously.',
+      description: 'Passed a challenge first try in a new run that you failed five or more times in a previous attempt.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_comeback_kid',
       name: 'The Comeback Kid',
-      description: 'Three separate attempts, three separate personal best levels. Keeps getting better.',
+      description: 'Three separate attempts, three separate personal best levels. Every run gets better.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
       tier: ChallengerRoadBadgeTier.hidden,
     ),
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
-      id: 'cr_short_handed',
-      name: 'Short-Handed',
-      description: 'Down after 3+ consecutive failures on the same challenge — came back with the pass.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_battle_tested',
       name: 'Battle Tested',
-      description: 'Five straight failures on the same challenge in one attempt, then you broke through.',
+      description: 'Five straight failures on the same challenge in one attempt — then you broke through.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_game_7',
       name: 'Game 7',
-      description: 'The challenge you\'ve failed the most all-time — you finally got it.',
+      description: 'The challenge you\'ve failed the most across your whole history — you finally got the pass.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_ghosts_in_the_machine',
       name: 'Ghosts in the Machine',
-      description: '10+ all-time failures on the same challenge. Stared it down anyway and passed.',
+      description: '10+ all-time failures on the same challenge. Stared it down and got the pass anyway.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.hidden,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_third_period_heart',
       name: 'Third Period Heart',
-      description: 'Deep in a level, absorbed 10+ failed sessions across its challenges, still found a way out.',
+      description: 'Deep in a level with 10+ failed sessions spread across its challenges — still found a way out.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_old_grudge',
       name: 'Old Grudge',
-      description: 'Failed this challenge in two separate attempts without passing it. Closed it out in a third.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_didnt_quit',
-      name: 'Didn\'t Quit',
-      description: 'Failed a challenge and passed it in your very next session.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_takes_a_licking',
-      name: 'Takes a Licking',
-      description: '50 total failed CR sessions across your whole history. Still competing.',
+      description: 'Failed this challenge in two separate attempts without ever passing it. Closed it out in a third.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.rare,
     ),
 
     // ── LEVEL ADVANCEMENT ─────────────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
-      id: 'cr_paying_your_dues',
-      name: 'Paying Your Dues',
-      description: 'Level 3 complete. Running real shifts now.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_ice_time_earned',
       name: 'Ice Time Earned',
-      description: 'Level 5. Every level past here is bonus territory for most players.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_franchise_player',
-      name: 'Franchise Player',
-      description: 'Level 7 down. You carry this Road.',
+      description: 'Level 5 complete. Every level past here is bonus territory for most players.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_team_captain',
       name: 'Team Captain',
-      description: 'Level 10. No one earns the C without this kind of work.',
+      description: 'Level 10 complete. No one earns the C without this kind of work.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_climb',
       name: 'The Climb',
-      description: 'Reached a new personal best level. Your ceiling just moved.',
+      description: 'Reached a new personal best level on the Challenger Road. Your ceiling just moved.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.common,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_reclaiming_the_ice',
-      name: 'Reclaiming the Ice',
-      description: 'Cleared a level in a new attempt that you\'d already beaten before. Muscle memory.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_playoff_mode',
       name: 'Playoff Mode',
-      description: 'Reached the highest available level on the Road. The cup run starts now.',
+      description: 'Reached the highest available level on the Challenger Road. The cup run starts now.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_general',
       name: 'The General',
-      description: 'Every challenge, every level. Commander status.',
+      description: 'Every challenge, every level — all of them. Commander status.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
@@ -414,56 +316,35 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_building_a_barn',
       name: 'Building a Barn',
-      description: '1,000 shots on the Road. Foundation is poured.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_filling_the_net',
-      name: 'Filling the Net',
-      description: '2,500 shots deep into the Road. You\'ve put in serious work.',
+      description: '1,000 shots on the Challenger Road. Foundation is poured.',
       category: ChallengerRoadBadgeCategory.crShotMilestones,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_ten_minute_major',
       name: 'Ten-Minute Major',
-      description: '5,000 Challenger Road shots. A major-penalty\'s worth of effort.',
+      description: '5,000 Challenger Road shots. That\'s a major-penalty\'s worth of pure effort.',
       category: ChallengerRoadBadgeCategory.crShotMilestones,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_buzzer_beater',
       name: 'Buzzer Beater',
-      description: '10,000 Challenger Road shots. You heard the horn and it was earned.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.epic,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_and_again',
-      name: 'And Again',
-      description: 'Hit the 10k Challenger Road milestone twice in a single attempt. Counter reset. You didn\'t.',
+      description: '10,000 Challenger Road shots. You heard the horn — and it was earned.',
       category: ChallengerRoadBadgeCategory.crShotMilestones,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_three_periods',
       name: 'Three Periods',
-      description: 'Three 10k resets in one attempt. The clock just keeps running.',
+      description: '30,000 Challenger Road shots (three 10,000-shot milestones) in one attempt. The clock just keeps running.',
       category: ChallengerRoadBadgeCategory.crShotMilestones,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_well_never_runs_dry',
       name: 'The Well Never Runs Dry',
-      description: '25,000 cumulative Challenger Road shots. Across everything. That\'s a career.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.legendary,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_tape_burner',
-      name: 'Tape Burner',
-      description: '50,000 Challenger Road shots. Nobody else is working like this.',
+      description: '25,000 cumulative Challenger Road shots across your entire history. That\'s a career.',
       category: ChallengerRoadBadgeCategory.crShotMilestones,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
@@ -472,100 +353,65 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_lights_out',
       name: 'Lights Out',
-      description: 'New personal best accuracy in a CR session. Everything found the mark.',
+      description: 'New personal best accuracy in a Challenger Road session. Everything found the mark.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_bar_down',
       name: 'Bar Down',
-      description: '90%+ accuracy in a single CR challenge session. Top of the cage.',
+      description: '90%+ accuracy in a single Challenger Road challenge session. Top of the cage.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_top_cheese',
       name: 'Top Cheese',
-      description: '95%+ accuracy in a single CR session. You\'re not missing anything right now.',
+      description: '95%+ accuracy in a single Challenger Road session. You\'re not missing anything right now.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_pure',
       name: 'Pure',
-      description: '100% accuracy in a CR session. Every shot, every mark.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.epic,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_snipe_artist',
-      name: 'Snipe Artist',
-      description: 'Three consecutive CR sessions above 85% accuracy. Dialled right in.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_dead_aim',
-      name: 'Dead Aim',
-      description: '80%+ average accuracy across every session in a completed level.',
+      description: '100% accuracy in a Challenger Road session. Every shot, every mark, nothing missed.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_sniper',
       name: 'The Sniper',
-      description: '85%+ average accuracy across a fully completed level. That\'s a different shooter.',
+      description: '85%+ average accuracy across every session in a completed level. That\'s a different kind of shooter.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.legendary,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_millimetre',
-      name: 'Millimetre',
-      description: '10 CR sessions at 90%+ accuracy across your entire history.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_all_net',
       name: 'All Net',
-      description: 'Five perfect 100% accuracy sessions on the Road.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.legendary,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_pinpoint',
-      name: 'Pinpoint',
-      description: '85%+ average CR session accuracy across an entire attempt, start to finish.',
+      description: 'Five perfect 100% accuracy sessions on the Challenger Road. Nobody misses like this.',
       category: ChallengerRoadBadgeCategory.crSessionAccuracy,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
 
     // ── HOT STREAKS ───────────────────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
-      id: 'cr_on_a_heater',
-      name: 'On a Heater',
-      description: 'Three consecutive passed CR sessions with zero failures between them.',
-      category: ChallengerRoadBadgeCategory.hotStreaks,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_sauce',
       name: 'Sauce',
-      description: 'Five passed CR sessions in a row. No failures. You\'re cooking right now.',
+      description: 'Five passed Challenger Road sessions in a row — no failures between them. You\'re cooking.',
       category: ChallengerRoadBadgeCategory.hotStreaks,
       tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_unstoppable',
       name: 'Unstoppable',
-      description: 'Ten straight CR sessions passed. That kind of run is impossible to ignore.',
+      description: 'Ten straight Challenger Road sessions passed without a single failure. That kind of run is impossible to ignore.',
       category: ChallengerRoadBadgeCategory.hotStreaks,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_full_send',
       name: 'Full Send',
-      description: 'Your highest-volume CR session AND best accuracy in the same session. Total output.',
+      description: 'Your highest-volume Challenger Road session AND your best accuracy — both in the same session. Total output.',
       category: ChallengerRoadBadgeCategory.hotStreaks,
       tier: ChallengerRoadBadgeTier.epic,
     ),
@@ -574,86 +420,51 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_never_missed',
       name: 'Never Missed',
-      description: 'Five or more challenges on this Road you have never once failed. Clean record.',
+      description: 'Five or more challenges on the Challenger Road you have never once failed. Spotless record.',
       category: ChallengerRoadBadgeCategory.challengeMastery,
       tier: ChallengerRoadBadgeTier.hidden,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_consistent',
-      name: 'Consistent',
-      description: 'The same challenge, passed first attempt in three or more separate attempts.',
-      category: ChallengerRoadBadgeCategory.challengeMastery,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_untouchable',
       name: 'Untouchable',
-      description: 'One challenge, first-attempt pass, five or more separate attempts. You own it.',
+      description: 'One challenge, passed on the first attempt in five or more separate runs. You own that drill.',
       category: ChallengerRoadBadgeCategory.challengeMastery,
       tier: ChallengerRoadBadgeTier.hidden,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_earned_a_salary',
       name: 'Earned a Salary',
-      description: '25 all-time passed sessions on a single challenge. You own that drill.',
+      description: '25 all-time passed sessions on a single challenge. You don\'t just run that drill — you are that drill.',
       category: ChallengerRoadBadgeCategory.challengeMastery,
       tier: ChallengerRoadBadgeTier.epic,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_the_regular',
-      name: 'The Regular',
-      description: '15+ all-time sessions attempted on a single challenge across all runs.',
-      category: ChallengerRoadBadgeCategory.challengeMastery,
-      tier: ChallengerRoadBadgeTier.rare,
     ),
 
     // ── MULTI-ATTEMPT / CAREER ────────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
       id: 'cr_veteran_presence',
       name: 'Veteran Presence',
-      description: 'Second attempt. More dangerous for knowing what\'s coming.',
+      description: 'Back for a second Challenger Road attempt. You know what\'s coming — and you showed up anyway.',
       category: ChallengerRoadBadgeCategory.multiAttemptCareer,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_double_shift',
-      name: 'Double Shift',
-      description: 'Third attempt. The Road keeps calling.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_this_is_what_i_do',
-      name: 'This Is What I Do',
-      description: 'Fourth attempt. Not novelty — this is just your thing.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_lifer',
       name: 'Lifer',
-      description: 'Five attempts on this Road. The Road is in your DNA.',
+      description: 'Five attempts on the Challenger Road. At this point the Road is in your DNA.',
       category: ChallengerRoadBadgeCategory.multiAttemptCareer,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_career_year',
       name: 'Career Year',
-      description: 'Hit 10k CR shots AND reached a new personal best level in the same attempt.',
+      description: 'Hit 10,000 Challenger Road shots AND reached a new personal best level in the same attempt.',
       category: ChallengerRoadBadgeCategory.multiAttemptCareer,
       tier: ChallengerRoadBadgeTier.epic,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_the_long_road',
-      name: 'The Long Road',
-      description: '100 total CR challenge sessions across your whole history.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.rare,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_road_dog',
       name: 'Road Dog',
-      description: '250 total CR sessions. The map is tattooed on your brain.',
+      description: '250 total Challenger Road sessions across your entire career. The map is tattooed on your brain.',
       category: ChallengerRoadBadgeCategory.multiAttemptCareer,
       tier: ChallengerRoadBadgeTier.epic,
     ),
@@ -669,81 +480,67 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_hall_of_famer',
       name: 'Hall of Famer',
-      description: 'Full Road completed in a single attempt. Top to bottom. Clean.',
+      description: 'Full Challenger Road completed in a single attempt — top to bottom, every challenge cleared.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_machine',
       name: 'The Machine',
-      description: '80%+ average CR session accuracy across three complete attempts. Genuinely inhuman.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.legendary,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_sniper_mentality',
-      name: 'Sniper Mentality',
-      description: 'Passed every unique CR challenge at 85%+ at least once across your history.',
+      description: '80%+ average session accuracy across three complete Challenger Road attempts. Genuinely inhuman.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_hockey_god',
       name: 'Hockey God',
-      description: 'A full CR attempt with zero failed sessions. A perfect record nobody else has.',
+      description: 'A full Challenger Road attempt with zero failed sessions — a perfect record nobody else has.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.hidden,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_the_road_ends_here',
-      name: 'The Road Ends Here',
-      description: 'Completed the full Challenger Road in a second or later attempt.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.legendary,
     ),
 
     // ── CHIRPY / PERSONALITY ──────────────────────────────────────────────────
     ChallengerRoadBadgeDefinition(
       id: 'cr_bender',
       name: 'Bender',
-      description: 'Started a new attempt at a lower level than your previous best. Humility is underrated.',
+      description: 'Started a new attempt at a lower level than your previous best. Sometimes humility is the move.',
       category: ChallengerRoadBadgeCategory.chirpy,
       tier: ChallengerRoadBadgeTier.common,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_pigeon',
       name: 'Pigeon',
-      description: 'Passed a hard challenge first try at 95%+. Natural talent or beginner\'s luck?',
+      description: 'Passed a hard challenge first try at 95%+ accuracy. Natural talent — or beginner\'s luck?',
       category: ChallengerRoadBadgeCategory.chirpy,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_old_habits',
-      name: 'Old Habits',
-      description: 'Failed the same challenge across two separate attempts without ever passing it.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.common,
-    ),
-    ChallengerRoadBadgeDefinition(
-      id: 'cr_just_visiting',
-      name: 'Just Visiting',
-      description: 'Three attempts on the Road. No level cleared in any of them. Respect for the stubbornness.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.common,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_ferda',
       name: 'Ferda',
-      description: 'Hit 10k on the Road and kept right on going. Reset the counter, not the effort.',
+      description: 'Hit 10,000 Challenger Road shots and kept right on going. Reset the counter — not the effort.',
       category: ChallengerRoadBadgeCategory.chirpy,
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_sauce_boss',
       name: 'Sauce Boss',
-      description: 'Personal best accuracy session on a hard CR challenge. Pure show-off territory.',
+      description: 'Personal best accuracy in a session on a higher-difficulty Challenger Road challenge. Pure show-off territory.',
       category: ChallengerRoadBadgeCategory.chirpy,
       tier: ChallengerRoadBadgeTier.rare,
+    ),
+    ChallengerRoadBadgeDefinition(
+      id: 'cr_skip_the_tryout',
+      name: 'Skip the Tryout',
+      description: 'Started a new Challenger Road attempt at a higher level using unlocks carried over from a previous run. No time for Level 1.',
+      category: ChallengerRoadBadgeCategory.chirpy,
+      tier: ChallengerRoadBadgeTier.common,
+    ),
+    ChallengerRoadBadgeDefinition(
+      id: 'cr_all_stars',
+      name: 'All Stars',
+      description: 'Completed every level of the Challenger Road starting from Level 1 — even though you had levels unlocked to skip. No shortcuts. All the stars.',
+      category: ChallengerRoadBadgeCategory.eliteEndgame,
+      tier: ChallengerRoadBadgeTier.hidden,
     ),
   ];
 
@@ -819,7 +616,11 @@ class ChallengerRoadService {
   /// Creates a brand-new [ChallengerRoadAttempt] for a user starting at
   /// [startingLevel]. Also updates the user summary's `currentAttemptId` and
   /// `totalAttempts`, then runs badge checks.
-  Future<ChallengerRoadAttempt> createAttempt(String userId, int startingLevel) async {
+  Future<ChallengerRoadAttempt> createAttempt(
+    String userId,
+    int startingLevel, {
+    int inheritedUnlockedLevel = 0,
+  }) async {
     final summary = await getUserSummary(userId);
     final attemptNumber = summary.totalAttempts + 1;
 
@@ -831,6 +632,7 @@ class ChallengerRoadService {
       totalShotsThisAttempt: 0,
       resetCount: 0,
       highestLevelReachedThisAttempt: startingLevel,
+      inheritedUnlockedLevel: inheritedUnlockedLevel,
       status: 'active',
       startDate: DateTime.now(),
     );
@@ -843,13 +645,21 @@ class ChallengerRoadService {
       'total_attempts': attemptNumber,
     });
 
-    await _checkAndAwardBadges(
-      userId: userId,
-      summary: summary.copyWith(
-        currentAttemptId: docRef.id,
-        totalAttempts: attemptNumber,
-      ),
+    final updatedSummary = summary.copyWith(
+      currentAttemptId: docRef.id,
+      totalAttempts: attemptNumber,
     );
+    await _checkAndAwardBadges(userId: userId, summary: updatedSummary);
+
+    // cr_skip_the_tryout: player chose to start above Level 1 using inherited unlocks.
+    if (inheritedUnlockedLevel > 0 && startingLevel > 1) {
+      final freshSummary = await getUserSummary(userId);
+      final earned = List<String>.from(freshSummary.badges);
+      if (!earned.contains('cr_skip_the_tryout')) {
+        earned.add('cr_skip_the_tryout');
+        await updateUserSummary(userId, {'badges': earned});
+      }
+    }
 
     return attempt;
   }
@@ -926,10 +736,7 @@ class ChallengerRoadService {
 
     final sessionAcc = session.totalShots > 0 ? session.shotsMade / session.totalShots : 0.0;
 
-    // cr_greasy_but_goes_in: passed at exactly shotsToPass.
-    if (session.passed && session.shotsMade == session.shotsToPass) {
-      maybeAward('cr_greasy_but_goes_in');
-    }
+    // cr_greasy_but_goes_in was removed from the catalog (too niche).
 
     // cr_lights_out: new personal best accuracy — compare against all previous CR sessions.
     // Read all prior sessions for this challenge across all attempts to find the prior best.
@@ -954,25 +761,15 @@ class ChallengerRoadService {
     }
     if (sessionAcc > priorBestAcc && priorBestAcc > 0.0) {
       maybeAward('cr_lights_out');
-      maybeAward('cr_better_than_before');
+      // cr_better_than_before was removed from the catalog; no longer awarded here.
     }
 
-    // cr_didnt_quit: failed challenge passed in immediate next session.
-    // Check if the prior session for this challenge in this attempt was a failure.
-    final priorInAttempt = await _sessionsRef(userId, attemptId).where('challenge_id', isEqualTo: session.challengeId).orderBy('date', descending: true).limit(2).get();
-    if (session.passed && priorInAttempt.docs.length >= 2) {
-      final priorSession = ChallengeSession.fromSnapshot(priorInAttempt.docs[1]);
-      if (!priorSession.passed) maybeAward('cr_didnt_quit');
-    }
+    // cr_didnt_quit was removed from the catalog (too simple / overlapping).
 
-    // cr_short_handed: passed after 3+ consecutive failures.
+    // cr_short_handed: removed. cr_battle_tested: passed after 5+ consecutive failures.
     if (session.passed) {
       final allInAttempt = await _sessionsRef(userId, attemptId).where('challenge_id', isEqualTo: session.challengeId).orderBy('date').get();
       final sessionList = allInAttempt.docs.map(ChallengeSession.fromSnapshot).toList();
-      if (sessionList.length >= 4) {
-        final priorThree = sessionList.sublist(sessionList.length - 4, sessionList.length - 1);
-        if (priorThree.every((s) => !s.passed)) maybeAward('cr_short_handed');
-      }
 
       // cr_battle_tested: passed after exactly 5 consecutive failures.
       if (sessionList.length >= 6) {
@@ -1022,12 +819,7 @@ class ChallengerRoadService {
         }
       }
 
-      // cr_snipe_artist: 3 consecutive sessions at 85%+ (check last 3 in this attempt).
-      final last3Snap = await _sessionsRef(userId, attemptId).orderBy('date', descending: true).limit(3).get();
-      final last3 = last3Snap.docs.map(ChallengeSession.fromSnapshot).toList();
-      if (last3.length == 3 && last3.every((s) => s.totalShots > 0 && s.shotsMade / s.totalShots >= 0.85)) {
-        maybeAward('cr_snipe_artist');
-      }
+      // cr_snipe_artist was removed from the catalog; no contextual check needed.
     }
 
     // cr_pigeon: first-try 95%+ on a hard challenge.
@@ -1219,13 +1011,6 @@ class ChallengerRoadService {
       extraBadges.add('cr_clean_sweep');
     }
 
-    // cr_barnburner_run: zero failures AND 80%+ average accuracy.
-    if (failedInLevel == 0 && levelSessions.docs.isNotEmpty) {
-      final allInLevel = levelSessions.docs.map(ChallengeSession.fromSnapshot).toList();
-      final avgAcc = allInLevel.where((s) => s.totalShots > 0).map((s) => s.shotsMade / s.totalShots).fold(0.0, (a, b) => a + b) / allInLevel.length;
-      if (avgAcc >= 0.80) extraBadges.add('cr_barnburner_run');
-    }
-
     // cr_freight_train: previous level was also completed with zero failures.
     if (failedInLevel == 0 && completedLevel > 1) {
       final prevLevelSessions = await _sessionsRef(userId, attemptId).where('level', isEqualTo: completedLevel - 1).get();
@@ -1233,33 +1018,13 @@ class ChallengerRoadService {
       if (prevFailed == 0) extraBadges.add('cr_freight_train');
     }
 
-    // cr_dead_aim: 80%+ average accuracy across all sessions in this level.
+    // cr_the_sniper: 85%+ average accuracy across all sessions in this level.
     if (levelSessions.docs.isNotEmpty) {
       final allInLevel = levelSessions.docs.map(ChallengeSession.fromSnapshot).toList();
       if (allInLevel.any((s) => s.totalShots > 0)) {
         final avgAcc = allInLevel.where((s) => s.totalShots > 0).map((s) => s.shotsMade / s.totalShots).fold(0.0, (a, b) => a + b) / allInLevel.where((s) => s.totalShots > 0).length;
-        if (avgAcc >= 0.80) extraBadges.add('cr_dead_aim');
         if (avgAcc >= 0.85) extraBadges.add('cr_the_sniper');
       }
-    }
-
-    // cr_dug_deep: cleared a level that was previously not cleared in any prior attempt.
-    final prevAttemptsSnap = await _attemptsRef(userId).where('attempt_number', isLessThan: attempt.attemptNumber).get();
-    bool levelWasPreviouslyUncleared = false;
-    for (final prevDoc in prevAttemptsSnap.docs) {
-      final prevSessions = await _sessionsRef(userId, prevDoc.id).where('level', isEqualTo: completedLevel).where('passed', isEqualTo: true).limit(1).get();
-      if (prevSessions.docs.isEmpty) {
-        levelWasPreviouslyUncleared = true;
-        break;
-      }
-    }
-    if (levelWasPreviouslyUncleared && prevAttemptsSnap.docs.isNotEmpty) {
-      extraBadges.add('cr_dug_deep');
-    }
-
-    // cr_reclaiming_the_ice: level was cleared in a prior attempt AND this attempt.
-    if (!levelWasPreviouslyUncleared && prevAttemptsSnap.docs.isNotEmpty) {
-      extraBadges.add('cr_reclaiming_the_ice');
     }
 
     // Check if the full road is now complete (all levels cleared in this attempt).
@@ -1273,20 +1038,10 @@ class ChallengerRoadService {
       // cr_hall_of_famer: first time completing the full road.
       extraBadges.add('cr_hall_of_famer');
 
-      // cr_the_road_ends_here: completing the road in a 2nd+ attempt.
-      if (attempt.attemptNumber >= 2) extraBadges.add('cr_the_road_ends_here');
-
       // cr_hockey_god: full road with zero failed sessions across all levels.
       final allSessionsSnap = await _sessionsRef(userId, attemptId).get();
       final anyFailure = allSessionsSnap.docs.map(ChallengeSession.fromSnapshot).any((s) => !s.passed);
       if (!anyFailure) extraBadges.add('cr_hockey_god');
-
-      // cr_pinpoint: 85%+ average accuracy across the entire attempt.
-      final allSessions = allSessionsSnap.docs.map(ChallengeSession.fromSnapshot).where((s) => s.totalShots > 0).toList();
-      if (allSessions.isNotEmpty) {
-        final attemptAvgAcc = allSessions.map((s) => s.shotsMade / s.totalShots).fold(0.0, (a, b) => a + b) / allSessions.length;
-        if (attemptAvgAcc >= 0.85) extraBadges.add('cr_pinpoint');
-      }
 
       // cr_the_machine: 80%+ average across 3 complete attempts.
       // We check all completed attempts' average accuracies.
@@ -1305,19 +1060,10 @@ class ChallengerRoadService {
         }
       }
 
-      // cr_sniper_mentality: 85%+ on at least one session per unique challenge.
-      final allHistorySnap = await _allTimeHistoryRef(userId).get();
-      // Use all-time history docs as a proxy for all challenges ever attempted.
-      bool allAt85 = allHistorySnap.docs.isNotEmpty;
-      for (final hDoc in allHistorySnap.docs) {
-        final bestAcc = await _bestAccuracyForChallenge(userId, hDoc.id);
-        if (bestAcc < 0.85) {
-          allAt85 = false;
-          break;
-        }
-      }
-      if (allAt85 && allHistorySnap.docs.isNotEmpty) {
-        extraBadges.add('cr_sniper_mentality');
+      // cr_all_stars: completed the full road from Level 1 even though the
+      // player had levels unlocked that they could have skipped.
+      if (attempt.inheritedUnlockedLevel > 0 && attempt.startingLevel == 1) {
+        extraBadges.add('cr_all_stars');
       }
     }
 
@@ -1387,7 +1133,7 @@ class ChallengerRoadService {
         }
       }
 
-      if (newResetCount >= 2) maybeAward('cr_and_again');
+      // cr_and_again removed from catalog. cr_three_periods: 3 resets = 30,000 total.
       if (newResetCount >= 3) maybeAward('cr_three_periods');
       // cr_ferda: kept going after a 10k reset (will have more sessions after reset).
       maybeAward('cr_ferda');
@@ -1419,12 +1165,18 @@ class ChallengerRoadService {
   /// **Post-completion restart** (`resetCount >= 1`): the attempt is marked
   /// `completed` and a genuinely new attempt is created with an incremented
   /// `attemptNumber` / `totalAttempts` (original behaviour).
-  Future<ChallengerRoadAttempt> restartChallengerRoad(String userId) async {
+  ///
+  /// [chosenStartingLevel] lets the player pick where to begin on the new
+  /// attempt (1 for the full grind, or their highest inherited-unlock level).
+  Future<ChallengerRoadAttempt> restartChallengerRoad(
+    String userId, {
+    int? chosenStartingLevel,
+  }) async {
     final active = await getActiveAttempt(userId);
 
-    int startingLevel = 1;
+    int inheritedUnlockedLevel = 0;
     if (active != null) {
-      startingLevel = max(1, active.highestLevelReachedThisAttempt - 1);
+      inheritedUnlockedLevel = max(0, active.highestLevelReachedThisAttempt - 1);
 
       final hasCompletedRoad = active.resetCount >= 1;
       await updateAttempt(userId, active.id!, {
@@ -1433,7 +1185,8 @@ class ChallengerRoadService {
       });
 
       if (!hasCompletedRoad) {
-        // Reuse the same attempt number — this is a "do-over", not a new attempt.
+        // Do-over: reuse the same attempt number, no inherited unlocks apply.
+        final startingLevel = max(1, active.highestLevelReachedThisAttempt - 1);
         final attempt = ChallengerRoadAttempt(
           attemptNumber: active.attemptNumber,
           startingLevel: startingLevel,
@@ -1442,6 +1195,7 @@ class ChallengerRoadService {
           totalShotsThisAttempt: 0,
           resetCount: 0,
           highestLevelReachedThisAttempt: startingLevel,
+          inheritedUnlockedLevel: 0,
           status: 'active',
           startDate: DateTime.now(),
         );
@@ -1454,24 +1208,28 @@ class ChallengerRoadService {
     }
 
     // Genuine new attempt (post-completion) — increment totalAttempts.
-    return createAttempt(userId, startingLevel);
+    final safeStartingLevel = inheritedUnlockedLevel > 0 && chosenStartingLevel != null ? chosenStartingLevel.clamp(1, inheritedUnlockedLevel + 1) : max(1, (active?.highestLevelReachedThisAttempt ?? 2) - 1);
+    return createAttempt(userId, safeStartingLevel, inheritedUnlockedLevel: inheritedUnlockedLevel);
   }
 
   /// Called when the user taps "RUN IT BACK" after completing the full road.
   ///
-  /// Marks the current attempt as `completed` and creates a genuine new attempt
-  /// starting from level 1. Unlike [restartChallengerRoad] this path is always
-  /// a fresh start — the road was finished, not abandoned.
-  Future<ChallengerRoadAttempt> runItBack(String userId) async {
+  /// Marks the current attempt as `completed` and creates a genuine new attempt.
+  /// [chosenStartingLevel] lets the player pick Level 1 (completionist path) or
+  /// jump to the highest level they've unlocked via [inheritedUnlockedLevel].
+  Future<ChallengerRoadAttempt> runItBack(String userId, {int chosenStartingLevel = 1}) async {
     final active = await getActiveAttempt(userId);
+    int inheritedUnlockedLevel = 0;
     if (active != null) {
+      inheritedUnlockedLevel = max(0, active.highestLevelReachedThisAttempt - 1);
       await updateAttempt(userId, active.id!, {
         'status': 'completed',
         'end_date': Timestamp.fromDate(DateTime.now()),
       });
     }
-    // Always start from level 1 — the user beat the whole road.
-    return createAttempt(userId, 1);
+    // Clamp the chosen level to what is actually unlocked.
+    final safeStartingLevel = inheritedUnlockedLevel > 0 ? chosenStartingLevel.clamp(1, inheritedUnlockedLevel + 1) : 1;
+    return createAttempt(userId, safeStartingLevel, inheritedUnlockedLevel: inheritedUnlockedLevel);
   }
 
   // ---------------------------------------------------------------------------
@@ -1663,9 +1421,7 @@ class ChallengerRoadService {
     int totalFailedSessions = 0;
     int totalPassedSessions = 0;
     double bestSingleSessionAccuracy = 0.0;
-    int sessionsAt90PctPlus = 0;
     int perfectSessions = 0;
-    double bestHardChallengeAccuracy = 0.0;
     int longestPassStreak = 0;
 
     final levelsEverCleared = <int>{};
@@ -1727,7 +1483,6 @@ class ChallengerRoadService {
         }
 
         if (acc > bestSingleSessionAccuracy) bestSingleSessionAccuracy = acc;
-        if (acc >= 0.90) sessionsAt90PctPlus++;
         if (s.totalShots > 0 && s.shotsMade == s.totalShots) perfectSessions++;
 
         // Per-challenge accuracy tracking.
@@ -1798,8 +1553,6 @@ class ChallengerRoadService {
     String? mostFailedChallengeId;
     int mostFailedChallengeCount = 0;
     int challengesWithSalary = 0;
-    int challengesWithRegularStatus = 0;
-    int consistentFirstPassChallenges = 0;
     int untouchableChallenges = 0;
 
     // Per-challenge: all-time failed session count.
@@ -1821,11 +1574,7 @@ class ChallengerRoadService {
       final passes = allTimePassesByChallenge[challengeId] ?? 0;
       if (passes >= 25) challengesWithSalary++;
 
-      final totalSessions = allTimeSessionsByChallenge[challengeId] ?? 0;
-      if (totalSessions >= 15) challengesWithRegularStatus++;
-
       final firstPassAttempts = firstAttemptPassesByChallenge[challengeId] ?? [];
-      if (firstPassAttempts.length >= 3) consistentFirstPassChallenges++;
       if (firstPassAttempts.length >= 5) untouchableChallenges++;
     }
 
@@ -1833,17 +1582,11 @@ class ChallengerRoadService {
     // required > 1 try in attempt N-1.
     int scoutingReportCount = 0;
     int rematches = 0;
-    int betterThanBeforeCount = 0;
-    int dugDeepCount = 0;
-    int secondNatureCount = 0;
     bool dialedInAchieved = false;
 
     for (final entry in sessionsByChallengeByAttempt.entries) {
       final byAttempt = entry.value;
       final attemptNums = byAttempt.keys.toList()..sort();
-
-      double prevBestAcc = 0.0;
-      bool everPassedBefore = false;
 
       for (int i = 0; i < attemptNums.length; i++) {
         final aN = attemptNums[i];
@@ -1861,51 +1604,6 @@ class ChallengerRoadService {
 
           // The Rematch: not passed in prev attempt, passed in this one.
           if (!prevPassed && passedThisAttempt) rematches++;
-
-          // Dug Deep: level was not cleared in prev attempt but cleared here.
-          // (Approximated at challenge level: not passed prev, passed now.)
-          if (!prevPassed && passedThisAttempt && !everPassedBefore) dugDeepCount++;
-        }
-
-        // Better Than Before: any session's accuracy exceeds all previous sessions.
-        for (final s in sessions) {
-          final acc = s.totalShots > 0 ? s.shotsMade / s.totalShots : 0.0;
-          if (acc > prevBestAcc && prevBestAcc > 0.0) betterThanBeforeCount++;
-          if (acc > prevBestAcc) prevBestAcc = acc;
-        }
-
-        if (passedThisAttempt) everPassedBefore = true;
-      }
-
-      // Redemption Arc: 5+ failures in a previous attempt, then first-try pass
-      // in a later attempt.
-      for (int i = 1; i < attemptNums.length; i++) {
-        final prevSessions = byAttempt[attemptNums[i - 1]]!;
-        final prevFailed = prevSessions.where((s) => !s.passed).length;
-        final currSessions = byAttempt[attemptNums[i]]!;
-        if (prevFailed >= 5 && currSessions.isNotEmpty && currSessions.first.passed) {
-          // Redemption Arc is awarded contextually in _checkAndAwardBadges via
-          // a dedicated flag — tracked here:
-          // (We reuse scoutingReportCount for now; a dedicated field handles it below.)
-        }
-      }
-    }
-
-    // Second Nature: in the most recent attempt, count challenges where the
-    // player had failed at least once in any prior attempt but passed first-try.
-    if (latestAttemptNumber > 0 && allAttempts.isNotEmpty) {
-      final latestAttempt = allAttempts.last;
-      final latestSessions = await _sessionsRef(userId, latestAttempt.id!).orderBy('date').get();
-      final latestSessionList = latestSessions.docs.map(ChallengeSession.fromSnapshot).toList();
-      final seenInLatest = <String>{};
-      for (final s in latestSessionList) {
-        if (!seenInLatest.contains(s.challengeId)) {
-          seenInLatest.add(s.challengeId);
-          if (s.passed) {
-            // Check if ever failed in a prior attempt.
-            final everFailedPrior = sessionsByChallengeByAttempt[s.challengeId]?.entries.where((e) => e.key < latestAttemptNumber).any((e) => e.value.any((sess) => !sess.passed)) ?? false;
-            if (everFailedPrior) secondNatureCount++;
-          }
         }
       }
     }
@@ -1927,9 +1625,7 @@ class ChallengerRoadService {
       totalFailedSessions: totalFailedSessions,
       totalPassedSessions: totalPassedSessions,
       bestSingleSessionAccuracy: bestSingleSessionAccuracy,
-      sessionsAt90PctPlus: sessionsAt90PctPlus,
       perfectSessions: perfectSessions,
-      bestHardChallengeAccuracy: bestHardChallengeAccuracy,
       longestPassStreak: longestPassStreak,
       levelsEverCleared: levelsEverCleared,
       levelsCleared_latestAttempt: levelsCleared_latestAttempt,
@@ -1946,14 +1642,9 @@ class ChallengerRoadService {
       mostFailedChallengeId: mostFailedChallengeId,
       mostFailedChallengeCount: mostFailedChallengeCount,
       challengesWithSalary: challengesWithSalary,
-      challengesWithRegularStatus: challengesWithRegularStatus,
-      consistentFirstPassChallenges: consistentFirstPassChallenges,
       untouchableChallenges: untouchableChallenges,
       scoutingReportCount: scoutingReportCount,
       rematches: rematches,
-      betterThanBeforeCount: betterThanBeforeCount,
-      dugDeepCount: dugDeepCount,
-      secondNatureCount: secondNatureCount,
       dialedInAchieved: dialedInAchieved,
     );
   }
@@ -1982,22 +1673,6 @@ class ChallengerRoadService {
     }
   }
 
-  /// Returns the highest accuracy ratio (shotsMade/totalShots) ever achieved
-  /// across all attempts for a specific [challengeId].
-  Future<double> _bestAccuracyForChallenge(String userId, String challengeId) async {
-    double best = 0.0;
-    final attemptsSnap = await _attemptsRef(userId).get();
-    for (final aDoc in attemptsSnap.docs) {
-      final snap = await _sessionsRef(userId, aDoc.id).where('challenge_id', isEqualTo: challengeId).get();
-      for (final s in snap.docs) {
-        final session = ChallengeSession.fromSnapshot(s);
-        final acc = session.totalShots > 0 ? session.shotsMade / session.totalShots : 0.0;
-        if (acc > best) best = acc;
-      }
-    }
-    return best;
-  }
-
   /// newly earned badges. Idempotent — will not re-award a badge already in
   /// the `badges` list.
   /// Computes badge eligibility from [_RoadBadgeStats] and persists any newly
@@ -2006,7 +1681,12 @@ class ChallengerRoadService {
     required String userId,
     required ChallengerRoadUserSummary summary,
   }) async {
-    final earned = List<String>.from(summary.badges);
+    // Prune any badge IDs no longer present in the current catalog — removes
+    // legacy badges earned before a catalog reduction without any extra tooling.
+    final catalogIds = badgeCatalog.map((b) => b.id).toSet();
+    final earned = summary.badges.where((id) => catalogIds.contains(id)).toList();
+    final hadLegacyBadges = earned.length != summary.badges.length;
+
     final newIds = <String>[];
     final stats = await _loadRoadBadgeStats(userId);
 
@@ -2025,9 +1705,8 @@ class ChallengerRoadService {
     if (stats.totalCrSessions >= 1) maybeAward('cr_drop_the_biscuit');
     if (stats.totalPassedSessions >= 1) maybeAward('cr_clean_read');
     if (stats.levelsEverCleared.contains(1)) maybeAward('cr_level_clear');
-    if (stats.levelsEverCleared.contains(2)) maybeAward('cr_called_up');
+    // cr_called_up (Level 2) and cr_the_tape_is_on removed from catalog.
     if (stats.levelsEverCleared.contains(3)) maybeAward('cr_made_the_show');
-    if (t >= 2) maybeAward('cr_the_tape_is_on');
 
     // ── WITHIN-RUN EFFICIENCY ─────────────────────────────────────────────────
     // cr_no_warmup_needed: any level completed with 0 failed sessions — computed
@@ -2052,15 +1731,8 @@ class ChallengerRoadService {
     // ── CROSS-ATTEMPT IMPROVEMENT ─────────────────────────────────────────────
     if (stats.scoutingReportCount >= 1) maybeAward('cr_scouting_report');
     if (stats.rematches >= 1) maybeAward('cr_the_rematch');
-    if (stats.betterThanBeforeCount >= 1) maybeAward('cr_better_than_before');
-    if (stats.dugDeepCount >= 1) maybeAward('cr_dug_deep');
-    if (stats.secondNatureCount >= 5) maybeAward('cr_second_nature');
+    // cr_better_than_before, cr_dug_deep, cr_second_nature, cr_chip_on_your_shoulder removed.
     if (stats.dialedInAchieved) maybeAward('cr_dialed_in');
-
-    // cr_chip_on_your_shoulder: started lower, reached new all-time best.
-    if (stats.latestAttemptNumber >= 2 && stats.latestAttemptStartingLevel < stats.previousAttemptHighestLevel && summary.allTimeBestLevel > stats.previousAttemptHighestLevel) {
-      maybeAward('cr_chip_on_your_shoulder');
-    }
 
     // cr_comeback_season: latest attempt's highest level > previous attempt's highest.
     if (stats.latestAttemptNumber >= 2 && summary.allTimeBestLevel > stats.previousAttemptHighestLevel) {
@@ -2075,25 +1747,17 @@ class ChallengerRoadService {
     }
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
-    // cr_short_handed, cr_battle_tested, cr_game_7, cr_ghosts_in_the_machine,
-    // cr_didnt_quit, cr_old_grudge — all awarded contextually in saveChallengeSession.
+    // cr_battle_tested, cr_game_7, cr_ghosts_in_the_machine, cr_old_grudge —
+    // all awarded contextually in saveChallengeSession.
     // cr_third_period_heart — awarded contextually in advanceLevel.
-
-    if (stats.totalFailedSessions >= 50) maybeAward('cr_takes_a_licking');
+    // cr_short_handed, cr_didnt_quit, cr_takes_a_licking — removed from catalog.
 
     // ── LEVEL ADVANCEMENT ─────────────────────────────────────────────────────
-    if (stats.levelsEverCleared.contains(3)) maybeAward('cr_paying_your_dues');
     if (stats.levelsEverCleared.contains(5)) maybeAward('cr_ice_time_earned');
-    if (stats.levelsEverCleared.contains(7)) maybeAward('cr_franchise_player');
     if (stats.levelsEverCleared.contains(10)) maybeAward('cr_team_captain');
+    // cr_paying_your_dues, cr_franchise_player, cr_reclaiming_the_ice — removed.
 
     // cr_the_climb: awarded contextually in advanceLevel when new all-time best hit.
-
-    // cr_reclaiming_the_ice: cleared a level in latest attempt that was also
-    // cleared in a prior attempt.
-    if (stats.latestAttemptNumber >= 2 && stats.levelsCleared_latestAttempt.any((l) => stats.levelsEverCleared.contains(l))) {
-      maybeAward('cr_reclaiming_the_ice');
-    }
 
     // cr_playoff_mode: reached the max available level.
     if (stats.highestActiveLevel > 0 && summary.allTimeBestLevel >= stats.highestActiveLevel) {
@@ -2103,8 +1767,6 @@ class ChallengerRoadService {
     // cr_the_general: all challenges at max level cleared.
     if (stats.highestActiveLevel > 0) {
       final activeAtMax = stats.activeChallengeIdsByLevel[stats.highestActiveLevel] ?? {};
-      // Cleared if every one appears in levelsEverCleared data — proxy: all
-      // levels up to max were cleared at some point.
       if (activeAtMax.isNotEmpty && stats.levelsEverCleared.contains(stats.highestActiveLevel)) {
         maybeAward('cr_the_general');
       }
@@ -2113,51 +1775,50 @@ class ChallengerRoadService {
     // ── CR SHOT MILESTONES ────────────────────────────────────────────────────
     if (shots >= 100) maybeAward('cr_first_bucket');
     if (shots >= 1000) maybeAward('cr_building_a_barn');
-    if (shots >= 2500) maybeAward('cr_filling_the_net');
+    // cr_filling_the_net removed (2,500 — too granular).
     if (shots >= 5000) maybeAward('cr_ten_minute_major');
     if (shots >= 10000) maybeAward('cr_buzzer_beater');
-    // cr_and_again / cr_three_periods — awarded contextually via incrementChallengerRoadShots.
+    // cr_and_again removed; cr_three_periods awarded contextually via incrementChallengerRoadShots.
     if (shots >= 25000) maybeAward('cr_well_never_runs_dry');
-    if (shots >= 50000) maybeAward('cr_tape_burner');
+    // cr_tape_burner removed (50,000 — extremely hard to achieve).
 
     // ── CR SESSION ACCURACY ───────────────────────────────────────────────────
     // cr_lights_out: awarded contextually in saveChallengeSession (new PB).
     if (stats.bestSingleSessionAccuracy >= 0.90) maybeAward('cr_bar_down');
     if (stats.bestSingleSessionAccuracy >= 0.95) maybeAward('cr_top_cheese');
     if (stats.perfectSessions >= 1) maybeAward('cr_pure');
-    // cr_snipe_artist: 3 consecutive sessions >= 85% — awarded contextually.
-    // cr_dead_aim / cr_the_sniper — awarded contextually in advanceLevel.
-    if (stats.sessionsAt90PctPlus >= 10) maybeAward('cr_millimetre');
+    // cr_snipe_artist, cr_dead_aim, cr_millimetre, cr_pinpoint — removed.
+    // cr_the_sniper — awarded contextually in advanceLevel.
     if (stats.perfectSessions >= 5) maybeAward('cr_all_net');
-    // cr_pinpoint — awarded contextually after a full attempt completes.
 
     // ── HOT STREAKS ───────────────────────────────────────────────────────────
-    if (stats.longestPassStreak >= 3) maybeAward('cr_on_a_heater');
+    // cr_on_a_heater removed (3 passes — too close to cr_sauce at 5 passes).
     if (stats.longestPassStreak >= 5) maybeAward('cr_sauce');
     if (stats.longestPassStreak >= 10) maybeAward('cr_unstoppable');
     // cr_full_send — awarded contextually in saveChallengeSession.
 
     // ── CHALLENGE MASTERY ─────────────────────────────────────────────────────
     if (stats.challengesWithPerfectRecord >= 5) maybeAward('cr_never_missed');
-    if (stats.consistentFirstPassChallenges >= 1) maybeAward('cr_consistent');
+    // cr_consistent removed (overlaps with cr_untouchable).
     if (stats.untouchableChallenges >= 1) maybeAward('cr_untouchable');
     if (stats.challengesWithSalary >= 1) maybeAward('cr_earned_a_salary');
-    if (stats.challengesWithRegularStatus >= 1) maybeAward('cr_the_regular');
+    // cr_the_regular removed (overlaps with cr_earned_a_salary).
 
     // ── MULTI-ATTEMPT / CAREER ────────────────────────────────────────────────
     if (t >= 2) maybeAward('cr_veteran_presence');
-    if (t >= 3) maybeAward('cr_double_shift');
-    if (t >= 4) maybeAward('cr_this_is_what_i_do');
+    // cr_double_shift, cr_this_is_what_i_do removed (too granular).
     if (t >= 5) maybeAward('cr_lifer');
     // cr_career_year: awarded contextually when 10k milestone and new best happen in same attempt.
-    if (stats.totalCrSessions >= 100) maybeAward('cr_the_long_road');
+    // cr_the_long_road removed (overlaps with cr_road_dog).
     if (stats.totalCrSessions >= 250) maybeAward('cr_road_dog');
     if (stats.totalPassedSessions >= 100) maybeAward('cr_all_time_great');
 
     // ── ELITE / ENDGAME ───────────────────────────────────────────────────────
-    // cr_hall_of_famer, cr_the_road_ends_here — contextually in advanceLevel.
-    // cr_hockey_god — contextually in advanceLevel.
-    // cr_the_machine, cr_sniper_mentality, cr_pinpoint — contextually after attempt completes.
+    // cr_hall_of_famer — awarded contextually in advanceLevel.
+    // cr_hockey_god — awarded contextually in advanceLevel.
+    // cr_the_machine — awarded contextually after attempt completes.
+    // cr_the_road_ends_here, cr_sniper_mentality — removed from catalog.
+    // cr_all_stars — awarded contextually in advanceLevel (full road from level 1 with unlocks).
 
     // ── CHIRPY ────────────────────────────────────────────────────────────────
     if (stats.latestAttemptNumber >= 2 && stats.latestAttemptStartingLevel < stats.previousAttemptHighestLevel) {
@@ -2165,18 +1826,12 @@ class ChallengerRoadService {
     }
 
     // cr_pigeon: first-try 95%+ on a hard challenge — contextually.
-
-    // cr_old_habits: challenged failed in 2+ attempts, never passed.
-    final neverPassedMultiAttempt = stats.allTimePassesByChallenge.entries.where((e) => e.value == 0 && (stats.allTimeSessionsByChallenge[e.key] ?? 0) >= 2).length;
-    if (neverPassedMultiAttempt >= 1) maybeAward('cr_old_habits');
-
-    // cr_just_visiting: 3+ attempts, no level cleared in any.
-    if (t >= 3 && stats.levelsEverCleared.isEmpty) maybeAward('cr_just_visiting');
-
     // cr_ferda, cr_sauce_boss — contextually.
+    // cr_old_habits, cr_just_visiting — removed from catalog.
+    // cr_skip_the_tryout: awarded in createAttempt when startingLevel > 1 with inherited unlocks.
 
-    // Persist earned badges if changed.
-    if (newIds.isNotEmpty) {
+    // Persist earned badges if changed (new awards OR legacy badges pruned).
+    if (newIds.isNotEmpty || hadLegacyBadges) {
       await updateUserSummary(userId, {'badges': earned});
     }
     return newIds;
@@ -2205,14 +1860,8 @@ class _RoadBadgeStats {
   /// Best accuracy ratio (shotsMade/totalShots) seen in any single CR session.
   final double bestSingleSessionAccuracy;
 
-  /// Number of CR sessions with accuracy >= 0.90.
-  final int sessionsAt90PctPlus;
-
   /// Number of CR sessions with 100% accuracy.
   final int perfectSessions;
-
-  /// Best accuracy seen on any single hard-difficulty CR challenge session.
-  final double bestHardChallengeAccuracy;
 
   // ── Pass-streak tracking ───────────────────────────────────────────────────
   /// Longest consecutive-pass streak (no failures between) across all attempts.
@@ -2267,12 +1916,6 @@ class _RoadBadgeStats {
   /// Number of challenges where allTimeTotalPassed >= 25.
   final int challengesWithSalary;
 
-  /// Number of challenges where allTimeTotalAttempts >= 15.
-  final int challengesWithRegularStatus;
-
-  /// Number of challenges where first-attempt pass happened in >= 3 separate attempts.
-  final int consistentFirstPassChallenges;
-
   /// Number of challenges where first-attempt pass happened in >= 5 separate attempts.
   final int untouchableChallenges;
 
@@ -2285,20 +1928,6 @@ class _RoadBadgeStats {
   /// passed (in any session) in a later attempt.
   final int rematches;
 
-  /// Number of challenges where the most-recent session accuracy exceeds the
-  /// previous personal best for that challenge.
-  final int betterThanBeforeCount;
-
-  /// Number of challenges that:
-  ///   - were attempted in a previous attempt and not cleared (level not completed)
-  ///   - were passed in a later attempt
-  final int dugDeepCount;
-
-  /// Number of challenges in the current level where the player previously
-  /// failed at least once (any attempt) but passed first-try this attempt.
-  /// Used for the "Second Nature" badge (needs >= 5).
-  final int secondNatureCount;
-
   /// True when: the all-time best accuracy on the most-failed challenge was set
   /// in the most recent attempt.
   final bool dialedInAchieved;
@@ -2310,9 +1939,7 @@ class _RoadBadgeStats {
     required this.totalFailedSessions,
     required this.totalPassedSessions,
     required this.bestSingleSessionAccuracy,
-    required this.sessionsAt90PctPlus,
     required this.perfectSessions,
-    required this.bestHardChallengeAccuracy,
     required this.longestPassStreak,
     required this.levelsEverCleared,
     required this.levelsCleared_latestAttempt,
@@ -2329,14 +1956,9 @@ class _RoadBadgeStats {
     required this.mostFailedChallengeId,
     required this.mostFailedChallengeCount,
     required this.challengesWithSalary,
-    required this.challengesWithRegularStatus,
-    required this.consistentFirstPassChallenges,
     required this.untouchableChallenges,
     required this.scoutingReportCount,
     required this.rematches,
-    required this.betterThanBeforeCount,
-    required this.dugDeepCount,
-    required this.secondNatureCount,
     required this.dialedInAchieved,
   });
 }

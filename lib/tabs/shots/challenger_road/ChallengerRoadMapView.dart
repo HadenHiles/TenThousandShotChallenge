@@ -791,31 +791,60 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   // ── Confirm restart dialog ────────────────────────────────────────────────
 
   /// Shown when the user taps "RUN IT BACK" on the victory banner.
-  /// Completes the current attempt and starts a brand-new one from level 1.
+  /// Completes the current attempt and starts a brand-new one.
+  /// If the player has inherited unlocks, they can choose to skip ahead or
+  /// go for the full grind from Level 1.
   void _confirmRunItBack(BuildContext context) {
+    final highestReached = _lastData?.activeAttempt?.highestLevelReachedThisAttempt ?? 1;
+    final nextInherited = (highestReached - 1).clamp(0, 999);
+
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans')),
-        content: const Text(
-          'You conquered the full road. Nice work! '
-          'This will complete your current attempt and start a fresh new one from Level 1.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('You conquered the full road. Nice work!'),
+            if (nextInherited >= 1) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Your last run unlocks levels 1–$nextInherited. Pick your path:',
+                style: const TextStyle(fontFamily: 'NovecentoSans'),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
+          if (nextInherited >= 1)
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                setState(() => _runItBackLoading = true);
+                await _service!.runItBack(widget.userId, chosenStartingLevel: nextInherited + 1);
+                if (mounted) setState(() => _runItBackLoading = false);
+                _refreshData(scrollToBottom: true);
+              },
+              child: Text(
+                'Jump to Level ${nextInherited + 1}',
+                style: TextStyle(color: Theme.of(context).primaryColor),
+              ),
+            ),
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
               setState(() => _runItBackLoading = true);
-              await _service!.runItBack(widget.userId);
+              await _service!.runItBack(widget.userId, chosenStartingLevel: 1);
               if (mounted) setState(() => _runItBackLoading = false);
               _refreshData(scrollToBottom: true);
             },
             child: Text(
-              'Let\'s Go',
+              nextInherited >= 1 ? 'Full Grind — Start from Level 1' : 'Let\'s Go',
               style: TextStyle(color: Theme.of(context).primaryColor),
             ),
           ),
@@ -827,10 +856,16 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   void _confirmRestart(BuildContext context, ChallengerRoadAttempt attempt) {
     final isDoOver = attempt.resetCount == 0;
     final title = isDoOver ? 'Start Over?' : 'Restart Challenger Road?';
+
+    // Compute inherited unlocks for the post-10k restart path.
+    final nextInherited = isDoOver ? 0 : (attempt.highestLevelReachedThisAttempt - 1).clamp(0, 999);
+
     final body = isDoOver
         ? 'Your shot count and challenge progress for this attempt will be cleared. '
             'Your attempt number stays the same.\n\nThis is a do-over, not a new attempt.'
-        : 'Your current attempt will end. Your next attempt will start one level below your current best.';
+        : nextInherited >= 1
+            ? 'Your current attempt will end. Your last run unlocks levels 1–$nextInherited — pick where you start next.'
+            : 'Your current attempt will end. Your next attempt will start one level below your current best.';
 
     showDialog<void>(
       context: context,
@@ -842,14 +877,33 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
+          if (!isDoOver && nextInherited >= 1)
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _service!.restartChallengerRoad(widget.userId, chosenStartingLevel: nextInherited + 1);
+                _refreshData();
+              },
+              child: Text(
+                'Jump to Level ${nextInherited + 1}',
+                style: TextStyle(color: Theme.of(context).primaryColor),
+              ),
+            ),
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await _service!.restartChallengerRoad(widget.userId);
+              await _service!.restartChallengerRoad(
+                widget.userId,
+                chosenStartingLevel: isDoOver ? null : 1,
+              );
               _refreshData();
             },
             child: Text(
-              'Restart',
+              isDoOver
+                  ? 'Restart'
+                  : nextInherited >= 1
+                      ? 'Full Grind — Start from Level 1'
+                      : 'Restart',
               style: TextStyle(color: Theme.of(context).primaryColor),
             ),
           ),
