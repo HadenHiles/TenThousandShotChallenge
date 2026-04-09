@@ -1706,17 +1706,15 @@ class _VideoFrameScrubber extends StatefulWidget {
 class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   List<Uint8List> _frames = [];
   int _frameIndex = 0;
-  bool _ready = false; // true once the first frame is available
-  bool _allLoaded = false; // true once all frames are extracted
+  bool _ready = false;
+  bool _allLoaded = false;
   bool _error = false;
-  bool _loading = false; // guard against concurrent _loadRemaining calls
+  bool _loading = false;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    // _scheduleRemainingLoad is called from _loadFirstFrame once _ready is true,
-    // so we never need to call it here separately.
     _loadFirstFrame();
   }
 
@@ -1724,33 +1722,31 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   void didUpdateWidget(_VideoFrameScrubber old) {
     super.didUpdateWidget(old);
     if (!old.focused && widget.focused) {
-      if (_allLoaded && _frames.length > 1) {
-        // Frames already loaded — just restart the timer.
-        _timer?.cancel();
-        _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-          if (!mounted) return;
-          setState(() => _frameIndex = (_frameIndex + 1) % _frames.length);
-        });
-      } else {
-        // Frames not yet loaded — load them (also starts the timer).
-        _scheduleRemainingLoad();
+      if (_frames.length > 1 && _timer == null) {
+        _startTimer(); // frames already ready — resume cycling
+      } else if (!_allLoaded) {
+        _scheduleRemainingLoad(); // first time in focus — load frames
       }
     } else if (old.focused && !widget.focused) {
-      // Scrolled out of focus — stop cycling to save CPU/battery.
       _timer?.cancel();
       _timer = null;
-      if (mounted) setState(() => _frameIndex = 0);
+      // Do NOT reset _frameIndex — resume from the same position on re-focus
+      // so the animation doesn't visibly jump back to the start.
     }
   }
 
-  // ── Phase 1: load just frame 0 (cheap, always runs in background) ──────────
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (!mounted) return;
+      setState(() => _frameIndex = (_frameIndex + 1) % _frames.length);
+    });
+  }
+
+  // ── Phase 1: load frame 0 eagerly in background ───────────────────────────
 
   Future<void> _loadFirstFrame() async {
     try {
-      // Fetch frame 0 and probe the video duration in a single
-      // MediaMetadataRetriever call by requesting a very late timestamp —
-      // video_thumbnail clamps to the last frame and we note the requested
-      // time that returned null to bound our step estimates.
       final data = await VideoThumbnail.thumbnailData(
         video: widget.url,
         imageFormat: ImageFormat.JPEG,
@@ -1767,18 +1763,15 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
         _frames = [data];
         _ready = true;
       });
-      // Phase 1 complete — now safe to start phase 2 if focus is already set.
       if (widget.focused) _scheduleRemainingLoad();
     } catch (_) {
       if (mounted) setState(() => _error = true);
     }
   }
 
-  // ── Phase 2: load frames 1‥N and start the cycling timer ─────────────────
+  // ── Phase 2: detect duration then load remaining frames on focus ──────────
 
   void _scheduleRemainingLoad() {
-    // Guard: phase 1 must be done before we start fetching more frames,
-    // so _frames.first is guaranteed to exist when we merge the lists.
     if (!_ready || _allLoaded || _loading) return;
     _loading = true;
     _loadRemainingFrames();
@@ -1786,17 +1779,32 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
 
   Future<void> _loadRemainingFrames() async {
     try {
-      // Probe duration with a single cheap thumbnail call at a large timestamp.
-      // video_thumbnail returns null when the timestamp exceeds the video length.
-      // Run all probes IN PARALLEL (tiny quality=1/32px) sorted descending —
-      // the largest timestamp that returns data is our approximate duration.
-      // Candidates cover from 5 min down to 1 s so even very short videos get
-      // a valid spread.
-      const totalFrames = 6; // including frame 0
+      const totalFrames = 6;
+
+      // ── Duration detection ───────────────────────────────────────────────
+      // On Android, MediaMetadataRetriever does NOT return null for timestamps
+      // past the video end — it clamps and returns the last frame. So we cannot
+      // use null as a past-end sentinel. Instead:
+      //   1. Fetch a guaranteed-past-end sentinel (24 h) at tiny quality.
+      //   2. Run all probe candidates in parallel at the same tiny quality.
+      //   3. The last frame for every out-of-bounds timestamp equals the sentinel
+      //      byte-for-byte; the first probe that DIFFERS from the sentinel is
+      //      within the video — that gives us the approximate duration.
+      const sentinelMs = 24 * 60 * 60 * 1000; // 24 h — always past any video
       const probeCandidatesMs = [300000, 120000, 60000, 30000, 10000, 5000, 3000, 1000];
+
       if (!mounted) return;
-      final probeResults = await Future.wait(
-        probeCandidatesMs.map(
+
+      // One parallel round-trip for sentinel + all probes.
+      final allResults = await Future.wait([
+        VideoThumbnail.thumbnailData(
+          video: widget.url,
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 32,
+          quality: 1,
+          timeMs: sentinelMs,
+        ),
+        ...probeCandidatesMs.map(
           (t) => VideoThumbnail.thumbnailData(
             video: widget.url,
             imageFormat: ImageFormat.JPEG,
@@ -1805,54 +1813,73 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
             timeMs: t,
           ),
         ),
-      );
-      // Pick the largest timestamp whose probe returned valid data.
+      ]);
+
+      if (!mounted) return;
+
+      final sentinel = allResults[0];
+
+      // Walk candidates descending; first one whose bytes differ from the
+      // sentinel is inside the video.
       int detectedDurationMs = 0;
       for (int i = 0; i < probeCandidatesMs.length; i++) {
-        final d = probeResults[i];
-        if (d != null && d.isNotEmpty) {
-          detectedDurationMs = probeCandidatesMs[i];
-          break; // list is descending so first hit = largest valid time
+        final probe = allResults[i + 1];
+        if (probe != null && probe.isNotEmpty) {
+          final pastEnd = sentinel != null && _bytesEqual(probe, sentinel);
+          if (!pastEnd) {
+            detectedDurationMs = probeCandidatesMs[i];
+            break;
+          }
         }
       }
-      // Fall back to 1 s steps if all probes failed (sub-second edge case).
-      final int stepMs = detectedDurationMs > 0 ? (detectedDurationMs / (totalFrames - 1)).round() : 1000;
 
-      // Fetch all remaining frames IN PARALLEL — this is the key perf win.
-      if (!mounted) return;
-      final futures = List.generate(
-        totalFrames - 1,
-        (i) => VideoThumbnail.thumbnailData(
+      final int stepMs = detectedDurationMs > 0 ? (detectedDurationMs / (totalFrames - 1)).round() : 1000; // fallback: 1 s steps
+
+      // ── Frame extraction ─────────────────────────────────────────────────
+      // Sequential fetching is more reliable than parallel for network videos:
+      // concurrent MediaMetadataRetriever requests on Android frequently fail
+      // or return empty, which was causing only 1-2 frames to load.
+      // Add frames progressively so cycling starts as soon as 2 are ready.
+      for (int i = 1; i < totalFrames; i++) {
+        if (!mounted) return;
+        final data = await VideoThumbnail.thumbnailData(
           video: widget.url,
           imageFormat: ImageFormat.JPEG,
           maxWidth: 480,
           quality: 70,
-          timeMs: (i + 1) * stepMs,
-        ),
-      );
-      final results = await Future.wait(futures);
+          timeMs: i * stepMs,
+        );
+        if (data == null || data.isEmpty) continue;
+        if (!mounted) return;
+        setState(() => _frames = [..._frames, data]);
+        // Start cycling as soon as we have 2 frames and are in focus.
+        if (_frames.length == 2 && widget.focused && _timer == null) {
+          _startTimer();
+        }
+      }
 
       if (!mounted) return;
-      final extra = results.whereType<Uint8List>().where((d) => d.isNotEmpty).toList();
-
-      if (extra.isNotEmpty) {
-        setState(() {
-          _frames = [_frames.first, ...extra];
-        });
-      }
       _allLoaded = true;
       _loading = false;
 
-      // Start cycling only if still focused and there are multiple frames.
+      // Ensure timer is running if it wasn't started mid-load.
       if (widget.focused && _frames.length > 1 && _timer == null) {
-        _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-          if (!mounted) return;
-          setState(() => _frameIndex = (_frameIndex + 1) % _frames.length);
-        });
+        _startTimer();
       }
     } catch (_) {
       _loading = false;
     }
+  }
+
+  /// Byte-exact equality check for two JPEG buffers.
+  /// JPEGs from the same MediaMetadataRetriever render are bit-for-bit identical,
+  /// so this reliably detects clamped "past-end" frames.
+  static bool _bytesEqual(Uint8List a, Uint8List b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override
