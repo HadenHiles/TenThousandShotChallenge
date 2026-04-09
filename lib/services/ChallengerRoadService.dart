@@ -235,12 +235,55 @@ class ChallengerRoadService {
     return badges;
   }
 
-  /// Returns the profile badge catalog generated from the current active
-  /// Challenger Road levels/challenges.
-  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
-    final stats = await _loadRoadBadgeStats(userId);
-    return _buildBadgeDefinitions(stats);
+  /// Returns the global badge catalog derived purely from the currently active
+  /// Challenger Road levels and challenges in Firestore.
+  ///
+  /// The catalog is **identical for every user** — it depends only on the
+  /// active level/challenge configuration, not on any user's progress.
+  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalog() async {
+    final levelSnaps = await _levelsRef.where('active', isEqualTo: true).get();
+    final activeChallengeIdsByLevel = <int, Set<String>>{};
+    final activeShotTypeChallengeCountByLevel = <String, int>{};
+
+    for (final levelDoc in levelSnaps.docs) {
+      final level = ((levelDoc.data() as Map<String, dynamic>?)?['level'] as num?)?.toInt();
+      if (level == null) continue;
+
+      final challengeSnaps = await _challengesRef(levelDoc.id).where('active', isEqualTo: true).get();
+      for (final challengeSnap in challengeSnaps.docs) {
+        final challenge = ChallengerRoadChallenge.fromSnapshot(challengeSnap);
+        final challengeId = challenge.id;
+        if (challengeId == null) continue;
+
+        activeChallengeIdsByLevel.putIfAbsent(level, () => <String>{}).add(challengeId);
+
+        final shotType = challenge.shotType?.toLowerCase();
+        if (shotType != null && shotType.isNotEmpty) {
+          final key = _shotTypeLevelKey(shotType, level);
+          activeShotTypeChallengeCountByLevel[key] = (activeShotTypeChallengeCountByLevel[key] ?? 0) + 1;
+        }
+      }
+    }
+
+    final highestLevel = activeChallengeIdsByLevel.keys.isEmpty ? 0 : (activeChallengeIdsByLevel.keys.toList()..sort()).last;
+
+    final catalogStats = _RoadBadgeStats(
+      highestActiveLevel: highestLevel,
+      activeChallengeIdsByLevel: activeChallengeIdsByLevel,
+      activeShotTypeChallengeCountByLevel: activeShotTypeChallengeCountByLevel,
+      clearedChallengeIdsByLevel: const {},
+      passesByShotTypeAndLevel: const {},
+      outperformPlusTwoPasses: 0,
+    );
+
+    return _buildBadgeDefinitions(catalogStats);
   }
+
+  /// Returns the profile badge catalog for a user.
+  ///
+  /// Delegates to [getBadgeCatalog] — the catalog is user-agnostic and derived
+  /// entirely from the active Challenger Road configuration in Firestore.
+  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) => getBadgeCatalog();
 
   // ---------------------------------------------------------------------------
   // 1. Global challenge data
