@@ -186,16 +186,15 @@ class _ProfileState extends State<Profile> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(context, currentUser),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             _buildProgressCard(context, currentUser),
-            const SizedBox(height: 12),
-            _buildSessionsCard(context, currentUser),
+            _buildAchievementsCard(context, currentUser),
             const SizedBox(height: 12),
             _buildAccuracyCard(context, currentUser),
             const SizedBox(height: 12),
-            _buildAchievementsCard(context, currentUser),
-            const SizedBox(height: 12),
             _buildChallengerRoadCard(context, currentUser),
+            const SizedBox(height: 12),
+            _buildSessionsCard(context, currentUser),
             const SizedBox(height: 80),
           ],
         ),
@@ -796,7 +795,7 @@ class _ProfileState extends State<Profile> {
                     )
                   else
                     Text(
-                      'Pro feature \u2014 unlock to track progress',
+                      'Pro feature. Unlock to track progress',
                       style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
                     ),
                 ],

@@ -6,8 +6,9 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
 /// Drop-in Challenger Road section for the Profile tab.
 ///
-/// Pass [userId] and the current [isPro] flag. If the user is not pro,
-/// a teaser callout is shown instead of badge data.
+/// Pass [userId] and the current [isPro] flag.
+/// Both free and pro users can see their stats and badges — free users also
+/// see a compact "Go Pro" nudge encouraging them to unlock full gameplay.
 class ChallengerRoadProfileSection extends StatelessWidget {
   const ChallengerRoadProfileSection({
     super.key,
@@ -22,10 +23,6 @@ class ChallengerRoadProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isPro) {
-      return _buildUpsell(context);
-    }
-
     return StreamBuilder<ChallengerRoadUserSummary>(
       stream: ChallengerRoadService().watchUserSummary(userId),
       builder: (context, snap) {
@@ -35,7 +32,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
     );
   }
 
-  // ── Pro content ─────────────────────────────────────────────────────────
+  // ── Content (all users) ──────────────────────────────────────────────────
 
   Widget _buildContent(BuildContext context, ChallengerRoadUserSummary summary) {
     return Padding(
@@ -43,6 +40,11 @@ class ChallengerRoadProfileSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Free-user Go-Pro nudge banner
+          if (!isPro) ...[
+            const SizedBox(height: 8),
+            _GoProNudge(onGoProTap: onGoProTap),
+          ],
           const SizedBox(height: 8),
           // Personal Best Badge
           _PersonalBestBadge(
@@ -65,7 +67,8 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            future: ChallengerRoadService().getBadgeCatalogForUser(userId),
+            // Badge catalog is global — same for every user.
+            future: ChallengerRoadService().getBadgeCatalog(),
             builder: (context, badgeSnap) {
               final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
               if (badgeDefs.isEmpty && summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
@@ -87,67 +90,56 @@ class ChallengerRoadProfileSection extends StatelessWidget {
       ),
     );
   }
+}
 
-  // ── Free user upsell ────────────────────────────────────────────────────
+// ── Compact Go-Pro nudge (free users only) ──────────────────────────────────
 
-  Widget _buildUpsell(BuildContext context) {
+class _GoProNudge extends StatelessWidget {
+  const _GoProNudge({this.onGoProTap});
+  final VoidCallback? onGoProTap;
+
+  @override
+  Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: primary.withValues(alpha: 0.35),
-            width: 1.2,
-          ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.route_rounded, color: primary, size: 28),
-                const SizedBox(width: 10),
-                Text(
-                  'CHALLENGER ROAD',
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 20,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Challenger Road is a Pro feature. Earn badges, track your personal best level, and compete on the road to 10,000 shots.',
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: primary.withValues(alpha: 0.3), width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Icon(Icons.lock_open_rounded, color: primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'earn more badges & unlock the full challenger road.',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
-                fontSize: 15,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                fontSize: 13,
+                color: scheme.onSurface.withValues(alpha: 0.85),
               ),
             ),
-            if (onGoProTap != null) ...[
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: onGoProTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Theme.of(context).colorScheme.surface,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text(
-                  'GO PRO',
-                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18),
-                ),
+          ),
+          if (onGoProTap != null) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: onGoProTap,
+              style: TextButton.styleFrom(
+                foregroundColor: primary,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-            ],
+              child: const Text(
+                'GO PRO',
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
