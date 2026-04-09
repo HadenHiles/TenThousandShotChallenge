@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1697,8 +1698,7 @@ class _VideoFrameScrubber extends StatefulWidget {
 }
 
 class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
-  VideoPlayerController? _controller;
-  List<Duration> _frames = [];
+  List<Uint8List> _frames = [];
   int _frameIndex = 0;
   bool _ready = false;
   bool _error = false;
@@ -1707,51 +1707,64 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   @override
   void initState() {
     super.initState();
-    _initVideo();
+    _loadFrames();
   }
 
-  Future<void> _initVideo() async {
+  Future<void> _loadFrames() async {
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-      _controller = controller;
-      await controller.initialize();
-      if (!mounted) return;
+      // Extract JPEG thumbnails at 10 s intervals using MediaMetadataRetriever
+      // (via video_thumbnail). This is far lighter than a live VideoPlayer —
+      // no ExoPlayer pipeline, no codec state machine, no continuous seeks.
+      const stepMs = 10 * 1000; // 10 seconds in ms
+      const maxFrames = 10; // try up to 100 s worth of frames
 
-      await controller.setVolume(0);
-      await controller.setLooping(false);
-
-      final duration = controller.value.duration;
-      final stepSeconds = 3;
-      final totalSeconds = duration.inSeconds.clamp(0, 600);
-
-      // Build frame list: 0, 10, 20, ... up to (but not past) the end.
-      final raw = <Duration>[];
-      for (int s = 0; s <= totalSeconds; s += stepSeconds) {
-        raw.add(Duration(seconds: s));
+      final frames = <Uint8List>[];
+      for (int i = 0; i < maxFrames; i++) {
+        if (!mounted) return;
+        final data = await VideoThumbnail.thumbnailData(
+          video: widget.url,
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 480,
+          quality: 70,
+          timeMs: i * stepMs,
+        );
+        // null / empty means we've gone past the end of the video.
+        if (data == null || data.isEmpty) break;
+        frames.add(data);
       }
-      // Always include a frame near the end if the last step didn't land there.
-      // Stay at least 2 s from the end to avoid triggering a completion state.
-      if (raw.isEmpty || raw.last < duration) {
-        final nearEnd = duration - const Duration(seconds: 2);
-        raw.add(nearEnd > Duration.zero ? nearEnd : Duration.zero);
-      }
-      // De-dup and sort.
-      _frames = raw.toSet().toList()..sort((a, b) => a.compareTo(b));
 
-      await controller.seekTo(_frames.first);
-      await controller.pause();
+      // Fallback: try once with no time constraint if nothing came back.
+      if (frames.isEmpty && mounted) {
+        final data = await VideoThumbnail.thumbnailData(
+          video: widget.url,
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 480,
+          quality: 70,
+        );
+        if (data != null && data.isNotEmpty) frames.add(data);
+      }
 
       if (!mounted) return;
+      if (frames.isEmpty) {
+        setState(() => _error = true);
+        return;
+      }
+
       setState(() {
-        _ready = true;
+        _frames = frames;
         _frameIndex = 0;
+        _ready = true;
       });
 
-      _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        if (!mounted || !_ready || _frames.isEmpty) return;
-        _frameIndex = (_frameIndex + 1) % _frames.length;
-        _controller?.seekTo(_frames[_frameIndex]).then((_) => _controller?.pause());
-      });
+      // Only start cycling if there's more than one frame.
+      if (frames.length > 1) {
+        _timer = Timer.periodic(const Duration(milliseconds: 800), (_) {
+          if (!mounted) return;
+          setState(() {
+            _frameIndex = (_frameIndex + 1) % _frames.length;
+          });
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _error = true);
     }
@@ -1760,24 +1773,19 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   @override
   void dispose() {
     _timer?.cancel();
-    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_error) return widget.placeholderBuilder(context);
-    if (!_ready || _controller == null) return widget.placeholderBuilder(context);
+    if (_error || !_ready) return widget.placeholderBuilder(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox.expand(
-        child: FittedBox(
+        child: Image.memory(
+          _frames[_frameIndex],
           fit: BoxFit.cover,
-          child: SizedBox(
-            width: _controller!.value.size.width,
-            height: _controller!.value.size.height,
-            child: VideoPlayer(_controller!),
-          ),
+          gaplessPlayback: true, // prevents white flash between frame swaps
         ),
       ),
     );
