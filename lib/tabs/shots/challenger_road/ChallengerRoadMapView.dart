@@ -1726,8 +1726,17 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   void didUpdateWidget(_VideoFrameScrubber old) {
     super.didUpdateWidget(old);
     if (!old.focused && widget.focused) {
-      // Scrolled into focus — load remaining frames and start cycling.
-      _scheduleRemainingLoad();
+      if (_allLoaded && _frames.length > 1) {
+        // Frames already loaded — just restart the timer.
+        _timer?.cancel();
+        _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+          if (!mounted) return;
+          setState(() => _frameIndex = (_frameIndex + 1) % _frames.length);
+        });
+      } else {
+        // Frames not yet loaded — load them (also starts the timer).
+        _scheduleRemainingLoad();
+      }
     } else if (old.focused && !widget.focused) {
       // Scrolled out of focus — stop cycling to save CPU/battery.
       _timer?.cancel();
