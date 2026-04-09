@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -718,7 +719,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     );
   }
 
-  Widget _buildPreviewMedia(BuildContext context, _ChallengePreviewMedia media) {
+  Widget _buildPreviewMedia(BuildContext context, _ChallengePreviewMedia media, {bool focused = false}) {
     if (!media.hasMedia) {
       return _buildPreviewMediaPlaceholder(context, icon: Icons.photo_library_outlined, label: 'Preview coming soon');
     }
@@ -726,6 +727,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     if (media.mediaType == 'video') {
       return _VideoFrameScrubber(
         url: media.url!,
+        focused: focused,
         placeholderBuilder: (ctx) => _buildPreviewMediaPlaceholder(ctx, icon: Icons.play_circle_fill_rounded, label: 'Video preview'),
       );
     }
@@ -1339,7 +1341,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                                     child: SizedBox(
                                       width: thumbWidth,
                                       height: thumbHeight,
-                                      child: _buildPreviewMedia(context, previewMedia),
+                                      child: _buildPreviewMedia(context, previewMedia, focused: isFocused),
                                     ),
                                   ),
                                 ),
@@ -1684,12 +1686,17 @@ class _LevelUnlockAnimatedBannerState extends State<_LevelUnlockAnimatedBanner> 
 
 /// Loads a video silently and cycles through still frames sampled every 10 s,
 /// producing a GIF-like preview without playing the full video at normal speed.
+/// Frame loading is split into two phases:
+///   1. First frame is extracted eagerly in the background for all video previews.
+///   2. Remaining frames are extracted and cycling starts only when [focused] is true.
 class _VideoFrameScrubber extends StatefulWidget {
   final String url;
+  final bool focused;
   final Widget Function(BuildContext) placeholderBuilder;
 
   const _VideoFrameScrubber({
     required this.url,
+    required this.focused,
     required this.placeholderBuilder,
   });
 
@@ -1700,26 +1707,103 @@ class _VideoFrameScrubber extends StatefulWidget {
 class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   List<Uint8List> _frames = [];
   int _frameIndex = 0;
-  bool _ready = false;
+  int _durationMs = 0; // populated in parallel with frame 0
+  bool _ready = false; // true once the first frame is available
+  bool _allLoaded = false; // true once all frames are extracted
   bool _error = false;
+  bool _loading = false; // guard against concurrent _loadRemaining calls
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _loadFrames();
+    // _scheduleRemainingLoad is called from _loadFirstFrame once _ready is true,
+    // so we never need to call it here separately.
+    _loadFirstFrame();
   }
 
-  Future<void> _loadFrames() async {
-    try {
-      // Extract JPEG thumbnails at 10 s intervals using MediaMetadataRetriever
-      // (via video_thumbnail). This is far lighter than a live VideoPlayer —
-      // no ExoPlayer pipeline, no codec state machine, no continuous seeks.
-      const stepMs = 10 * 1000; // 10 seconds in ms
-      const maxFrames = 10; // try up to 100 s worth of frames
+  @override
+  void didUpdateWidget(_VideoFrameScrubber old) {
+    super.didUpdateWidget(old);
+    if (!old.focused && widget.focused) {
+      // Scrolled into focus — load remaining frames and start cycling.
+      _scheduleRemainingLoad();
+    } else if (old.focused && !widget.focused) {
+      // Scrolled out of focus — stop cycling to save CPU/battery.
+      _timer?.cancel();
+      _timer = null;
+      if (mounted) setState(() => _frameIndex = 0);
+    }
+  }
 
-      final frames = <Uint8List>[];
-      for (int i = 0; i < maxFrames; i++) {
+  // ── Phase 1: load just frame 0 (cheap, always runs in background) ──────────
+
+  Future<void> _loadFirstFrame() async {
+    try {
+      // Run thumbnail extraction and duration probe concurrently so neither
+      // blocks the other — both use the network but are independent requests.
+      final thumbnailFuture = VideoThumbnail.thumbnailData(
+        video: widget.url,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 480,
+        quality: 70,
+        timeMs: 0,
+      );
+      final durationFuture = _probeDurationMs();
+
+      final data = await thumbnailFuture;
+      _durationMs = await durationFuture;
+
+      if (!mounted) return;
+      if (data == null || data.isEmpty) {
+        setState(() => _error = true);
+        return;
+      }
+      setState(() {
+        _frames = [data];
+        _ready = true;
+      });
+      // Phase 1 complete — now safe to start phase 2 if focus is already set.
+      if (widget.focused) _scheduleRemainingLoad();
+    } catch (_) {
+      if (mounted) setState(() => _error = true);
+    }
+  }
+
+  /// Spins up a VideoPlayerController just long enough to read the duration
+  /// from the container header, then immediately disposes it.
+  Future<int> _probeDurationMs() async {
+    VideoPlayerController? c;
+    try {
+      c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      await c.initialize();
+      return c.value.duration.inMilliseconds;
+    } catch (_) {
+      return 0;
+    } finally {
+      await c?.dispose();
+    }
+  }
+
+  // ── Phase 2: load frames 1‥N and start the cycling timer ─────────────────
+
+  void _scheduleRemainingLoad() {
+    // Guard: phase 1 must be done before we start fetching more frames,
+    // so _frames.first is guaranteed to exist when we merge the lists.
+    if (!_ready || _allLoaded || _loading) return;
+    _loading = true;
+    _loadRemainingFrames();
+  }
+
+  Future<void> _loadRemainingFrames() async {
+    try {
+      const totalFrames = 6; // 6 frames total including frame 0
+      // If we have the actual duration, spread frames evenly across it.
+      // Fall back to 5 s steps if the duration probe failed.
+      final int stepMs = _durationMs > 0 ? (_durationMs / (totalFrames - 1)).round() : 5 * 1000;
+
+      final extra = <Uint8List>[];
+      for (int i = 1; i < totalFrames; i++) {
         if (!mounted) return;
         final data = await VideoThumbnail.thumbnailData(
           video: widget.url,
@@ -1728,37 +1812,22 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
           quality: 70,
           timeMs: i * stepMs,
         );
-        // null / empty means we've gone past the end of the video.
         if (data == null || data.isEmpty) break;
-        frames.add(data);
-      }
-
-      // Fallback: try once with no time constraint if nothing came back.
-      if (frames.isEmpty && mounted) {
-        final data = await VideoThumbnail.thumbnailData(
-          video: widget.url,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 480,
-          quality: 70,
-        );
-        if (data != null && data.isNotEmpty) frames.add(data);
+        extra.add(data);
       }
 
       if (!mounted) return;
-      if (frames.isEmpty) {
-        setState(() => _error = true);
-        return;
+      if (extra.isNotEmpty) {
+        setState(() {
+          _frames = [_frames.first, ...extra];
+        });
       }
+      _allLoaded = true;
+      _loading = false;
 
-      setState(() {
-        _frames = frames;
-        _frameIndex = 0;
-        _ready = true;
-      });
-
-      // Only start cycling if there's more than one frame.
-      if (frames.length > 1) {
-        _timer = Timer.periodic(const Duration(milliseconds: 800), (_) {
+      // Start cycling only if still focused and there are multiple frames.
+      if (widget.focused && _frames.length > 1 && _timer == null) {
+        _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
           if (!mounted) return;
           setState(() {
             _frameIndex = (_frameIndex + 1) % _frames.length;
@@ -1766,7 +1835,7 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _error = true);
+      _loading = false;
     }
   }
 
@@ -1785,7 +1854,7 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
         child: Image.memory(
           _frames[_frameIndex],
           fit: BoxFit.cover,
-          gaplessPlayback: true, // prevents white flash between frame swaps
+          gaplessPlayback: true,
         ),
       ),
     );
