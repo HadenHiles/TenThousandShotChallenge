@@ -671,7 +671,7 @@ class _HistoryState extends State<History> {
                               border: Border.all(color: const Color(0xFFFFD700), width: 1),
                             ),
                             child: const Text(
-                              'CR',
+                              'Challenger Road',
                               style: TextStyle(
                                 color: Color(0xFFFFD700),
                                 fontSize: 11,
