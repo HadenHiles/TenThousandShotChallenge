@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeDetailSheet.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadBadgeAwardScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
@@ -215,7 +216,19 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
     try {
       // Save to ChallengerRoad sub-collection — this is the critical write.
-      await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
+      final newBadges = await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
+
+      // Badge celebration — shown before the milestone / result screens so it
+      // feels like a special moment immediately after the session.
+      if (newBadges.isNotEmpty && mounted) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => ChallengerRoadBadgeAwardScreen(badges: newBadges),
+          ),
+        );
+        if (!mounted) return;
+      }
 
       // Save to the global shooting session so the main iteration counter
       // updates.  This is best-effort: a missing index or network hiccup

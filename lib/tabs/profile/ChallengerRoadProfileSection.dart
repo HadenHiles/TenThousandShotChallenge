@@ -351,7 +351,8 @@ class _BadgeWrapGrid extends StatelessWidget {
         id: id,
         name: _titleFromBadgeId(id),
         description: 'Legacy Challenger Road badge.',
-        category: ChallengerRoadBadgeCategory.special,
+        category: ChallengerRoadBadgeCategory.chirpy,
+        tier: ChallengerRoadBadgeTier.common,
       );
     }).toList()
       ..sort((a, b) => a.name.compareTo(b.name));
@@ -407,57 +408,70 @@ class _BadgeChip extends StatelessWidget {
 
   IconData _iconForBadge() {
     switch (def.category) {
-      case ChallengerRoadBadgeCategory.attempts:
-        return Icons.repeat_rounded;
-      case ChallengerRoadBadgeCategory.shotsMilestone:
-        return Icons.workspace_premium_rounded;
-      case ChallengerRoadBadgeCategory.levelAllClear:
+      case ChallengerRoadBadgeCategory.firstSteps:
         return Icons.route_rounded;
-      case ChallengerRoadBadgeCategory.shotTypeLevelMastery:
-        switch ((def.shotType ?? '').toLowerCase()) {
-          case 'snap':
-            return Icons.bolt_rounded;
-          case 'backhand':
-            return Icons.undo_rounded;
-          case 'slap':
-            return Icons.flash_on_rounded;
-          case 'wrist':
-          default:
-            return Icons.sports_hockey_rounded;
-        }
-      case ChallengerRoadBadgeCategory.outperform:
+      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+        return Icons.bolt_rounded;
+      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+        return Icons.trending_up_rounded;
+      case ChallengerRoadBadgeCategory.grindAndResilience:
+        return Icons.shield_rounded;
+      case ChallengerRoadBadgeCategory.levelAdvancement:
+        return Icons.stairs_rounded;
+      case ChallengerRoadBadgeCategory.crShotMilestones:
+        return Icons.workspace_premium_rounded;
+      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+        return Icons.gps_fixed_rounded;
+      case ChallengerRoadBadgeCategory.hotStreaks:
+        return Icons.local_fire_department_rounded;
+      case ChallengerRoadBadgeCategory.challengeMastery:
         return Icons.emoji_events_rounded;
-      case ChallengerRoadBadgeCategory.special:
-        if (def.id == 'cr_comeback') return Icons.trending_up_rounded;
-        if (def.id == 'cr_perfect_level') return Icons.stars_rounded;
+      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+        return Icons.repeat_rounded;
+      case ChallengerRoadBadgeCategory.eliteEndgame:
         return Icons.military_tech_rounded;
+      case ChallengerRoadBadgeCategory.chirpy:
+        return Icons.sports_hockey_rounded;
     }
   }
 
   Color _colorForBadge() {
+    // Tier takes visual precedence for epic/legendary/hidden.
+    switch (def.tier) {
+      case ChallengerRoadBadgeTier.legendary:
+        return const Color(0xFFFFD700);
+      case ChallengerRoadBadgeTier.epic:
+        return const Color(0xFFAB47BC);
+      case ChallengerRoadBadgeTier.hidden:
+        return const Color(0xFF78909C);
+      default:
+        break;
+    }
     switch (def.category) {
-      case ChallengerRoadBadgeCategory.attempts:
-        return const Color(0xFF29B6F6);
-      case ChallengerRoadBadgeCategory.shotsMilestone:
-        return const Color(0xFFFF7043);
-      case ChallengerRoadBadgeCategory.levelAllClear:
-        return const Color(0xFF26A69A);
-      case ChallengerRoadBadgeCategory.shotTypeLevelMastery:
-        switch ((def.shotType ?? '').toLowerCase()) {
-          case 'snap':
-            return const Color(0xFF64B5F6);
-          case 'backhand':
-            return const Color(0xFF9575CD);
-          case 'slap':
-            return const Color(0xFFFFB74D);
-          case 'wrist':
-          default:
-            return const Color(0xFF4FC3F7);
-        }
-      case ChallengerRoadBadgeCategory.outperform:
-        return const Color(0xFFFF8A65);
-      case ChallengerRoadBadgeCategory.special:
+      case ChallengerRoadBadgeCategory.firstSteps:
+        return const Color(0xFF42A5F5);
+      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+        return const Color(0xFF26C6DA);
+      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+        return const Color(0xFF66BB6A);
+      case ChallengerRoadBadgeCategory.grindAndResilience:
         return const Color(0xFF8D6E63);
+      case ChallengerRoadBadgeCategory.levelAdvancement:
+        return const Color(0xFF26A69A);
+      case ChallengerRoadBadgeCategory.crShotMilestones:
+        return const Color(0xFFFF7043);
+      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+        return const Color(0xFF5C6BC0);
+      case ChallengerRoadBadgeCategory.hotStreaks:
+        return const Color(0xFFEF5350);
+      case ChallengerRoadBadgeCategory.challengeMastery:
+        return const Color(0xFF5C6BC0);
+      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+        return const Color(0xFF29B6F6);
+      case ChallengerRoadBadgeCategory.eliteEndgame:
+        return const Color(0xFFFFD700);
+      case ChallengerRoadBadgeCategory.chirpy:
+        return const Color(0xFF78909C);
     }
   }
 
@@ -466,14 +480,12 @@ class _BadgeChip extends StatelessWidget {
   }
 
   String? _progressText() {
-    if (def.category == ChallengerRoadBadgeCategory.attempts && def.threshold != null) {
-      return 'Progress: ${summary.totalAttempts}/${def.threshold} attempts';
+    if (def.category == ChallengerRoadBadgeCategory.multiAttemptCareer) {
+      return 'Progress: ${summary.totalAttempts} attempts';
     }
-
-    if (def.category == ChallengerRoadBadgeCategory.shotsMilestone && def.threshold != null) {
-      return 'Progress: ${summary.allTimeTotalChallengerRoadShots}/${def.threshold} Challenger Road shots';
+    if (def.category == ChallengerRoadBadgeCategory.crShotMilestones) {
+      return 'Progress: ${summary.allTimeTotalChallengerRoadShots} CR shots';
     }
-
     return null;
   }
 

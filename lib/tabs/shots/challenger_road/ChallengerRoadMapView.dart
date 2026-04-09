@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChallenge.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'ChallengeDetailSheet.dart';
@@ -1625,6 +1626,25 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                         ),
                       ),
                     ),
+                  // ── Floating badges button ────────────────────────────
+                  if (_service != null)
+                    Positioned(
+                      bottom: 16 + widget.mapBottomInset,
+                      left: 16,
+                      child: _BadgesFloatingButton(
+                        userId: widget.userId,
+                        service: _service!,
+                      ),
+                    ),
+                  // ── Floating badges button ───────────────────────────
+                  Positioned(
+                    bottom: 16 + widget.mapBottomInset,
+                    left: 16,
+                    child: _BadgesFloatingButton(
+                      userId: widget.userId,
+                      service: _service!,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1898,6 +1918,391 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
           _frames[_frameIndex],
           fit: BoxFit.cover,
           gaplessPlayback: true,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Floating badges button ────────────────────────────────────────────────────
+
+/// Compact chip that shows `earned / total` badge count and opens the full
+/// badge sheet on tap. Uses a stream for live updates after sessions.
+class _BadgesFloatingButton extends StatelessWidget {
+  const _BadgesFloatingButton({
+    required this.userId,
+    required this.service,
+  });
+
+  final String userId;
+  final ChallengerRoadService service;
+
+  static int get _totalBadges => ChallengerRoadService.badgeCatalog.length;
+
+  void _openSheet(BuildContext context, List<String> earnedIds) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CRBadgeSheet(
+        earnedIds: earnedIds,
+        catalog: ChallengerRoadService.badgeCatalog,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<ChallengerRoadUserSummary>(
+      stream: service.watchUserSummary(userId),
+      builder: (context, snap) {
+        final earned = snap.data?.badges ?? const <String>[];
+        final earnedCount = earned.length;
+        final primary = Theme.of(context).primaryColor;
+
+        return GestureDetector(
+          onTap: () => _openSheet(context, earned),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: primary.withValues(alpha: 0.45),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.military_tech_rounded, size: 20, color: primary),
+                const SizedBox(width: 6),
+                Text(
+                  '$earnedCount / $_totalBadges',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'BADGES',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Badge bottom sheet ────────────────────────────────────────────────────────
+
+class _CRBadgeSheet extends StatelessWidget {
+  const _CRBadgeSheet({
+    required this.earnedIds,
+    required this.catalog,
+  });
+
+  final List<String> earnedIds;
+  final List<ChallengerRoadBadgeDefinition> catalog;
+
+  Color _colorFor(ChallengerRoadBadgeDefinition def) {
+    switch (def.tier) {
+      case ChallengerRoadBadgeTier.legendary:
+        return const Color(0xFFFFD700);
+      case ChallengerRoadBadgeTier.epic:
+        return const Color(0xFFAB47BC);
+      case ChallengerRoadBadgeTier.rare:
+        return const Color(0xFF42A5F5);
+      case ChallengerRoadBadgeTier.uncommon:
+        return const Color(0xFF66BB6A);
+      case ChallengerRoadBadgeTier.hidden:
+        return const Color(0xFF78909C);
+      case ChallengerRoadBadgeTier.common:
+        return const Color(0xFF90A4AE);
+    }
+  }
+
+  IconData _iconFor(ChallengerRoadBadgeDefinition def) {
+    switch (def.category) {
+      case ChallengerRoadBadgeCategory.firstSteps:
+        return Icons.route_rounded;
+      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+        return Icons.bolt_rounded;
+      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+        return Icons.trending_up_rounded;
+      case ChallengerRoadBadgeCategory.grindAndResilience:
+        return Icons.shield_rounded;
+      case ChallengerRoadBadgeCategory.levelAdvancement:
+        return Icons.stairs_rounded;
+      case ChallengerRoadBadgeCategory.crShotMilestones:
+        return Icons.workspace_premium_rounded;
+      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+        return Icons.gps_fixed_rounded;
+      case ChallengerRoadBadgeCategory.hotStreaks:
+        return Icons.local_fire_department_rounded;
+      case ChallengerRoadBadgeCategory.challengeMastery:
+        return Icons.emoji_events_rounded;
+      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+        return Icons.repeat_rounded;
+      case ChallengerRoadBadgeCategory.eliteEndgame:
+        return Icons.military_tech_rounded;
+      case ChallengerRoadBadgeCategory.chirpy:
+        return Icons.sports_hockey_rounded;
+    }
+  }
+
+  void _showDetail(BuildContext context, ChallengerRoadBadgeDefinition def, bool earned) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = _colorFor(def);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: scheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
+                      border: Border.all(
+                        color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(_iconFor(def), size: 22, color: earned ? color : scheme.onSurface.withValues(alpha: 0.5)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          def.name,
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 20,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          earned ? 'UNLOCKED' : 'LOCKED',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 12,
+                            color: earned ? Colors.green : scheme.onSurface.withValues(alpha: 0.5),
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                def.description,
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 15,
+                  color: scheme.onSurface.withValues(alpha: 0.85),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final primary = Theme.of(context).primaryColor;
+    final earnedCount = earnedIds.length;
+    final total = catalog.length;
+
+    // Sort: earned first, then alphabetical within each group.
+    final sorted = [...catalog]..sort((a, b) {
+        final aEarned = earnedIds.contains(a.id);
+        final bEarned = earnedIds.contains(b.id);
+        if (aEarned == bEarned) return a.name.compareTo(b.name);
+        return aEarned ? -1 : 1;
+      });
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.4,
+      maxChildSize: 0.96,
+      snap: true,
+      expand: false,
+      builder: (_, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // ── Drag handle ──────────────────────────────────────────────
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: scheme.onSurface.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ── Header ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Icon(Icons.military_tech_rounded, color: primary, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    'BADGES',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 22,
+                      color: scheme.onSurface,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$earnedCount / $total',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 18,
+                      color: primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Progress bar ─────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: total > 0 ? earnedCount / total : 0,
+                  backgroundColor: scheme.onSurface.withValues(alpha: 0.12),
+                  color: primary,
+                  minHeight: 6,
+                ),
+              ),
+            ),
+
+            // ── Badge grid ───────────────────────────────────────────────
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                itemCount: sorted.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 0.88,
+                ),
+                itemBuilder: (_, index) {
+                  final def = sorted[index];
+                  final earned = earnedIds.contains(def.id);
+                  final color = _colorFor(def);
+
+                  return GestureDetector(
+                    onTap: () => _showDetail(context, def, earned),
+                    child: Opacity(
+                      opacity: earned ? 1.0 : 0.42,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
+                              border: Border.all(
+                                color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
+                                width: earned ? 2 : 1.2,
+                              ),
+                              boxShadow: earned
+                                  ? [
+                                      BoxShadow(
+                                        color: color.withValues(alpha: 0.28),
+                                        blurRadius: 8,
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Icon(
+                              _iconFor(def),
+                              size: 26,
+                              color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            def.name,
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 11,
+                              color: earned ? scheme.onSurface : scheme.onSurface.withValues(alpha: 0.6),
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
