@@ -28,8 +28,39 @@ class ChallengerRoadMilestoneResult {
   });
 }
 
+/// Visual and motivational rarity tier for a Challenger Road badge.
+///
+/// Tiers drive the badge colour in the UI:
+/// - [common]    → grey     (#90A4AE)
+/// - [uncommon]  → green    (#66BB6A)
+/// - [rare]      → blue     (#42A5F5)
+/// - [epic]      → purple   (#AB47BC)
+/// - [legendary] → gold     (#FFD700)
+/// - [hidden]    → slate    (#78909C)  displayed as "SECRET"; not shown in
+///                the locked-badge gallery until earned
 enum ChallengerRoadBadgeTier { common, uncommon, rare, epic, legendary, hidden }
 
+/// Groups Challenger Road badges by the behaviour that unlocks them.
+///
+/// Categories are used to:
+///   1. Assign icon characters in [_BadgeChip], [ChallengerRoadBadgeAwardScreen],
+///      and the map-view badge sheet.
+///   2. Group badges in future catalogue screens.
+///
+/// | Category                 | Icon                         |
+/// |--------------------------|------------------------------|
+/// | firstSteps               | Icons.route_rounded          |
+/// | withinRunEfficiency      | Icons.bolt_rounded           |
+/// | crossAttemptImprovement  | Icons.trending_up_rounded    |
+/// | grindAndResilience       | Icons.shield_rounded         |
+/// | levelAdvancement         | Icons.stairs_rounded         |
+/// | crShotMilestones         | Icons.workspace_premium_rounded |
+/// | crSessionAccuracy        | Icons.gps_fixed_rounded      |
+/// | hotStreaks                | Icons.local_fire_department_rounded |
+/// | challengeMastery         | Icons.emoji_events_rounded   |
+/// | multiAttemptCareer       | Icons.repeat_rounded         |
+/// | eliteEndgame             | Icons.military_tech_rounded  |
+/// | chirpy                   | Icons.sports_hockey_rounded  |
 enum ChallengerRoadBadgeCategory {
   firstSteps,
   withinRunEfficiency,
@@ -45,11 +76,38 @@ enum ChallengerRoadBadgeCategory {
   chirpy,
 }
 
+/// Immutable definition of a single Challenger Road badge.
+///
+/// Instances live exclusively in [ChallengerRoadService.badgeCatalog] — they
+/// are `const` and never stored in Firestore.  Only the [id] is persisted
+/// (as a string) in the user's `badges` array inside the
+/// `users/{uid}/challenger_road/summary` document.
+///
+/// **Adding a new badge**
+/// 1. Add a `ChallengerRoadBadgeDefinition` entry to [ChallengerRoadService.badgeCatalog].
+/// 2. Add the award logic to `_checkAndAwardBadges`, `_checkContextualSessionBadges`,
+///    `advanceLevel`, or `incrementChallengerRoadShots` as appropriate.
+/// 3. Add the [id] to the `VALID_BADGE_IDS` set in
+///    `scripts/prune_legacy_badges.js`.
+///
+/// **Removing a badge**
+/// Remove the entry from [badgeCatalog].  `_checkAndAwardBadges` automatically
+/// strips any ID not present in the catalog from a user's `badges` list the
+/// next time it runs for that user.
 class ChallengerRoadBadgeDefinition {
+  /// Stable, snake_case identifier persisted in Firestore. Never rename.
   final String id;
+
+  /// Short display name shown in the badge award screen and profile grid.
   final String name;
+
+  /// One-sentence description shown under the badge name (gen-Z hockey voice).
   final String description;
+
+  /// Behavioural grouping used for icon selection and future catalogue screens.
   final ChallengerRoadBadgeCategory category;
+
+  /// Rarity tier that drives badge colour.
   final ChallengerRoadBadgeTier tier;
 
   const ChallengerRoadBadgeDefinition({
@@ -696,9 +754,19 @@ class ChallengerRoadService {
 
     await batch.commit();
 
-    // Badge checks (outside the batch — read-then-write pattern).
-    final summary = await getUserSummary(userId);
-    final newStatsBadges = await _checkAndAwardBadges(userId: userId, summary: summary);
+    // Compute badge stats once — shared by both stat-based and contextual checks
+    // to avoid loading all Firestore session data twice per save.
+    // getUserSummary is kicked off in parallel with the stats load.
+    final badgeStatsFuture = _loadRoadBadgeStats(userId);
+    final summaryFuture = getUserSummary(userId);
+    final badgeStats = await badgeStatsFuture;
+    final summary = await summaryFuture;
+
+    final newStatsBadges = await _checkAndAwardBadges(
+      userId: userId,
+      summary: summary,
+      precomputedStats: badgeStats,
+    );
 
     // Re-read summary so contextual check sees stats badges already persisted.
     final summaryAfterStats = await getUserSummary(userId);
@@ -707,6 +775,7 @@ class ChallengerRoadService {
       attemptId: attemptId,
       session: session,
       summary: summaryAfterStats,
+      precomputedStats: badgeStats,
     );
 
     final allNewIds = {...newStatsBadges, ...newContextualBadges};
@@ -723,6 +792,7 @@ class ChallengerRoadService {
     required String attemptId,
     required ChallengeSession session,
     required ChallengerRoadUserSummary summary,
+    _RoadBadgeStats? precomputedStats,
   }) async {
     final earned = List<String>.from(summary.badges);
     final newIds = <String>[];
@@ -780,7 +850,7 @@ class ChallengerRoadService {
 
     // cr_game_7: passed the all-time most-failed challenge.
     if (session.passed) {
-      final stats = await _loadRoadBadgeStats(userId);
+      final stats = precomputedStats ?? await _loadRoadBadgeStats(userId);
       if (stats.mostFailedChallengeId == session.challengeId && stats.mostFailedChallengeCount >= 3) {
         maybeAward('cr_game_7');
       }
@@ -791,15 +861,15 @@ class ChallengerRoadService {
       final priorFailed = failCount - passCount - 1; // subtract this pass
       if (priorFailed >= 10) maybeAward('cr_ghosts_in_the_machine');
 
+      // cr_old_grudge + cr_redemption_arc: fetch all prior-attempt progress in
+      // parallel to avoid N sequential Firestore round-trips.
+      final priorAttemptDocs = (await _attemptsRef(userId).orderBy('attempt_number').get()).docs.takeWhile((doc) => doc.id != attemptId).toList();
+      final priorProgresses = await Future.wait(
+        priorAttemptDocs.map((doc) => getChallengeProgress(userId, doc.id, session.challengeId)),
+      );
+
       // cr_old_grudge: failed this challenge in the previous two attempts, now passed.
-      int attemptsWithoutPass = 0;
-      for (final attemptDoc in (await _attemptsRef(userId).orderBy('attempt_number').get()).docs) {
-        if (attemptDoc.id == attemptId) break;
-        final progress = await getChallengeProgress(userId, attemptDoc.id, session.challengeId);
-        if (progress != null && progress.totalPassed == 0 && progress.totalAttempts > 0) {
-          attemptsWithoutPass++;
-        }
-      }
+      final attemptsWithoutPass = priorProgresses.whereType<ChallengeProgressEntry>().where((p) => p.totalPassed == 0 && p.totalAttempts > 0).length;
       if (attemptsWithoutPass >= 2) maybeAward('cr_old_grudge');
 
       // cr_redemption_arc: passed first-try this attempt; had 5+ failures in a prior attempt.
@@ -808,9 +878,7 @@ class ChallengerRoadService {
         final progress = ChallengeProgressEntry.fromSnapshot(progressSnap);
         // totalAttempts == 1 means this is the first (and only) session in this attempt.
         if (progress.totalAttempts == 1) {
-          for (final attemptDoc in (await _attemptsRef(userId).orderBy('attempt_number').get()).docs) {
-            if (attemptDoc.id == attemptId) continue;
-            final pp = await getChallengeProgress(userId, attemptDoc.id, session.challengeId);
+          for (final pp in priorProgresses) {
             if (pp != null && (pp.totalAttempts - pp.totalPassed) >= 5) {
               maybeAward('cr_redemption_arc');
               break;
@@ -1387,6 +1455,18 @@ class ChallengerRoadService {
   // Internal: badge helpers
   // ---------------------------------------------------------------------------
 
+  /// Aggregates all Challenger Road data for [userId] into a single
+  /// [_RoadBadgeStats] snapshot used by [_checkAndAwardBadges].
+  ///
+  /// Reading order (minimises Firestore round-trips):
+  /// 1. Active level + challenge config from `challenger_road_levels`.
+  /// 2. All attempt documents (ordered by `attempt_number`).
+  /// 3. All session documents for each attempt (ordered by `date`).
+  /// 4. All-time history documents (one per challenge, O(1) reads).
+  ///
+  /// This is the most expensive read path in the service.  It is called once
+  /// per `_checkAndAwardBadges` invocation, which itself runs after every
+  /// session save, level advance, and 10 000-shot milestone.
   Future<_RoadBadgeStats> _loadRoadBadgeStats(String userId) async {
     // ── 1. Active challenge config from Firestore ────────────────────────────
     final levelSnaps = await _levelsRef.where('active', isEqualTo: true).get();
@@ -1450,7 +1530,13 @@ class ChallengerRoadService {
     int allTimeBestSeen = 0;
     int currentPassStreak = 0;
 
-    for (final attempt in allAttempts) {
+    // Fetch all per-attempt session docs in parallel to avoid N sequential round-trips.
+    final allSessionSnaps = await Future.wait(
+      allAttempts.map((a) => _sessionsRef(userId, a.id!).orderBy('date').get()),
+    );
+
+    for (int _attemptIdx = 0; _attemptIdx < allAttempts.length; _attemptIdx++) {
+      final attempt = allAttempts[_attemptIdx];
       final attemptId = attempt.id!;
       final attemptNumber = attempt.attemptNumber;
 
@@ -1459,9 +1545,8 @@ class ChallengerRoadService {
         latestAttemptStartingLevel = attempt.startingLevel;
       }
 
-      // All sessions for this attempt, oldest first.
-      final sessionsSnap = await _sessionsRef(userId, attemptId).orderBy('date').get();
-      final sessions = sessionsSnap.docs.map(ChallengeSession.fromSnapshot).toList();
+      // All sessions for this attempt, oldest first (pre-fetched in parallel above).
+      final sessions = allSessionSnaps[_attemptIdx].docs.map(ChallengeSession.fromSnapshot).toList();
 
       // Track first-session-per-challenge within this attempt.
       final seenChallengesThisAttempt = <String>{};
@@ -1673,13 +1758,28 @@ class ChallengerRoadService {
     }
   }
 
-  /// newly earned badges. Idempotent — will not re-award a badge already in
-  /// the `badges` list.
-  /// Computes badge eligibility from [_RoadBadgeStats] and persists any newly
-  /// earned badges.  Returns the IDs of badges newly awarded by this call.
+  /// Checks all **stat-based** badge conditions and persists any newly earned
+  /// badges to the user's summary document.
+  ///
+  /// Idempotent — will not re-award a badge already in the `badges` list.
+  /// Also prunes any badge IDs that no longer exist in [badgeCatalog],
+  /// ensuring removed badges are silently cleaned up without extra tooling.
+  ///
+  /// **Award paths** — badges are awarded from one of four call sites:
+  ///
+  /// | Call site                         | Badges awarded there |
+  /// |-----------------------------------|----------------------|
+  /// | `_checkAndAwardBadges` (here)     | All stat-derivable badges: shot milestones, level clears, session counts, streak lengths, cross-attempt improvement counters, etc. |
+  /// | `_checkContextualSessionBadges`   | Badges that need the live `ChallengeSession` object: `cr_lights_out`, `cr_battle_tested`, `cr_game_7`, `cr_ghosts_in_the_machine`, `cr_old_grudge`, `cr_redemption_arc`, `cr_pigeon`, `cr_sauce_boss`, `cr_full_send`. |
+  /// | `advanceLevel`                    | Level-completion badges: `cr_the_climb`, `cr_third_period_heart`, `cr_no_warmup_needed`, `cr_breakaway`, `cr_clean_sweep`, `cr_freight_train`, `cr_the_sniper`, `cr_hall_of_famer`, `cr_hockey_god`, `cr_the_machine`, `cr_all_stars`. |
+  /// | `incrementChallengerRoadShots`    | 10k-milestone badges: `cr_three_periods`, `cr_ferda`, `cr_career_year`. |
+  /// | `createAttempt`                   | Per-attempt badges: `cr_skip_the_tryout`. |
+  ///
+  /// Returns the IDs of badges newly awarded by this call.
   Future<List<String>> _checkAndAwardBadges({
     required String userId,
     required ChallengerRoadUserSummary summary,
+    _RoadBadgeStats? precomputedStats,
   }) async {
     // Prune any badge IDs no longer present in the current catalog — removes
     // legacy badges earned before a catalog reduction without any extra tooling.
@@ -1688,7 +1788,7 @@ class ChallengerRoadService {
     final hadLegacyBadges = earned.length != summary.badges.length;
 
     final newIds = <String>[];
-    final stats = await _loadRoadBadgeStats(userId);
+    final stats = precomputedStats ?? await _loadRoadBadgeStats(userId);
 
     void maybeAward(String badgeId) {
       if (!earned.contains(badgeId)) {
