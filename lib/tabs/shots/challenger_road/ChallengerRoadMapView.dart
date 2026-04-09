@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -1707,7 +1706,6 @@ class _VideoFrameScrubber extends StatefulWidget {
 class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   List<Uint8List> _frames = [];
   int _frameIndex = 0;
-  int _durationMs = 0; // populated in parallel with frame 0
   bool _ready = false; // true once the first frame is available
   bool _allLoaded = false; // true once all frames are extracted
   bool _error = false;
@@ -1749,20 +1747,17 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
 
   Future<void> _loadFirstFrame() async {
     try {
-      // Run thumbnail extraction and duration probe concurrently so neither
-      // blocks the other — both use the network but are independent requests.
-      final thumbnailFuture = VideoThumbnail.thumbnailData(
+      // Fetch frame 0 and probe the video duration in a single
+      // MediaMetadataRetriever call by requesting a very late timestamp —
+      // video_thumbnail clamps to the last frame and we note the requested
+      // time that returned null to bound our step estimates.
+      final data = await VideoThumbnail.thumbnailData(
         video: widget.url,
         imageFormat: ImageFormat.JPEG,
         maxWidth: 480,
         quality: 70,
         timeMs: 0,
       );
-      final durationFuture = _probeDurationMs();
-
-      final data = await thumbnailFuture;
-      _durationMs = await durationFuture;
-
       if (!mounted) return;
       if (data == null || data.isEmpty) {
         setState(() => _error = true);
@@ -1779,21 +1774,6 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
     }
   }
 
-  /// Spins up a VideoPlayerController just long enough to read the duration
-  /// from the container header, then immediately disposes it.
-  Future<int> _probeDurationMs() async {
-    VideoPlayerController? c;
-    try {
-      c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-      await c.initialize();
-      return c.value.duration.inMilliseconds;
-    } catch (_) {
-      return 0;
-    } finally {
-      await c?.dispose();
-    }
-  }
-
   // ── Phase 2: load frames 1‥N and start the cycling timer ─────────────────
 
   void _scheduleRemainingLoad() {
@@ -1806,26 +1786,55 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
 
   Future<void> _loadRemainingFrames() async {
     try {
-      const totalFrames = 6; // 6 frames total including frame 0
-      // If we have the actual duration, spread frames evenly across it.
-      // Fall back to 5 s steps if the duration probe failed.
-      final int stepMs = _durationMs > 0 ? (_durationMs / (totalFrames - 1)).round() : 5 * 1000;
+      // Probe duration with a single cheap thumbnail call at a large timestamp.
+      // video_thumbnail returns null when the timestamp exceeds the video length.
+      // Run all probes IN PARALLEL (tiny quality=1/32px) sorted descending —
+      // the largest timestamp that returns data is our approximate duration.
+      // Candidates cover from 5 min down to 1 s so even very short videos get
+      // a valid spread.
+      const totalFrames = 6; // including frame 0
+      const probeCandidatesMs = [300000, 120000, 60000, 30000, 10000, 5000, 3000, 1000];
+      if (!mounted) return;
+      final probeResults = await Future.wait(
+        probeCandidatesMs.map(
+          (t) => VideoThumbnail.thumbnailData(
+            video: widget.url,
+            imageFormat: ImageFormat.JPEG,
+            maxWidth: 32,
+            quality: 1,
+            timeMs: t,
+          ),
+        ),
+      );
+      // Pick the largest timestamp whose probe returned valid data.
+      int detectedDurationMs = 0;
+      for (int i = 0; i < probeCandidatesMs.length; i++) {
+        final d = probeResults[i];
+        if (d != null && d.isNotEmpty) {
+          detectedDurationMs = probeCandidatesMs[i];
+          break; // list is descending so first hit = largest valid time
+        }
+      }
+      // Fall back to 1 s steps if all probes failed (sub-second edge case).
+      final int stepMs = detectedDurationMs > 0 ? (detectedDurationMs / (totalFrames - 1)).round() : 1000;
 
-      final extra = <Uint8List>[];
-      for (int i = 1; i < totalFrames; i++) {
-        if (!mounted) return;
-        final data = await VideoThumbnail.thumbnailData(
+      // Fetch all remaining frames IN PARALLEL — this is the key perf win.
+      if (!mounted) return;
+      final futures = List.generate(
+        totalFrames - 1,
+        (i) => VideoThumbnail.thumbnailData(
           video: widget.url,
           imageFormat: ImageFormat.JPEG,
           maxWidth: 480,
           quality: 70,
-          timeMs: i * stepMs,
-        );
-        if (data == null || data.isEmpty) break;
-        extra.add(data);
-      }
+          timeMs: (i + 1) * stepMs,
+        ),
+      );
+      final results = await Future.wait(futures);
 
       if (!mounted) return;
+      final extra = results.whereType<Uint8List>().where((d) => d.isNotEmpty).toList();
+
       if (extra.isNotEmpty) {
         setState(() {
           _frames = [_frames.first, ...extra];
@@ -1838,9 +1847,7 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
       if (widget.focused && _frames.length > 1 && _timer == null) {
         _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
           if (!mounted) return;
-          setState(() {
-            _frameIndex = (_frameIndex + 1) % _frames.length;
-          });
+          setState(() => _frameIndex = (_frameIndex + 1) % _frames.length);
         });
       }
     } catch (_) {
