@@ -234,7 +234,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       // updates.  This is best-effort: a missing index or network hiccup
       // should NOT block the user from seeing their challenge result.
       try {
-        await saveShootingSession(_shots, auth, firestore);
+        await saveShootingSession(_shots, auth, firestore, isChallengerRoad: true);
       } catch (globalSaveError) {
         debugPrint('Global session save failed (non-fatal): $globalSaveError');
       }

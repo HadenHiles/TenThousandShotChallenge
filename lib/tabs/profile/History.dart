@@ -661,6 +661,26 @@ class _HistoryState extends State<History> {
                     ),
                     Row(
                       children: [
+                        if (s.isChallengerRoad == true) ...[
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFFFD700), width: 1),
+                            ),
+                            child: const Text(
+                              'CR',
+                              style: TextStyle(
+                                color: Color(0xFFFFD700),
+                                fontSize: 11,
+                                fontFamily: 'NovecentoSans',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                         Text(
                           s.total.toString() + " Shots".toUpperCase(),
                           style: TextStyle(
