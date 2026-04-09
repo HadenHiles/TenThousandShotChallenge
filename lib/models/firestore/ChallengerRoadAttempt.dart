@@ -24,6 +24,17 @@ class ChallengerRoadAttempt {
   /// Used to compute the next attempt's startingLevel.
   final int highestLevelReachedThisAttempt;
 
+  /// Levels 1..inheritedUnlockedLevel were pre-unlocked when this attempt was
+  /// created (carried over from the previous attempt's progress). A value of 0
+  /// means no inherited unlocks — this is the player's first attempt, or their
+  /// previous attempt had no level completions to carry forward.
+  ///
+  /// When > 0 the player chose either to start from Level 1 (completionist
+  /// path) or skip to [startingLevel] (which may be > 1). Used for badge
+  /// tracking (e.g. "All Stars" — completing the full road from Level 1 despite
+  /// having levels to skip).
+  final int inheritedUnlockedLevel;
+
   /// 'active' or 'completed'
   final String status;
 
@@ -41,6 +52,7 @@ class ChallengerRoadAttempt {
     required this.totalShotsThisAttempt,
     required this.resetCount,
     required this.highestLevelReachedThisAttempt,
+    this.inheritedUnlockedLevel = 0,
     required this.status,
     required this.startDate,
     this.endDate,
@@ -56,6 +68,7 @@ class ChallengerRoadAttempt {
         totalShotsThisAttempt = map['total_shots_this_attempt'] ?? 0,
         resetCount = map['reset_count'] ?? 0,
         highestLevelReachedThisAttempt = map['highest_level_reached_this_attempt'] ?? 1,
+        inheritedUnlockedLevel = map['inherited_unlocked_level'] ?? 0,
         status = map['status'] ?? 'active',
         startDate = (map['start_date'] as Timestamp?)?.toDate() ?? DateTime.now(),
         endDate = (map['end_date'] as Timestamp?)?.toDate();
@@ -70,6 +83,7 @@ class ChallengerRoadAttempt {
       'total_shots_this_attempt': totalShotsThisAttempt,
       'reset_count': resetCount,
       'highest_level_reached_this_attempt': highestLevelReachedThisAttempt,
+      'inherited_unlocked_level': inheritedUnlockedLevel,
       'status': status,
       'start_date': startDate,
       'end_date': endDate,
@@ -91,6 +105,7 @@ class ChallengerRoadAttempt {
     int? totalShotsThisAttempt,
     int? resetCount,
     int? highestLevelReachedThisAttempt,
+    int? inheritedUnlockedLevel,
     String? status,
     DateTime? endDate,
   }) {
@@ -103,6 +118,7 @@ class ChallengerRoadAttempt {
       totalShotsThisAttempt: totalShotsThisAttempt ?? this.totalShotsThisAttempt,
       resetCount: resetCount ?? this.resetCount,
       highestLevelReachedThisAttempt: highestLevelReachedThisAttempt ?? this.highestLevelReachedThisAttempt,
+      inheritedUnlockedLevel: inheritedUnlockedLevel ?? this.inheritedUnlockedLevel,
       status: status ?? this.status,
       startDate: startDate,
       endDate: endDate ?? this.endDate,
