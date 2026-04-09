@@ -1535,8 +1535,8 @@ class ChallengerRoadService {
       allAttempts.map((a) => _sessionsRef(userId, a.id!).orderBy('date').get()),
     );
 
-    for (int _attemptIdx = 0; _attemptIdx < allAttempts.length; _attemptIdx++) {
-      final attempt = allAttempts[_attemptIdx];
+    for (int attemptIdx = 0; attemptIdx < allAttempts.length; attemptIdx++) {
+      final attempt = allAttempts[attemptIdx];
       final attemptId = attempt.id!;
       final attemptNumber = attempt.attemptNumber;
 
@@ -1546,7 +1546,7 @@ class ChallengerRoadService {
       }
 
       // All sessions for this attempt, oldest first (pre-fetched in parallel above).
-      final sessions = allSessionSnaps[_attemptIdx].docs.map(ChallengeSession.fromSnapshot).toList();
+      final sessions = allSessionSnaps[attemptIdx].docs.map(ChallengeSession.fromSnapshot).toList();
 
       // Track first-session-per-challenge within this attempt.
       final seenChallengesThisAttempt = <String>{};
