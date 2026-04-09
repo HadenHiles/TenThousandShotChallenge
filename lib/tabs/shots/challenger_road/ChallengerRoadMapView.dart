@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:video_player/video_player.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -721,7 +723,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     }
 
     if (media.mediaType == 'video') {
-      return _buildPreviewMediaPlaceholder(context, icon: Icons.play_circle_fill_rounded, label: 'Video preview');
+      return _VideoFrameScrubber(
+        url: media.url!,
+        placeholderBuilder: (ctx) => _buildPreviewMediaPlaceholder(ctx, icon: Icons.play_circle_fill_rounded, label: 'Video preview'),
+      );
     }
 
     return ClipRRect(
@@ -1670,6 +1675,111 @@ class _LevelUnlockAnimatedBannerState extends State<_LevelUnlockAnimatedBanner> 
     return SlideTransition(
       position: _slide,
       child: FadeTransition(opacity: _fade, child: widget.child),
+    );
+  }
+}
+
+// ── Video frame scrubber (map thumbnail) ─────────────────────────────────────
+
+/// Loads a video silently and cycles through still frames sampled every 10 s,
+/// producing a GIF-like preview without playing the full video at normal speed.
+class _VideoFrameScrubber extends StatefulWidget {
+  final String url;
+  final Widget Function(BuildContext) placeholderBuilder;
+
+  const _VideoFrameScrubber({
+    required this.url,
+    required this.placeholderBuilder,
+  });
+
+  @override
+  State<_VideoFrameScrubber> createState() => _VideoFrameScrubberState();
+}
+
+class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
+  VideoPlayerController? _controller;
+  List<Duration> _frames = [];
+  int _frameIndex = 0;
+  bool _ready = false;
+  bool _error = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVideo();
+  }
+
+  Future<void> _initVideo() async {
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      _controller = controller;
+      await controller.initialize();
+      if (!mounted) return;
+
+      await controller.setVolume(0);
+      await controller.setLooping(false);
+
+      final duration = controller.value.duration;
+      final stepSeconds = 3;
+      final totalSeconds = duration.inSeconds.clamp(0, 600);
+
+      // Build frame list: 0, 10, 20, ... up to (but not past) the end.
+      final raw = <Duration>[];
+      for (int s = 0; s <= totalSeconds; s += stepSeconds) {
+        raw.add(Duration(seconds: s));
+      }
+      // Always include a frame near the end if the last step didn't land there.
+      // Stay at least 2 s from the end to avoid triggering a completion state.
+      if (raw.isEmpty || raw.last < duration) {
+        final nearEnd = duration - const Duration(seconds: 2);
+        raw.add(nearEnd > Duration.zero ? nearEnd : Duration.zero);
+      }
+      // De-dup and sort.
+      _frames = raw.toSet().toList()..sort((a, b) => a.compareTo(b));
+
+      await controller.seekTo(_frames.first);
+      await controller.pause();
+
+      if (!mounted) return;
+      setState(() {
+        _ready = true;
+        _frameIndex = 0;
+      });
+
+      _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+        if (!mounted || !_ready || _frames.isEmpty) return;
+        _frameIndex = (_frameIndex + 1) % _frames.length;
+        _controller?.seekTo(_frames[_frameIndex]).then((_) => _controller?.pause());
+      });
+    } catch (_) {
+      if (mounted) setState(() => _error = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error) return widget.placeholderBuilder(context);
+    if (!_ready || _controller == null) return widget.placeholderBuilder(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: _controller!.value.size.width,
+            height: _controller!.value.size.height,
+            child: VideoPlayer(_controller!),
+          ),
+        ),
+      ),
     );
   }
 }
