@@ -14,6 +14,7 @@ class ShootingSession {
   final int? snapTargetsHit;
   final int? slapTargetsHit;
   final int? backhandTargetsHit;
+  final bool? isChallengerRoad;
   List<Shots>? shots;
   DocumentReference? reference;
 
@@ -29,6 +30,7 @@ class ShootingSession {
     this.snapTargetsHit,
     this.slapTargetsHit,
     this.backhandTargetsHit,
+    this.isChallengerRoad,
     this.shots,
     this.reference,
   });
@@ -52,7 +54,8 @@ class ShootingSession {
         wristTargetsHit = map['wrist_targets_hit'],
         snapTargetsHit = map['snap_targets_hit'],
         slapTargetsHit = map['slap_targets_hit'],
-        backhandTargetsHit = map['backhand_targets_hit'];
+        backhandTargetsHit = map['backhand_targets_hit'],
+        isChallengerRoad = map['is_challenger_road'] as bool?;
 
   Map<String, dynamic> toMap() {
     // List<Map<String, dynamic>> mappedShots = [];
@@ -74,6 +77,7 @@ class ShootingSession {
       'snap_targets_hit': snapTargetsHit,
       'slap_targets_hit': slapTargetsHit,
       'backhand_targets_hit': backhandTargetsHit,
+      if (isChallengerRoad == true) 'is_challenger_road': true,
       // 'shots': mappedShots,
     };
   }

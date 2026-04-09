@@ -9,7 +9,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firebaseMessageService.dart';
 
-Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseFirestore firestore) async {
+Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseFirestore firestore, {bool isChallengerRoad = false}) async {
   // Get the total number of shots and targets hit for the session
   int total = 0;
   int wrist = 0;
@@ -57,6 +57,7 @@ Future<bool> saveShootingSession(List<Shots> shots, FirebaseAuth auth, FirebaseF
     snapTargetsHit: snapTargetsHit,
     slapTargetsHit: slapTargetsHit,
     backhandTargetsHit: backhandTargetsHit,
+    isChallengerRoad: isChallengerRoad ? true : null,
   );
   shootingSession.shots = shots;
 
