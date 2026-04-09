@@ -79,7 +79,7 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> {
-  final ValueNotifier<CommunitySection> _communitySectionNotifier = ValueNotifier(CommunitySection.friends);
+  final ValueNotifier<CommunitySection> _communitySectionNotifier = ValueNotifier(CommunitySection.team);
 
   // Update last_seen in Firestore if not already set to today
   Future<void> updateLastSeenIfNeeded(BuildContext context) async {
@@ -173,7 +173,7 @@ class _NavigationState extends State<Navigation> {
   }
 
   CommunitySection _normalizeCommunitySection(String? rawSection) {
-    return rawSection == CommunitySection.team.name ? CommunitySection.team : CommunitySection.friends;
+    return rawSection == CommunitySection.friends.name ? CommunitySection.friends : CommunitySection.team;
   }
 
   void _onCommunitySectionChanged(CommunitySection section) {
