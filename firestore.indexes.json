@@ -87,6 +87,20 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "challenge_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "challenge_id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "level",
           "order": "ASCENDING"
         },
