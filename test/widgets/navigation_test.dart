@@ -193,54 +193,132 @@ void main() {
       expect(find.byType(Navigation), findsOneWidget);
     });
 
-    // Test different tab indices that are valid
-    // Omit the Explore tab for this test
-    final tabLabels = ['Shots', 'Friends', 'Team', 'Profile'];
-    final tabWidgetFinders = [
-      find.byKey(const Key('shots_tab_body')),
-      find.byKey(const Key('friends_tab_body')),
-      find.byKey(const Key('team_tab_body')),
-      find.byKey(const Key('profile_tab_body')),
-    ];
-    for (int i = 0; i < tabLabels.length; i++) {
-      if (i == 3) continue; // Skip Explore tab for this test
+    // Navigation now has 4 tabs: 0=train(Shots), 1=community(Team/Friends), 2=learn(Explore), 3=me(Profile)
+    // Tab 0 (Train): shows shots_tab_body
+    // Tab 1 (Community): shows team_tab_body by default (community section defaults to team)
+    // Tab 3 (Me): shows profile_tab_body
+    testWidgets('Navigation displays tab 0 (Shots) correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 0));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('shots_tab_body')), findsOneWidget);
+    });
 
-      testWidgets('Navigation displays tab $i (${tabLabels[i]}) correctly', (WidgetTester tester) async {
-        await tester.pumpWidget(createTestNavigationWidget(selectedIndex: i));
-        await tester.pump();
-        await tester.pump();
-        expect(find.byType(Navigation), findsOneWidget);
-        // Check for tab-specific widget
-        expect(tabWidgetFinders[i], findsOneWidget);
-      });
-    }
+    testWidgets('Navigation displays community tab (Team section) correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 1));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      // Community tab defaults to Team section
+      expect(find.byKey(const Key('team_tab_body')), findsOneWidget);
+    });
+
+    testWidgets('Navigation displays tab 3 (Profile) correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestNavigationWidget(selectedIndex: 3));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('profile_tab_body')), findsOneWidget);
+    });
 
     // Test selecting each tab by tabId
-    final tabIds = ['shots', 'friends', 'team', 'profile']; // Omit the 'explore' tab for this test
-    for (int i = 0; i < tabIds.length; i++) {
-      testWidgets('Navigation selects correct tab with tabId (${tabIds[i]})', (WidgetTester tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: MultiProvider(
-              providers: [
-                Provider<TestEnv>.value(value: testEnv),
-                ChangeNotifierProvider<PreferencesStateNotifier>(
-                  create: (_) => PreferencesStateNotifier(),
-                ),
-                Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
-                Provider<FirebaseFirestore>.value(value: fakeFirestore),
-                Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
-              ],
-              child: Navigation(tabId: tabIds[i]),
-            ),
+    // 'shots' and 'train' → shots_tab_body
+    // 'friends' → community tab (team section by default, since communitySection must be passed separately)
+    // 'team' → community tab (team section)
+    // 'profile'/'me' → profile_tab_body
+    testWidgets('Navigation selects correct tab with tabId (shots)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(
+                create: (_) => PreferencesStateNotifier(),
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            child: const Navigation(tabId: 'shots'),
           ),
-        );
-        await tester.pump();
-        await tester.pump();
-        expect(find.byType(Navigation), findsOneWidget);
-        expect(tabWidgetFinders[i], findsOneWidget);
-      });
-    }
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('shots_tab_body')), findsOneWidget);
+    });
+
+    testWidgets('Navigation selects correct tab with tabId (team)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(
+                create: (_) => PreferencesStateNotifier(),
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            child: const Navigation(tabId: 'team'),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('team_tab_body')), findsOneWidget);
+    });
+
+    testWidgets('Navigation selects correct tab with tabId (profile)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(
+                create: (_) => PreferencesStateNotifier(),
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            child: const Navigation(tabId: 'profile'),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('profile_tab_body')), findsOneWidget);
+    });
+
+    testWidgets('Navigation selects friends section with tabId (friends)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiProvider(
+            providers: [
+              Provider<TestEnv>.value(value: testEnv),
+              ChangeNotifierProvider<PreferencesStateNotifier>(
+                create: (_) => PreferencesStateNotifier(),
+              ),
+              Provider<FirebaseAuth>.value(value: mockFirebaseAuth),
+              Provider<FirebaseFirestore>.value(value: fakeFirestore),
+              Provider<NetworkStatusService>.value(value: mockNetworkStatusService),
+            ],
+            // Pass communitySection to ensure Friends section is visible
+            child: const Navigation(tabId: 'friends', communitySection: 'friends'),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(Navigation), findsOneWidget);
+      expect(find.byKey(const Key('friends_tab_body')), findsOneWidget);
+    });
   });
 
   group('NavigationTab Widget Tests', () {

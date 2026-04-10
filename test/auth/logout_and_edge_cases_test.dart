@@ -109,17 +109,20 @@ void main() {
       await tester.enterText(fields.at(1), 'any-password');
       final signInButton = find.widgetWithText(ElevatedButton, 'Sign in');
       await tester.tap(signInButton);
-      // Simulate login
+      // Simulate login - use pump calls instead of pumpAndSettle to avoid timeout
+      // from infinite Firestore streams in the Navigation widget.
       simulateLogin(mockAuth as MockFirebaseAuthWithSignedIn, testAuthNotifier);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
       // After login, immediately navigate to the settings route
       router.go('/settings');
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
       // Try to scroll the settings page to the very bottom to reveal the logout button
       final settingsList = find.byType(Scrollable);
       if (settingsList.evaluate().isNotEmpty) {
         await tester.drag(settingsList.first, const Offset(0, -1000)); // Large offset to ensure bottom
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 200));
       }
       // Try to find and tap the logout button by text label, tapping its nearest tappable ancestor
       final logoutText = find.text('Logout');
@@ -128,10 +131,11 @@ void main() {
       final logoutTappable = find.ancestor(of: logoutText, matching: find.byType(InkWell));
       expect(logoutTappable, findsOneWidget);
       await tester.tap(logoutTappable);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 200));
       // Simulate logout for mock auth and notifier (ensure state is updated before navigation)
       simulateLogout(mockAuth as MockFirebaseAuthWithSignedIn, testAuthNotifier);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
       // Should return to Login screen
       expect(find.byType(Login), findsOneWidget);
     });
