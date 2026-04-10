@@ -281,17 +281,16 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                   ),
-                  // CR achievement badge — only visible for Pro subscribers
-                  if (_subscriptionLevel == 'pro')
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: CrAvatarBadgeStream(
-                        userId: currentUser.uid,
-                        size: 22,
-                        showProFallback: true,
-                      ),
+                  // CR achievement badge overlay
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: CrAvatarBadgeStream(
+                      userId: currentUser.uid,
+                      size: 22,
+                      showProFallback: _subscriptionLevel == 'pro',
                     ),
+                  ),
                 ],
               ),
             ),

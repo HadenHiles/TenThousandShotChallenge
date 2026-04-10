@@ -833,10 +833,11 @@ class _PlayerState extends State<Player> {
     return StreamBuilder<ChallengerRoadUserSummary>(
       stream: ChallengerRoadService().watchUserSummary(widget.uid!),
       builder: (context, snap) {
-        final summary = snap.data;
-        if (summary == null || (summary.totalAttempts == 0 && summary.badges.isEmpty)) {
+        // Show nothing while still loading the first event.
+        if (!snap.hasData && snap.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
+        final summary = snap.data ?? ChallengerRoadUserSummary.empty();
         return _CrPlayerCard(
           userId: widget.uid!,
           summary: summary,
@@ -1144,6 +1145,34 @@ class _CrPlayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final badges = summary.badges.toSet();
+    final bool hasActivity = summary.totalAttempts > 0 || badges.isNotEmpty;
+
+    // No-activity placeholder
+    if (!hasActivity) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: lighten(theme.colorScheme.primary, 0.08),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+          child: Row(
+            children: [
+              Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.35), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'challenger road — no activity yet',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 15,
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.35),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     // Derive the headline based on outcomes.
     final bool roadComplete = badges.contains('cr_the_general') || badges.contains('cr_playoff_mode');
