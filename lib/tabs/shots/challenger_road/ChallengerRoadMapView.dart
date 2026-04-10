@@ -407,6 +407,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     }
 
     _lastData = result;
+
+    // Silently catch up any badges the user earned before they were defined.
+    // Runs in the background — does not block map rendering.
+    if (!widget.isPreviewMode) {
+      unawaited(_service!.awardMissingBadges(widget.userId));
+    }
+
     return result;
   }
 

@@ -1387,6 +1387,20 @@ class ChallengerRoadService {
     });
   }
 
+  /// Silently awards any badges the user has earned but doesn't yet have,
+  /// based purely on their persisted stats (full session history scan).
+  ///
+  /// Safe to call at any time — fully idempotent. Already-earned badges are
+  /// never re-awarded. This is useful after deploying new badge definitions: any
+  /// user who already meets the criteria will receive the badge the next time
+  /// this runs (e.g. when opening the Challenger Road map).
+  ///
+  /// Returns the IDs of badges newly added by this call (empty if nothing changed).
+  Future<List<String>> awardMissingBadges(String userId) async {
+    final summary = await getUserSummary(userId);
+    return _checkAndAwardBadges(userId: userId, summary: summary);
+  }
+
   /// Applies a partial update to the user summary document. If the document
   /// does not exist it will be created (merge: true behaviour via [SetOptions]).
   Future<void> updateUserSummary(String userId, Map<String, dynamic> data) async {
