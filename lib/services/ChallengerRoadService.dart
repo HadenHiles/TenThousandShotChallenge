@@ -110,13 +110,48 @@ class ChallengerRoadBadgeDefinition {
   /// Rarity tier that drives badge colour.
   final ChallengerRoadBadgeTier tier;
 
+  /// Admin-managed display name override stored in Firestore
+  /// (`challenger_road_badges/{id}.display_name`). When non-null, the UI should
+  /// prefer this over [name]. Never affects award logic.
+  final String? displayName;
+
+  /// Admin-managed description override stored in Firestore
+  /// (`challenger_road_badges/{id}.display_description`). When non-null, the UI
+  /// should prefer this over [description]. Never affects award logic.
+  final String? displayDescription;
+
+  /// The name shown to players. Returns [displayName] if the admin has set one,
+  /// otherwise falls back to the code-defined [name].
+  String get effectiveName => displayName ?? name;
+
+  /// The description shown to players. Returns [displayDescription] if the admin
+  /// has set one, otherwise falls back to the code-defined [description].
+  String get effectiveDescription => displayDescription ?? description;
+
   const ChallengerRoadBadgeDefinition({
     required this.id,
     required this.name,
     required this.description,
     required this.category,
     required this.tier,
+    this.displayName,
+    this.displayDescription,
   });
+
+  ChallengerRoadBadgeDefinition copyWith({
+    String? displayName,
+    String? displayDescription,
+  }) {
+    return ChallengerRoadBadgeDefinition(
+      id: id,
+      name: name,
+      description: description,
+      category: category,
+      tier: tier,
+      displayName: displayName ?? this.displayName,
+      displayDescription: displayDescription ?? this.displayDescription,
+    );
+  }
 }
 
 class ChallengerRoadService {
@@ -133,6 +168,11 @@ class ChallengerRoadService {
   /// Root of the Challenger Road levels collection.
   /// Firestore path: challenger_road_levels/{levelId}
   CollectionReference get _levelsRef => _firestore.collection('challenger_road_levels');
+
+  /// Admin-managed badge display overrides.
+  /// Firestore path: challenger_road_badges/{badgeId}
+  /// Fields: display_name (string?), display_description (string?)
+  CollectionReference get _badgeOverridesRef => _firestore.collection('challenger_road_badges');
 
   /// Challenge docs owned by a specific level.
   CollectionReference _challengesRef(String levelDocId) => _levelsRef.doc(levelDocId).collection('challenges');
@@ -602,12 +642,39 @@ class ChallengerRoadService {
     ),
   ];
 
-  /// Returns the full badge catalog. Identical for every user — the catalog is
-  /// static and does not depend on Firestore configuration.
+  /// Returns the full badge catalog with code-defined values only.
+  /// Use [getBadgeCatalogForUser] to include admin-managed display overrides.
   Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalog() async => badgeCatalog;
 
-  /// Returns the profile badge catalog for a user. Delegates to [getBadgeCatalog].
-  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) => getBadgeCatalog();
+  /// Returns the badge catalog with any admin-managed display overrides applied.
+  ///
+  /// Reads `challenger_road_badges/{id}` documents from Firestore. If a doc
+  /// exists for a badge it may supply `display_name` and/or
+  /// `display_description` fields; those override the code-defined copy in the
+  /// UI via [ChallengerRoadBadgeDefinition.effectiveName] and
+  /// [ChallengerRoadBadgeDefinition.effectiveDescription].
+  ///
+  /// Award logic is never affected — it always uses [badgeCatalog] directly.
+  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
+    final overridesSnap = await _badgeOverridesRef.get();
+    if (overridesSnap.docs.isEmpty) return badgeCatalog;
+
+    final overridesByid = <String, Map<String, dynamic>>{
+      for (final doc in overridesSnap.docs) doc.id: doc.data() as Map<String, dynamic>,
+    };
+
+    return badgeCatalog.map((badge) {
+      final overrides = overridesByid[badge.id];
+      if (overrides == null) return badge;
+      final displayName = overrides['display_name'] as String?;
+      final displayDescription = overrides['display_description'] as String?;
+      if (displayName == null && displayDescription == null) return badge;
+      return badge.copyWith(
+        displayName: displayName,
+        displayDescription: displayDescription,
+      );
+    }).toList();
+  }
 
   // ---------------------------------------------------------------------------
   // 1. Global challenge data
