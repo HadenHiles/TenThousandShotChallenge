@@ -820,7 +820,7 @@ class _ProfileState extends State<Profile> {
                                   ),
                               ] else
                                 Text(
-                                  'Pro feature. Unlock to track progress',
+                                  'Pro feature. Unlock to attempt the challenge!',
                                   style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
                                 ),
                             ],
@@ -833,11 +833,17 @@ class _ProfileState extends State<Profile> {
                     if (featured.isNotEmpty && catalog.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          for (final id in featured.take(3)) ...[
-                            _crDashboardBadge(context, byId[id]),
-                            const SizedBox(width: 10),
-                          ],
+                          for (final id in featured.take(3))
+                            _crDashboardBadge(
+                              context,
+                              byId[id],
+                              userId: currentUser.uid,
+                              slotId: id,
+                              summary: summary,
+                              catalog: catalog,
+                            ),
                         ],
                       ),
                     ],
@@ -851,40 +857,83 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _crDashboardBadge(BuildContext context, ChallengerRoadBadgeDefinition? def) {
+  Widget _crDashboardBadge(
+    BuildContext context,
+    ChallengerRoadBadgeDefinition? def, {
+    required String userId,
+    required String slotId,
+    required ChallengerRoadUserSummary summary,
+    required List<ChallengerRoadBadgeDefinition> catalog,
+  }) {
     if (def == null) return const SizedBox.shrink();
     final color = _crProfileBadgeColor(def);
     final icon = _crProfileBadgeIcon(def);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withValues(alpha: 0.18),
-            border: Border.all(color: color, width: 1.5),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+    return GestureDetector(
+      onTap: () => _showProfileBadgeSwapSheet(
+        context,
+        userId: userId,
+        slotId: slotId,
+        currentDef: def,
+        summary: summary,
+        catalog: catalog,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.18),
+              border: Border.all(color: color, width: 1.5),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+            ),
+            child: Icon(icon, color: color, size: 18),
           ),
-          child: Icon(icon, color: color, size: 16),
-        ),
-        const SizedBox(width: 6),
-        SizedBox(
-          width: 68,
-          child: Text(
-            def.effectiveName,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'NovecentoSans',
-              fontSize: 11,
-              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-              height: 1.2,
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 64,
+            child: Text(
+              def.effectiveName,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                height: 1.2,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  void _showProfileBadgeSwapSheet(
+    BuildContext context, {
+    required String userId,
+    required String slotId,
+    required ChallengerRoadBadgeDefinition currentDef,
+    required ChallengerRoadUserSummary summary,
+    required List<ChallengerRoadBadgeDefinition> catalog,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => _ProfileBadgeSwapSheet(
+        userId: userId,
+        slotId: slotId,
+        currentDef: currentDef,
+        summary: summary,
+        catalog: catalog,
+      ),
     );
   }
 }
@@ -909,6 +958,177 @@ class _DashboardCard extends StatelessWidget {
         splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
         highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
         child: child,
+      ),
+    );
+  }
+}
+
+// ── CR badge swap sheet (profile dashboard card) ────────────────────────────
+
+class _ProfileBadgeSwapSheet extends StatefulWidget {
+  const _ProfileBadgeSwapSheet({
+    required this.userId,
+    required this.slotId,
+    required this.currentDef,
+    required this.summary,
+    required this.catalog,
+  });
+
+  final String userId;
+  final String slotId;
+  final ChallengerRoadBadgeDefinition currentDef;
+  final ChallengerRoadUserSummary summary;
+  final List<ChallengerRoadBadgeDefinition> catalog;
+
+  @override
+  State<_ProfileBadgeSwapSheet> createState() => _ProfileBadgeSwapSheetState();
+}
+
+class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
+  bool _saving = false;
+
+  Future<void> _swap(String newBadgeId) async {
+    if (newBadgeId == widget.slotId) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _saving = true);
+    final newFeatured = List<String>.from(widget.summary.featuredBadges);
+    newFeatured.remove(newBadgeId); // pull out if already in another slot
+    final idx = newFeatured.indexOf(widget.slotId);
+    if (idx >= 0) {
+      newFeatured[idx] = newBadgeId;
+    } else {
+      newFeatured.add(newBadgeId);
+    }
+    await ChallengerRoadService().updateFeaturedBadges(widget.userId, newFeatured.take(3).toList());
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final byId = {for (final d in widget.catalog) d.id: d};
+    final earnedIds = widget.summary.badges.toSet();
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.name.compareTo(b.name));
+
+    final currentColor = _crProfileBadgeColor(widget.currentDef);
+    final currentIcon = _crProfileBadgeIcon(widget.currentDef);
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: scheme.onSurface.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: currentColor.withValues(alpha: 0.18),
+                    border: Border.all(color: currentColor, width: 2),
+                    boxShadow: [BoxShadow(color: currentColor.withValues(alpha: 0.3), blurRadius: 6)],
+                  ),
+                  child: Icon(currentIcon, color: currentColor, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.currentDef.effectiveName,
+                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: scheme.onSurface),
+                      ),
+                      Text(
+                        widget.currentDef.effectiveDescription,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.6)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'SWAP WITH',
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.55), letterSpacing: 1.2),
+              ),
+            ),
+          ),
+          if (_saving)
+            const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: CircularProgressIndicator())
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+              child: GridView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: earnedDefs.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.9,
+                ),
+                itemBuilder: (context, i) {
+                  final def = earnedDefs[i];
+                  final color = _crProfileBadgeColor(def);
+                  final icon = _crProfileBadgeIcon(def);
+                  final isAlreadyFeatured = widget.summary.featuredBadges.contains(def.id);
+                  return InkWell(
+                    onTap: () => _swap(def.id),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Opacity(
+                      opacity: isAlreadyFeatured ? 0.45 : 1.0,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: color.withValues(alpha: 0.15),
+                              border: Border.all(color: color, width: 1.5),
+                            ),
+                            child: Icon(icon, color: color, size: 24),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            def.effectiveName,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: scheme.onSurface.withValues(alpha: 0.85), height: 1.2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
       ),
     );
   }
