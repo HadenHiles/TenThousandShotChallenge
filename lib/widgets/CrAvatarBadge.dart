@@ -57,7 +57,7 @@ const _kEpicIds = {
 ///   3. Epic badge                                       → purple, fire
 ///   4. Any level reached (allTimeBestLevel > 0)         → colored, level number
 ///   5. showProFallback = true, no CR activity           → steel, pro star
-_CrBadgeAttrs? resolveCrBadge(
+_CrBadgeAttrs? _resolveCrBadge(
   ChallengerRoadUserSummary summary, {
   bool showProFallback = false,
 }) {
@@ -134,7 +134,7 @@ String _fmtN(int n) {
 /// Small circular badge overlaid on an avatar (bottom-right corner) that
 /// reflects the user's greatest Challenger Road accomplishment.
 ///
-/// Call [resolveCrBadge] to determine whether a badge is warranted before
+/// Call [_resolveCrBadge] to determine whether a badge is warranted before
 /// rendering; this widget renders [SizedBox.shrink] when [summary] yields no
 /// displayable badge.
 class CrAvatarBadge extends StatelessWidget {
@@ -156,7 +156,7 @@ class CrAvatarBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attrs = resolveCrBadge(summary, showProFallback: showProFallback);
+    final attrs = _resolveCrBadge(summary, showProFallback: showProFallback);
     if (attrs == null) return const SizedBox.shrink();
 
     final innerSize = size - 4.0; // subtract 2px border on each side
