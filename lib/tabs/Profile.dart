@@ -776,46 +776,115 @@ class _ProfileState extends State<Profile> {
     final isPro = _subscriptionLevel == 'pro';
     return _DashboardCard(
       onTap: () => context.push(AppRoutePaths.profileChallengerRoad),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-              child: Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Challenger Road'.toUpperCase(), style: theme.textTheme.headlineSmall),
-                  const SizedBox(height: 4),
-                  if (isPro)
-                    StreamBuilder<ChallengerRoadUserSummary>(
-                      stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
-                      builder: (context, snap) {
-                        final summary = snap.data ?? ChallengerRoadUserSummary.empty();
-                        final bestLabel = summary.allTimeBestLevelShots == null ? 'Best: Level ${summary.allTimeBestLevel}' : 'Best: Level ${summary.allTimeBestLevel} in ${summary.allTimeBestLevelShots} shots';
-                        return Text(
-                          '$bestLabel  ·  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
-                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
-                        );
-                      },
-                    )
-                  else
-                    Text(
-                      'Pro feature. Unlock to track progress',
-                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
+      child: StreamBuilder<ChallengerRoadUserSummary>(
+        stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
+        builder: (context, snap) {
+          final summary = snap.data ?? ChallengerRoadUserSummary.empty();
+          final featured = summary.featuredBadges;
+
+          return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+            future: ChallengerRoadService().getBadgeCatalog(),
+            builder: (context, catSnap) {
+              final catalog = catSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
+              final byId = {for (final d in catalog) d.id: d};
+
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary, size: 24),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Challenger Road'.toUpperCase(), style: theme.textTheme.headlineSmall),
+                              const SizedBox(height: 4),
+                              if (isPro) ...[
+                                if (summary.allTimeBestLevel > 0)
+                                  Text(
+                                    'Best: Level ${summary.allTimeBestLevel}${summary.allTimeBestLevelShots != null ? ' in ${summary.allTimeBestLevelShots} shots' : ''}  ·  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
+                                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
+                                  )
+                                else
+                                  Text(
+                                    'No level completed yet',
+                                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                  ),
+                              ] else
+                                Text(
+                                  'Pro feature. Unlock to track progress',
+                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
+                      ],
                     ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
-          ],
-        ),
+                    // Featured badges row
+                    if (featured.isNotEmpty && catalog.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final id in featured.take(3)) ...[
+                            _crDashboardBadge(context, byId[id]),
+                            const SizedBox(width: 10),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
+    );
+  }
+
+  Widget _crDashboardBadge(BuildContext context, ChallengerRoadBadgeDefinition? def) {
+    if (def == null) return const SizedBox.shrink();
+    final color = _crProfileBadgeColor(def);
+    final icon = _crProfileBadgeIcon(def);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.18),
+            border: Border.all(color: color, width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: 68,
+          child: Text(
+            def.effectiveName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+              height: 1.2,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -842,5 +911,75 @@ class _DashboardCard extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+// ── CR badge color/icon helpers (profile dashboard card) ────────────────────
+
+Color _crProfileBadgeColor(ChallengerRoadBadgeDefinition def) {
+  switch (def.tier) {
+    case ChallengerRoadBadgeTier.legendary:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeTier.epic:
+      return const Color(0xFFAB47BC);
+    case ChallengerRoadBadgeTier.hidden:
+      return const Color(0xFF78909C);
+    default:
+      break;
+  }
+  switch (def.category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return const Color(0xFF42A5F5);
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return const Color(0xFF26C6DA);
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return const Color(0xFF66BB6A);
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return const Color(0xFF8D6E63);
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return const Color(0xFF26A69A);
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return const Color(0xFFFF7043);
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return const Color(0xFFEF5350);
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return const Color(0xFF29B6F6);
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeCategory.chirpy:
+      return const Color(0xFF78909C);
+  }
+}
+
+IconData _crProfileBadgeIcon(ChallengerRoadBadgeDefinition def) {
+  switch (def.category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return Icons.route_rounded;
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return Icons.bolt_rounded;
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return Icons.trending_up_rounded;
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return Icons.shield_rounded;
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return Icons.stairs_rounded;
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return Icons.workspace_premium_rounded;
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return Icons.gps_fixed_rounded;
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return Icons.local_fire_department_rounded;
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return Icons.emoji_events_rounded;
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return Icons.repeat_rounded;
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return Icons.military_tech_rounded;
+    case ChallengerRoadBadgeCategory.chirpy:
+      return Icons.sports_hockey_rounded;
   }
 }
