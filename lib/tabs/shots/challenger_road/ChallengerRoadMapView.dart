@@ -1700,15 +1700,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                         service: _service!,
                       ),
                     ),
-                  // ── Floating badges button ───────────────────────────
-                  Positioned(
-                    bottom: 16 + widget.mapBottomInset,
-                    left: 16,
-                    child: _BadgesFloatingButton(
-                      userId: widget.userId,
-                      service: _service!,
-                    ),
-                  ),
                 ],
               ),
             ),
