@@ -1446,7 +1446,7 @@ class _CrPlayerCard extends StatelessWidget {
                   Icon(Icons.military_tech_rounded, color: Theme.of(context).primaryColor, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    "${playerName}'s badges".toUpperCase(),
+                    "$playerName's badges".toUpperCase(),
                     style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ],
