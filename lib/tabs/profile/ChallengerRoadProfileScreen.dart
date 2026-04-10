@@ -105,6 +105,7 @@ class _ChallengerRoadProfileScreenState extends State<ChallengerRoadProfileScree
                 child: ChallengerRoadProfileSection(
                   userId: user.uid,
                   isPro: _subscriptionLevel == 'pro',
+                  isEditable: true,
                   onGoProTap: () async {
                     await presentPaywallIfNeeded(context);
                   },

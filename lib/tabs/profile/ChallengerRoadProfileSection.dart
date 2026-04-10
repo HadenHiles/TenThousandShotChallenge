@@ -14,11 +14,16 @@ class ChallengerRoadProfileSection extends StatelessWidget {
     super.key,
     required this.userId,
     required this.isPro,
+    this.isEditable = false,
     this.onGoProTap,
   });
 
   final String userId;
   final bool isPro;
+
+  /// When true, shows a "PLAYER CARD" featured-badge showcase with an edit
+  /// button — only meaningful when this is the signed-in user's own profile.
+  final bool isEditable;
   final VoidCallback? onGoProTap;
 
   @override
@@ -55,19 +60,8 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           // Stats row
           _StatsRow(summary: summary),
           const SizedBox(height: 20),
-          // Badge bar
-          Text(
-            'BADGES',
-            style: TextStyle(
-              fontFamily: 'NovecentoSans',
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Badge catalog powers both the featured showcase and the full grid.
           FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            // Badge catalog is global — same for every user.
             future: ChallengerRoadService().getBadgeCatalog(),
             builder: (context, badgeSnap) {
               final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
@@ -78,10 +72,35 @@ class ChallengerRoadProfileSection extends StatelessWidget {
                 );
               }
 
-              return _BadgeWrapGrid(
-                earnedBadges: summary.badges,
-                summary: summary,
-                badgeDefs: badgeDefs,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Player card showcase (own profile with isEditable)
+                  if (isEditable && summary.badges.isNotEmpty) ...[
+                    _FeaturedShowcase(
+                      userId: userId,
+                      summary: summary,
+                      badgeDefs: badgeDefs,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  // Badge bar
+                  Text(
+                    'BADGES',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _BadgeWrapGrid(
+                    earnedBadges: summary.badges,
+                    summary: summary,
+                    badgeDefs: badgeDefs,
+                  ),
+                ],
               );
             },
           ),
@@ -621,4 +640,437 @@ class _BadgeChip extends StatelessWidget {
 
 String _titleFromBadgeId(String id) {
   return id.replaceAll('cr_', '').split('_').where((p) => p.isNotEmpty).map((part) => '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
+}
+
+// ── Badge color/icon helpers (used by showcase + picker) ────────────────────
+
+Color _crBadgeColor(ChallengerRoadBadgeDefinition def) {
+  switch (def.tier) {
+    case ChallengerRoadBadgeTier.legendary:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeTier.epic:
+      return const Color(0xFFAB47BC);
+    case ChallengerRoadBadgeTier.hidden:
+      return const Color(0xFF78909C);
+    default:
+      break;
+  }
+  switch (def.category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return const Color(0xFF42A5F5);
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return const Color(0xFF26C6DA);
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return const Color(0xFF66BB6A);
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return const Color(0xFF8D6E63);
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return const Color(0xFF26A69A);
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return const Color(0xFFFF7043);
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return const Color(0xFFEF5350);
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return const Color(0xFF29B6F6);
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeCategory.chirpy:
+      return const Color(0xFF78909C);
+  }
+}
+
+IconData _crBadgeIcon(ChallengerRoadBadgeDefinition def) {
+  switch (def.category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return Icons.route_rounded;
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return Icons.bolt_rounded;
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return Icons.trending_up_rounded;
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return Icons.shield_rounded;
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return Icons.stairs_rounded;
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return Icons.workspace_premium_rounded;
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return Icons.gps_fixed_rounded;
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return Icons.local_fire_department_rounded;
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return Icons.emoji_events_rounded;
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return Icons.repeat_rounded;
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return Icons.military_tech_rounded;
+    case ChallengerRoadBadgeCategory.chirpy:
+      return Icons.sports_hockey_rounded;
+  }
+}
+
+// ── Featured Badges Showcase ─────────────────────────────────────────────────
+
+class _FeaturedShowcase extends StatelessWidget {
+  const _FeaturedShowcase({
+    required this.userId,
+    required this.summary,
+    required this.badgeDefs,
+  });
+
+  final String userId;
+  final ChallengerRoadUserSummary summary;
+  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+
+  @override
+  Widget build(BuildContext context) {
+    final byId = {for (final d in badgeDefs) d.id: d};
+    final featured = summary.featuredBadges;
+    final primary = Theme.of(context).primaryColor;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              'PLAYER CARD',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: scheme.onSurface.withValues(alpha: 0.7),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: () => _showPicker(context),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Text(
+                  'EDIT',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: primary,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (featured.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              'Tap EDIT to choose up to 3 badges to feature on your player card.',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 13,
+                color: scheme.onSurface.withValues(alpha: 0.55),
+              ),
+            ),
+          )
+        else
+          Row(
+            children: [
+              for (final id in featured.take(3)) ...[
+                _showcaseSlot(context, byId[id]),
+                const SizedBox(width: 12),
+              ],
+              for (int i = featured.length; i < 3; i++) ...[
+                _emptySlot(context),
+                const SizedBox(width: 12),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _showcaseSlot(BuildContext context, ChallengerRoadBadgeDefinition? def) {
+    if (def == null) return _emptySlot(context);
+    final color = _crBadgeColor(def);
+    final icon = _crBadgeIcon(def);
+    return Column(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.18),
+            border: Border.all(color: color, width: 2),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 6)],
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: 64,
+          child: Text(
+            def.effectiveName,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+              height: 1.2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _emptySlot(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Icon(
+        Icons.add_rounded,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+        size: 22,
+      ),
+    );
+  }
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => _FeaturedBadgesPickerSheet(
+        userId: userId,
+        summary: summary,
+        badgeDefs: badgeDefs,
+      ),
+    );
+  }
+}
+
+// ── Featured Badges Picker Sheet ─────────────────────────────────────────────
+
+class _FeaturedBadgesPickerSheet extends StatefulWidget {
+  const _FeaturedBadgesPickerSheet({
+    required this.userId,
+    required this.summary,
+    required this.badgeDefs,
+  });
+
+  final String userId;
+  final ChallengerRoadUserSummary summary;
+  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+
+  @override
+  State<_FeaturedBadgesPickerSheet> createState() => _FeaturedBadgesPickerSheetState();
+}
+
+class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> {
+  late Set<String> _selected;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = Set<String>.from(widget.summary.featuredBadges);
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    await ChallengerRoadService().updateFeaturedBadges(widget.userId, _selected.toList());
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  void _toggle(String id) {
+    setState(() {
+      if (_selected.contains(id)) {
+        _selected.remove(id);
+      } else if (_selected.length < 3) {
+        _selected.add(id);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    final scheme = Theme.of(context).colorScheme;
+    final earnedIds = widget.summary.badges.toSet();
+    final byId = {for (final d in widget.badgeDefs) d.id: d};
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList()..sort((a, b) => a.name.compareTo(b.name));
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: scheme.onSurface.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'CHOOSE FEATURED BADGES',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 20,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    'Select up to 3 to show on your player card.',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 13,
+                      color: scheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.45,
+              ),
+              child: GridView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                itemCount: earnedDefs.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.9,
+                ),
+                itemBuilder: (context, i) {
+                  final def = earnedDefs[i];
+                  final color = _crBadgeColor(def);
+                  final icon = _crBadgeIcon(def);
+                  final isSelected = _selected.contains(def.id);
+                  final isDisabled = !isSelected && _selected.length >= 3;
+                  return InkWell(
+                    onTap: isDisabled ? null : () => _toggle(def.id),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Opacity(
+                      opacity: isDisabled ? 0.35 : 1.0,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: color.withValues(alpha: isSelected ? 0.3 : 0.15),
+                                    border: Border.all(
+                                      color: isSelected ? primary : color,
+                                      width: isSelected ? 2.5 : 1.5,
+                                    ),
+                                  ),
+                                  child: Icon(icon, color: color, size: 24),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  def.effectiveName,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 10,
+                                    color: scheme.onSurface.withValues(alpha: 0.85),
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Positioned(
+                              top: 0,
+                              right: 8,
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: primary,
+                                ),
+                                child: const Icon(Icons.check_rounded, color: Colors.white, size: 12),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          'SAVE  (${_selected.length}/3)',
+                          style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 17),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
