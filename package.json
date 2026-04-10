@@ -8,7 +8,11 @@
         "seed:challenger-road": "node scripts/seed_challenger_road.js",
         "unseed:challenger-road": "node scripts/unseed_challenger_road.js",
         "seed:challenger-road:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/seed_challenger_road.js",
-        "unseed:challenger-road:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road.js"
+        "unseed:challenger-road:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road.js",
+        "seed:badges": "node scripts/seed_challenger_road_badges.js",
+        "unseed:badges": "node scripts/unseed_challenger_road_badges.js",
+        "seed:badges:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/seed_challenger_road_badges.js",
+        "unseed:badges:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road_badges.js"
     },
     "dependencies": {
         "firebase-admin": "^13.4.0",
