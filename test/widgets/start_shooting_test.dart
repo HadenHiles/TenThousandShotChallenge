@@ -8,14 +8,13 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
-import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/main.dart' as main_globals;
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import '../mock_firebase.dart';
 import 'shots_test.mocks.dart';
 
@@ -43,6 +42,7 @@ void main() {
         null,
       );
       await setupFirebaseAuthMocks();
+      NetworkStatusService.isTestingOverride = true;
     });
 
     setUp(() async {
