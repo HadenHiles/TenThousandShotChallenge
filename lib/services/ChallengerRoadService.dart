@@ -1407,6 +1407,14 @@ class ChallengerRoadService {
     await _userSummaryRef(userId).set(data, SetOptions(merge: true));
   }
 
+  /// Persists the user's chosen featured badges (max 3) to their summary doc.
+  Future<void> updateFeaturedBadges(String userId, List<String> badgeIds) async {
+    await _userSummaryRef(userId).set(
+      {'featured_badges': badgeIds.take(3).toList()},
+      SetOptions(merge: true),
+    );
+  }
+
   Map<String, dynamic> _buildBestAttemptSummaryUpdate({
     required ChallengerRoadUserSummary summary,
     required int completedLevel,

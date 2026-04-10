@@ -21,6 +21,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -280,6 +281,17 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                   ),
+                  // CR achievement badge — only visible for Pro subscribers
+                  if (_subscriptionLevel == 'pro')
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: CrAvatarBadgeStream(
+                        userId: currentUser.uid,
+                        size: 22,
+                        showProFallback: true,
+                      ),
+                    ),
                 ],
               ),
             ),
