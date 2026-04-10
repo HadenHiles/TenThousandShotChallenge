@@ -149,7 +149,10 @@ void main() {
       await tester.tap(submitButton);
       (auth as MockFirebaseAuthWithSignedIn).signedIn = true;
       testAuthNotifier.notifyListeners();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      // Use pump-based polling instead of pumpAndSettle to avoid timeout from
+      // infinite Firestore streams in the Navigation widget.
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
       await pumpUntilFound(tester, find.byType(Navigation), timeout: const Duration(seconds: 5));
       expect(find.byType(Navigation), findsOneWidget);
     });

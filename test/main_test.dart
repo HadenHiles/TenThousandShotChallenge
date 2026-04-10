@@ -23,6 +23,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'main_test.mocks.dart';
+import 'mock_firebase.dart';
 
 // Mock classes
 @GenerateMocks([
@@ -65,6 +66,9 @@ void main() {
   NetworkStatusService.isTestingOverride = true;
   TestWidgetsFlutterBinding.ensureInitialized();
   late FirebaseFirestore firestore;
+  setUpAll(() async {
+    await setupFirebaseAuthMocks();
+  });
   setUp(() async {
     if (isIntegrationTest) {
       await Firebase.initializeApp();
@@ -252,7 +256,7 @@ void main() {
     );
     await tester.pump(); // allow first frame
     await tester.pump(const Duration(milliseconds: 100)); // allow post frame callback
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300)); // let streams start
     expect(find.byType(MaterialApp), findsOneWidget);
     // Should show Navigation widget if user is logged in and introShown is true
     expect(find.byType(Navigation), findsOneWidget);
