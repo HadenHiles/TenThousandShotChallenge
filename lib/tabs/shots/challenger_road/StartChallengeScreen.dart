@@ -198,6 +198,11 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     final service = ChallengerRoadService(firestore: firestore);
 
+    // Snapshot badges before this save flow so we can compute all newly earned
+    // badges after session save + milestone + level advancement.
+    final beforeSummary = await service.getUserSummary(widget.userId);
+    final beforeBadgeIds = beforeSummary.badges.toSet();
+
     // A session is passed when any single try met or exceeded the goal.
     final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
 
@@ -216,19 +221,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
     try {
       // Save to ChallengerRoad sub-collection — this is the critical write.
-      final newBadges = await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
-
-      // Badge celebration — shown before the milestone / result screens so it
-      // feels like a special moment immediately after the session.
-      if (newBadges.isNotEmpty && mounted) {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            fullscreenDialog: true,
-            builder: (_) => ChallengerRoadBadgeAwardScreen(badges: newBadges),
-          ),
-        );
-        if (!mounted) return;
-      }
+      await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
 
       // Save to the global shooting session so the main iteration counter
       // updates.  This is best-effort: a missing index or network hiccup
@@ -314,6 +307,25 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         }
       }
 
+      // Badge celebration — aggregate everything earned in this flow (session,
+      // milestone, and level advancement) and show once.
+      final afterSummary = await service.getUserSummary(widget.userId);
+      final newlyUnlockedIds = afterSummary.badges.where((id) => !beforeBadgeIds.contains(id)).toSet();
+      if (newlyUnlockedIds.isNotEmpty && mounted) {
+        final catalog = await service.getBadgeCatalogForUser(widget.userId);
+        final byId = {for (final def in catalog) def.id: def};
+        final newBadges = newlyUnlockedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList();
+
+        if (newBadges.isNotEmpty) {
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (_) => ChallengerRoadBadgeAwardScreen(badges: newBadges),
+            ),
+          );
+          if (!mounted) return;
+        }
+      }
       // Close the panel, push the result screen above navigation, then clear
       // the active challenge once the user dismisses the result screen.
       sessionPanelController.close();
