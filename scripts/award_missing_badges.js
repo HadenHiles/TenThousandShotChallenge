@@ -67,7 +67,6 @@ const VALID_BADGE_IDS = new Set([
     'cr_breakaway',
     'cr_freight_train',
     'cr_clean_sweep',
-    'cr_barnburner_run',
     'cr_lights_out',
     'cr_battle_tested',
     'cr_game_7',
@@ -88,7 +87,6 @@ const VALID_BADGE_IDS = new Set([
     'cr_ferda',
     'cr_career_year',
     'cr_skip_the_tryout',
-    'cr_greasy_but_goes_in',
 ]);
 
 async function main() {
