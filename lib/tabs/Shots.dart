@@ -148,7 +148,7 @@ class _ShotsState extends State<Shots> {
     );
   }
 
-  bool _achievementsCollapsed = false;
+  bool _achievementsCollapsed = true;
 
   Future<void> _openChallengerRoad() async {
     if (_showChallengerRoad) return;
@@ -453,88 +453,64 @@ class _ShotsState extends State<Shots> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accent.withValues(alpha: 0.14),
-                      border: Border.all(color: accent.withValues(alpha: 0.75), width: 1.5),
-                    ),
-                    child: Icon(
-                      Icons.route_rounded,
-                      color: accent,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Challenger Road',
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 24,
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isPro ? 'Can you make it to the end of the road?' : 'Think you can complete every challenge?',
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 13,
-                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.68),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.14),
+                  border: Border.all(color: accent.withValues(alpha: 0.75), width: 1.5),
+                ),
+                child: Icon(
+                  Icons.route_rounded,
+                  color: accent,
+                  size: 25,
+                ),
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      color: accent.withValues(alpha: 0.15),
-                    ),
-                    child: Text(
-                      isPro ? 'PRO MEMBER' : 'LEVEL 1 FREE',
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Challenger Road',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
-                        fontSize: 12,
+                        fontSize: 24,
                         color: theme.colorScheme.onPrimary,
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      color: accent,
-                    ),
-                    child: Text(
-                      isPro ? 'CONTINUE' : 'START',
-                      style: const TextStyle(
+                    const SizedBox(height: 2),
+                    Text(
+                      isPro ? 'Can you make it to the end of the road?' : 'Think you can complete every challenge?',
+                      style: TextStyle(
                         fontFamily: 'NovecentoSans',
-                        fontSize: 14,
-                        color: Colors.white,
+                        fontSize: 13,
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.68),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: accent,
+                ),
+                child: Text(
+                  isPro ? 'CONTINUE' : 'START',
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 14,
+                    color: Colors.white,
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -615,16 +591,9 @@ class _ShotsState extends State<Shots> {
             crossFadeState: _achievementsCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
             firstChild: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Tap to see your weekly shooting targets.',
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
+              child: WeeklyAchievementsWidget(
+                showResetCountdown: true,
+                showOnlyResetCountdown: true,
               ),
             ),
             secondChild: Padding(
