@@ -20,6 +20,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 
 const TEAM_HEADER_HEIGHT = 65.0;
@@ -542,14 +543,19 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           Text("Tap + to create a team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 15.0),
-            child: Ink(
-                decoration: ShapeDecoration(color: Theme.of(context).cardTheme.color, shape: const CircleBorder()),
-                child: IconButton(
-                    iconSize: 40,
-                    icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
-                    onPressed: () {
-                      context.push(AppRoutePaths.createTeam);
-                    })),
+            child: Container(
+              decoration: ShapeDecoration(
+                color: Theme.of(context).cardTheme.color,
+                shape: const CircleBorder(),
+              ),
+              child: IconButton(
+                iconSize: 40,
+                icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
+                onPressed: () {
+                  context.push(AppRoutePaths.createTeam);
+                },
+              ),
+            ),
           ),
           const Divider(height: 30),
           Text("Or join an existing team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
@@ -815,16 +821,26 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            CircleAvatar(
-              radius: avatarRadius,
-              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              backgroundImage: avatarImage,
-              child: (avatarImage == null)
-                  ? Text(
-                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
-                    )
-                  : null,
+            UserAvatarCrPopover(
+              userId: plyr.profile?.reference?.id ?? '',
+              menuColor: Theme.of(context).colorScheme.primary,
+              onViewProfile: isDeletedUser || (plyr.profile?.reference?.id ?? '').isEmpty
+                  ? null
+                  : () {
+                      Feedback.forTap(context);
+                      context.push(AppRoutePaths.playerPathFor(plyr.profile?.reference?.id ?? ''));
+                    },
+              child: CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                backgroundImage: avatarImage,
+                child: (avatarImage == null)
+                    ? Text(
+                        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
+                      )
+                    : null,
+              ),
             ),
             Positioned(
               bottom: -4,

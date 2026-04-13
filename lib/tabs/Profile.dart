@@ -22,6 +22,7 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -35,8 +36,6 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-
-  final GlobalKey _avatarMenuKey = GlobalKey();
   String _subscriptionLevel = 'free';
 
   String? _selectedIterationId;
@@ -216,67 +215,40 @@ class _ProfileState extends State<Profile> {
               margin: const EdgeInsets.only(right: 12),
               child: Stack(
                 children: [
-                  PopupMenuButton(
-                    key: _avatarMenuKey,
-                    color: Theme.of(context).colorScheme.primary,
-                    iconSize: 40,
-                    icon: Container(),
-                    itemBuilder: (_) => <PopupMenuItem<String>>[
-                      PopupMenuItem<String>(
-                        value: 'edit',
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Change Avatar'.toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary)),
-                            Icon(Icons.edit, color: Theme.of(context).colorScheme.onPrimary),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'qr_code',
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Show QR Code'.toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary)),
-                            Icon(Icons.qr_code_2_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        context.push(AppRoutePaths.editProfile);
-                      } else if (value == 'qr_code') {
-                        showQRCode(context, currentUser);
-                      }
-                    },
-                  ),
                   SizedBox(
                     width: 60,
                     height: 60,
-                    child: GestureDetector(
-                      onLongPress: () {
-                        Feedback.forLongPress(context);
+                    child: UserAvatarCrPopover(
+                      userId: currentUser.uid,
+                      menuColor: Theme.of(context).colorScheme.primary,
+                      showProFallback: _subscriptionLevel == 'pro',
+                      onEditAvatar: () {
+                        Feedback.forTap(context);
                         context.push(AppRoutePaths.editProfile);
                       },
-                      onTap: () {
+                      onShowQrCode: () {
                         Feedback.forTap(context);
-                        dynamic state = _avatarMenuKey.currentState;
-                        state.showButtonMenu();
+                        showQRCode(context, currentUser);
                       },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(60),
-                        child: StreamBuilder<DocumentSnapshot>(
-                          stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return UserAvatar(user: UserProfile.fromSnapshot(snapshot.data!), backgroundColor: Colors.transparent);
-                            }
-                            return UserAvatar(
-                              user: UserProfile(currentUser.displayName, currentUser.email, currentUser.photoURL, true, true, null, ''),
-                              backgroundColor: Colors.transparent,
-                            );
-                          },
+                      child: GestureDetector(
+                        onLongPress: () {
+                          Feedback.forLongPress(context);
+                          context.push(AppRoutePaths.editProfile);
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(60),
+                          child: StreamBuilder<DocumentSnapshot>(
+                            stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return UserAvatar(user: UserProfile.fromSnapshot(snapshot.data!), backgroundColor: Colors.transparent);
+                              }
+                              return UserAvatar(
+                                user: UserProfile(currentUser.displayName, currentUser.email, currentUser.photoURL, true, true, null, ''),
+                                backgroundColor: Colors.transparent,
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

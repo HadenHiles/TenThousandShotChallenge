@@ -49,6 +49,151 @@ const _kEpicIds = {
   'cr_earned_a_salary',
 };
 
+class CrProfileAccomplishment {
+  final Color color;
+  final IconData? icon;
+  final String? label;
+  final String headline;
+  final String? subtitle;
+
+  const CrProfileAccomplishment({
+    required this.color,
+    this.icon,
+    this.label,
+    required this.headline,
+    this.subtitle,
+  }) : assert(icon != null || label != null, 'icon or label required');
+}
+
+int _badgeTierRank(ChallengerRoadBadgeTier tier) {
+  switch (tier) {
+    case ChallengerRoadBadgeTier.legendary:
+      return 6;
+    case ChallengerRoadBadgeTier.epic:
+      return 5;
+    case ChallengerRoadBadgeTier.hidden:
+      return 4;
+    case ChallengerRoadBadgeTier.rare:
+      return 3;
+    case ChallengerRoadBadgeTier.uncommon:
+      return 2;
+    case ChallengerRoadBadgeTier.common:
+      return 1;
+  }
+}
+
+IconData _badgeCategoryIcon(ChallengerRoadBadgeCategory category) {
+  switch (category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return Icons.route_rounded;
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return Icons.bolt_rounded;
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return Icons.trending_up_rounded;
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return Icons.shield_rounded;
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return Icons.stairs_rounded;
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return Icons.workspace_premium_rounded;
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return Icons.gps_fixed_rounded;
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return Icons.local_fire_department_rounded;
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return Icons.emoji_events_rounded;
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return Icons.repeat_rounded;
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return Icons.military_tech_rounded;
+    case ChallengerRoadBadgeCategory.chirpy:
+      return Icons.sports_hockey_rounded;
+  }
+}
+
+Color _tierColor(ChallengerRoadBadgeTier tier) {
+  switch (tier) {
+    case ChallengerRoadBadgeTier.legendary:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeTier.epic:
+      return const Color(0xFFAB47BC);
+    case ChallengerRoadBadgeTier.rare:
+      return const Color(0xFF42A5F5);
+    case ChallengerRoadBadgeTier.uncommon:
+      return const Color(0xFF66BB6A);
+    case ChallengerRoadBadgeTier.hidden:
+      return const Color(0xFF78909C);
+    case ChallengerRoadBadgeTier.common:
+      return const Color(0xFF90A4AE);
+  }
+}
+
+CrProfileAccomplishment? resolveCrProfileAccomplishment(
+  ChallengerRoadUserSummary summary, {
+  bool showProFallback = false,
+}) {
+  final badges = summary.badges.toSet();
+
+  if (badges.intersection(_kRoadCompleteIds).isNotEmpty) {
+    final shots = summary.allTimeBestLevelShots;
+    final fast = shots != null && shots < 10000;
+    final shotCopy = shots == null ? null : '${_fmtN(shots)} shots';
+    return CrProfileAccomplishment(
+      color: const Color(0xFFFFD700),
+      icon: fast ? Icons.bolt_rounded : Icons.check_circle_rounded,
+      headline: fast ? 'Road Complete (Sub-10k)' : 'Road Complete',
+      subtitle: shotCopy == null ? 'Completed the full Challenger Road' : 'Completed the full Challenger Road in $shotCopy',
+    );
+  }
+
+  final badgeById = {
+    for (final def in ChallengerRoadService.badgeCatalog) def.id: def,
+  };
+  ChallengerRoadBadgeDefinition? bestBadge;
+  for (final id in badges) {
+    final def = badgeById[id];
+    if (def == null) continue;
+    if (bestBadge == null || _badgeTierRank(def.tier) > _badgeTierRank(bestBadge.tier)) {
+      bestBadge = def;
+    }
+  }
+
+  if (bestBadge != null) {
+    return CrProfileAccomplishment(
+      color: _tierColor(bestBadge.tier),
+      icon: _badgeCategoryIcon(bestBadge.category),
+      headline: bestBadge.name,
+      subtitle: bestBadge.description,
+    );
+  }
+
+  if (summary.allTimeBestLevel > 0) {
+    final lvl = summary.allTimeBestLevel;
+    final color = lvl >= 10
+        ? const Color(0xFFAB47BC)
+        : lvl >= 5
+            ? const Color(0xFF26A69A)
+            : const Color(0xFF42A5F5);
+    return CrProfileAccomplishment(
+      color: color,
+      label: '$lvl',
+      headline: 'Best Level: $lvl',
+      subtitle: 'Best Challenger Road progression so far',
+    );
+  }
+
+  if (showProFallback) {
+    return const CrProfileAccomplishment(
+      color: Color(0xFF78909C),
+      icon: Icons.workspace_premium_rounded,
+      headline: 'Pro Subscriber',
+      subtitle: 'No Challenger Road milestone yet',
+    );
+  }
+
+  return null;
+}
+
 /// Resolves which badge to show for [summary], or null if nothing useful.
 ///
 /// Priority:
