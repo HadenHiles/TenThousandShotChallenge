@@ -78,8 +78,8 @@ const BADGES = [
     { id: 'cr_ice_time_earned', name: 'Ice Time Earned', description: 'Level 5 cleared.', category: 'levelAdvancement', tier: 'rare' },
     { id: 'cr_team_captain', name: 'Team Captain', description: 'Level 10 cleared.', category: 'levelAdvancement', tier: 'epic' },
     { id: 'cr_the_climb', name: 'The Climb', description: 'New personal best level reached.', category: 'levelAdvancement', tier: 'common' },
-    { id: 'cr_playoff_mode', name: 'Playoff Mode', description: 'Reached the highest level on the Challenger Road.', category: 'levelAdvancement', tier: 'legendary' },
-    { id: 'cr_the_general', name: 'The General', description: 'Every challenge, every level — all of them.', category: 'levelAdvancement', tier: 'legendary' },
+    { id: 'cr_playoff_mode', name: 'Playoff Mode', description: 'Reached the current highest active Challenger Road level.', category: 'levelAdvancement', tier: 'legendary' },
+    { id: 'cr_the_general', name: 'The General', description: 'Cleared every challenge at the current highest active level.', category: 'levelAdvancement', tier: 'legendary' },
 
     // ── CR SHOT MILESTONES ────────────────────────────────────────────────────
     { id: 'cr_first_bucket', name: 'First Bucket', description: '100 Challenger Road shots.', category: 'crShotMilestones', tier: 'common' },
@@ -115,9 +115,9 @@ const BADGES = [
     { id: 'cr_all_time_great', name: 'All-Time Great', description: '100 total challenge passes across all attempts.', category: 'multiAttemptCareer', tier: 'legendary' },
 
     // ── ELITE / ENDGAME ───────────────────────────────────────────────────────
-    { id: 'cr_hall_of_famer', name: 'Hall of Famer', description: 'Completed the full Challenger Road in a single attempt.', category: 'eliteEndgame', tier: 'legendary' },
-    { id: 'cr_the_machine', name: 'The Machine', description: '80%+ average accuracy across 3 complete attempts.', category: 'eliteEndgame', tier: 'legendary' },
-    { id: 'cr_hockey_god', name: 'Hockey God', description: 'Completed the full road with zero failed sessions.', category: 'eliteEndgame', tier: 'hidden' },
+    { id: 'cr_hall_of_famer', name: 'Hall of Famer', description: 'Completed every active Challenger Road level in one attempt.', category: 'eliteEndgame', tier: 'legendary' },
+    { id: 'cr_the_machine', name: 'The Machine', description: 'Completed 3+ attempts with 80%+ average accuracy in each completed attempt.', category: 'eliteEndgame', tier: 'legendary' },
+    { id: 'cr_hockey_god', name: 'Hockey God', description: 'Completed every active level in one attempt with zero failed sessions.', category: 'eliteEndgame', tier: 'hidden' },
 
     // ── CHIRPY / PERSONALITY ──────────────────────────────────────────────────
     { id: 'cr_bender', name: 'Bender', description: 'Started a new attempt at a lower level than your previous best.', category: 'chirpy', tier: 'common' },
@@ -125,7 +125,7 @@ const BADGES = [
     { id: 'cr_ferda', name: 'Ferda', description: 'Hit 10,000 shots and kept going.', category: 'chirpy', tier: 'uncommon' },
     { id: 'cr_sauce_boss', name: 'Sauce Boss', description: 'New personal best accuracy on a harder Challenger Road challenge.', category: 'chirpy', tier: 'rare' },
     { id: 'cr_skip_the_tryout', name: 'Skip the Tryout', description: 'Started a new attempt at a higher level using unlocks from a previous run.', category: 'chirpy', tier: 'common' },
-    { id: 'cr_all_stars', name: 'All Stars', description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.', category: 'eliteEndgame', tier: 'legendary' },
+    { id: 'cr_all_stars', name: 'All Stars', description: 'Had unlocked skips available, started at Level 1, and completed every active level in one attempt.', category: 'eliteEndgame', tier: 'legendary' },
 ];
 
 const CATEGORY_ICON = {
