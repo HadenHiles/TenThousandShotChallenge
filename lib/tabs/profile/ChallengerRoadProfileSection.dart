@@ -361,22 +361,10 @@ class _BadgeWrapGrid extends StatelessWidget {
   final List<ChallengerRoadBadgeDefinition> badgeDefs;
 
   List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
-    final knownById = <String, ChallengerRoadBadgeDefinition>{
-      for (final badge in badgeDefs) badge.id: badge,
-    };
-
-    final unknownEarned = earnedBadges.where((id) => !knownById.containsKey(id)).map((id) {
-      return ChallengerRoadBadgeDefinition(
-        id: id,
-        name: _titleFromBadgeId(id),
-        description: 'Legacy Challenger Road badge.',
-        category: ChallengerRoadBadgeCategory.chirpy,
-        tier: ChallengerRoadBadgeTier.common,
-      );
-    }).toList()
-      ..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
-
-    return [...badgeDefs, ...unknownEarned];
+    return ChallengerRoadService.buildDisplayBadgeDefs(
+      earnedBadgeIds: earnedBadges,
+      catalog: badgeDefs,
+    );
   }
 
   @override
@@ -424,10 +412,6 @@ class _BadgeChip extends StatelessWidget {
   final ChallengerRoadBadgeDefinition def;
   final bool earned;
   final ChallengerRoadUserSummary summary;
-
-  IconData _iconForBadge() {
-    return ChallengerRoadService.iconForBadge(def);
-  }
 
   Color _colorForBadge() {
     // Tier takes visual precedence for epic/legendary/hidden.
@@ -501,7 +485,11 @@ class _BadgeChip extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(_iconForBadge(), color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6), size: 22),
+                    ChallengerRoadService.badgeIconWidget(
+                      def,
+                      size: 22,
+                      color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -585,8 +573,8 @@ class _BadgeChip extends StatelessWidget {
                           ]
                         : null,
                   ),
-                  child: Icon(
-                    _iconForBadge(),
+                  child: ChallengerRoadService.badgeIconWidget(
+                    def,
                     size: 26,
                     color: earned ? _colorForBadge() : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                   ),
@@ -782,10 +770,6 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
       ),
     );
   }
-}
-
-String _titleFromBadgeId(String id) {
-  return id.replaceAll('cr_', '').split('_').where((p) => p.isNotEmpty).map((part) => '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
 }
 
 // ── Badge color/icon helpers (used by showcase + picker) ────────────────────
