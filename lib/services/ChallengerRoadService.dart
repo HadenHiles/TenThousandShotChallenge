@@ -601,7 +601,7 @@ class ChallengerRoadService {
       name: 'The Comeback Kid',
       description: 'Set a new personal best level in 3 separate attempts.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.hidden,
+      tier: ChallengerRoadBadgeTier.epic,
     ),
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
@@ -913,7 +913,7 @@ class ChallengerRoadService {
       name: 'All Stars',
       description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.hidden,
+      tier: ChallengerRoadBadgeTier.legendary,
     ),
   ];
 

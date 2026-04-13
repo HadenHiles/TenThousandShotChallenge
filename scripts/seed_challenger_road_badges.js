@@ -65,7 +65,7 @@ const BADGES = [
     { id: 'cr_dialed_in', name: 'Dialed In', description: 'New personal best accuracy on your hardest challenge.', category: 'crossAttemptImprovement', tier: 'epic' },
     { id: 'cr_comeback_season', name: 'Comeback Season', description: 'Reached a higher level than your previous best attempt.', category: 'crossAttemptImprovement', tier: 'rare' },
     { id: 'cr_redemption_arc', name: 'Redemption Arc', description: 'First-try pass on a challenge you failed 5+ times in a previous run.', category: 'crossAttemptImprovement', tier: 'epic' },
-    { id: 'cr_the_comeback_kid', name: 'The Comeback Kid', description: 'Set a new personal best level in 3 separate attempts.', category: 'crossAttemptImprovement', tier: 'hidden' },
+    { id: 'cr_the_comeback_kid', name: 'The Comeback Kid', description: 'Set a new personal best level in 3 separate attempts.', category: 'crossAttemptImprovement', tier: 'epic' },
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
     { id: 'cr_battle_tested', name: 'Battle Tested', description: 'Failed the same challenge 5 times in a row, then passed it.', category: 'grindAndResilience', tier: 'rare' },
@@ -125,7 +125,7 @@ const BADGES = [
     { id: 'cr_ferda', name: 'Ferda', description: 'Hit 10,000 shots and kept going.', category: 'chirpy', tier: 'uncommon' },
     { id: 'cr_sauce_boss', name: 'Sauce Boss', description: 'New personal best accuracy on a harder Challenger Road challenge.', category: 'chirpy', tier: 'rare' },
     { id: 'cr_skip_the_tryout', name: 'Skip the Tryout', description: 'Started a new attempt at a higher level using unlocks from a previous run.', category: 'chirpy', tier: 'common' },
-    { id: 'cr_all_stars', name: 'All Stars', description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.', category: 'eliteEndgame', tier: 'hidden' },
+    { id: 'cr_all_stars', name: 'All Stars', description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.', category: 'eliteEndgame', tier: 'legendary' },
 ];
 
 const CATEGORY_ICON = {
