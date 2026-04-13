@@ -10,7 +10,12 @@ import 'dart:async';
 
 class WeeklyAchievementsWidget extends StatefulWidget {
   final bool showResetCountdown;
-  const WeeklyAchievementsWidget({super.key, this.showResetCountdown = false});
+  final bool showOnlyResetCountdown;
+  const WeeklyAchievementsWidget({
+    super.key,
+    this.showResetCountdown = false,
+    this.showOnlyResetCountdown = false,
+  });
 
   @override
   State<WeeklyAchievementsWidget> createState() => _WeeklyAchievementsWidgetState();
@@ -737,6 +742,11 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     if (_user == null) {
       return const Center(child: Text('Sign in to view achievements'));
     }
+
+    if (widget.showOnlyResetCountdown) {
+      return _WeeklyResetCountdown(nextMonday: _nextMondayEST());
+    }
+
     final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').where('time_frame', isEqualTo: 'week');
     final statsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('stats').doc('weekly');
 
@@ -1891,13 +1901,16 @@ class _WeeklyResetCountdownState extends State<_WeeklyResetCountdown> {
     String text = _remaining.isNegative ? 'Achievements reset soon!' : 'Resets in: ${_formatDuration(_remaining)}';
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8, top: 0, bottom: 0),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-          fontFamily: 'NovecentoSans',
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            fontFamily: 'NovecentoSans',
+          ),
         ),
       ),
     );
