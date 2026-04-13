@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeAllTimeHistory.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
@@ -817,6 +818,101 @@ void main() {
 
       final history = await db.collection('users').doc(uid).collection('challenger_road_challenge_history').doc('ch_1').get();
       expect(history.exists, true);
+    });
+  });
+
+  group('ChallengerRoadService badge display helpers', () {
+    test('buildDisplayBadgeDefs keeps catalog badges and appends unknown earned as legacy', () {
+      final defs = ChallengerRoadService.buildDisplayBadgeDefs(
+        earnedBadgeIds: const ['cr_fresh_laces', 'legacy_custom_badge'],
+        catalog: const [
+          ChallengerRoadBadgeDefinition(
+            id: 'cr_fresh_laces',
+            name: 'Fresh Laces',
+            description: 'Started the Challenger Road.',
+            category: ChallengerRoadBadgeCategory.firstSteps,
+            tier: ChallengerRoadBadgeTier.common,
+          ),
+        ],
+      );
+
+      expect(defs.any((d) => d.id == 'cr_fresh_laces'), isTrue);
+      final legacy = defs.where((d) => d.id == 'legacy_custom_badge').single;
+      expect(legacy.description, 'Legacy Challenger Road badge.');
+      expect(legacy.category, ChallengerRoadBadgeCategory.chirpy);
+    });
+
+    test('visibleDisplayBadgeDefs hides hidden-tier badges by default', () {
+      final visible = ChallengerRoadService.visibleDisplayBadgeDefs(
+        badges: const [
+          ChallengerRoadBadgeDefinition(
+            id: 'common_badge',
+            name: 'Common',
+            description: 'Common badge',
+            category: ChallengerRoadBadgeCategory.firstSteps,
+            tier: ChallengerRoadBadgeTier.common,
+          ),
+          ChallengerRoadBadgeDefinition(
+            id: 'hidden_badge',
+            name: 'Hidden',
+            description: 'Hidden badge',
+            category: ChallengerRoadBadgeCategory.challengeMastery,
+            tier: ChallengerRoadBadgeTier.hidden,
+          ),
+        ],
+      );
+
+      expect(visible.map((b) => b.id), contains('common_badge'));
+      expect(visible.map((b) => b.id), isNot(contains('hidden_badge')));
+    });
+
+    test('groupDisplayBadgesByTier returns groups common -> legendary', () {
+      final groups = ChallengerRoadService.groupDisplayBadgesByTier(
+        badges: const [
+          ChallengerRoadBadgeDefinition(
+            id: 'legendary_badge',
+            name: 'Legendary Badge',
+            description: 'Legendary',
+            category: ChallengerRoadBadgeCategory.eliteEndgame,
+            tier: ChallengerRoadBadgeTier.legendary,
+          ),
+          ChallengerRoadBadgeDefinition(
+            id: 'common_badge',
+            name: 'Common Badge',
+            description: 'Common',
+            category: ChallengerRoadBadgeCategory.firstSteps,
+            tier: ChallengerRoadBadgeTier.common,
+          ),
+          ChallengerRoadBadgeDefinition(
+            id: 'epic_badge',
+            name: 'Epic Badge',
+            description: 'Epic',
+            category: ChallengerRoadBadgeCategory.hotStreaks,
+            tier: ChallengerRoadBadgeTier.epic,
+          ),
+        ],
+        earnedBadgeIds: const ['common_badge'],
+      );
+
+      expect(groups.map((g) => g.tier).toList(), const [
+        ChallengerRoadBadgeTier.common,
+        ChallengerRoadBadgeTier.epic,
+        ChallengerRoadBadgeTier.legendary,
+      ]);
+    });
+
+    test('iconForBadge prefers defaultIconKey over category fallback', () {
+      const def = ChallengerRoadBadgeDefinition(
+        id: 'custom_icon_badge',
+        name: 'Custom Icon',
+        description: 'Uses override icon',
+        category: ChallengerRoadBadgeCategory.firstSteps,
+        tier: ChallengerRoadBadgeTier.common,
+        defaultIconKey: 'military_tech_rounded',
+      );
+
+      final icon = ChallengerRoadService.iconForBadge(def);
+      expect(icon, Icons.military_tech_rounded);
     });
   });
 }
