@@ -2014,7 +2014,6 @@ class _BadgesFloatingButton extends StatelessWidget {
       stream: service.watchUserSummary(userId),
       builder: (context, snap) {
         final earned = snap.data?.badges ?? const <String>[];
-        final earnedCount = earned.length;
         final primary = Theme.of(context).primaryColor;
 
         return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
@@ -2025,7 +2024,12 @@ class _BadgesFloatingButton extends StatelessWidget {
               earnedBadgeIds: earned,
               catalog: catalog,
             );
-            final totalBadges = displayDefs.length;
+            final visibleDefs = ChallengerRoadService.visibleDisplayBadgeDefs(
+              badges: displayDefs,
+              includeHidden: false,
+            );
+            final totalBadges = visibleDefs.length;
+            final visibleEarnedCount = visibleDefs.where((b) => earned.contains(b.id)).length;
 
             return GestureDetector(
               onTap: () => _openSheet(context, earned, catalog),
@@ -2052,7 +2056,7 @@ class _BadgesFloatingButton extends StatelessWidget {
                     Icon(Icons.military_tech_rounded, size: 20, color: primary),
                     const SizedBox(width: 6),
                     Text(
-                      '$earnedCount / $totalBadges',
+                      '$visibleEarnedCount / $totalBadges',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 15,
@@ -2205,14 +2209,17 @@ class _CRBadgeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final primary = Theme.of(context).primaryColor;
-    final earnedCount = earnedIds.length;
     final displayDefs = _buildDisplayDefs();
-    final total = displayDefs.length;
-
-    // Sort: earned first, then alphabetical within each group.
-    final sorted = ChallengerRoadService.sortDisplayBadges(
+    final visibleDefs = ChallengerRoadService.visibleDisplayBadgeDefs(
+      badges: displayDefs,
+      includeHidden: false,
+    );
+    final total = visibleDefs.length;
+    final earnedCount = visibleDefs.where((b) => earnedIds.contains(b.id)).length;
+    final tierGroups = ChallengerRoadService.groupDisplayBadgesByTier(
       badges: displayDefs,
       earnedBadgeIds: earnedIds,
+      includeHidden: false,
     );
 
     return DraggableScrollableSheet(
@@ -2285,71 +2292,92 @@ class _CRBadgeSheet extends StatelessWidget {
 
             // ── Badge grid ───────────────────────────────────────────────
             Expanded(
-              child: GridView.builder(
+              child: ListView(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                itemCount: sorted.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 14,
-                  childAspectRatio: 0.88,
-                ),
-                itemBuilder: (_, index) {
-                  final def = sorted[index];
-                  final earned = earnedIds.contains(def.id);
-                  final color = _colorFor(def);
-
-                  return GestureDetector(
-                    onTap: () => _showDetail(context, def, earned),
-                    child: Opacity(
-                      opacity: earned ? 1.0 : 0.42,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
-                              border: Border.all(
-                                color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
-                                width: earned ? 2 : 1.2,
-                              ),
-                              boxShadow: earned
-                                  ? [
-                                      BoxShadow(
-                                        color: color.withValues(alpha: 0.28),
-                                        blurRadius: 8,
-                                      )
-                                    ]
-                                  : null,
-                            ),
-                            child: ChallengerRoadService.badgeIconWidget(
-                              def,
-                              size: 26,
-                              color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            def.effectiveName,
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'NovecentoSans',
-                              fontSize: 11,
-                              color: earned ? scheme.onSurface : scheme.onSurface.withValues(alpha: 0.6),
-                              height: 1.2,
-                            ),
-                          ),
-                        ],
+                children: [
+                  for (final group in tierGroups) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 2, 4, 8),
+                      child: Text(
+                        group.label.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 12,
+                          color: scheme.onSurface.withValues(alpha: 0.62),
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
-                  );
-                },
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: group.badges.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.88,
+                      ),
+                      itemBuilder: (_, index) {
+                        final def = group.badges[index];
+                        final earned = earnedIds.contains(def.id);
+                        final color = _colorFor(def);
+
+                        return GestureDetector(
+                          onTap: () => _showDetail(context, def, earned),
+                          child: Opacity(
+                            opacity: earned ? 1.0 : 0.42,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
+                                    border: Border.all(
+                                      color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
+                                      width: earned ? 2 : 1.2,
+                                    ),
+                                    boxShadow: earned
+                                        ? [
+                                            BoxShadow(
+                                              color: color.withValues(alpha: 0.28),
+                                              blurRadius: 8,
+                                            )
+                                          ]
+                                        : null,
+                                  ),
+                                  child: ChallengerRoadService.badgeIconWidget(
+                                    def,
+                                    size: 26,
+                                    color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  def.effectiveName,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 11,
+                                    color: earned ? scheme.onSurface : scheme.onSurface.withValues(alpha: 0.6),
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
               ),
             ),
           ],

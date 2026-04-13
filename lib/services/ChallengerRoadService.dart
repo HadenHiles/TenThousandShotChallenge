@@ -193,6 +193,18 @@ class ChallengerRoadBadgeDefinition {
   }
 }
 
+class ChallengerRoadBadgeTierGroup {
+  final ChallengerRoadBadgeTier tier;
+  final String label;
+  final List<ChallengerRoadBadgeDefinition> badges;
+
+  const ChallengerRoadBadgeTierGroup({
+    required this.tier,
+    required this.label,
+    required this.badges,
+  });
+}
+
 class ChallengerRoadService {
   final FirebaseFirestore _firestore;
 
@@ -260,6 +272,82 @@ class ChallengerRoadService {
         return aEarned ? -1 : 1;
       });
     return sorted;
+  }
+
+  static const List<ChallengerRoadBadgeTier> visibleTierOrder = [
+    ChallengerRoadBadgeTier.legendary,
+    ChallengerRoadBadgeTier.epic,
+    ChallengerRoadBadgeTier.rare,
+    ChallengerRoadBadgeTier.uncommon,
+    ChallengerRoadBadgeTier.common,
+  ];
+
+  static String tierLabel(ChallengerRoadBadgeTier tier) {
+    switch (tier) {
+      case ChallengerRoadBadgeTier.legendary:
+        return 'Legendary';
+      case ChallengerRoadBadgeTier.epic:
+        return 'Epic';
+      case ChallengerRoadBadgeTier.rare:
+        return 'Rare';
+      case ChallengerRoadBadgeTier.uncommon:
+        return 'Uncommon';
+      case ChallengerRoadBadgeTier.common:
+        return 'Common';
+      case ChallengerRoadBadgeTier.hidden:
+        return 'Hidden';
+    }
+  }
+
+  static List<ChallengerRoadBadgeDefinition> visibleDisplayBadgeDefs({
+    required List<ChallengerRoadBadgeDefinition> badges,
+    bool includeHidden = false,
+  }) {
+    if (includeHidden) return [...badges];
+    return badges.where((b) => b.tier != ChallengerRoadBadgeTier.hidden).toList();
+  }
+
+  static List<ChallengerRoadBadgeTierGroup> groupDisplayBadgesByTier({
+    required List<ChallengerRoadBadgeDefinition> badges,
+    required List<String> earnedBadgeIds,
+    bool includeHidden = false,
+  }) {
+    final visible = visibleDisplayBadgeDefs(
+      badges: badges,
+      includeHidden: includeHidden,
+    );
+    final groups = <ChallengerRoadBadgeTierGroup>[];
+    for (final tier in visibleTierOrder) {
+      final tierBadges = visible.where((b) => b.tier == tier).toList();
+      if (tierBadges.isEmpty) continue;
+      final sorted = sortDisplayBadges(
+        badges: tierBadges,
+        earnedBadgeIds: earnedBadgeIds,
+      );
+      groups.add(
+        ChallengerRoadBadgeTierGroup(
+          tier: tier,
+          label: tierLabel(tier),
+          badges: sorted,
+        ),
+      );
+    }
+    if (includeHidden) {
+      final hiddenBadges = visible.where((b) => b.tier == ChallengerRoadBadgeTier.hidden).toList();
+      if (hiddenBadges.isNotEmpty) {
+        groups.add(
+          ChallengerRoadBadgeTierGroup(
+            tier: ChallengerRoadBadgeTier.hidden,
+            label: tierLabel(ChallengerRoadBadgeTier.hidden),
+            badges: sortDisplayBadges(
+              badges: hiddenBadges,
+              earnedBadgeIds: earnedBadgeIds,
+            ),
+          ),
+        );
+      }
+    }
+    return groups;
   }
 
   /// Resolves the icon for a badge, preferring any admin-managed icon key.
