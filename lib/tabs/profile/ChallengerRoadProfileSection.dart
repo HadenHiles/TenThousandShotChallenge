@@ -370,8 +370,13 @@ class _BadgeWrapGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayDefs = _buildDisplayDefs();
+    final groups = ChallengerRoadService.groupDisplayBadgesByTier(
+      badges: displayDefs,
+      earnedBadgeIds: earnedBadges,
+      includeHidden: false,
+    );
 
-    if (displayDefs.isEmpty) {
+    if (groups.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Text(
@@ -385,24 +390,42 @@ class _BadgeWrapGrid extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayDefs.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.95,
-      ),
-      itemBuilder: (context, index) {
-        final def = displayDefs[index];
-        final earned = earnedBadges.contains(def.id);
-        return Align(
-          alignment: Alignment.topCenter,
-          child: _BadgeChip(def: def, earned: earned, summary: summary),
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final group in groups) ...[
+          Text(
+            group.label.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: group.badges.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.95,
+            ),
+            itemBuilder: (context, index) {
+              final def = group.badges[index];
+              final earned = earnedBadges.contains(def.id);
+              return Align(
+                alignment: Alignment.topCenter,
+                child: _BadgeChip(def: def, earned: earned, summary: summary),
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+        ],
+      ],
     );
   }
 }
