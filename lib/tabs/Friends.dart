@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -584,9 +585,19 @@ class _FriendsState extends State<Friends> {
               ),
               child: SizedBox(
                 height: 60,
-                child: UserAvatar(
-                  user: friend,
-                  backgroundColor: Colors.transparent,
+                child: UserAvatarCrPopover(
+                  userId: friend.reference?.id ?? '',
+                  menuColor: Theme.of(context).colorScheme.primary,
+                  onViewProfile: friend.reference == null
+                      ? null
+                      : () {
+                          Feedback.forTap(context);
+                          context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                        },
+                  child: UserAvatar(
+                    user: friend,
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
               ),
             ),
@@ -850,13 +861,15 @@ class _FriendsState extends State<Friends> {
                         ),
                         child: SizedBox(
                           height: 60,
-                          child: GestureDetector(
-                            onTap: () {
-                              Feedback.forTap(context);
-                              if (friend.reference != null) {
-                                context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
-                              }
-                            },
+                          child: UserAvatarCrPopover(
+                            userId: friend.reference?.id ?? '',
+                            menuColor: Theme.of(context).colorScheme.primary,
+                            onViewProfile: friend.reference == null
+                                ? null
+                                : () {
+                                    Feedback.forTap(context);
+                                    context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                                  },
                             child: UserAvatar(
                               user: friend,
                               backgroundColor: Colors.transparent,

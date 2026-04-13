@@ -19,6 +19,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAchievementsReadOnly.dart';
@@ -386,9 +387,13 @@ class _PlayerState extends State<Player> {
                                         child: SizedBox(
                                           width: 60,
                                           height: 60,
-                                          child: UserAvatar(
-                                            user: _userPlayer,
-                                            backgroundColor: Colors.transparent,
+                                          child: UserAvatarCrPopover(
+                                            userId: widget.uid ?? '',
+                                            menuColor: Theme.of(context).colorScheme.primary,
+                                            child: UserAvatar(
+                                              user: _userPlayer,
+                                              backgroundColor: Colors.transparent,
+                                            ),
                                           ),
                                         ),
                                       ),
