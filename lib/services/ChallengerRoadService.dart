@@ -275,11 +275,11 @@ class ChallengerRoadService {
   }
 
   static const List<ChallengerRoadBadgeTier> visibleTierOrder = [
-    ChallengerRoadBadgeTier.legendary,
-    ChallengerRoadBadgeTier.epic,
-    ChallengerRoadBadgeTier.rare,
-    ChallengerRoadBadgeTier.uncommon,
     ChallengerRoadBadgeTier.common,
+    ChallengerRoadBadgeTier.uncommon,
+    ChallengerRoadBadgeTier.rare,
+    ChallengerRoadBadgeTier.epic,
+    ChallengerRoadBadgeTier.legendary,
   ];
 
   static String tierLabel(ChallengerRoadBadgeTier tier) {
@@ -666,14 +666,14 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_playoff_mode',
       name: 'Playoff Mode',
-      description: 'Reached the highest level on the Challenger Road.',
+      description: 'Reached the current highest active Challenger Road level.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_general',
       name: 'The General',
-      description: 'Every challenge, every level — all of them.',
+      description: 'Cleared every challenge at the current highest active level.',
       category: ChallengerRoadBadgeCategory.levelAdvancement,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
@@ -853,21 +853,21 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_hall_of_famer',
       name: 'Hall of Famer',
-      description: 'Completed the full Challenger Road in a single attempt.',
+      description: 'Completed every active Challenger Road level in one attempt.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_the_machine',
       name: 'The Machine',
-      description: '80%+ average accuracy across 3 complete attempts.',
+      description: 'Completed 3+ attempts with 80%+ average accuracy in each completed attempt.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'cr_hockey_god',
       name: 'Hockey God',
-      description: 'Completed the full road with zero failed sessions.',
+      description: 'Completed every active level in one attempt with zero failed sessions.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.hidden,
     ),
@@ -911,7 +911,7 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'cr_all_stars',
       name: 'All Stars',
-      description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.',
+      description: 'Had unlocked skips available, started at Level 1, and completed every active level in one attempt.',
       category: ChallengerRoadBadgeCategory.eliteEndgame,
       tier: ChallengerRoadBadgeTier.legendary,
     ),
