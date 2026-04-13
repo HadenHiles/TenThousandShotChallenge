@@ -5,6 +5,7 @@
  * Each document uses the badge ID as its key and stores:
  *   - display_name:        admin-editable copy of the badge name (initially matches code)
  *   - display_description: admin-editable copy of the badge description (initially matches code)
+ *   - display_icon:        admin-editable Material icon key used by Flutter UI
  *   - category:            read-only reference field for the admin dashboard
  *   - tier:                read-only reference field for the admin dashboard
  *
@@ -127,6 +128,21 @@ const BADGES = [
     { id: 'cr_all_stars', name: 'All Stars', description: 'Completed the full road from Level 1 — even though you had levels unlocked to skip.', category: 'eliteEndgame', tier: 'hidden' },
 ];
 
+const CATEGORY_ICON = {
+    firstSteps: 'route_rounded',
+    withinRunEfficiency: 'bolt_rounded',
+    crossAttemptImprovement: 'trending_up_rounded',
+    grindAndResilience: 'shield_rounded',
+    levelAdvancement: 'stairs_rounded',
+    crShotMilestones: 'workspace_premium_rounded',
+    crSessionAccuracy: 'gps_fixed_rounded',
+    hotStreaks: 'local_fire_department_rounded',
+    challengeMastery: 'emoji_events_rounded',
+    multiAttemptCareer: 'repeat_rounded',
+    eliteEndgame: 'military_tech_rounded',
+    chirpy: 'sports_hockey_rounded',
+};
+
 // ---------------------------------------------------------------------------
 // Seed
 // ---------------------------------------------------------------------------
@@ -149,6 +165,7 @@ async function seed() {
         await docRef.set({
             display_name: badge.name,
             display_description: badge.description,
+            display_icon: CATEGORY_ICON[badge.category] || 'sports_hockey_rounded',
             // Reference fields — purely informational for the admin dashboard.
             // These are never read by the Flutter app's award logic.
             category: badge.category,

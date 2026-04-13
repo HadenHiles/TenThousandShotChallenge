@@ -82,35 +82,6 @@ int _badgeTierRank(ChallengerRoadBadgeTier tier) {
   }
 }
 
-IconData _badgeCategoryIcon(ChallengerRoadBadgeCategory category) {
-  switch (category) {
-    case ChallengerRoadBadgeCategory.firstSteps:
-      return Icons.route_rounded;
-    case ChallengerRoadBadgeCategory.withinRunEfficiency:
-      return Icons.bolt_rounded;
-    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-      return Icons.trending_up_rounded;
-    case ChallengerRoadBadgeCategory.grindAndResilience:
-      return Icons.shield_rounded;
-    case ChallengerRoadBadgeCategory.levelAdvancement:
-      return Icons.stairs_rounded;
-    case ChallengerRoadBadgeCategory.crShotMilestones:
-      return Icons.workspace_premium_rounded;
-    case ChallengerRoadBadgeCategory.crSessionAccuracy:
-      return Icons.gps_fixed_rounded;
-    case ChallengerRoadBadgeCategory.hotStreaks:
-      return Icons.local_fire_department_rounded;
-    case ChallengerRoadBadgeCategory.challengeMastery:
-      return Icons.emoji_events_rounded;
-    case ChallengerRoadBadgeCategory.multiAttemptCareer:
-      return Icons.repeat_rounded;
-    case ChallengerRoadBadgeCategory.eliteEndgame:
-      return Icons.military_tech_rounded;
-    case ChallengerRoadBadgeCategory.chirpy:
-      return Icons.sports_hockey_rounded;
-  }
-}
-
 Color _tierColor(ChallengerRoadBadgeTier tier) {
   switch (tier) {
     case ChallengerRoadBadgeTier.legendary:
@@ -161,9 +132,9 @@ CrProfileAccomplishment? resolveCrProfileAccomplishment(
   if (bestBadge != null) {
     return CrProfileAccomplishment(
       color: _tierColor(bestBadge.tier),
-      icon: _badgeCategoryIcon(bestBadge.category),
-      headline: bestBadge.name,
-      subtitle: bestBadge.description,
+      icon: ChallengerRoadService.iconForBadge(bestBadge),
+      headline: bestBadge.effectiveName,
+      subtitle: bestBadge.effectiveDescription,
     );
   }
 

@@ -62,7 +62,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           const SizedBox(height: 20),
           // Badge catalog powers both the featured showcase and the full grid.
           FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            future: ChallengerRoadService().getBadgeCatalog(),
+            future: ChallengerRoadService().getBadgeCatalogForUser(userId),
             builder: (context, badgeSnap) {
               final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
               if (badgeDefs.isEmpty && summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
@@ -374,7 +374,7 @@ class _BadgeWrapGrid extends StatelessWidget {
         tier: ChallengerRoadBadgeTier.common,
       );
     }).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+      ..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return [...badgeDefs, ...unknownEarned];
   }
@@ -426,32 +426,7 @@ class _BadgeChip extends StatelessWidget {
   final ChallengerRoadUserSummary summary;
 
   IconData _iconForBadge() {
-    switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
-        return Icons.route_rounded;
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
-        return Icons.bolt_rounded;
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-        return Icons.trending_up_rounded;
-      case ChallengerRoadBadgeCategory.grindAndResilience:
-        return Icons.shield_rounded;
-      case ChallengerRoadBadgeCategory.levelAdvancement:
-        return Icons.stairs_rounded;
-      case ChallengerRoadBadgeCategory.crShotMilestones:
-        return Icons.workspace_premium_rounded;
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
-        return Icons.gps_fixed_rounded;
-      case ChallengerRoadBadgeCategory.hotStreaks:
-        return Icons.local_fire_department_rounded;
-      case ChallengerRoadBadgeCategory.challengeMastery:
-        return Icons.emoji_events_rounded;
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
-        return Icons.repeat_rounded;
-      case ChallengerRoadBadgeCategory.eliteEndgame:
-        return Icons.military_tech_rounded;
-      case ChallengerRoadBadgeCategory.chirpy:
-        return Icons.sports_hockey_rounded;
-    }
+    return ChallengerRoadService.iconForBadge(def);
   }
 
   Color _colorForBadge() {
@@ -495,7 +470,7 @@ class _BadgeChip extends StatelessWidget {
   }
 
   String _requirementText() {
-    return def.description;
+    return def.effectiveDescription;
   }
 
   String? _progressText() {
@@ -530,7 +505,7 @@ class _BadgeChip extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        def.name,
+                        def.effectiveName,
                         style: TextStyle(
                           fontFamily: 'NovecentoSans',
                           fontSize: 22,
@@ -580,7 +555,7 @@ class _BadgeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: earned ? def.description : 'Locked: ${def.description}',
+      message: earned ? def.effectiveDescription : 'Locked: ${def.effectiveDescription}',
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () => _showBadgeDetails(context),
@@ -618,7 +593,7 @@ class _BadgeChip extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  def.name,
+                  def.effectiveName,
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -685,7 +660,7 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
     final scheme = Theme.of(context).colorScheme;
     final byId = {for (final d in widget.badgeDefs) d.id: d};
     final earnedIds = widget.summary.badges.toSet();
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.name.compareTo(b.name));
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     final currentColor = _crBadgeColor(widget.currentDef);
     final currentIcon = _crBadgeIcon(widget.currentDef);
@@ -855,32 +830,7 @@ Color _crBadgeColor(ChallengerRoadBadgeDefinition def) {
 }
 
 IconData _crBadgeIcon(ChallengerRoadBadgeDefinition def) {
-  switch (def.category) {
-    case ChallengerRoadBadgeCategory.firstSteps:
-      return Icons.route_rounded;
-    case ChallengerRoadBadgeCategory.withinRunEfficiency:
-      return Icons.bolt_rounded;
-    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-      return Icons.trending_up_rounded;
-    case ChallengerRoadBadgeCategory.grindAndResilience:
-      return Icons.shield_rounded;
-    case ChallengerRoadBadgeCategory.levelAdvancement:
-      return Icons.stairs_rounded;
-    case ChallengerRoadBadgeCategory.crShotMilestones:
-      return Icons.workspace_premium_rounded;
-    case ChallengerRoadBadgeCategory.crSessionAccuracy:
-      return Icons.gps_fixed_rounded;
-    case ChallengerRoadBadgeCategory.hotStreaks:
-      return Icons.local_fire_department_rounded;
-    case ChallengerRoadBadgeCategory.challengeMastery:
-      return Icons.emoji_events_rounded;
-    case ChallengerRoadBadgeCategory.multiAttemptCareer:
-      return Icons.repeat_rounded;
-    case ChallengerRoadBadgeCategory.eliteEndgame:
-      return Icons.military_tech_rounded;
-    case ChallengerRoadBadgeCategory.chirpy:
-      return Icons.sports_hockey_rounded;
-  }
+  return ChallengerRoadService.iconForBadge(def);
 }
 
 // ── Featured Badges Showcase ─────────────────────────────────────────────────
@@ -1110,7 +1060,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
     final scheme = Theme.of(context).colorScheme;
     final earnedIds = widget.summary.badges.toSet();
     final byId = {for (final d in widget.badgeDefs) d.id: d};
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList()..sort((a, b) => a.name.compareTo(b.name));
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return SafeArea(
       child: Padding(
