@@ -567,7 +567,7 @@ class _ShotsState extends State<Shots> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Track your weekly goals and stay on pace.',
+                          'Complete these achievements to start a hot streak.',
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 13,
