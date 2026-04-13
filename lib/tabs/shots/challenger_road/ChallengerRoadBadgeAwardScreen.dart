@@ -133,32 +133,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
   }
 
   IconData _badgeIcon(ChallengerRoadBadgeDefinition def) {
-    switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
-        return Icons.route_rounded;
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
-        return Icons.bolt_rounded;
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-        return Icons.trending_up_rounded;
-      case ChallengerRoadBadgeCategory.grindAndResilience:
-        return Icons.shield_rounded;
-      case ChallengerRoadBadgeCategory.levelAdvancement:
-        return Icons.stairs_rounded;
-      case ChallengerRoadBadgeCategory.crShotMilestones:
-        return Icons.workspace_premium_rounded;
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
-        return Icons.gps_fixed_rounded;
-      case ChallengerRoadBadgeCategory.hotStreaks:
-        return Icons.local_fire_department_rounded;
-      case ChallengerRoadBadgeCategory.challengeMastery:
-        return Icons.emoji_events_rounded;
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
-        return Icons.repeat_rounded;
-      case ChallengerRoadBadgeCategory.eliteEndgame:
-        return Icons.military_tech_rounded;
-      case ChallengerRoadBadgeCategory.chirpy:
-        return Icons.sports_hockey_rounded;
-    }
+    return ChallengerRoadService.iconForBadge(def);
   }
 
   String _tierLabel(ChallengerRoadBadgeTier tier) {
@@ -312,7 +287,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
 
                           // Badge name
                           Text(
-                            def.name.toUpperCase(),
+                            def.effectiveName.toUpperCase(),
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontFamily: 'NovecentoSans',
@@ -338,7 +313,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
 
                           // Description
                           Text(
-                            def.description,
+                            def.effectiveDescription,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',

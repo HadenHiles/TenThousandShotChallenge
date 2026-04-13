@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeAllTimeHistory.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart';
@@ -120,6 +121,13 @@ class ChallengerRoadBadgeDefinition {
   /// should prefer this over [description]. Never affects award logic.
   final String? displayDescription;
 
+  /// Admin-managed icon override stored in Firestore.
+  ///
+  /// Supported fields on `challenger_road_badges/{id}` include
+  /// `display_icon`, `display_icon_key`, `icon_key`, and `icon_name`.
+  /// When set, UI should prefer this icon key over category-based defaults.
+  final String? displayIconKey;
+
   /// The name shown to players. Returns [displayName] if the admin has set one,
   /// otherwise falls back to the code-defined [name].
   String get effectiveName => displayName ?? name;
@@ -127,6 +135,9 @@ class ChallengerRoadBadgeDefinition {
   /// The description shown to players. Returns [displayDescription] if the admin
   /// has set one, otherwise falls back to the code-defined [description].
   String get effectiveDescription => displayDescription ?? description;
+
+  /// The icon key shown to players. Null means use category-based fallback.
+  String? get effectiveIconKey => displayIconKey;
 
   const ChallengerRoadBadgeDefinition({
     required this.id,
@@ -136,11 +147,13 @@ class ChallengerRoadBadgeDefinition {
     required this.tier,
     this.displayName,
     this.displayDescription,
+    this.displayIconKey,
   });
 
   ChallengerRoadBadgeDefinition copyWith({
     String? displayName,
     String? displayDescription,
+    String? displayIconKey,
   }) {
     return ChallengerRoadBadgeDefinition(
       id: id,
@@ -150,6 +163,7 @@ class ChallengerRoadBadgeDefinition {
       tier: tier,
       displayName: displayName ?? this.displayName,
       displayDescription: displayDescription ?? this.displayDescription,
+      displayIconKey: displayIconKey ?? this.displayIconKey,
     );
   }
 }
@@ -171,8 +185,83 @@ class ChallengerRoadService {
 
   /// Admin-managed badge display overrides.
   /// Firestore path: challenger_road_badges/{badgeId}
-  /// Fields: display_name (string?), display_description (string?)
+  /// Fields: display_name, display_description, display_icon/icon_key (string?)
   CollectionReference get _badgeOverridesRef => _firestore.collection('challenger_road_badges');
+
+  /// Resolves the icon for a badge, preferring any admin-managed icon key.
+  static IconData iconForBadge(ChallengerRoadBadgeDefinition def) {
+    final key = def.effectiveIconKey?.trim().toLowerCase();
+    switch (key) {
+      case 'route':
+      case 'route_rounded':
+        return Icons.route_rounded;
+      case 'bolt':
+      case 'bolt_rounded':
+        return Icons.bolt_rounded;
+      case 'trending_up':
+      case 'trending_up_rounded':
+        return Icons.trending_up_rounded;
+      case 'shield':
+      case 'shield_rounded':
+        return Icons.shield_rounded;
+      case 'stairs':
+      case 'stairs_rounded':
+        return Icons.stairs_rounded;
+      case 'workspace_premium':
+      case 'workspace_premium_rounded':
+        return Icons.workspace_premium_rounded;
+      case 'gps_fixed':
+      case 'gps_fixed_rounded':
+        return Icons.gps_fixed_rounded;
+      case 'local_fire_department':
+      case 'local_fire_department_rounded':
+      case 'fire':
+        return Icons.local_fire_department_rounded;
+      case 'emoji_events':
+      case 'emoji_events_rounded':
+      case 'trophy':
+        return Icons.emoji_events_rounded;
+      case 'repeat':
+      case 'repeat_rounded':
+        return Icons.repeat_rounded;
+      case 'military_tech':
+      case 'military_tech_rounded':
+        return Icons.military_tech_rounded;
+      case 'sports_hockey':
+      case 'sports_hockey_rounded':
+      case 'hockey':
+        return Icons.sports_hockey_rounded;
+      default:
+        break;
+    }
+
+    switch (def.category) {
+      case ChallengerRoadBadgeCategory.firstSteps:
+        return Icons.route_rounded;
+      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+        return Icons.bolt_rounded;
+      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+        return Icons.trending_up_rounded;
+      case ChallengerRoadBadgeCategory.grindAndResilience:
+        return Icons.shield_rounded;
+      case ChallengerRoadBadgeCategory.levelAdvancement:
+        return Icons.stairs_rounded;
+      case ChallengerRoadBadgeCategory.crShotMilestones:
+        return Icons.workspace_premium_rounded;
+      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+        return Icons.gps_fixed_rounded;
+      case ChallengerRoadBadgeCategory.hotStreaks:
+        return Icons.local_fire_department_rounded;
+      case ChallengerRoadBadgeCategory.challengeMastery:
+        return Icons.emoji_events_rounded;
+      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+        return Icons.repeat_rounded;
+      case ChallengerRoadBadgeCategory.eliteEndgame:
+        return Icons.military_tech_rounded;
+      case ChallengerRoadBadgeCategory.chirpy:
+        return Icons.sports_hockey_rounded;
+    }
+  }
 
   /// Challenge docs owned by a specific level.
   CollectionReference _challengesRef(String levelDocId) => _levelsRef.doc(levelDocId).collection('challenges');
@@ -650,9 +739,11 @@ class ChallengerRoadService {
   ///
   /// Reads `challenger_road_badges/{id}` documents from Firestore. If a doc
   /// exists for a badge it may supply `display_name` and/or
-  /// `display_description` fields; those override the code-defined copy in the
+  /// `display_description` and/or `display_icon` fields; those override the
+  /// code-defined copy in the
   /// UI via [ChallengerRoadBadgeDefinition.effectiveName] and
-  /// [ChallengerRoadBadgeDefinition.effectiveDescription].
+  /// [ChallengerRoadBadgeDefinition.effectiveDescription]. Icon overrides are
+  /// resolved by [iconForBadge].
   ///
   /// Award logic is never affected — it always uses [badgeCatalog] directly.
   Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
@@ -668,10 +759,14 @@ class ChallengerRoadService {
       if (overrides == null) return badge;
       final displayName = overrides['display_name'] as String?;
       final displayDescription = overrides['display_description'] as String?;
-      if (displayName == null && displayDescription == null) return badge;
+      final displayIconKey = (overrides['display_icon_key'] as String?) ?? (overrides['display_icon'] as String?) ?? (overrides['icon_key'] as String?) ?? (overrides['icon_name'] as String?);
+      if (displayName == null && displayDescription == null && displayIconKey == null) {
+        return badge;
+      }
       return badge.copyWith(
         displayName: displayName,
         displayDescription: displayDescription,
+        displayIconKey: displayIconKey,
       );
     }).toList();
   }
@@ -1851,8 +1946,10 @@ class ChallengerRoadService {
   /// badges to the user's summary document.
   ///
   /// Idempotent — will not re-award a badge already in the `badges` list.
-  /// Also prunes any badge IDs that no longer exist in [badgeCatalog],
-  /// ensuring removed badges are silently cleaned up without extra tooling.
+  /// Preserves unknown/legacy badge IDs already present in the user summary,
+  /// while using [badgeCatalog] as the source of truth for any matching IDs.
+  /// This keeps grandfathered badges intact even if they are no longer in the
+  /// global catalog.
   ///
   /// **Award paths** — badges are awarded from one of four call sites:
   ///
@@ -1870,11 +1967,9 @@ class ChallengerRoadService {
     required ChallengerRoadUserSummary summary,
     _RoadBadgeStats? precomputedStats,
   }) async {
-    // Prune any badge IDs no longer present in the current catalog — removes
-    // legacy badges earned before a catalog reduction without any extra tooling.
-    final catalogIds = badgeCatalog.map((b) => b.id).toSet();
-    final earned = summary.badges.where((id) => catalogIds.contains(id)).toList();
-    final hadLegacyBadges = earned.length != summary.badges.length;
+    // Keep all existing badge IDs, including legacy IDs not present in the
+    // current catalog. New awards are still driven by current catalog IDs.
+    final earned = List<String>.from(summary.badges);
 
     final newIds = <String>[];
     final stats = precomputedStats ?? await _loadRoadBadgeStats(userId);
@@ -2019,8 +2114,8 @@ class ChallengerRoadService {
     // cr_old_habits, cr_just_visiting — removed from catalog.
     // cr_skip_the_tryout: awarded in createAttempt when startingLevel > 1 with inherited unlocks.
 
-    // Persist earned badges if changed (new awards OR legacy badges pruned).
-    if (newIds.isNotEmpty || hadLegacyBadges) {
+    // Persist only when this invocation awards at least one new badge.
+    if (newIds.isNotEmpty) {
       await updateUserSummary(userId, {'badges': earned});
     }
     return newIds;

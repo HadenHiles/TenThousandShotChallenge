@@ -2102,32 +2102,7 @@ class _CRBadgeSheet extends StatelessWidget {
   }
 
   IconData _iconFor(ChallengerRoadBadgeDefinition def) {
-    switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
-        return Icons.route_rounded;
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
-        return Icons.bolt_rounded;
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-        return Icons.trending_up_rounded;
-      case ChallengerRoadBadgeCategory.grindAndResilience:
-        return Icons.shield_rounded;
-      case ChallengerRoadBadgeCategory.levelAdvancement:
-        return Icons.stairs_rounded;
-      case ChallengerRoadBadgeCategory.crShotMilestones:
-        return Icons.workspace_premium_rounded;
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
-        return Icons.gps_fixed_rounded;
-      case ChallengerRoadBadgeCategory.hotStreaks:
-        return Icons.local_fire_department_rounded;
-      case ChallengerRoadBadgeCategory.challengeMastery:
-        return Icons.emoji_events_rounded;
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
-        return Icons.repeat_rounded;
-      case ChallengerRoadBadgeCategory.eliteEndgame:
-        return Icons.military_tech_rounded;
-      case ChallengerRoadBadgeCategory.chirpy:
-        return Icons.sports_hockey_rounded;
-    }
+    return ChallengerRoadService.iconForBadge(def);
   }
 
   void _showDetail(BuildContext context, ChallengerRoadBadgeDefinition def, bool earned) {
@@ -2167,7 +2142,7 @@ class _CRBadgeSheet extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          def.name,
+                          def.effectiveName,
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 20,
@@ -2190,7 +2165,7 @@ class _CRBadgeSheet extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                def.description,
+                def.effectiveDescription,
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 15,
@@ -2216,7 +2191,9 @@ class _CRBadgeSheet extends StatelessWidget {
     final sorted = [...catalog]..sort((a, b) {
         final aEarned = earnedIds.contains(a.id);
         final bEarned = earnedIds.contains(b.id);
-        if (aEarned == bEarned) return a.name.compareTo(b.name);
+        if (aEarned == bEarned) {
+          return a.effectiveName.compareTo(b.effectiveName);
+        }
         return aEarned ? -1 : 1;
       });
 
@@ -2339,7 +2316,7 @@ class _CRBadgeSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            def.name,
+                            def.effectiveName,
                             textAlign: TextAlign.center,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,

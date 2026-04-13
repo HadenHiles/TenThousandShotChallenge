@@ -755,7 +755,7 @@ class _ProfileState extends State<Profile> {
           final featured = summary.featuredBadges;
 
           return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            future: ChallengerRoadService().getBadgeCatalog(),
+            future: ChallengerRoadService().getBadgeCatalogForUser(currentUser.uid),
             builder: (context, catSnap) {
               final catalog = catSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
               final byId = {for (final d in catalog) d.id: d};
@@ -982,7 +982,7 @@ class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
     final scheme = Theme.of(context).colorScheme;
     final byId = {for (final d in widget.catalog) d.id: d};
     final earnedIds = widget.summary.badges.toSet();
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.name.compareTo(b.name));
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     final currentColor = _crProfileBadgeColor(widget.currentDef);
     final currentIcon = _crProfileBadgeIcon(widget.currentDef);
@@ -1148,30 +1148,5 @@ Color _crProfileBadgeColor(ChallengerRoadBadgeDefinition def) {
 }
 
 IconData _crProfileBadgeIcon(ChallengerRoadBadgeDefinition def) {
-  switch (def.category) {
-    case ChallengerRoadBadgeCategory.firstSteps:
-      return Icons.route_rounded;
-    case ChallengerRoadBadgeCategory.withinRunEfficiency:
-      return Icons.bolt_rounded;
-    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-      return Icons.trending_up_rounded;
-    case ChallengerRoadBadgeCategory.grindAndResilience:
-      return Icons.shield_rounded;
-    case ChallengerRoadBadgeCategory.levelAdvancement:
-      return Icons.stairs_rounded;
-    case ChallengerRoadBadgeCategory.crShotMilestones:
-      return Icons.workspace_premium_rounded;
-    case ChallengerRoadBadgeCategory.crSessionAccuracy:
-      return Icons.gps_fixed_rounded;
-    case ChallengerRoadBadgeCategory.hotStreaks:
-      return Icons.local_fire_department_rounded;
-    case ChallengerRoadBadgeCategory.challengeMastery:
-      return Icons.emoji_events_rounded;
-    case ChallengerRoadBadgeCategory.multiAttemptCareer:
-      return Icons.repeat_rounded;
-    case ChallengerRoadBadgeCategory.eliteEndgame:
-      return Icons.military_tech_rounded;
-    case ChallengerRoadBadgeCategory.chirpy:
-      return Icons.sports_hockey_rounded;
-  }
+  return ChallengerRoadService.iconForBadge(def);
 }
