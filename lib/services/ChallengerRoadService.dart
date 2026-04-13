@@ -128,6 +128,19 @@ class ChallengerRoadBadgeDefinition {
   /// When set, UI should prefer this icon key over category-based defaults.
   final String? displayIconKey;
 
+  /// Admin-managed remote icon URL stored in Firestore
+  /// (`challenger_road_badges/{id}.icon_url`).
+  ///
+  /// When non-empty, UI should render this image before falling back to icons.
+  final String? iconUrl;
+
+  /// Admin-managed default icon key stored in Firestore
+  /// (`challenger_road_badges/{id}.default_icon`).
+  ///
+  /// Used when [iconUrl] is empty. Falls back to [displayIconKey] and finally
+  /// category defaults.
+  final String? defaultIconKey;
+
   /// The name shown to players. Returns [displayName] if the admin has set one,
   /// otherwise falls back to the code-defined [name].
   String get effectiveName => displayName ?? name;
@@ -139,6 +152,12 @@ class ChallengerRoadBadgeDefinition {
   /// The icon key shown to players. Null means use category-based fallback.
   String? get effectiveIconKey => displayIconKey;
 
+  /// The image URL shown to players. Empty/null means icon fallback applies.
+  String? get effectiveIconUrl => iconUrl;
+
+  /// The default icon key shown to players when [effectiveIconUrl] is absent.
+  String? get effectiveDefaultIconKey => defaultIconKey ?? displayIconKey;
+
   const ChallengerRoadBadgeDefinition({
     required this.id,
     required this.name,
@@ -148,12 +167,16 @@ class ChallengerRoadBadgeDefinition {
     this.displayName,
     this.displayDescription,
     this.displayIconKey,
+    this.iconUrl,
+    this.defaultIconKey,
   });
 
   ChallengerRoadBadgeDefinition copyWith({
     String? displayName,
     String? displayDescription,
     String? displayIconKey,
+    String? iconUrl,
+    String? defaultIconKey,
   }) {
     return ChallengerRoadBadgeDefinition(
       id: id,
@@ -164,6 +187,8 @@ class ChallengerRoadBadgeDefinition {
       displayName: displayName ?? this.displayName,
       displayDescription: displayDescription ?? this.displayDescription,
       displayIconKey: displayIconKey ?? this.displayIconKey,
+      iconUrl: iconUrl ?? this.iconUrl,
+      defaultIconKey: defaultIconKey ?? this.defaultIconKey,
     );
   }
 }
@@ -185,12 +210,61 @@ class ChallengerRoadService {
 
   /// Admin-managed badge display overrides.
   /// Firestore path: challenger_road_badges/{badgeId}
-  /// Fields: display_name, display_description, display_icon/icon_key (string?)
+  /// Fields: display_name, display_description, icon_url,
+  /// default_icon, display_icon/icon_key (string?)
   CollectionReference get _badgeOverridesRef => _firestore.collection('challenger_road_badges');
+
+  /// Humanized title used for unknown earned legacy badge IDs.
+  static String titleFromBadgeId(String id) {
+    return id.replaceAll('cr_', '').split('_').where((p) => p.isNotEmpty).map((part) => '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
+  }
+
+  /// Returns catalog badges plus any unknown earned IDs as legacy placeholders.
+  static List<ChallengerRoadBadgeDefinition> buildDisplayBadgeDefs({
+    required List<String> earnedBadgeIds,
+    required List<ChallengerRoadBadgeDefinition> catalog,
+  }) {
+    final knownById = <String, ChallengerRoadBadgeDefinition>{
+      for (final badge in catalog) badge.id: badge,
+    };
+
+    final unknownEarned = earnedBadgeIds
+        .where((id) => !knownById.containsKey(id))
+        .map(
+          (id) => ChallengerRoadBadgeDefinition(
+            id: id,
+            name: titleFromBadgeId(id),
+            description: 'Legacy Challenger Road badge.',
+            category: ChallengerRoadBadgeCategory.chirpy,
+            tier: ChallengerRoadBadgeTier.common,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
+
+    return [...catalog, ...unknownEarned];
+  }
+
+  /// Sort badges for list/grid display: earned first, then by effective name.
+  static List<ChallengerRoadBadgeDefinition> sortDisplayBadges({
+    required List<ChallengerRoadBadgeDefinition> badges,
+    required List<String> earnedBadgeIds,
+  }) {
+    final earnedSet = earnedBadgeIds.toSet();
+    final sorted = [...badges]..sort((a, b) {
+        final aEarned = earnedSet.contains(a.id);
+        final bEarned = earnedSet.contains(b.id);
+        if (aEarned == bEarned) {
+          return a.effectiveName.compareTo(b.effectiveName);
+        }
+        return aEarned ? -1 : 1;
+      });
+    return sorted;
+  }
 
   /// Resolves the icon for a badge, preferring any admin-managed icon key.
   static IconData iconForBadge(ChallengerRoadBadgeDefinition def) {
-    final key = def.effectiveIconKey?.trim().toLowerCase();
+    final key = def.effectiveDefaultIconKey?.trim().toLowerCase();
     switch (key) {
       case 'route':
       case 'route_rounded':
@@ -261,6 +335,30 @@ class ChallengerRoadService {
       case ChallengerRoadBadgeCategory.chirpy:
         return Icons.sports_hockey_rounded;
     }
+  }
+
+  /// Builds a badge icon widget honoring this precedence:
+  /// 1) icon_url (network image), 2) default_icon (mapped icon),
+  /// 3) hardcoded category icon fallback.
+  static Widget badgeIconWidget(
+    ChallengerRoadBadgeDefinition def, {
+    required double size,
+    required Color color,
+  }) {
+    final url = def.effectiveIconUrl?.trim();
+    if (url != null && url.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.18),
+        child: Image.network(
+          url,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Icon(iconForBadge(def), size: size, color: color),
+        ),
+      );
+    }
+    return Icon(iconForBadge(def), size: size, color: color);
   }
 
   /// Challenge docs owned by a specific level.
@@ -739,11 +837,11 @@ class ChallengerRoadService {
   ///
   /// Reads `challenger_road_badges/{id}` documents from Firestore. If a doc
   /// exists for a badge it may supply `display_name` and/or
-  /// `display_description` and/or `display_icon` fields; those override the
-  /// code-defined copy in the
+  /// `display_description`, `icon_url`, and/or `default_icon` fields; those
+  /// override the code-defined copy in the
   /// UI via [ChallengerRoadBadgeDefinition.effectiveName] and
-  /// [ChallengerRoadBadgeDefinition.effectiveDescription]. Icon overrides are
-  /// resolved by [iconForBadge].
+  /// [ChallengerRoadBadgeDefinition.effectiveDescription]. Icon precedence is
+  /// resolved by [badgeIconWidget].
   ///
   /// Award logic is never affected — it always uses [badgeCatalog] directly.
   Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
@@ -759,14 +857,18 @@ class ChallengerRoadService {
       if (overrides == null) return badge;
       final displayName = overrides['display_name'] as String?;
       final displayDescription = overrides['display_description'] as String?;
+      final iconUrl = (overrides['icon_url'] as String?) ?? (overrides['display_icon_url'] as String?);
+      final defaultIconKey = (overrides['default_icon'] as String?) ?? (overrides['default_icon_key'] as String?);
       final displayIconKey = (overrides['display_icon_key'] as String?) ?? (overrides['display_icon'] as String?) ?? (overrides['icon_key'] as String?) ?? (overrides['icon_name'] as String?);
-      if (displayName == null && displayDescription == null && displayIconKey == null) {
+      if (displayName == null && displayDescription == null && iconUrl == null && defaultIconKey == null && displayIconKey == null) {
         return badge;
       }
       return badge.copyWith(
         displayName: displayName,
         displayDescription: displayDescription,
         displayIconKey: displayIconKey,
+        iconUrl: iconUrl,
+        defaultIconKey: defaultIconKey,
       );
     }).toList();
   }

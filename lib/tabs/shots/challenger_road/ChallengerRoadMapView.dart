@@ -1992,16 +1992,18 @@ class _BadgesFloatingButton extends StatelessWidget {
   final String userId;
   final ChallengerRoadService service;
 
-  static int get _totalBadges => ChallengerRoadService.badgeCatalog.length;
-
-  void _openSheet(BuildContext context, List<String> earnedIds) {
+  void _openSheet(
+    BuildContext context,
+    List<String> earnedIds,
+    List<ChallengerRoadBadgeDefinition> catalog,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CRBadgeSheet(
         earnedIds: earnedIds,
-        catalog: ChallengerRoadService.badgeCatalog,
+        catalog: catalog,
       ),
     );
   }
@@ -2015,58 +2017,70 @@ class _BadgesFloatingButton extends StatelessWidget {
         final earnedCount = earned.length;
         final primary = Theme.of(context).primaryColor;
 
-        return GestureDetector(
-          onTap: () => _openSheet(context, earned),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: primary.withValues(alpha: 0.45),
-                width: 1.2,
+        return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+          future: service.getBadgeCatalogForUser(userId),
+          builder: (context, catSnap) {
+            final catalog = catSnap.data ?? ChallengerRoadService.badgeCatalog;
+            final displayDefs = ChallengerRoadService.buildDisplayBadgeDefs(
+              earnedBadgeIds: earned,
+              catalog: catalog,
+            );
+            final totalBadges = displayDefs.length;
+
+            return GestureDetector(
+              onTap: () => _openSheet(context, earned, catalog),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: primary.withValues(alpha: 0.45),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.military_tech_rounded, size: 20, color: primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$earnedCount / $totalBadges',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'BADGES',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.military_tech_rounded, size: 20, color: primary),
-                const SizedBox(width: 6),
-                Text(
-                  '$earnedCount / $_totalBadges',
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 15,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'BADGES',
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ],
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -2084,6 +2098,13 @@ class _CRBadgeSheet extends StatelessWidget {
   final List<String> earnedIds;
   final List<ChallengerRoadBadgeDefinition> catalog;
 
+  List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
+    return ChallengerRoadService.buildDisplayBadgeDefs(
+      earnedBadgeIds: earnedIds,
+      catalog: catalog,
+    );
+  }
+
   Color _colorFor(ChallengerRoadBadgeDefinition def) {
     switch (def.tier) {
       case ChallengerRoadBadgeTier.legendary:
@@ -2099,10 +2120,6 @@ class _CRBadgeSheet extends StatelessWidget {
       case ChallengerRoadBadgeTier.common:
         return const Color(0xFF90A4AE);
     }
-  }
-
-  IconData _iconFor(ChallengerRoadBadgeDefinition def) {
-    return ChallengerRoadService.iconForBadge(def);
   }
 
   void _showDetail(BuildContext context, ChallengerRoadBadgeDefinition def, bool earned) {
@@ -2134,7 +2151,11 @@ class _CRBadgeSheet extends StatelessWidget {
                         width: 1.5,
                       ),
                     ),
-                    child: Icon(_iconFor(def), size: 22, color: earned ? color : scheme.onSurface.withValues(alpha: 0.5)),
+                    child: ChallengerRoadService.badgeIconWidget(
+                      def,
+                      size: 22,
+                      color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -2185,17 +2206,14 @@ class _CRBadgeSheet extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final primary = Theme.of(context).primaryColor;
     final earnedCount = earnedIds.length;
-    final total = catalog.length;
+    final displayDefs = _buildDisplayDefs();
+    final total = displayDefs.length;
 
     // Sort: earned first, then alphabetical within each group.
-    final sorted = [...catalog]..sort((a, b) {
-        final aEarned = earnedIds.contains(a.id);
-        final bEarned = earnedIds.contains(b.id);
-        if (aEarned == bEarned) {
-          return a.effectiveName.compareTo(b.effectiveName);
-        }
-        return aEarned ? -1 : 1;
-      });
+    final sorted = ChallengerRoadService.sortDisplayBadges(
+      badges: displayDefs,
+      earnedBadgeIds: earnedIds,
+    );
 
     return DraggableScrollableSheet(
       initialChildSize: 0.72,
@@ -2308,8 +2326,8 @@ class _CRBadgeSheet extends StatelessWidget {
                                     ]
                                   : null,
                             ),
-                            child: Icon(
-                              _iconFor(def),
+                            child: ChallengerRoadService.badgeIconWidget(
+                              def,
                               size: 26,
                               color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
                             ),
