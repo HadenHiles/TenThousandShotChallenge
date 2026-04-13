@@ -740,7 +740,7 @@ class _ShotsState extends State<Shots> {
             ),
             const SizedBox(height: 4),
             Text(
-              iteration.total == null || iteration.total == 0 ? 'Log your first session to see your breakdown.' : 'See how your shots break down this season.',
+              iteration.total == null || iteration.total == 0 ? 'Log your first session to see your breakdown.' : 'See how your shots break down this challenge.',
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
                 fontSize: 13,
