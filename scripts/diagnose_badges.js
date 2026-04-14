@@ -127,21 +127,21 @@ async function diagnose() {
     console.log('    perfectSessions:', perfectSessions);
 
     const wouldAward = [];
-    if (t >= 1) wouldAward.push('cr_fresh_laces');
-    if (totalSessions >= 1) wouldAward.push('cr_drop_the_biscuit');
-    if (totalPassed >= 1) wouldAward.push('cr_clean_read');
-    if (shots >= 100) wouldAward.push('cr_first_bucket');
-    if (shots >= 1000) wouldAward.push('cr_building_a_barn');
-    if (shots >= 5000) wouldAward.push('cr_ten_minute_major');
-    if (longestStreak >= 4) wouldAward.push('cr_sharp');
-    if (longestStreak >= 5) wouldAward.push('cr_sauce');
-    if (longestStreak >= 10) wouldAward.push('cr_unstoppable');
-    if (bestAccuracy >= 0.90) wouldAward.push('cr_bar_down');
-    if (bestAccuracy >= 0.95) wouldAward.push('cr_top_cheese');
-    if (perfectSessions >= 1) wouldAward.push('cr_pure');
-    if (perfectSessions >= 5) wouldAward.push('cr_all_net');
-    if (t >= 2) wouldAward.push('cr_veteran_presence');
-    if (t >= 5) wouldAward.push('cr_lifer');
+    if (t >= 1) wouldAward.push('fresh_laces');
+    if (totalSessions >= 1) wouldAward.push('drop_the_biscuit');
+    if (totalPassed >= 1) wouldAward.push('clean_read');
+    if (shots >= 100) wouldAward.push('first_bucket');
+    if (shots >= 1000) wouldAward.push('building_a_barn');
+    if (shots >= 5000) wouldAward.push('ten_minute_major');
+    // cr_sharp removed from catalog (too close to cr_sauce at 5 passes).
+    if (longestStreak >= 5) wouldAward.push('sauce');
+    if (longestStreak >= 10) wouldAward.push('unstoppable');
+    if (bestAccuracy >= 0.90) wouldAward.push('bar_down');
+    if (bestAccuracy >= 0.95) wouldAward.push('top_cheese');
+    if (perfectSessions >= 1) wouldAward.push('pure');
+    if (perfectSessions >= 5) wouldAward.push('all_net');
+    if (t >= 2) wouldAward.push('veteran_presence');
+    if (t >= 5) wouldAward.push('lifer');
 
     console.log('\n  Badges that SHOULD be awarded:', wouldAward);
     console.log('  Badges currently in Firestore:', summary.badges ?? []);

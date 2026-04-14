@@ -30,18 +30,18 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const BADGE_IDS = [
-    'cr_fresh_laces', 'cr_drop_the_biscuit', 'cr_clean_read', 'cr_level_clear', 'cr_made_the_show',
-    'cr_no_warmup_needed', 'cr_sharp', 'cr_breakaway', 'cr_freight_train', 'cr_clean_sweep',
-    'cr_scouting_report', 'cr_the_rematch', 'cr_dialed_in', 'cr_comeback_season', 'cr_redemption_arc', 'cr_the_comeback_kid',
-    'cr_battle_tested', 'cr_game_7', 'cr_ghosts_in_the_machine', 'cr_third_period_heart', 'cr_old_grudge',
-    'cr_ice_time_earned', 'cr_team_captain', 'cr_the_climb', 'cr_playoff_mode', 'cr_the_general',
-    'cr_first_bucket', 'cr_building_a_barn', 'cr_ten_minute_major', 'cr_buzzer_beater', 'cr_three_periods', 'cr_well_never_runs_dry',
-    'cr_lights_out', 'cr_bar_down', 'cr_top_cheese', 'cr_pure', 'cr_the_sniper', 'cr_all_net',
-    'cr_sauce', 'cr_unstoppable', 'cr_full_send',
-    'cr_never_missed', 'cr_untouchable', 'cr_earned_a_salary',
-    'cr_veteran_presence', 'cr_lifer', 'cr_career_year', 'cr_road_dog', 'cr_all_time_great',
-    'cr_hall_of_famer', 'cr_the_machine', 'cr_hockey_god',
-    'cr_bender', 'cr_pigeon', 'cr_sauce_boss', 'cr_skip_the_tryout', 'cr_all_stars',
+    'fresh_laces', 'drop_the_biscuit', 'clean_read', 'level_clear', 'made_the_show',
+    'no_warmup_needed', 'sharp', 'breakaway', 'freight_train', 'clean_sweep',
+    'scouting_report', 'the_rematch', 'dialed_in', 'comeback_season', 'redemption_arc', 'the_comeback_kid',
+    'battle_tested', 'game_7', 'ghosts_in_the_machine', 'third_period_heart', 'old_grudge',
+    'ice_time_earned', 'team_captain', 'the_climb', 'playoff_mode', 'the_general',
+    'first_bucket', 'building_a_barn', 'ten_minute_major', 'buzzer_beater', 'three_periods', 'well_never_runs_dry',
+    'lights_out', 'bar_down', 'top_cheese', 'pure', 'the_sniper', 'all_net',
+    'sauce', 'unstoppable', 'full_send',
+    'never_missed', 'untouchable', 'earned_a_salary',
+    'veteran_presence', 'lifer', 'career_year', 'road_dog', 'all_time_great',
+    'hall_of_famer', 'the_machine', 'hockey_god',
+    'bender', 'pigeon', 'sauce_boss', 'skip_the_tryout', 'all_stars',
 ];
 
 async function unseed() {
