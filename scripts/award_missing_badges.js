@@ -84,7 +84,6 @@ const VALID_BADGE_IDS = new Set([
     'cr_the_machine',
     'cr_all_stars',
     'cr_three_periods',
-    'cr_ferda',
     'cr_career_year',
     'cr_skip_the_tryout',
 ]);

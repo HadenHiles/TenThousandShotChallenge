@@ -122,7 +122,6 @@ const BADGES = [
     // ── CHIRPY / PERSONALITY ──────────────────────────────────────────────────
     { id: 'cr_bender', name: 'Bender', description: 'Started a new attempt at a lower level than your previous best.', category: 'chirpy', tier: 'common' },
     { id: 'cr_pigeon', name: 'Pigeon', description: 'First-try pass at 95%+ accuracy on a hard challenge.', category: 'chirpy', tier: 'uncommon' },
-    { id: 'cr_ferda', name: 'Ferda', description: 'Hit 10,000 shots and kept going.', category: 'chirpy', tier: 'uncommon' },
     { id: 'cr_sauce_boss', name: 'Sauce Boss', description: 'New personal best accuracy on a harder Challenger Road challenge.', category: 'chirpy', tier: 'rare' },
     { id: 'cr_skip_the_tryout', name: 'Skip the Tryout', description: 'Started a new attempt at a higher level using unlocks from a previous run.', category: 'chirpy', tier: 'common' },
     { id: 'cr_all_stars', name: 'All Stars', description: 'Had unlocked skips available, started at Level 1, and completed every active level in one attempt.', category: 'eliteEndgame', tier: 'legendary' },
