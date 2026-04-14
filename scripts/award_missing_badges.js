@@ -28,64 +28,64 @@ const db = admin.firestore();
 // Badge catalog — must stay in sync with badgeCatalog in ChallengerRoadService.dart.
 // Only the IDs matter here; we just need to know which ones are valid.
 const VALID_BADGE_IDS = new Set([
-    'cr_fresh_laces',
-    'cr_drop_the_biscuit',
-    'cr_clean_read',
-    'cr_level_clear',
-    'cr_made_the_show',
-    'cr_sharp',
-    'cr_scouting_report',
-    'cr_the_rematch',
-    'cr_dialed_in',
-    'cr_comeback_season',
-    'cr_the_comeback_kid',
-    'cr_ice_time_earned',
-    'cr_team_captain',
-    'cr_playoff_mode',
-    'cr_the_general',
-    'cr_first_bucket',
-    'cr_building_a_barn',
-    'cr_ten_minute_major',
-    'cr_buzzer_beater',
-    'cr_well_never_runs_dry',
-    'cr_bar_down',
-    'cr_top_cheese',
-    'cr_pure',
-    'cr_all_net',
-    'cr_sauce',
-    'cr_unstoppable',
-    'cr_never_missed',
-    'cr_untouchable',
-    'cr_earned_a_salary',
-    'cr_veteran_presence',
-    'cr_lifer',
-    'cr_road_dog',
-    'cr_all_time_great',
-    'cr_bender',
+    'fresh_laces',
+    'drop_the_biscuit',
+    'clean_read',
+    'level_clear',
+    'made_the_show',
+    'sharp',               // removed from catalog — kept so existing earners aren't pruned
+    'scouting_report',
+    'the_rematch',
+    'dialed_in',
+    'comeback_season',
+    'the_comeback_kid',
+    'ice_time_earned',
+    'team_captain',
+    'playoff_mode',        // removed from catalog — kept so existing earners aren't pruned
+    'the_general',
+    'first_bucket',
+    'building_a_barn',
+    'ten_minute_major',
+    'buzzer_beater',
+    'well_never_runs_dry',
+    'bar_down',
+    'top_cheese',
+    'pure',
+    'all_net',
+    'sauce',
+    'unstoppable',
+    'never_missed',
+    'untouchable',
+    'earned_a_salary',
+    'veteran_presence',
+    'lifer',
+    'road_dog',
+    'all_time_great',
+    'bender',
     // Contextually awarded — included so they're not pruned if present:
-    'cr_no_warmup_needed',
-    'cr_breakaway',
-    'cr_freight_train',
-    'cr_clean_sweep',
-    'cr_lights_out',
-    'cr_battle_tested',
-    'cr_game_7',
-    'cr_ghosts_in_the_machine',
-    'cr_old_grudge',
-    'cr_redemption_arc',
-    'cr_pigeon',
-    'cr_sauce_boss',
-    'cr_full_send',
-    'cr_the_climb',
-    'cr_third_period_heart',
-    'cr_the_sniper',
-    'cr_hall_of_famer',
-    'cr_hockey_god',
-    'cr_the_machine',
-    'cr_all_stars',
-    'cr_three_periods',
-    'cr_career_year',
-    'cr_skip_the_tryout',
+    'no_warmup_needed',
+    'breakaway',
+    'freight_train',
+    'clean_sweep',
+    'lights_out',
+    'battle_tested',
+    'game_7',
+    'ghosts_in_the_machine', // removed from catalog — kept so existing earners aren't pruned
+    'old_grudge',
+    'redemption_arc',
+    'pigeon',
+    'sauce_boss',
+    'full_send',
+    'the_climb',
+    'third_period_heart',
+    'the_sniper',
+    'hall_of_famer',
+    'hockey_god',
+    'the_machine',
+    'all_stars',
+    'three_periods',
+    'career_year',
+    'skip_the_tryout',
 ]);
 
 async function main() {
@@ -295,49 +295,47 @@ async function main() {
         }
     };
 
-    if (t >= 1) maybeAward('cr_fresh_laces');
-    if (totalCrSessions >= 1) maybeAward('cr_drop_the_biscuit');
-    if (totalPassedSessions >= 1) maybeAward('cr_clean_read');
-    if (levelsEverCleared.has(1)) maybeAward('cr_level_clear');
-    if (levelsEverCleared.has(3)) maybeAward('cr_made_the_show');
-    if (longestPassStreak >= 4) maybeAward('cr_sharp');
-    if (scoutingReportCount >= 1) maybeAward('cr_scouting_report');
-    if (rematches >= 1) maybeAward('cr_the_rematch');
+    if (t >= 1) maybeAward('fresh_laces');
+    if (totalCrSessions >= 1) maybeAward('drop_the_biscuit');
+    if (totalPassedSessions >= 1) maybeAward('clean_read');
+    if (levelsEverCleared.has(1)) maybeAward('level_clear');
+    if (levelsEverCleared.has(3)) maybeAward('made_the_show');
+    // cr_sharp removed from catalog (too close to cr_sauce at 5 passes).
+    if (scoutingReportCount >= 1) maybeAward('scouting_report');
+    if (rematches >= 1) maybeAward('the_rematch');
     if (latestAttemptNumber >= 2 && summary.all_time_best_level > previousAttemptHighestLevel) {
-        maybeAward('cr_comeback_season');
+        maybeAward('comeback_season');
     }
-    if (attemptNumbersWithNewBestLevel.length >= 3) maybeAward('cr_the_comeback_kid');
-    if (levelsEverCleared.has(5)) maybeAward('cr_ice_time_earned');
-    if (levelsEverCleared.has(10)) maybeAward('cr_team_captain');
-    if (highestActiveLevel > 0 && (summary.all_time_best_level ?? 0) >= highestActiveLevel) {
-        maybeAward('cr_playoff_mode');
-    }
+    if (attemptNumbersWithNewBestLevel.length >= 3) maybeAward('the_comeback_kid');
+    if (levelsEverCleared.has(5)) maybeAward('ice_time_earned');
+    if (levelsEverCleared.has(10)) maybeAward('team_captain');
+    // cr_playoff_mode removed from catalog (fired right before cr_the_general).
     if (highestActiveLevel > 0) {
         const activeAtMax = activeChallengeIdsByLevel[highestActiveLevel] ?? new Set();
         if (activeAtMax.size > 0 && levelsEverCleared.has(highestActiveLevel)) {
-            maybeAward('cr_the_general');
+            maybeAward('the_general');
         }
     }
-    if (shots >= 100) maybeAward('cr_first_bucket');
-    if (shots >= 1000) maybeAward('cr_building_a_barn');
-    if (shots >= 5000) maybeAward('cr_ten_minute_major');
-    if (shots >= 10000) maybeAward('cr_buzzer_beater');
-    if (shots >= 25000) maybeAward('cr_well_never_runs_dry');
-    if (bestSingleSessionAccuracy >= 0.90) maybeAward('cr_bar_down');
-    if (bestSingleSessionAccuracy >= 0.95) maybeAward('cr_top_cheese');
-    if (perfectSessions >= 1) maybeAward('cr_pure');
-    if (perfectSessions >= 5) maybeAward('cr_all_net');
-    if (longestPassStreak >= 5) maybeAward('cr_sauce');
-    if (longestPassStreak >= 10) maybeAward('cr_unstoppable');
-    if (challengesWithPerfectRecord >= 5) maybeAward('cr_never_missed');
-    if (untouchableChallenges >= 1) maybeAward('cr_untouchable');
-    if (challengesWithSalary >= 1) maybeAward('cr_earned_a_salary');
-    if (t >= 2) maybeAward('cr_veteran_presence');
-    if (t >= 5) maybeAward('cr_lifer');
-    if (totalCrSessions >= 250) maybeAward('cr_road_dog');
-    if (totalPassedSessions >= 100) maybeAward('cr_all_time_great');
+    if (shots >= 100) maybeAward('first_bucket');
+    if (shots >= 1000) maybeAward('building_a_barn');
+    if (shots >= 5000) maybeAward('ten_minute_major');
+    if (shots >= 10000) maybeAward('buzzer_beater');
+    if (shots >= 25000) maybeAward('well_never_runs_dry');
+    if (bestSingleSessionAccuracy >= 0.90) maybeAward('bar_down');
+    if (bestSingleSessionAccuracy >= 0.95) maybeAward('top_cheese');
+    if (perfectSessions >= 1) maybeAward('pure');
+    if (perfectSessions >= 5) maybeAward('all_net');
+    if (longestPassStreak >= 5) maybeAward('sauce');
+    if (longestPassStreak >= 10) maybeAward('unstoppable');
+    if (challengesWithPerfectRecord >= 5) maybeAward('never_missed');
+    if (untouchableChallenges >= 1) maybeAward('untouchable');
+    if (challengesWithSalary >= 1) maybeAward('earned_a_salary');
+    if (t >= 2) maybeAward('veteran_presence');
+    if (t >= 5) maybeAward('lifer');
+    if (totalCrSessions >= 250) maybeAward('road_dog');
+    if (totalPassedSessions >= 100) maybeAward('all_time_great');
     if (latestAttemptNumber >= 2 && latestAttemptStartingLevel < previousAttemptHighestLevel) {
-        maybeAward('cr_bender');
+        maybeAward('bender');
     }
 
     console.log('\nBadges to award:', newIds);

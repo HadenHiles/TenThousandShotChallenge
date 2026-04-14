@@ -1180,7 +1180,7 @@ class _CrPlayerCard extends StatelessWidget {
     }
 
     // Derive the headline based on outcomes.
-    final bool roadComplete = badges.contains('cr_the_general') || badges.contains('cr_playoff_mode');
+    final bool roadComplete = badges.contains('the_general') || badges.contains('playoff_mode');
     final int? shots = summary.allTimeBestLevelShots;
     String headline;
     if (roadComplete) {

@@ -22,31 +22,32 @@ class _CrBadgeAttrs {
 }
 
 // IDs from ChallengerRoadService.badgeCatalog grouped by tier.
-const _kRoadCompleteIds = {'cr_the_general', 'cr_playoff_mode'};
+// cr_playoff_mode kept here for backward-compat: users who earned it before removal keep the visual.
+const _kRoadCompleteIds = {'the_general', 'playoff_mode'};
 const _kLegendaryIds = {
-  'cr_hockey_god',
-  'cr_hall_of_famer',
-  'cr_the_machine',
-  'cr_all_stars',
-  'cr_clean_sweep',
-  'cr_three_periods',
-  'cr_well_never_runs_dry',
-  'cr_all_net',
-  'cr_the_sniper',
-  'cr_career_year',
+  'hockey_god',
+  'hall_of_famer',
+  'the_machine',
+  'all_stars',
+  'clean_sweep',
+  'three_periods',
+  'well_never_runs_dry',
+  'all_net',
+  'the_sniper',
+  'career_year',
 };
 const _kEpicIds = {
-  'cr_freight_train',
-  'cr_dialed_in',
-  'cr_redemption_arc',
+  'freight_train',
+  'dialed_in',
+  'redemption_arc',
   'cr_game_7',
-  'cr_team_captain',
-  'cr_buzzer_beater',
-  'cr_top_cheese',
-  'cr_pure',
-  'cr_unstoppable',
-  'cr_full_send',
-  'cr_earned_a_salary',
+  'team_captain',
+  'buzzer_beater',
+  'top_cheese',
+  'pure',
+  'unstoppable',
+  'full_send',
+  'earned_a_salary',
 };
 
 class CrProfileAccomplishment {
