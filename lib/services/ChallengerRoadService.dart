@@ -888,13 +888,6 @@ class ChallengerRoadService {
       tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
-      id: 'cr_ferda',
-      name: 'Ferda',
-      description: 'Hit 10,000 shots and kept going.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.uncommon,
-    ),
-    ChallengerRoadBadgeDefinition(
       id: 'cr_sauce_boss',
       name: 'Sauce Boss',
       description: 'New personal best accuracy on a harder Challenger Road challenge.',
