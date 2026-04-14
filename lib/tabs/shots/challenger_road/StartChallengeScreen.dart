@@ -198,28 +198,28 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     final service = ChallengerRoadService(firestore: firestore);
 
-    // Snapshot badges before this save flow so we can compute all newly earned
-    // badges after session save + milestone + level advancement.
-    final beforeSummary = await service.getUserSummary(widget.userId);
-    final beforeBadgeIds = beforeSummary.badges.toSet();
-
-    // A session is passed when any single try met or exceeded the goal.
-    final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
-
-    final session = ChallengeSession(
-      challengeId: widget.challenge.id!,
-      level: widget.levelDoc.level,
-      date: DateTime.now(),
-      duration: duration,
-      shotsRequired: widget.levelDoc.shotsRequired,
-      shotsToPass: widget.levelDoc.shotsToPass,
-      shotsMade: _sessionShotsMade,
-      totalShots: _sessionTotalShots,
-      passed: passed,
-      shots: List.unmodifiable(_shots),
-    );
-
     try {
+      // Snapshot badges before this save flow so we can compute all newly earned
+      // badges after session save + milestone + level advancement.
+      final beforeSummary = await service.getUserSummary(widget.userId);
+      final beforeBadgeIds = beforeSummary.badges.toSet();
+
+      // A session is passed when any single try met or exceeded the goal.
+      final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
+
+      final session = ChallengeSession(
+        challengeId: widget.challenge.id!,
+        level: widget.levelDoc.level,
+        date: DateTime.now(),
+        duration: duration,
+        shotsRequired: widget.levelDoc.shotsRequired,
+        shotsToPass: widget.levelDoc.shotsToPass,
+        shotsMade: _sessionShotsMade,
+        totalShots: _sessionTotalShots,
+        passed: passed,
+        shots: List.unmodifiable(_shots),
+      );
+
       // Save to ChallengerRoad sub-collection — this is the critical write.
       await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
 
@@ -707,7 +707,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         ),
       );
       await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) _finishSession();
+      if (mounted && !_saving) _finishSession();
     }
   }
 
