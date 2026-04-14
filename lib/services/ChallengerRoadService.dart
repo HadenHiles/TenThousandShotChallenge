@@ -1555,8 +1555,7 @@ class ChallengerRoadService {
 
       // cr_and_again removed from catalog. cr_three_periods: 3 resets = 30,000 total.
       if (newResetCount >= 3) maybeAward('cr_three_periods');
-      // cr_ferda: kept going after a 10k reset (will have more sessions after reset).
-      maybeAward('cr_ferda');
+      maybeAward('cr_career_year');
       // cr_career_year: 10k milestone hit AND this attempt set a new all-time best level.
       if (attempt.highestLevelReachedThisAttempt > freshSummary.allTimeBestLevel) {
         maybeAward('cr_career_year');
@@ -2148,7 +2147,7 @@ class ChallengerRoadService {
   /// | `_checkAndAwardBadges` (here)     | All stat-derivable badges: shot milestones, level clears, session counts, streak lengths, cross-attempt improvement counters, etc. |
   /// | `_checkContextualSessionBadges`   | Badges that need the live `ChallengeSession` object: `cr_lights_out`, `cr_battle_tested`, `cr_game_7`, `cr_ghosts_in_the_machine`, `cr_old_grudge`, `cr_redemption_arc`, `cr_pigeon`, `cr_sauce_boss`, `cr_full_send`. |
   /// | `advanceLevel`                    | Level-completion badges: `cr_the_climb`, `cr_third_period_heart`, `cr_no_warmup_needed`, `cr_breakaway`, `cr_clean_sweep`, `cr_freight_train`, `cr_the_sniper`, `cr_hall_of_famer`, `cr_hockey_god`, `cr_the_machine`, `cr_all_stars`. |
-  /// | `incrementChallengerRoadShots`    | 10k-milestone badges: `cr_three_periods`, `cr_ferda`, `cr_career_year`. |
+  /// | `incrementChallengerRoadShots`    | 10k-milestone badges: `cr_three_periods`, `cr_career_year`. |
   /// | `createAttempt`                   | Per-attempt badges: `cr_skip_the_tryout`. |
   ///
   /// Returns the IDs of badges newly awarded by this call.
@@ -2300,7 +2299,7 @@ class ChallengerRoadService {
     }
 
     // cr_pigeon: first-try 95%+ on a hard challenge — contextually.
-    // cr_ferda, cr_sauce_boss — contextually.
+    // cr_sauce_boss — contextually.
     // cr_old_habits, cr_just_visiting — removed from catalog.
     // cr_skip_the_tryout: awarded in createAttempt when startingLevel > 1 with inherited unlocks.
 

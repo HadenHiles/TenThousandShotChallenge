@@ -41,7 +41,7 @@ const BADGE_IDS = [
     'cr_never_missed', 'cr_untouchable', 'cr_earned_a_salary',
     'cr_veteran_presence', 'cr_lifer', 'cr_career_year', 'cr_road_dog', 'cr_all_time_great',
     'cr_hall_of_famer', 'cr_the_machine', 'cr_hockey_god',
-    'cr_bender', 'cr_pigeon', 'cr_ferda', 'cr_sauce_boss', 'cr_skip_the_tryout', 'cr_all_stars',
+    'cr_bender', 'cr_pigeon', 'cr_sauce_boss', 'cr_skip_the_tryout', 'cr_all_stars',
 ];
 
 async function unseed() {
