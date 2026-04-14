@@ -60,7 +60,7 @@ const BADGES = [
     { id: 'clean_sweep', name: 'Clean Sweep', description: 'Every challenge in a level passed on the first try.', category: 'withinRunEfficiency', tier: 'legendary' },
 
     // ── CROSS-ATTEMPT IMPROVEMENT ─────────────────────────────────────────────
-    { id: 'scouting_report', name: 'Scouting Report', description: 'First-try pass on a challenge that took multiple tries last run.', category: 'crossAttemptImprovement', tier: 'rare' },
+    { id: 'scouting_report', name: 'Scouting Report', description: 'First-try pass on a challenge that took multiple tries last run.', category: 'crossAttemptImprovement', tier: 'uncommon' },
     { id: 'the_rematch', name: 'The Rematch', description: "Passed a challenge you couldn't finish in your previous attempt.", category: 'crossAttemptImprovement', tier: 'uncommon' },
     { id: 'dialed_in', name: 'Dialed In', description: 'New personal best accuracy on your hardest challenge.', category: 'crossAttemptImprovement', tier: 'epic' },
     { id: 'comeback_season', name: 'Comeback Season', description: 'Reached a higher level than your previous best attempt.', category: 'crossAttemptImprovement', tier: 'rare' },
@@ -68,7 +68,7 @@ const BADGES = [
     { id: 'the_comeback_kid', name: 'The Comeback Kid', description: 'Set a new personal best level in 3 separate attempts.', category: 'crossAttemptImprovement', tier: 'epic' },
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
-    { id: 'battle_tested', name: 'Battle Tested', description: 'Failed the same challenge 5 times in a row, then passed it.', category: 'grindAndResilience', tier: 'rare' },
+    { id: 'battle_tested', name: 'Battle Tested', description: 'Failed the same challenge 5 times in a row, then passed it.', category: 'grindAndResilience', tier: 'uncommon' },
     { id: 'game_7', name: 'Game 7', description: "Passed the challenge you've failed more than any other.", category: 'grindAndResilience', tier: 'epic' },
     { id: 'third_period_heart', name: 'Third Period Heart', description: 'Cleared a level despite 10+ failed sessions inside it.', category: 'grindAndResilience', tier: 'rare' },
     { id: 'old_grudge', name: 'Old Grudge', description: 'Failed this challenge in two straight attempts — then finally passed it.', category: 'grindAndResilience', tier: 'rare' },
@@ -98,7 +98,7 @@ const BADGES = [
     // ── HOT STREAKS ───────────────────────────────────────────────────────────
     { id: 'sauce', name: 'Sauce', description: '5 passes in a row, no failures in between.', category: 'hotStreaks', tier: 'rare' },
     { id: 'unstoppable', name: 'Unstoppable', description: '10 passes in a row, no failures in between.', category: 'hotStreaks', tier: 'epic' },
-    { id: 'full_send', name: 'Full Send', description: 'Best accuracy AND highest shot volume in the same session.', category: 'hotStreaks', tier: 'epic' },
+    { id: 'full_send', name: 'Full Send', description: 'Best accuracy AND highest shot volume in the same session.', category: 'hotStreaks', tier: 'rare' },
 
     // ── CHALLENGE MASTERY ─────────────────────────────────────────────────────
     { id: 'never_missed', name: 'Never Missed', description: "5+ challenges you've never once failed.", category: 'challengeMastery', tier: 'hidden' },
@@ -107,7 +107,7 @@ const BADGES = [
 
     // ── MULTI-ATTEMPT / CAREER ────────────────────────────────────────────────
     { id: 'veteran_presence', name: 'Veteran Presence', description: 'Started a second Challenger Road attempt.', category: 'multiAttemptCareer', tier: 'uncommon' },
-    { id: 'lifer', name: 'Lifer', description: "5 Challenger Road attempts. It's just your thing now.", category: 'multiAttemptCareer', tier: 'epic' },
+    { id: 'lifer', name: 'Lifer', description: "5 Challenger Road attempts. It's just your thing now.", category: 'multiAttemptCareer', tier: 'legendary' },
     { id: 'career_year', name: 'Career Year', description: 'Hit 10,000 shots AND a new personal best level in the same attempt.', category: 'multiAttemptCareer', tier: 'epic' },
     { id: 'road_dog', name: 'Road Dog', description: '250 total sessions on the Challenger Road.', category: 'multiAttemptCareer', tier: 'epic' },
     { id: 'all_time_great', name: 'All-Time Great', description: '100 total challenge passes across all attempts.', category: 'multiAttemptCareer', tier: 'legendary' },
@@ -119,7 +119,7 @@ const BADGES = [
 
     // ── CHIRPY / PERSONALITY ──────────────────────────────────────────────────
     { id: 'bender', name: 'Bender', description: 'Started a new attempt at a lower level than your previous best.', category: 'chirpy', tier: 'common' },
-    { id: 'pigeon', name: 'Pigeon', description: 'First-try pass at 95%+ accuracy on a hard challenge.', category: 'chirpy', tier: 'uncommon' },
+    { id: 'pigeon', name: 'Pigeon', description: 'First-try pass at 95%+ accuracy on a hard challenge.', category: 'chirpy', tier: 'rare' },
     { id: 'sauce_boss', name: 'Sauce Boss', description: 'New personal best accuracy on a harder Challenger Road challenge.', category: 'chirpy', tier: 'rare' },
     { id: 'skip_the_tryout', name: 'Skip the Tryout', description: 'Started a new attempt at a higher level using unlocks from a previous run.', category: 'chirpy', tier: 'common' },
     { id: 'all_stars', name: 'All Stars', description: 'Had unlocked skips available, started at Level 1, and completed every active level in one attempt.', category: 'eliteEndgame', tier: 'legendary' },

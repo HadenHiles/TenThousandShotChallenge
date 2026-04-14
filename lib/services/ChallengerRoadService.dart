@@ -559,7 +559,7 @@ class ChallengerRoadService {
       name: 'Scouting Report',
       description: 'First-try pass on a challenge that took multiple tries last run.',
       category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.rare,
+      tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'the_rematch',
@@ -603,7 +603,7 @@ class ChallengerRoadService {
       name: 'Battle Tested',
       description: 'Failed the same challenge 5 times in a row, then passed it.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.rare,
+      tier: ChallengerRoadBadgeTier.uncommon,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'game_7',
@@ -765,7 +765,7 @@ class ChallengerRoadService {
       name: 'Full Send',
       description: 'Best accuracy AND highest shot volume in the same session.',
       category: ChallengerRoadBadgeCategory.hotStreaks,
-      tier: ChallengerRoadBadgeTier.epic,
+      tier: ChallengerRoadBadgeTier.rare,
     ),
 
     // ── CHALLENGE MASTERY ─────────────────────────────────────────────────────
@@ -804,7 +804,7 @@ class ChallengerRoadService {
       name: 'Lifer',
       description: '5 Challenger Road attempts. It\'s just your thing now.',
       category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.epic,
+      tier: ChallengerRoadBadgeTier.legendary,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'career_year',
@@ -864,7 +864,7 @@ class ChallengerRoadService {
       name: 'Pigeon',
       description: 'First-try pass at 95%+ accuracy on a hard challenge.',
       category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      tier: ChallengerRoadBadgeTier.rare,
     ),
     ChallengerRoadBadgeDefinition(
       id: 'sauce_boss',
@@ -1220,7 +1220,9 @@ class ChallengerRoadService {
     }
 
     // cr_sauce_boss: personal best accuracy on any challenge at a hard level.
-    if (session.level >= 5) {
+    // Requires a prior session on that challenge (priorBestAcc > 0) so the very
+    // first attempt at level 5+ doesn't trivially award this.
+    if (session.level >= 5 && priorBestAcc > 0.0) {
       if (sessionAcc > priorBestAcc) maybeAward('sauce_boss');
     }
 
@@ -2035,14 +2037,26 @@ class ChallengerRoadService {
       }
     }
 
-    // Dialed In: current personal best accuracy on the most-failed challenge
-    // was achieved in the most recent attempt.
-    if (mostFailedChallengeId != null && latestAttemptNumber > 0) {
-      final bestAcc = bestAccuracyByChallenge[mostFailedChallengeId] ?? 0.0;
-      final latestAttempt = allAttempts.last;
-      final latestSess = await _sessionsRef(userId, latestAttempt.id!).where('challenge_id', isEqualTo: mostFailedChallengeId).get();
-      final latestAccMax = latestSess.docs.map(ChallengeSession.fromSnapshot).map((s) => s.totalShots > 0 ? s.shotsMade / s.totalShots : 0.0).fold(0.0, (a, b) => a > b ? a : b);
-      dialedInAchieved = latestAccMax >= bestAcc && bestAcc > 0.0;
+    // Dialed In: latest attempt sets a *new* personal best accuracy on the
+    // most-failed challenge. Requires at least 2 attempts so there is an
+    // actual prior baseline to beat (first attempt is trivially a "best").
+    if (mostFailedChallengeId != null && latestAttemptNumber >= 2) {
+      // Best accuracy on that challenge across all previous attempts only.
+      double prevBestAcc = 0.0;
+      final sessionsByAttempt = sessionsByChallengeByAttempt[mostFailedChallengeId] ?? {};
+      for (final entry in sessionsByAttempt.entries) {
+        if (entry.key == latestAttemptNumber) continue;
+        for (final s in entry.value) {
+          final acc = s.totalShots > 0 ? s.shotsMade / s.totalShots : 0.0;
+          if (acc > prevBestAcc) prevBestAcc = acc;
+        }
+      }
+      if (prevBestAcc > 0.0) {
+        // Latest attempt's best accuracy on that challenge (already prefetched).
+        final latestSessionsForChallenge = sessionsByAttempt[latestAttemptNumber] ?? [];
+        final latestAccMax = latestSessionsForChallenge.isEmpty ? 0.0 : latestSessionsForChallenge.map((s) => s.totalShots > 0 ? s.shotsMade / s.totalShots : 0.0).reduce((a, b) => a > b ? a : b);
+        dialedInAchieved = latestAccMax > prevBestAcc;
+      }
     }
 
     return _RoadBadgeStats(
