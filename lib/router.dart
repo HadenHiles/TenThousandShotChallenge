@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/CompareStats.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/AccuracyScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/AchievementsScreen.dart';
@@ -48,6 +49,7 @@ abstract final class AppRouteNames {
   static const profileAchievements = 'me_achievements';
   static const profileChallengerRoad = 'me_challenger_road';
   static const challengerRoad = 'train_challenger_road';
+  static const compareStats = 'community_compare_stats';
 }
 
 String _appShellRouteName(GoRouterState state) {
@@ -160,6 +162,14 @@ List<RouteBase> _buildCommunityRoutes() {
       builder: (context, state) {
         final playerId = state.pathParameters['id'];
         return Player(uid: playerId);
+      },
+    ),
+    GoRoute(
+      path: '/compare-stats/:friendId',
+      name: AppRouteNames.compareStats,
+      builder: (context, state) {
+        final friendId = state.pathParameters['friendId']!;
+        return CompareStats(friendUid: friendId);
       },
     ),
     GoRoute(

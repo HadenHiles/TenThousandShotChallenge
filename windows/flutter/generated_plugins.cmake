@@ -12,6 +12,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_windows
   flutter_timezone
   permission_handler_windows
+  printing
   share_plus
   url_launcher_windows
 )

@@ -33,6 +33,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   // State settings values
   bool _darkMode = false;
   bool _friendNotifications = true;
+  bool _practiceReminders = false;
+  bool _healthSync = false;
   bool _publicProfile = true;
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
@@ -90,6 +92,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       setState(() {
         _publicProfile = u.public ?? false;
         _friendNotifications = u.friendNotifications ?? true;
+        _practiceReminders = u.practiceReminders ?? false;
+        _healthSync = u.healthSync ?? false;
       });
     });
   }
@@ -570,6 +574,44 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   ),
                                 );
                               }
+                            },
+                          ),
+                          SettingsTile.switchTile(
+                            title: Text(
+                              'Practice Reminders',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            description: Text(
+                              'Get a push notification when you haven\'t practised in 2 days',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(
+                              Icons.alarm,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            initialValue: _practiceReminders,
+                            onToggle: (bool value) async {
+                              await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
+                              if (mounted) setState(() => _practiceReminders = value);
+                            },
+                          ),
+                          SettingsTile.switchTile(
+                            title: Text(
+                              'Apple Health / Google Fit Sync',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            description: Text(
+                              'Log hockey workouts to Apple Health or Google Fit after each session',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(
+                              Icons.favorite_outlined,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            initialValue: _healthSync,
+                            onToggle: (bool value) async {
+                              await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'health_sync': value});
+                              if (mounted) setState(() => _healthSync = value);
                             },
                           ),
                         ],

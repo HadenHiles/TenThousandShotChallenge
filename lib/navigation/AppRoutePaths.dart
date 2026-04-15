@@ -22,4 +22,7 @@ abstract final class AppRoutePaths {
 
   /// Parameterised player-profile path: `/player/<id>`.
   static String playerPathFor(String id) => '/player/$id';
+
+  /// Parameterised compare-stats path: `/compare-stats/<friendUid>`.
+  static String compareStatsPathFor(String friendUid) => '/compare-stats/$friendUid';
 }

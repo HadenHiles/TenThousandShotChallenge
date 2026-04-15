@@ -7,11 +7,13 @@ class UserProfile {
   final String? photoUrl;
   final bool? public;
   final bool? friendNotifications;
+  final bool? practiceReminders;
+  final bool? healthSync;
   String? teamId;
   final String? fcmToken;
   DocumentReference? reference;
 
-  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.friendNotifications, this.teamId, this.fcmToken);
+  UserProfile(this.displayName, this.email, this.photoUrl, this.public, this.friendNotifications, this.teamId, this.fcmToken, {this.practiceReminders, this.healthSync});
 
   UserProfile.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
@@ -20,6 +22,8 @@ class UserProfile {
         photoUrl = map['photo_url'],
         public = map['public'] ?? false,
         friendNotifications = map['friend_notifications'] ?? true,
+        practiceReminders = map['practice_reminders'] ?? false,
+        healthSync = map['health_sync'] ?? false,
         teamId = map['team_id'],
         fcmToken = map['fcm_token'];
 
@@ -31,6 +35,8 @@ class UserProfile {
       'photo_url': photoUrl,
       'public': public ?? false,
       'friend_notifications': friendNotifications ?? true,
+      'practice_reminders': practiceReminders ?? false,
+      'health_sync': healthSync ?? false,
       'team_id': teamId,
       'fcm_token': fcmToken,
     };

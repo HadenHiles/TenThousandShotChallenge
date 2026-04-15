@@ -22,6 +22,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import '../main.dart';
 
 class Shots extends StatefulWidget {
@@ -152,6 +153,17 @@ class _ShotsState extends State<Shots> {
 
   Future<void> _openChallengerRoad() async {
     if (_showChallengerRoad) return;
+    // Challenger Road requires an internet connection.
+    final status = Provider.of<NetworkStatus>(context, listen: false);
+    if (status == NetworkStatus.Offline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Challenger Road requires an internet connection.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
     final latestLevel = await subscriptionLevel(context);
     if (!mounted) return;
     setState(() {
@@ -824,16 +836,75 @@ class _ShotsState extends State<Shots> {
   }
 
   Widget _buildInlineChallengerRoad(User user) {
-    if (_subscriptionLevel == 'pro') {
-      return ChallengerRoadMapView(
-        userId: user.uid,
-        onCloseTap: _closeChallengerRoad,
-      );
-    }
+    return Consumer<NetworkStatus>(
+      builder: (context, status, _) {
+        if (status == NetworkStatus.Offline) {
+          return _buildChallengerRoadOfflinePlaceholder(context);
+        }
+        if (_subscriptionLevel == 'pro') {
+          return ChallengerRoadMapView(
+            userId: user.uid,
+            onCloseTap: _closeChallengerRoad,
+          );
+        }
+        return ChallengerRoadTeaserView(
+          embedded: true,
+          onCloseTap: _closeChallengerRoad,
+        );
+      },
+    );
+  }
 
-    return ChallengerRoadTeaserView(
-      embedded: true,
-      onCloseTap: _closeChallengerRoad,
+  Widget _buildChallengerRoadOfflinePlaceholder(BuildContext context) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: _closeChallengerRoad,
+              ),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 72,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'No Connection',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Challenger Road requires an internet connection.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1018,6 +1089,37 @@ class _ShotsState extends State<Shots> {
                 bottom: 0,
                 child: _buildSessionControls(),
               ),
+            // Offline indicator banner
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Consumer<NetworkStatus>(
+                builder: (_, status, __) {
+                  if (status != NetworkStatus.Offline) return const SizedBox.shrink();
+                  return Container(
+                    color: Colors.orange.shade800,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.wifi_off_rounded, color: Colors.white, size: 15),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Offline — sessions will sync when connection is restored.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         );
       },

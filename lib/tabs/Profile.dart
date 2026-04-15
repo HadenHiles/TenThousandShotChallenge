@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -194,6 +195,8 @@ class _ProfileState extends State<Profile> {
             const SizedBox(height: 12),
             _buildChallengerRoadCard(context, currentUser),
             const SizedBox(height: 12),
+            _buildActivityCalendarCard(context),
+            const SizedBox(height: 12),
             _buildSessionsCard(context, currentUser),
             const SizedBox(height: 80),
           ],
@@ -348,6 +351,39 @@ class _ProfileState extends State<Profile> {
           },
         ),
       ],
+    );
+  }
+
+  // ── Activity Calendar ─────────────────────────────────────────────────────
+
+  Widget _buildActivityCalendarCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.calendar_month_rounded, color: theme.colorScheme.onPrimary, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Text('Training Activity'.toUpperCase(), style: theme.textTheme.headlineSmall),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const ActivityCalendar(),
+          ],
+        ),
+      ),
     );
   }
 
