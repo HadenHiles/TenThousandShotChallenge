@@ -1551,7 +1551,13 @@ class _StartShootingState extends State<StartShooting> {
                         final connectivity = await Connectivity().checkConnectivity();
                         final isOffline = connectivity.contains(ConnectivityResult.none);
                         if (isOffline) {
-                          await OfflineSessionQueue.instance.enqueue(_shots);
+                          final queuedDuration = sessionService.currentDuration;
+                          final queuedStartedAt = DateTime.now().subtract(queuedDuration);
+                          await OfflineSessionQueue.instance.enqueue(
+                            _shots,
+                            sessionStartedAt: queuedStartedAt,
+                            duration: queuedDuration,
+                          );
                           final pending = await OfflineSessionQueue.instance.pendingCount();
                           await widget.sessionPanelController.close();
                           sessionService.reset();

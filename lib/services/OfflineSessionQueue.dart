@@ -28,22 +28,35 @@ class OfflineSessionQueue {
   Future<Database> _openDb() async {
     return openDatabase(
       dbPathOverride ?? 'offline_sessions.db',
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE pending_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             shots_json TEXT NOT NULL,
             is_challenger_road INTEGER NOT NULL DEFAULT 0,
+            session_started_at INTEGER,
+            duration_ms INTEGER,
             created_at INTEGER NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE pending_sessions ADD COLUMN session_started_at INTEGER');
+          await db.execute('ALTER TABLE pending_sessions ADD COLUMN duration_ms INTEGER');
+        }
       },
     );
   }
 
   /// Serialize [shots] and persist them locally for later sync.
-  Future<void> enqueue(List<Shots> shots, {bool isChallengerRoad = false}) async {
+  Future<void> enqueue(
+    List<Shots> shots, {
+    bool isChallengerRoad = false,
+    DateTime? sessionStartedAt,
+    Duration? duration,
+  }) async {
     final db = await _database;
     final shotsJson = jsonEncode(shots
         .map((s) => {
@@ -56,6 +69,8 @@ class OfflineSessionQueue {
     await db.insert('pending_sessions', {
       'shots_json': shotsJson,
       'is_challenger_road': isChallengerRoad ? 1 : 0,
+      'session_started_at': sessionStartedAt?.millisecondsSinceEpoch,
+      'duration_ms': duration?.inMilliseconds,
       'created_at': DateTime.now().millisecondsSinceEpoch,
     });
   }
@@ -69,8 +84,12 @@ class OfflineSessionQueue {
 
   /// Attempt to sync all pending sessions to Firestore.
   /// Call this whenever connectivity is restored.
-  Future<void> syncPending(FirebaseAuth auth, FirebaseFirestore firestore) async {
-    final connectivity = await Connectivity().checkConnectivity();
+  Future<void> syncPending(
+    FirebaseAuth auth,
+    FirebaseFirestore firestore, {
+    Future<List<ConnectivityResult>> Function()? connectivityCheck,
+  }) async {
+    final connectivity = await (connectivityCheck?.call() ?? Connectivity().checkConnectivity());
     if (connectivity.contains(ConnectivityResult.none)) return;
     if (auth.currentUser == null) return;
 
@@ -91,7 +110,16 @@ class OfflineSessionQueue {
         }).toList();
 
         final isChallengerRoad = (row['is_challenger_road'] as int?) == 1;
-        final success = await saveShootingSession(shots, auth, firestore, isChallengerRoad: isChallengerRoad);
+        final startedAtMs = row['session_started_at'] as int?;
+        final durationMs = row['duration_ms'] as int?;
+        final success = await saveShootingSession(
+          shots,
+          auth,
+          firestore,
+          isChallengerRoad: isChallengerRoad,
+          sessionDateOverride: startedAtMs != null ? DateTime.fromMillisecondsSinceEpoch(startedAtMs) : null,
+          sessionDurationOverride: durationMs != null ? Duration(milliseconds: durationMs) : null,
+        );
         if (success) {
           await db.delete('pending_sessions', where: 'id = ?', whereArgs: [row['id']]);
         }
