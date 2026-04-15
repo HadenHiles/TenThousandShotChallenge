@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
@@ -38,6 +39,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _publicProfile = true;
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
+
+  // Local notification settings
+  bool _localPracticeReminders = true;
+  bool _streakNotifications = true;
+  bool _achievementNotifications = true;
+  bool _weeklyProgressNotifications = true;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 17, minute: 0); // 5 PM default
 
   // Simulated subscription level (replace with RevenueCat or your backend)
   String _subscriptionLevel = "free"; // Can be "Free", "Premium", or "Pro"
@@ -85,6 +93,13 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
     setState(() {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
+      _localPracticeReminders = prefs.getBool('local_practice_reminders') ?? true;
+      _streakNotifications = prefs.getBool('streak_notifications') ?? true;
+      _achievementNotifications = prefs.getBool('achievement_notifications') ?? true;
+      _weeklyProgressNotifications = prefs.getBool('weekly_progress_notifications') ?? true;
+      final h = prefs.getInt('reminder_hour') ?? 17;
+      final m = prefs.getInt('reminder_minute') ?? 0;
+      _reminderTime = TimeOfDay(hour: h, minute: m);
     });
 
     Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).get().then((snapshot) {
@@ -616,11 +631,133 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           ),
                         ],
                       ),
+                      // ── Local Notifications ───────────────────────────────────────
                       SettingsSection(
-                        title: Text(
-                          'Account',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+                        title: Text('On-Device Notifications', style: Theme.of(context).textTheme.titleLarge),
+                        tiles: [
+                          SettingsTile.switchTile(
+                            title: Text('Daily Practice Reminder', style: Theme.of(context).textTheme.bodyLarge),
+                            description: Text(
+                              'Remind me to log shots every day at my chosen time',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(Icons.alarm_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                            initialValue: _localPracticeReminders,
+                            onToggle: (bool value) async {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('local_practice_reminders', value);
+                              if (mounted) setState(() => _localPracticeReminders = value);
+                              if (value) {
+                                await LocalNotificationService.scheduleDailyReminder(
+                                  hour: _reminderTime.hour,
+                                  minute: _reminderTime.minute,
+                                );
+                              } else {
+                                await LocalNotificationService.cancelDailyReminder();
+                              }
+                            },
+                          ),
+                          if (_localPracticeReminders)
+                            SettingsTile(
+                              title: Text('Reminder Time', style: Theme.of(context).textTheme.bodyLarge),
+                              description: Text(
+                                _reminderTime.format(context),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(Icons.schedule_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                              onPressed: (ctx) async {
+                                final picked = await showTimePicker(
+                                  context: ctx,
+                                  initialTime: _reminderTime,
+                                );
+                                if (picked != null) {
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setInt('reminder_hour', picked.hour);
+                                  await prefs.setInt('reminder_minute', picked.minute);
+                                  if (mounted) setState(() => _reminderTime = picked);
+                                  await LocalNotificationService.scheduleDailyReminder(
+                                    hour: picked.hour,
+                                    minute: picked.minute,
+                                  );
+                                }
+                              },
+                            ),
+                          SettingsTile.switchTile(
+                            title: Text('Streak Alerts', style: Theme.of(context).textTheme.bodyLarge),
+                            description: Text(
+                              'Alert at 8 PM if you haven\'t practiced and have a streak going',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+                            initialValue: _streakNotifications,
+                            onToggle: (bool value) async {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('streak_notifications', value);
+                              if (mounted) setState(() => _streakNotifications = value);
+                              if (!value) await LocalNotificationService.cancelStreakAtRisk();
+                            },
+                          ),
+                          SettingsTile.switchTile(
+                            title: Text('Achievement & Milestone Alerts', style: Theme.of(context).textTheme.bodyLarge),
+                            description: Text(
+                              'Notify me when I complete a session, earn a badge, or hit a milestone',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(Icons.emoji_events_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                            initialValue: _achievementNotifications,
+                            onToggle: (bool value) async {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('achievement_notifications', value);
+                              if (mounted) setState(() => _achievementNotifications = value);
+                            },
+                          ),
+                          SettingsTile.switchTile(
+                            title: Row(
+                              children: [
+                                Text('Weekly Wrap-Up', style: Theme.of(context).textTheme.bodyLarge),
+                                const SizedBox(width: 8),
+                                if (_subscriptionLevel != 'pro')
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'PRO',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            description: Text(
+                              'Friday 6 PM reminder to review your week\'s shot count',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            leading: Icon(Icons.bar_chart_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                            enabled: _subscriptionLevel == 'pro',
+                            initialValue: _weeklyProgressNotifications && _subscriptionLevel == 'pro',
+                            onToggle: (bool value) async {
+                              if (_subscriptionLevel != 'pro') return;
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('weekly_progress_notifications', value);
+                              if (mounted) setState(() => _weeklyProgressNotifications = value);
+                              if (value) {
+                                await LocalNotificationService.scheduleWeeklyProgress();
+                              } else {
+                                await LocalNotificationService.cancelWeeklyProgress();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      SettingsSection(
+                        title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
                         tiles: [
                           SettingsTile.switchTile(
                             title: Text(

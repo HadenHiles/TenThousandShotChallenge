@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
 import 'package:tenthousandshotchallenge/services/HealthService.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -1605,7 +1606,7 @@ class _StartShootingState extends State<StartShooting> {
                             });
                           }
 
-                          await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                          await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
                             if (snapshot.docs.isNotEmpty) {
                               Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
@@ -1619,6 +1620,17 @@ class _StartShootingState extends State<StartShooting> {
                                   textColor: Theme.of(context).colorScheme.onPrimary,
                                   fontSize: 16.0,
                                 );
+
+                                // Fire session-complete local notification.
+                                final sessionPrefs = await SharedPreferences.getInstance();
+                                final sessionCount = (sessionPrefs.getInt('session_count') ?? 0) + 1;
+                                await sessionPrefs.setInt('session_count', sessionCount);
+                                await LocalNotificationService.showSessionComplete(
+                                  totalShots: totalShots,
+                                  sessionCount: sessionCount,
+                                  isPro: _subscriptionLevel == 'pro',
+                                );
+
                                 // Check if a sub-milestone was crossed this session
                                 const subMilestones = [1000, 2500, 5000, 7500];
                                 for (final milestone in subMilestones) {
@@ -1665,6 +1677,11 @@ class _StartShootingState extends State<StartShooting> {
                                             ),
                                           ],
                                         ),
+                                      );
+                                      // Also fire a milestone local notification.
+                                      await LocalNotificationService.showMilestoneReached(
+                                        totalShots: milestone,
+                                        isPro: _subscriptionLevel == 'pro',
                                       );
                                     }
                                     break;

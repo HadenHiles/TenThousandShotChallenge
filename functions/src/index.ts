@@ -326,51 +326,42 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
         await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
             session = sDoc.data();
-            let data: any;
+            // Build the notification title based on session data.
+            const notifTitle = session != null
+                ? `${user.display_name} just took ${session.total} shots!`
+                : `Look out! ${user.display_name} is a shooting machine!`;
 
-            if (session != null) {
-                data = {
-                    "message": {
-                        "data": {
-                            "body": `${user.display_name} just finished shooting!`,
-                            "title": `${user.display_name} just took ${session.total} shots!`,
-                            "click_action": "FLUTTER_NOTIFICATION_CLICK"
-                        }
-                    },
-                };
-            } else {
-                data = {
-                    "message": {
-                        "data": {
-                            "body": `${user.display_name} just finished shooting`,
-                            "title": `Look out! ${user.display_name} is a shooting machine!`,
-                            "click_action": "FLUTTER_NOTIFICATION_CLICK"
-                        }
-                    },
-                };
-            }
-
-            if (user! != null && user.friend_notifications == true) {
-                // Retrieve the teammate who accepted the invite
+            if (user != null && user.friend_notifications == true) {
+                // Fan out a notification to every mutual teammate who has opted in.
                 await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
-                    // Get the players teammates
                     teammates = tDoc.docs;
 
                     teammates.forEach(async (t) => {
-                        let teammate = t.data();
+                        // FCM token lives on the *user* document, not the teammate relationship doc.
                         await db.collection("users").doc(t.id).get().then(async (tmDoc) => {
-                            let friend = tmDoc.data();
-                            let friendNotifications = friend!.friend_notifications != undefined ? friend!.friend_notifications : false;
-                            let fcmToken = teammate.fcm_token != undefined ? teammate.fcm_token : null;
-                            //functions.logger.debug("attempting send notification to teammate: " + teammate.display_name + "\nfcm_token: " + fcmToken + "\nfriend_notifications: " + friendNotifications);
+                            const friend = tmDoc.data();
+                            const friendNotifications = friend?.friend_notifications ?? false;
+                            const fcmToken = friend?.fcm_token ?? null;
 
                             if (friendNotifications && fcmToken != null) {
-                                data.notification.body = getFriendNotificationMessage(user!.display_name, teammate.display_name);
-                                data.message.token = fcmToken;
-
-                                logger.debug("Sending notification with data: " + JSON.stringify(data));
-
-                                sendFcmMessage(data);
+                                // Use a notification payload so the OS displays it automatically,
+                                // plus a fun randomised body from getFriendNotificationMessage.
+                                const friendData = {
+                                    "message": {
+                                        "token": fcmToken,
+                                        "notification": {
+                                            "title": notifTitle,
+                                            "body": getFriendNotificationMessage(
+                                                user.display_name,
+                                                friend?.display_name ?? "",
+                                            ),
+                                        },
+                                        "android": { "priority": "normal" },
+                                        "apns": { "payload": { "aps": { "sound": "default" } } },
+                                    }
+                                };
+                                logger.debug("Sending friend notification: " + JSON.stringify(friendData));
+                                sendFcmMessage(friendData);
                             }
                         });
                     });
@@ -383,7 +374,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
                 return true;
             } else {
-                logger.warn("fcm_token not found");
+                logger.warn("user.friend_notifications is false or user is null, skipping friend notifications");
                 return null;
             }
         }).catch((err) => {
