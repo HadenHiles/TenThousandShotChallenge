@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -16,6 +17,11 @@ class LocalNotificationService {
 
   static final _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
+  static GoRouter? _router;
+
+  /// Call this once after [createAppRouter] so that notification taps can
+  /// navigate without a [BuildContext].
+  static void setRouter(GoRouter router) => _router = router;
 
   // ── Channel IDs ──────────────────────────────────────────────────────────
   static const _practiceChannelId = 'practice_reminders';
@@ -98,7 +104,18 @@ class LocalNotificationService {
   }
 
   static void _onTapped(NotificationResponse response) {
-    // TODO: use a global navigator key to route to the relevant screen.
+    final router = _router;
+    if (router == null) return;
+
+    switch (response.payload) {
+      case 'history':
+        router.go('/history');
+      case 'achievements':
+        router.go('/profile/achievements');
+      case 'train':
+      default:
+        router.go('/app?tab=train');
+    }
   }
 
   // ── Helper: build NotificationDetails ────────────────────────────────────
@@ -148,6 +165,7 @@ class LocalNotificationService {
       _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time, // repeat at same time every day
+      payload: 'train',
     );
   }
 
@@ -177,6 +195,7 @@ class LocalNotificationService {
       scheduled,
       _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: 'train',
     );
   }
 
@@ -201,6 +220,7 @@ class LocalNotificationService {
       'Session logged — $totalShots shots! 🎯',
       isPro ? '$msg View your stats for full details.' : msg,
       _details(_motivationChannelId, 'Motivation'),
+      payload: 'history',
     );
   }
 
@@ -234,6 +254,7 @@ class LocalNotificationService {
       'Milestone Reached! 🎖️',
       isPro ? '$totalShots shots! You\'re closing in on 10,000. Check your profile for full progress.' : '$totalShots shots logged! Keep pushing toward 10,000!',
       _details(_achievementChannelId, 'Achievements', importance: Importance.high, priority: Priority.high),
+      payload: 'achievements',
     );
   }
 
@@ -259,6 +280,7 @@ class LocalNotificationService {
       _details(_motivationChannelId, 'Motivation'),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      payload: 'history',
     );
   }
 
@@ -283,6 +305,7 @@ class LocalNotificationService {
       title,
       body,
       _details(_motivationChannelId, 'Motivation'),
+      payload: 'train',
     );
   }
 }

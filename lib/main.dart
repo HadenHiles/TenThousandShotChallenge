@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -11,6 +13,7 @@ import 'services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
@@ -235,6 +238,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   late final AuthChangeNotifier _authNotifier;
   User? _lastUser;
   late final VoidCallback _authListener;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
@@ -247,6 +251,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       authNotifier: _authNotifier,
       introShownNotifier: widget.introShownNotifier,
     );
+    // Give LocalNotificationService a reference so notification taps can navigate.
+    LocalNotificationService.setRouter(_router);
 
     // Listen for auth changes via _authNotifier and initialize RevenueCat when user is available
     _authListener = () async {
@@ -287,11 +293,20 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     _authNotifier.addListener(_authListener);
     // Trigger once in case user is already logged in
     _authListener();
+
+    // Sync queued offline sessions as soon as connectivity comes back.
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) async {
+      if (results.contains(ConnectivityResult.none)) return;
+      final auth = Provider.of<FirebaseAuth>(context, listen: false);
+      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+      await OfflineSessionQueue.instance.syncPending(auth, firestore);
+    });
   }
 
   @override
   @override
   void dispose() {
+    _connectivitySub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _authNotifier.removeListener(_authListener);
     super.dispose();

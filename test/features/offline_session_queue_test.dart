@@ -1,4 +1,8 @@
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
@@ -70,6 +74,45 @@ void main() {
       // This test confirms syncPending returns early without touching rows
       // when the queue starts empty (no connectivity issue raised)
       expect(await OfflineSessionQueue.instance.pendingCount(), 0);
+    });
+
+    test('syncPending preserves queued session date and duration', () async {
+      final auth = MockFirebaseAuth(
+        signedIn: true,
+        mockUser: MockUser(uid: 'test_user_1'),
+      );
+      final firestore = FakeFirebaseFirestore();
+
+      final startedAt = DateTime(2024, 7, 4, 9, 15, 0);
+      const duration = Duration(minutes: 23, seconds: 40);
+      final shots = [
+        Shots(DateTime(2024, 7, 4, 9, 20, 0), 'wrist', 30, 20),
+        Shots(DateTime(2024, 7, 4, 9, 25, 0), 'snap', 20, 12),
+      ];
+
+      await OfflineSessionQueue.instance.enqueue(
+        shots,
+        sessionStartedAt: startedAt,
+        duration: duration,
+      );
+
+      await OfflineSessionQueue.instance.syncPending(
+        auth,
+        firestore,
+        connectivityCheck: () async => [ConnectivityResult.wifi],
+      );
+
+      expect(await OfflineSessionQueue.instance.pendingCount(), 0);
+
+      final iterationsQuery = await firestore.collection('iterations').doc('test_user_1').collection('iterations').get();
+      expect(iterationsQuery.docs.length, 1);
+
+      final sessionsQuery = await iterationsQuery.docs.first.reference.collection('sessions').get();
+      expect(sessionsQuery.docs.length, 1);
+
+      final session = ShootingSession.fromSnapshot(sessionsQuery.docs.first);
+      expect(session.date!.isAtSameMomentAs(startedAt), true);
+      expect(session.duration, duration);
     });
   });
 }
