@@ -685,7 +685,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           SettingsTile.switchTile(
                             title: Text('Streak Alerts', style: Theme.of(context).textTheme.bodyLarge),
                             description: Text(
-                              'Alert at 8 PM if you haven\'t practiced and have a streak going',
+                              'Alert at 6 PM if you haven\'t practiced and have a streak going',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             leading: Icon(Icons.local_fire_department_rounded, color: Colors.orange),
