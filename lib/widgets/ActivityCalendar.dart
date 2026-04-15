@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 
 /// GitHub-style contribution heatmap showing the last 52 weeks of training days.
 ///
@@ -71,6 +72,9 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
           _dailyShots = daily;
           _loading = false;
         });
+
+        // Schedule or cancel streak-at-risk notification based on today's activity.
+        _updateStreakNotification(daily);
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -78,6 +82,23 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
   }
 
   // ── Streak helpers ─────────────────────────────────────────────────────
+
+  /// Schedule the streak-at-risk notification if the user has a streak and
+  /// hasn't practiced today; cancel it if they already practiced today.
+  Future<void> _updateStreakNotification(Map<String, int> daily) async {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final practiced = daily.containsKey(today);
+    if (practiced) {
+      await LocalNotificationService.cancelStreakAtRisk();
+    } else {
+      final streak = _currentStreak();
+      if (streak >= 2) {
+        await LocalNotificationService.scheduleStreakAtRisk(streakDays: streak);
+      } else {
+        await LocalNotificationService.cancelStreakAtRisk();
+      }
+    }
+  }
 
   int _currentStreak() {
     if (_dailyShots.isEmpty) return 0;

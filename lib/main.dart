@@ -9,6 +9,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'services/RevenueCatConfig.dart';
 import 'services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
@@ -70,6 +71,9 @@ Future<void> main() async {
   final introShown = prefs.getBool('intro_shown') ?? false;
   final introShownNotifier = IntroShownNotifier.withValue(introShown);
 
+  // Initialize local notifications (channels + timezone setup).
+  await LocalNotificationService.initialize();
+
   // Initialize navigation environment (Android SDK + system paddings)
   await initNavigationEnvironment();
 
@@ -92,14 +96,37 @@ Future<void> main() async {
 
   // Get the user's FCM token
   firebaseMessaging.getToken().then((token) {
-    if (preferences!.fcmToken != token) {
-      prefs.setString('fcm_token', token!); // Svae the fcm token to local storage (will save to firestore after user authenticates)
+    if (token != null && preferences!.fcmToken != token) {
+      prefs.setString('fcm_token', token);
     }
-
-    print("FCM token: $token"); // Print the Token in Console
   });
 
-  // Listen for firebase messages
+  // Refresh token whenever FCM rotates it so Firestore stays up to date.
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+    final savedPrefs = await SharedPreferences.getInstance();
+    await savedPrefs.setString('fcm_token', newToken);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .update({'fcm_token': newToken});
+    }
+  });
+
+  // Show FCM messages that arrive while the app is in the foreground.
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final notification = message.notification;
+    if (notification != null) {
+      LocalNotificationService.showForegroundMessage(
+        id: message.hashCode,
+        title: notification.title ?? 'New notification',
+        body: notification.body,
+      );
+    }
+  });
+
+  // Listen for firebase background messages
   FirebaseMessaging.onBackgroundMessage(_messageHandler);
   // Listen for message clicks
   FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
@@ -134,14 +161,16 @@ Future<void> main() async {
 }
 
 /*
- * Called when a background message is sent from firebase cloud messaging
+ * Called when a background FCM message is received.
+ * Note: data-only messages have no notification field — guard against null.
  */
 Future<void> _messageHandler(RemoteMessage message) async {
-  print('background message ${message.notification!.body}');
+  final body = message.notification?.body ?? message.data['body'];
+  print('background message: $body');
 }
 
 Future<void> _messageClickHandler(RemoteMessage message) async {
-  print('Background message clicked!');
+  print('FCM message tapped: ${message.data}');
 }
 
 Future<void> initRevenueCat(String? appUserID) async {
