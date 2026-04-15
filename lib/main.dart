@@ -107,10 +107,7 @@ Future<void> main() async {
     await savedPrefs.setString('fcm_token', newToken);
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .update({'fcm_token': newToken});
+      await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).update({'fcm_token': newToken});
     }
   });
 

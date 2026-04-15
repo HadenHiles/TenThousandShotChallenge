@@ -29,7 +29,6 @@ class LocalNotificationService {
   static const int _weeklyProgressId = 3;
   // Immediate notifications use base + (counter % 50) so they don't stomp each other
   static const int _sessionCompleteBase = 100;
-  static const int _achievementBase = 200;
   static const int _milestoneBase = 300;
 
   // ── Motivational messages for session-complete notification ───────────────
@@ -68,25 +67,28 @@ class LocalNotificationService {
 
     // Create Android notification channels.
     if (Platform.isAndroid) {
-      final android =
-          _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       await android?.createNotificationChannel(const AndroidNotificationChannel(
-        _practiceChannelId, 'Practice Reminders',
+        _practiceChannelId,
+        'Practice Reminders',
         description: 'Daily practice reminder notifications',
         importance: Importance.high,
       ));
       await android?.createNotificationChannel(const AndroidNotificationChannel(
-        _streakChannelId, 'Streak Alerts',
+        _streakChannelId,
+        'Streak Alerts',
         description: 'Streak-at-risk notifications',
         importance: Importance.high,
       ));
       await android?.createNotificationChannel(const AndroidNotificationChannel(
-        _motivationChannelId, 'Motivation',
+        _motivationChannelId,
+        'Motivation',
         description: 'Session complete and weekly progress notifications',
         importance: Importance.defaultImportance,
       ));
       await android?.createNotificationChannel(const AndroidNotificationChannel(
-        _achievementChannelId, 'Achievements',
+        _achievementChannelId,
+        'Achievements',
         description: 'Achievement and milestone notifications',
         importance: Importance.high,
       ));
@@ -143,8 +145,7 @@ class LocalNotificationService {
       'Time to hit the ice! 🏒',
       "Don't forget to log your shots today. Every rep counts!",
       scheduled,
-      _details(_practiceChannelId, 'Practice Reminders',
-          importance: Importance.high, priority: Priority.high, badgeNumber: 1),
+      _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time, // repeat at same time every day
     );
@@ -154,9 +155,9 @@ class LocalNotificationService {
     await _plugin.cancel(_dailyReminderId);
   }
 
-  // ── 2. Streak-at-risk (scheduled once for 8 PM today) ───────────────────
+  // ── 2. Streak-at-risk (scheduled once for 6 PM today) ───────────────────
 
-  /// Schedule an 8 PM streak-alert if the user has a streak ≥ 2 and hasn't
+  /// Schedule a 6 PM streak-alert if the user has a streak ≥ 2 and hasn't
   /// practiced today.  Cancels any existing streak alert first.
   static Future<void> scheduleStreakAtRisk({required int streakDays}) async {
     await _plugin.cancel(_streakAtRiskId);
@@ -166,7 +167,7 @@ class LocalNotificationService {
     if (!(prefs.getBool('streak_notifications') ?? true)) return;
 
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, 20, 0);
+    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, 18, 0);
     if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
 
     await _plugin.zonedSchedule(
@@ -174,8 +175,7 @@ class LocalNotificationService {
       '🔥 Don\'t break your streak!',
       '$streakDays-day streak on the line — log a session today to keep it alive!',
       scheduled,
-      _details(_streakChannelId, 'Streak Alerts',
-          importance: Importance.high, priority: Priority.high),
+      _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
@@ -204,23 +204,19 @@ class LocalNotificationService {
     );
   }
 
-  // ── 4. Achievement unlocked (immediate) ─────────────────────────────────
+  // ── 4. Achievement unlocked (in-app only) ───────────────────────────────
+  //
+  // Achievements only unlock during an active session, so the user is already
+  // looking at the app. Return a record with the display data instead of
+  // posting a system notification — the caller shows an in-app banner/dialog.
 
-  static Future<void> showAchievementUnlocked({
+  static ({String title, String body}) buildAchievementUnlockedMessage({
     required String achievementName,
     bool isPro = false,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!(prefs.getBool('achievement_notifications') ?? true)) return;
-
-    await _plugin.show(
-      _achievementBase + (achievementName.hashCode.abs() % 50),
-      'Achievement Unlocked! 🏆',
-      isPro
-          ? 'You earned: $achievementName. Check your profile to see all badges.'
-          : 'You earned: $achievementName!',
-      _details(_achievementChannelId, 'Achievements',
-          importance: Importance.high, priority: Priority.high),
+  }) {
+    return (
+      title: 'Achievement Unlocked! 🏆',
+      body: isPro ? 'You earned: $achievementName. Check your profile to see all badges.' : 'You earned: $achievementName!',
     );
   }
 
@@ -236,11 +232,8 @@ class LocalNotificationService {
     await _plugin.show(
       _milestoneBase + (totalShots ~/ 1000),
       'Milestone Reached! 🎖️',
-      isPro
-          ? '$totalShots shots! You\'re closing in on 10,000. Check your profile for full progress.'
-          : '$totalShots shots logged! Keep pushing toward 10,000!',
-      _details(_achievementChannelId, 'Achievements',
-          importance: Importance.high, priority: Priority.high),
+      isPro ? '$totalShots shots! You\'re closing in on 10,000. Check your profile for full progress.' : '$totalShots shots logged! Keep pushing toward 10,000!',
+      _details(_achievementChannelId, 'Achievements', importance: Importance.high, priority: Priority.high),
     );
   }
 
@@ -256,8 +249,7 @@ class LocalNotificationService {
     int daysUntilFriday = (DateTime.friday - now.weekday + 7) % 7;
     if (daysUntilFriday == 0 && now.hour >= 18) daysUntilFriday = 7;
 
-    final scheduled = tz.TZDateTime(
-        tz.local, now.year, now.month, now.day + daysUntilFriday, 18, 0);
+    final scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day + daysUntilFriday, 18, 0);
 
     await _plugin.zonedSchedule(
       _weeklyProgressId,
