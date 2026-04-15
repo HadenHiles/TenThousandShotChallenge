@@ -19,6 +19,7 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamLeaderboardPdf.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
@@ -519,6 +520,33 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner);
                                 },
                               ),
+                        if (isCurrentUserOwner)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 4),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.picture_as_pdf_outlined),
+                                label: Text(
+                                  'Export Leaderboard PDF'.toUpperCase(),
+                                  style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16),
+                                ),
+                                onPressed: () {
+                                  final sorted = List<Plyr>.from(currentPlayers)..sort((a, b) => (b.shots ?? 0).compareTo(a.shots ?? 0));
+                                  shareTeamLeaderboardPdf(
+                                    context,
+                                    safeTeam,
+                                    sorted
+                                        .map((p) => LeaderboardPlayer(
+                                              name: p.profile?.displayName ?? 'Unknown',
+                                              shots: p.shots ?? 0,
+                                            ))
+                                        .toList(),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
                         if (isCurrentUserOwner) _buildEditTeamButton() else _buildLeaveTeamButton(team),
                         const SizedBox(height: 56),
                       ],

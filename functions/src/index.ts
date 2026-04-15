@@ -2195,4 +2195,70 @@ export const swapAchievement = onCall(async (req) => {
         swapCount: swapCount + 1,
         nextAvailable: nextSwapTime.toISOString(),
     };
+}
+
+// ── Practice Reminders ─────────────────────────────────────────────────────────
+// Runs daily at 11am ET. Finds users who have opted in to practice reminders
+// and haven't logged any session in the past 48 hours, then sends them an FCM push.
+export const sendPracticeReminders = onSchedule(
+    { schedule: '0 11 * * *', timeZone: 'America/New_York', timeoutSeconds: 300 },
+    async (_event) => {
+        const db = getFirestore();
+        const messaging = admin.messaging();
+
+        const cutoff = Timestamp.fromDate(new Date(Date.now() - 48 * 60 * 60 * 1000));
+
+        // Fetch all users with practice_reminders == true and an fcmToken
+        const usersSnap = await db.collection('users')
+            .where('practice_reminders', '==', true)
+            .get();
+
+        logger.info(`Practice reminders: checking ${usersSnap.size} opted-in users`);
+
+        const tasks = usersSnap.docs.map(async (userDoc) => {
+            const data = userDoc.data();
+            const token: string | undefined = data['fcm_token'];
+            if (!token) return;
+
+            const uid = userDoc.id;
+
+            // Check if the user has any session newer than 48h
+            const itersSnap = await db.collection('iterations')
+                .doc(uid)
+                .collection('iterations')
+                .where('complete', '==', false)
+                .limit(1)
+                .get();
+
+            if (itersSnap.empty) return; // no active iteration yet
+
+            const iterDoc = itersSnap.docs[0];
+            const sessionsSnap = await iterDoc.ref.collection('sessions')
+                .where('date', '>=', cutoff)
+                .limit(1)
+                .get();
+
+            if (!sessionsSnap.empty) return; // practised recently — no reminder needed
+
+            try {
+                await messaging.send({
+                    token,
+                    notification: {
+                        title: "Time to hit the ice! 🏒",
+                        body: "You haven't practised in 2 days. Keep your streak alive!",
+                    },
+                    data: { type: 'practice_reminder' },
+                    apns: { payload: { aps: { badge: 1, sound: 'default' } } },
+                    android: { priority: 'normal' },
+                });
+                logger.info(`Practice reminder sent to user ${uid}`);
+            } catch (err: any) {
+                logger.warn(`Failed to send reminder to ${uid}: ${err?.message ?? err}`);
+            }
+        });
+
+        await Promise.allSettled(tasks);
+        logger.info('Practice reminders complete.');
+    }
+);
 });

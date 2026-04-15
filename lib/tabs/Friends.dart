@@ -601,38 +601,69 @@ class _FriendsState extends State<Friends> {
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    friend.displayName != null
-                        ? SizedBox(
-                            width: MediaQuery.of(context).size.width - 235,
-                            child: AutoSizeText(
-                              friend.displayName!,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyLarge!.color,
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      friend.displayName != null
+                          ? SizedBox(
+                              width: MediaQuery.of(context).size.width - 285,
+                              child: AutoSizeText(
+                                friend.displayName!,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).textTheme.bodyLarge!.color,
+                                ),
                               ),
-                            ),
-                          )
-                        : Container(),
-                  ],
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    SizedBox(
-                      width: 135,
-                      child: StreamBuilder<QuerySnapshot>(
+                            )
+                          : Container(),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 135,
+                        child: StreamBuilder<QuerySnapshot>(
+                            stream: friend.reference == null ? const Stream<QuerySnapshot>.empty() : FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
+                            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                  child: SizedBox(
+                                    width: 120,
+                                    height: 2,
+                                    child: LinearProgressIndicator(),
+                                  ),
+                                );
+                              } else {
+                                int total = 0;
+                                for (var doc in snapshot.data!.docs) {
+                                  total += Iteration.fromSnapshot(doc).total!;
+                                }
+
+                                return AutoSizeText(
+                                  "$total Lifetime Shots",
+                                  maxLines: 1,
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontFamily: 'NovecentoSans',
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                );
+                              }
+                            }),
+                      ),
+                      StreamBuilder<QuerySnapshot>(
                           stream: friend.reference == null ? const Stream<QuerySnapshot>.empty() : FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
                           builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                             if (!snapshot.hasData) {
@@ -644,58 +675,40 @@ class _FriendsState extends State<Friends> {
                                 ),
                               );
                             } else {
-                              int total = 0;
+                              Duration totalDuration = const Duration();
                               for (var doc in snapshot.data!.docs) {
-                                total += Iteration.fromSnapshot(doc).total!;
+                                totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
                               }
 
-                              return AutoSizeText(
-                                "$total Lifetime Shots",
-                                maxLines: 1,
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontFamily: 'NovecentoSans',
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              );
+                              return totalDuration > const Duration()
+                                  ? Text(
+                                      "IN ${printDuration(totalDuration, true)}",
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    )
+                                  : Container();
                             }
                           }),
-                    ),
-                    StreamBuilder<QuerySnapshot>(
-                        stream: friend.reference == null ? const Stream<QuerySnapshot>.empty() : FirebaseFirestore.instance.collection('iterations').doc(friend.reference!.id).collection('iterations').snapshots(),
-                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                          if (!snapshot.hasData) {
-                            return const Center(
-                              child: SizedBox(
-                                width: 120,
-                                height: 2,
-                                child: LinearProgressIndicator(),
-                              ),
-                            );
-                          } else {
-                            Duration totalDuration = const Duration();
-                            for (var doc in snapshot.data!.docs) {
-                              totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                            }
-
-                            return totalDuration > const Duration()
-                                ? Text(
-                                    "IN ${printDuration(totalDuration, true)}",
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  )
-                                : Container();
-                          }
-                        }),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
+            if (friend.reference != null)
+              IconButton(
+                tooltip: 'Compare stats',
+                icon: Icon(
+                  Icons.compare_arrows_rounded,
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                ),
+                onPressed: () {
+                  context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
+                },
+              ),
           ],
         ),
       ),

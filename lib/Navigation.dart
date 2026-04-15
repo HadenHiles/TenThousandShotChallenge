@@ -30,7 +30,7 @@ import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
-import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
+
 import 'models/Preferences.dart';
 
 final PanelController sessionPanelController = PanelController();
@@ -438,6 +438,49 @@ class _NavigationState extends State<Navigation> {
         });
       }
     }
+  }
+
+  /// Shown for online-only tabs (Community, Learn, Me) when the device is offline.
+  Widget _buildOfflinePlaceholder(BuildContext context) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 72,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'No Connection',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 28,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This section requires internet. Tap Train below to log a shooting session offline.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildOnlineContent() {
@@ -960,44 +1003,16 @@ class _NavigationState extends State<Navigation> {
               return networkStatusService.networkStatusController.stream;
             },
             initialData: NetworkStatus.Online,
-            child: NetworkAwareWidget(
-              onlineChild: _buildOnlineContent(),
-              offlineChild: Scaffold(
-                body: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  margin: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Image(
-                        image: AssetImage('assets/images/logo.png'),
-                      ),
-                      Text(
-                        "Where's the wifi bud?".toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontFamily: "NovecentoSans",
-                          fontSize: 24,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 25,
-                      ),
-                      const CircularProgressIndicator(
-                        color: Colors.white70,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
+                // Train tab (index 0) is offline-capable — sessions are queued locally.
+                if (!isOffline || _selectedIndex == 0) {
+                  return _buildOnlineContent();
+                }
+                // All other tabs require an internet connection.
+                return _buildOfflinePlaceholder(context);
+              },
             ),
           ),
         ),

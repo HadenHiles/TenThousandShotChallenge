@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -12,16 +13,18 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
-import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
+import 'package:tenthousandshotchallenge/services/HealthService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/widgets/HandsfreeCountdownMode.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:tenthousandshotchallenge/widgets/MilestoneShareCard.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
@@ -48,6 +51,12 @@ class _StartShootingState extends State<StartShooting> {
   int? _lastTargetsHit;
   bool _chartCollapsed = true;
   CustomerInfoNotifier? _customerInfoNotifier; // cache to avoid lookups after dispose
+
+  // Session goal
+  int? _sessionGoal;
+
+  // Hands-free mode
+  bool _handsfreeActive = false;
 
   @override
   void initState() {
@@ -86,6 +95,8 @@ class _StartShootingState extends State<StartShooting> {
   void reset() {
     _shots = [];
     _currentShotCount = preferences!.puckCount!;
+    _sessionGoal = null;
+    _handsfreeActive = false;
   }
 
   _loadSubscriptionLevel() async {
@@ -97,6 +108,90 @@ class _StartShootingState extends State<StartShooting> {
     }).catchError((error) {
       print("Error loading subscription level: $error");
     });
+  }
+
+  Future<void> _showGoalPickerDialog(BuildContext context) async {
+    int value = _sessionGoal ?? 100;
+    final controller = TextEditingController(text: value.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: const Text('Set Session Goal'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('How many shots do you want to take this session?', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.7))),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(ctx).primaryColor,
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '100',
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  onChanged: (v) {
+                    final parsed = int.tryParse(v);
+                    if (parsed != null) setStateDialog(() => value = parsed);
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [50, 100, 150, 200, 250, 500]
+                    .map((preset) => ActionChip(
+                          label: Text('$preset'),
+                          onPressed: () {
+                            setStateDialog(() => value = preset);
+                            controller.text = preset.toString();
+                          },
+                        ))
+                    .toList(),
+              ),
+            ],
+          ),
+          actions: [
+            if (_sessionGoal != null)
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(0),
+                child: Text('Clear', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.6))),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(foregroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.6)),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(ctx).primaryColor, foregroundColor: Colors.white),
+              onPressed: () {
+                final entered = int.tryParse(controller.text) ?? value;
+                if (entered > 0) Navigator.of(ctx).pop(entered);
+              },
+              child: const Text('Set Goal'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() => _sessionGoal = result == 0 ? null : result);
+    }
   }
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
@@ -798,6 +893,18 @@ class _StartShootingState extends State<StartShooting> {
                     )
                   : _buildBlurredProChart(context, shotTypes, shotTypeColors),
             ),
+          // ── Hands-free overlay ───────────────────────────────────────
+          if (_handsfreeActive)
+            Positioned.fill(
+              child: HandsfreeCountdownMode(
+                shotCount: _currentShotCount,
+                shotType: _selectedShotType,
+                onShotAdded: (shot) {
+                  setState(() => _shots.insert(0, shot));
+                },
+                onExit: () => setState(() => _handsfreeActive = false),
+              ),
+            ),
         ],
       ),
     );
@@ -1011,9 +1118,88 @@ class _StartShootingState extends State<StartShooting> {
   }
 
   Widget _buildMainContent(BuildContext context) {
+    final int sessionTotal = _shots.fold(0, (sum, s) => sum + (s.count ?? 0));
+    final bool goalReached = _sessionGoal != null && sessionTotal >= _sessionGoal!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // ── Session Goal card ────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _showGoalPickerDialog(context),
+            child: _sessionGoal == null
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.flag_outlined, size: 16, color: Theme.of(context).primaryColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Set a session goal',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                goalReached ? Icons.flag : Icons.flag_outlined,
+                                size: 16,
+                                color: goalReached ? Colors.green : Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                goalReached ? 'Goal reached! 🎉' : 'Goal: $sessionTotal / $_sessionGoal shots',
+                                style: TextStyle(
+                                  color: goalReached ? Colors.green : Theme.of(context).colorScheme.onPrimary,
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${(_sessionGoal! > 0 ? (sessionTotal / _sessionGoal! * 100).clamp(0, 100).round() : 0)}%',
+                            style: TextStyle(
+                              color: goalReached ? Colors.green : Theme.of(context).primaryColor,
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _sessionGoal! > 0 ? (sessionTotal / _sessionGoal!).clamp(0.0, 1.0) : 0,
+                          minHeight: 6,
+                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            goalReached ? Colors.green : Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // ── End Session Goal card ─────────────────────────────────────────
         preferences!.puckCount != _currentShotCount ? const SizedBox(height: 10) : Container(),
         GestureDetector(
           onTap: () async {
@@ -1208,9 +1394,21 @@ class _StartShootingState extends State<StartShooting> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(
-          height: 15,
+        const SizedBox(height: 15),
+        // ── Hands-free mode button ────────────────────────────────────────
+        TextButton.icon(
+          icon: Icon(Icons.timer_outlined, color: Theme.of(context).primaryColor, size: 18),
+          label: Text(
+            'Hands-Free Mode',
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontFamily: 'NovecentoSans',
+              fontSize: 16,
+            ),
+          ),
+          onPressed: () => setState(() => _handsfreeActive = true),
         ),
+        const SizedBox(height: 6),
         SizedBox(
           width: MediaQuery.of(context).size.width - 200,
           child: TextButton(
@@ -1296,328 +1494,411 @@ class _StartShootingState extends State<StartShooting> {
             SizedBox(
               height: 60,
               width: MediaQuery.of(context).size.width - 20,
-              child: StreamProvider<NetworkStatus>(
-                create: (context) {
-                  return NetworkStatusService().networkStatusController.stream;
-                },
-                initialData: NetworkStatus.Online,
-                child: NetworkAwareWidget(
-                  onlineChild: _shots.isEmpty
-                      ? TextButton(
-                          onPressed: () async {
-                            Feedback.forLongPress(context);
-                            // Close the panel before reset; avoid hidden state that blocks reopening.
-                            await widget.sessionPanelController.close();
-                            sessionService.reset();
-                            if (mounted) {
-                              setState(() {
-                                _shots = [];
-                                _currentShotCount = preferences!.puckCount!;
-                                _chartCollapsed = true;
-                              });
-                            }
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                            foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+              child: _shots.isEmpty
+                  ? TextButton(
+                      onPressed: () async {
+                        Feedback.forLongPress(context);
+                        // Close the panel before reset; avoid hidden state that blocks reopening.
+                        await widget.sessionPanelController.close();
+                        sessionService.reset();
+                        if (mounted) {
+                          setState(() {
+                            _shots = [];
+                            _currentShotCount = preferences!.puckCount!;
+                            _chartCollapsed = true;
+                          });
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                        foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.delete_forever, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Cancel".toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.delete_forever, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Cancel".toUpperCase(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : TextButton(
-                          onPressed: () async {
-                            Feedback.forLongPress(context);
+                        ],
+                      ),
+                    )
+                  : TextButton(
+                      onPressed: () async {
+                        Feedback.forLongPress(context);
 
-                            int totalShots = 0;
-                            for (var s in _shots) {
-                              totalShots += s.count!;
+                        int totalShots = 0;
+                        for (var s in _shots) {
+                          totalShots += s.count!;
+                        }
+
+                        final auth = Provider.of<FirebaseAuth>(context, listen: false);
+                        final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+
+                        // Check connectivity — queue locally if offline
+                        final connectivity = await Connectivity().checkConnectivity();
+                        final isOffline = connectivity.contains(ConnectivityResult.none);
+                        if (isOffline) {
+                          await OfflineSessionQueue.instance.enqueue(_shots);
+                          final pending = await OfflineSessionQueue.instance.pendingCount();
+                          await widget.sessionPanelController.close();
+                          sessionService.reset();
+                          if (mounted) {
+                            setState(() {
+                              _shots = [];
+                              _currentShotCount = preferences!.puckCount!;
+                              _chartCollapsed = true;
+                            });
+                            Fluttertoast.showToast(
+                              msg: 'No connection — session saved offline ($pending pending).',
+                              toastLength: Toast.LENGTH_LONG,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Theme.of(context).cardTheme.color,
+                              textColor: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 16.0,
+                            );
+                          }
+                          return;
+                        }
+
+                        // Online: sync any previously queued sessions first, then save current
+                        await OfflineSessionQueue.instance.syncPending(auth, firestore);
+
+                        await saveShootingSession(
+                          _shots,
+                          auth,
+                          firestore,
+                        ).then((success) async {
+                          // Write workout to Apple Health / Google Fit if user opted in
+                          if (success) {
+                            final sessionEnd = DateTime.now();
+                            final sessionStart = sessionEnd.subtract(sessionService.currentDuration);
+                            final userDoc = await firestore.collection('users').doc(auth.currentUser?.uid).get();
+                            final healthSyncEnabled = (userDoc.data()?['health_sync'] as bool?) ?? false;
+                            if (healthSyncEnabled) {
+                              await HealthService.instance.writeSession(
+                                start: sessionStart,
+                                end: sessionEnd,
+                                shotCount: totalShots,
+                              );
                             }
+                          }
+                          // Close the panel before reset; avoid hidden state that blocks reopening.
+                          await widget.sessionPanelController.close();
+                          sessionService.reset();
+                          if (mounted) {
+                            setState(() {
+                              _shots = [];
+                              _currentShotCount = preferences!.puckCount!;
+                              _chartCollapsed = true;
+                            });
+                          }
 
-                            await saveShootingSession(
-                              _shots,
-                              Provider.of<FirebaseAuth>(context, listen: false),
-                              Provider.of<FirebaseFirestore>(context, listen: false),
-                            ).then((success) async {
-                              // Close the panel before reset; avoid hidden state that blocks reopening.
-                              await widget.sessionPanelController.close();
-                              sessionService.reset();
-                              if (mounted) {
-                                setState(() {
-                                  _shots = [];
-                                  _currentShotCount = preferences!.puckCount!;
-                                  _chartCollapsed = true;
-                                });
-                              }
+                          await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
+                            if (snapshot.docs.isNotEmpty) {
+                              Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
 
-                              await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) {
-                                if (snapshot.docs.isNotEmpty) {
-                                  Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
-
-                                  if ((i.total! + totalShots) < 10000) {
-                                    Fluttertoast.showToast(
-                                      msg: 'Shooting session saved!',
-                                      toastLength: Toast.LENGTH_SHORT,
-                                      gravity: ToastGravity.BOTTOM,
-                                      timeInSecForIosWeb: 1,
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                      textColor: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16.0,
-                                    );
-                                  } else {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return Dialog(
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-                                          child: SingleChildScrollView(
-                                            clipBehavior: Clip.none,
-                                            child: Stack(
-                                              clipBehavior: Clip.none,
-                                              alignment: Alignment.topCenter,
-                                              children: [
-                                                SizedBox(
-                                                  height: 550,
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
-                                                    child: Column(
-                                                      children: [
-                                                        Text(
-                                                          "Challenge Complete!".toUpperCase(),
-                                                          textAlign: TextAlign.center,
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).primaryColor,
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 32,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        Text(
-                                                          "Nice job, ya beauty!\n10,000 shots isn't easy.",
-                                                          textAlign: TextAlign.center,
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                            fontFamily: "NovecentoSans",
-                                                            fontSize: 22,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        Opacity(
-                                                          opacity: 0.8,
-                                                          child: Text(
-                                                            "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
-                                                            textAlign: TextAlign.center,
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontFamily: "NovecentoSans",
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 15),
-                                                        GestureDetector(
-                                                          onTap: () async {
-                                                            String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                            await canLaunchUrlString(link).then((can) {
-                                                              launchUrlString(link).catchError((err) {
-                                                                print(err);
-                                                                return false;
-                                                              });
-                                                            });
-                                                          },
-                                                          child: Card(
-                                                            color: Theme.of(context).cardTheme.color,
-                                                            elevation: 4,
-                                                            child: SizedBox(
-                                                              width: 125,
-                                                              height: 180,
-                                                              child: Column(
-                                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                                children: [
-                                                                  const Image(
-                                                                    image: NetworkImage(
-                                                                      "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
-                                                                    ),
-                                                                    width: 150,
-                                                                  ),
-                                                                  Expanded(
-                                                                    child: Column(
-                                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                                      children: [
-                                                                        Container(
-                                                                          padding: const EdgeInsets.all(5),
-                                                                          child: Text(
-                                                                            "Sniper Snapback".toUpperCase(),
-                                                                            maxLines: 2,
-                                                                            textAlign: TextAlign.center,
-                                                                            style: TextStyle(
-                                                                              fontFamily: "NovecentoSans",
-                                                                              fontSize: 18,
-                                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        Container(
-                                                          decoration: BoxDecoration(
-                                                            color: Theme.of(context).colorScheme.primaryContainer,
-                                                          ),
-                                                          padding: const EdgeInsets.all(5),
-                                                          child: SelectableText(
-                                                            "TENKSNIPER",
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontFamily: "NovecentoSans",
-                                                              fontSize: 24,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        TextButton(
-                                                          onPressed: () async {
-                                                            Navigator.of(context).pop();
-                                                            String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                            await canLaunchUrlString(link).then((can) {
-                                                              launchUrlString(link).catchError((err) {
-                                                                print(err);
-                                                                return false;
-                                                              });
-                                                            });
-                                                          },
-                                                          style: ButtonStyle(
-                                                            backgroundColor: WidgetStateProperty.all(
-                                                              Theme.of(context).primaryColor,
-                                                            ),
-                                                            padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
-                                                          ),
-                                                          child: Text(
-                                                            "Get yours".toUpperCase(),
-                                                            style: const TextStyle(
-                                                              fontFamily: "NovecentoSans",
-                                                              fontSize: 30,
-                                                              color: Colors.white,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                const Positioned(
-                                                  top: -40,
-                                                  child: SizedBox(
-                                                    width: 100,
-                                                    height: 100,
-                                                    child: Image(
-                                                      image: AssetImage("assets/images/GoalLight.gif"),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                              if ((i.total! + totalShots) < 10000) {
+                                Fluttertoast.showToast(
+                                  msg: 'Shooting session saved!',
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  timeInSecForIosWeb: 1,
+                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                  textColor: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16.0,
+                                );
+                                // Check if a sub-milestone was crossed this session
+                                const subMilestones = [1000, 2500, 5000, 7500];
+                                for (final milestone in subMilestones) {
+                                  if (i.total! < milestone && (i.total! + totalShots) >= milestone) {
+                                    if (context.mounted) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          backgroundColor: Theme.of(context).colorScheme.surface,
+                                          title: Text(
+                                            '$milestone Shots!'.toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              fontSize: 22,
+                                              color: Theme.of(context).primaryColor,
                                             ),
                                           ),
-                                        );
-                                      },
-                                    );
+                                          content: Text(
+                                            "You've hit $milestone shots! Keep pushing toward 10,000!",
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(context).pop(),
+                                              child: Text('Close'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
+                                            ),
+                                            TextButton.icon(
+                                              icon: const Icon(Icons.share),
+                                              label: Text('Share'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                shareMilestone(
+                                                  context: context,
+                                                  title: '$milestone SHOTS!',
+                                                  subtitle: 'Milestone reached toward 10,000',
+                                                  totalShots: i.total! + totalShots,
+                                                  displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                    break;
                                   }
                                 }
-                              });
-                            }).onError((error, stackTrace) {
-                              print(error);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                  content: Text(
-                                    'There was an error saving your shooting session :(',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  duration: const Duration(milliseconds: 1500),
-                                ),
-                              );
-                            });
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.save_alt_rounded, color: Colors.white),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Finish".toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'NovecentoSans',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                              } else {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return Dialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                      child: SingleChildScrollView(
+                                        clipBehavior: Clip.none,
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          alignment: Alignment.topCenter,
+                                          children: [
+                                            SizedBox(
+                                              height: 550,
+                                              child: Padding(
+                                                padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                child: Column(
+                                                  children: [
+                                                    Text(
+                                                      "Challenge Complete!".toUpperCase(),
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).primaryColor,
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 32,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Text(
+                                                      "Nice job, ya beauty!\n10,000 shots isn't easy.",
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                        fontFamily: "NovecentoSans",
+                                                        fontSize: 22,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Opacity(
+                                                      opacity: 0.8,
+                                                      child: Text(
+                                                        "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                        textAlign: TextAlign.center,
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 15),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                        await canLaunchUrlString(link).then((can) {
+                                                          launchUrlString(link).catchError((err) {
+                                                            print(err);
+                                                            return false;
+                                                          });
+                                                        });
+                                                      },
+                                                      child: Card(
+                                                        color: Theme.of(context).cardTheme.color,
+                                                        elevation: 4,
+                                                        child: SizedBox(
+                                                          width: 125,
+                                                          height: 180,
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.start,
+                                                            children: [
+                                                              const Image(
+                                                                image: NetworkImage(
+                                                                  "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
+                                                                ),
+                                                                width: 150,
+                                                              ),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                  children: [
+                                                                    Container(
+                                                                      padding: const EdgeInsets.all(5),
+                                                                      child: Text(
+                                                                        "Sniper Snapback".toUpperCase(),
+                                                                        maxLines: 2,
+                                                                        textAlign: TextAlign.center,
+                                                                        style: TextStyle(
+                                                                          fontFamily: "NovecentoSans",
+                                                                          fontSize: 18,
+                                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context).colorScheme.primaryContainer,
+                                                      ),
+                                                      padding: const EdgeInsets.all(5),
+                                                      child: SelectableText(
+                                                        "TENKSNIPER",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 24,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    TextButton(
+                                                      onPressed: () async {
+                                                        Navigator.of(context).pop();
+                                                        String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                        await canLaunchUrlString(link).then((can) {
+                                                          launchUrlString(link).catchError((err) {
+                                                            print(err);
+                                                            return false;
+                                                          });
+                                                        });
+                                                      },
+                                                      style: ButtonStyle(
+                                                        backgroundColor: WidgetStateProperty.all(
+                                                          Theme.of(context).primaryColor,
+                                                        ),
+                                                        padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                      ),
+                                                      child: Text(
+                                                        "Get yours".toUpperCase(),
+                                                        style: const TextStyle(
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 30,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    TextButton.icon(
+                                                      icon: const Icon(Icons.share, color: Colors.white70),
+                                                      label: Text(
+                                                        "Share Achievement".toUpperCase(),
+                                                        style: const TextStyle(
+                                                          fontFamily: "NovecentoSans",
+                                                          fontSize: 18,
+                                                          color: Colors.white70,
+                                                        ),
+                                                      ),
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop();
+                                                        shareMilestone(
+                                                          context: context,
+                                                          title: '10,000 SHOTS!',
+                                                          subtitle: 'Challenge Complete 🏒',
+                                                          totalShots: i.total! + totalShots,
+                                                          displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const Positioned(
+                                              top: -40,
+                                              child: SizedBox(
+                                                width: 100,
+                                                height: 100,
+                                                child: Image(
+                                                  image: AssetImage("assets/images/GoalLight.gif"),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                            }
+                          });
+                        }).onError((error, stackTrace) {
+                          print(error);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Theme.of(context).cardTheme.color,
+                              content: Text(
+                                'There was an error saving your shooting session :(',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
-                            ],
-                          ),
+                              duration: const Duration(milliseconds: 1500),
+                            ),
+                          );
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                  offlineChild: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.save_alt_rounded, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Finish".toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          "You need wifi to save, bud.".toLowerCase(),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontFamily: "NovecentoSans",
-                            fontSize: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 16,
-                          height: 16,
-                          margin: const EdgeInsets.only(top: 5),
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
