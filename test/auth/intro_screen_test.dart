@@ -54,6 +54,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: introShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/app',
       );
     });
@@ -82,6 +83,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: introShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/intro',
       );
       await tester.pumpWidget(buildTestApp(router));
