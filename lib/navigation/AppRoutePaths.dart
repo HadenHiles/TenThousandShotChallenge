@@ -5,6 +5,7 @@
 abstract final class AppRoutePaths {
   static const login = '/login';
   static const intro = '/intro';
+  static const permissions = '/permissions';
   static const app = '/app';
   static const settings = '/settings';
   static const editProfile = '/edit-profile';

@@ -47,6 +47,9 @@ class _IntroScreenState extends State<IntroScreen> {
     preferences?.puckCount = int.tryParse(_puckCountTextFieldController.text) ?? 25;
     preferences?.targetDate = _targetDate;
     Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    // Mark permissions as handled for this session so the router won't redirect
+    // to /permissions right after completing the intro.
+    Provider.of<PermissionsNotifier>(context, listen: false).markGranted();
     // Re-schedule the daily reminder now that exact alarm permission may have been granted.
     final h = prefs.getInt('reminder_hour') ?? 17;
     final m = prefs.getInt('reminder_minute') ?? 0;
@@ -441,8 +444,8 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                   onPressed: () async {
                     await Permission.camera.request();
+                    await Permission.notification.request();
                     if (Platform.isAndroid) {
-                      await Permission.notification.request();
                       await LocalNotificationService.requestExactAlarmPermission();
                     }
                     if (mounted) setState(() => _permissionsGranted = true);
@@ -541,6 +544,125 @@ class _PermissionRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown to existing users who are missing permissions after an app update.
+/// Displays only the permissions page — no full intro flow.
+class PermissionsScreen extends StatefulWidget {
+  const PermissionsScreen({super.key});
+
+  @override
+  State<PermissionsScreen> createState() => _PermissionsScreenState();
+}
+
+class _PermissionsScreenState extends State<PermissionsScreen> {
+  bool _granted = false;
+
+  Future<void> _requestPermissions() async {
+    await Permission.camera.request();
+    await Permission.notification.request();
+    if (Platform.isAndroid) {
+      await LocalNotificationService.requestExactAlarmPermission();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await LocalNotificationService.scheduleDailyReminder(
+      hour: prefs.getInt('reminder_hour') ?? 17,
+      minute: prefs.getInt('reminder_minute') ?? 0,
+    );
+    if (mounted) setState(() => _granted = true);
+    _continue();
+  }
+
+  void _continue() {
+    if (!mounted) return;
+    Provider.of<PermissionsNotifier>(context, listen: false).markGranted();
+    context.go(AppRoutePaths.app);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xffCC3333),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.shield_rounded,
+                size: MediaQuery.of(context).size.width * 0.35,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Allow Permissions'.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 32,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Grant these permissions so the app works properly:',
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              _PermissionRow(icon: Icons.camera_alt_rounded, label: 'Camera — scan QR codes to connect with teammates'),
+              const SizedBox(height: 10),
+              _PermissionRow(icon: Icons.notifications_active_rounded, label: 'Notifications — daily practice reminders & streak alerts'),
+              if (Platform.isAndroid) ...[
+                const SizedBox(height: 10),
+                _PermissionRow(icon: Icons.alarm_rounded, label: 'Exact alarms — deliver reminders at your chosen time'),
+              ],
+              const SizedBox(height: 32),
+              if (_granted)
+                const Text(
+                  '✓ All set!',
+                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: Colors.white),
+                )
+              else
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xffCC3333),
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                    textStyle: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: _requestPermissions,
+                  child: const Text('Grant Permissions'),
+                ),
+              const SizedBox(height: 14),
+              TextButton(
+                onPressed: _continue,
+                child: Text(
+                  'Skip'.toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 20,
+                    color: Colors.white54,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'You can change these later in your device settings',
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Colors.white38),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
