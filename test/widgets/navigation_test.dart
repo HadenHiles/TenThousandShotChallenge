@@ -146,6 +146,7 @@ void main() {
         analytics,
         authNotifier: authNotifier,
         introShownNotifier: introShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/app',
       );
       await tester.pumpWidget(
@@ -485,8 +486,7 @@ class _TestNavigationHomeState extends State<TestNavigationHome> {
     _router = createAppRouter(
       FirebaseAnalytics.instance,
       authNotifier: _authNotifier,
-      introShownNotifier: _introShownNotifier,
-      initialLocation: '/app?tab=${widget.tabId ?? 'start'}',
+      introShownNotifier: _introShownNotifier,      permissionsNotifier: PermissionsNotifier.withGranted(),      initialLocation: '/app?tab=${widget.tabId ?? 'start'}',
     );
   }
 

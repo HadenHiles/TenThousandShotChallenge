@@ -102,6 +102,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: testIntroShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/register',
       );
     });

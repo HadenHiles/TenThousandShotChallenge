@@ -132,6 +132,11 @@ class PermissionsNotifier extends ChangeNotifier {
     _check();
   }
 
+  /// Use in tests (or after granting permissions) to skip the async OS check.
+  PermissionsNotifier.withGranted() {
+    _needsPermissions = false;
+  }
+
   Future<void> _check() async {
     final camera = await Permission.camera.status;
     final notification = await Permission.notification.status;
@@ -310,10 +315,7 @@ GoRouter createAppRouter(
       // New user: show full intro flow first
       if (!introShown && path != AppRoutePaths.intro) return AppRoutePaths.intro;
       // Existing user with missing permissions: show permissions screen
-      if (introShown &&
-          permissionsNotifier.checked &&
-          permissionsNotifier.needsPermissions &&
-          path != AppRoutePaths.permissions) {
+      if (introShown && permissionsNotifier.checked && permissionsNotifier.needsPermissions && path != AppRoutePaths.permissions) {
         return AppRoutePaths.permissions;
       }
       if (user == null && path != AppRoutePaths.login && path != AppRoutePaths.intro && path != AppRoutePaths.permissions) {

@@ -57,6 +57,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: testIntroShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/login',
       );
     });
@@ -147,6 +148,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: testIntroShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/login',
       );
       await tester.pumpWidget(
@@ -190,6 +192,7 @@ void main() {
         analytics,
         authNotifier: testAuthNotifier,
         introShownNotifier: testIntroShownNotifier,
+        permissionsNotifier: PermissionsNotifier.withGranted(),
         initialLocation: '/login',
       );
       await tester.pumpWidget(
