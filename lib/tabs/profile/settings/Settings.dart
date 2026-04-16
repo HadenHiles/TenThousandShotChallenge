@@ -33,7 +33,7 @@ class ProfileSettings extends StatefulWidget {
 class _ProfileSettingsState extends State<ProfileSettings> {
   // State settings values
   bool _darkMode = false;
-  bool _friendNotifications = true;
+  String _friendNotificationMode = 'all'; // 'all' | 'selected' | 'off'
   bool _practiceReminders = false;
   bool _healthSync = false;
   bool _publicProfile = true;
@@ -43,7 +43,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   // Local notification settings
   bool _localPracticeReminders = true;
   bool _streakNotifications = true;
-  bool _achievementNotifications = true;
+  bool _activeSessionNotification = true;
   bool _weeklyProgressNotifications = true;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 17, minute: 0); // 5 PM default
 
@@ -95,7 +95,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
       _localPracticeReminders = prefs.getBool('local_practice_reminders') ?? true;
       _streakNotifications = prefs.getBool('streak_notifications') ?? true;
-      _achievementNotifications = prefs.getBool('achievement_notifications') ?? true;
+      _activeSessionNotification = prefs.getBool('active_session_notification') ?? true;
       _weeklyProgressNotifications = prefs.getBool('weekly_progress_notifications') ?? true;
       final h = prefs.getInt('reminder_hour') ?? 17;
       final m = prefs.getInt('reminder_minute') ?? 0;
@@ -106,7 +106,19 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       UserProfile u = UserProfile.fromSnapshot(snapshot);
       setState(() {
         _publicProfile = u.public ?? false;
-        _friendNotifications = u.friendNotifications ?? true;
+        // friend_notification_mode takes precedence; fall back to legacy friend_notifications bool
+        final rawMode = snapshot.data()?['friend_notification_mode'] as String?;
+        if (rawMode != null && ['all', 'selected', 'off'].contains(rawMode)) {
+          _friendNotificationMode = rawMode;
+        } else {
+          // Migrate from legacy bool — default to 'all' so existing users keep receiving notifications.
+          final legacyBool = snapshot.data()?['friend_notifications'] as bool?;
+          _friendNotificationMode = (legacyBool == false) ? 'off' : 'all';
+          // Persist the migrated value so the function logic can use the new field immediately.
+          Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
+            'friend_notification_mode': _friendNotificationMode,
+          });
+        }
         _practiceReminders = u.practiceReminders ?? false;
         _healthSync = u.healthSync ?? false;
       });
@@ -558,36 +570,103 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                       SettingsSection(
                         title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                         tiles: [
-                          SettingsTile.switchTile(
+                          SettingsTile(
                             title: Text(
                               'Friend Session Notifications',
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
+                            description: Text(
+                              _friendNotificationMode == 'all'
+                                  ? 'Notify for all friends'
+                                  : _friendNotificationMode == 'selected'
+                                      ? 'Notify for selected friends'
+                                      : 'Off',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                             leading: Icon(
-                              Icons.brightness_2,
+                              Icons.notifications_active_rounded,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            initialValue: _friendNotifications,
-                            onToggle: (bool value) async {
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-
-                              Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'friend_notifications': !_friendNotifications}).then((_) {
-                                setState(() {
-                                  _friendNotifications = !_friendNotifications;
-                                  prefs.setBool('friend_notifications', _friendNotifications);
+                            onPressed: (ctx) async {
+                              String? picked = await showDialog<String>(
+                                context: ctx,
+                                builder: (dialogCtx) {
+                                  String current = _friendNotificationMode;
+                                  return StatefulBuilder(
+                                    builder: (dialogCtx, setDialogState) {
+                                      return AlertDialog(
+                                        title: const Text('Friend Session Notifications'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            RadioListTile<String>(
+                                              title: Text(
+                                                'Notify for all friends',
+                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                              ),
+                                              value: 'all',
+                                              groupValue: current,
+                                              activeColor: Theme.of(dialogCtx).primaryColor,
+                                              onChanged: (v) => setDialogState(() => current = v!),
+                                            ),
+                                            RadioListTile<String>(
+                                              title: Text(
+                                                'Notify for selected friends',
+                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                              ),
+                                              subtitle: Text(
+                                                'Subscribe per-friend on their profile',
+                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                              ),
+                                              value: 'selected',
+                                              groupValue: current,
+                                              activeColor: Theme.of(dialogCtx).primaryColor,
+                                              onChanged: (v) => setDialogState(() => current = v!),
+                                            ),
+                                            RadioListTile<String>(
+                                              title: Text(
+                                                'Off',
+                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                              ),
+                                              value: 'off',
+                                              groupValue: current,
+                                              activeColor: Theme.of(dialogCtx).primaryColor,
+                                              onChanged: (v) => setDialogState(() => current = v!),
+                                            ),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(dialogCtx).pop(),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
+                                            ),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.of(dialogCtx).pop(current),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Theme.of(dialogCtx).primaryColor,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            child: const Text('Save'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                              if (picked != null && picked != _friendNotificationMode) {
+                                await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
+                                  'friend_notification_mode': picked,
+                                  'friend_notifications': picked != 'off',
                                 });
-                              });
-
-                              if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                                  Preferences(
-                                    prefs.getBool('dark_mode'),
-                                    prefs.getInt('puck_count'),
-                                    value,
-                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                                    prefs.getString('fcm_token'),
-                                  ),
-                                );
+                                if (mounted) {
+                                  setState(() {
+                                    _friendNotificationMode = picked;
+                                  });
+                                }
                               }
                             },
                           ),
@@ -669,6 +748,16 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 final picked = await showTimePicker(
                                   context: ctx,
                                   initialTime: _reminderTime,
+                                  builder: (context, child) => Theme(
+                                    data: Theme.of(context).copyWith(
+                                      textButtonTheme: TextButtonThemeData(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    child: child!,
+                                  ),
                                 );
                                 if (picked != null) {
                                   final prefs = await SharedPreferences.getInstance();
@@ -698,17 +787,18 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile.switchTile(
-                            title: Text('Achievement & Milestone Alerts', style: Theme.of(context).textTheme.bodyLarge),
+                            title: Text('Active Session Notification', style: Theme.of(context).textTheme.bodyLarge),
                             description: Text(
-                              'Notify me when I complete a session, earn a badge, or hit a milestone',
+                              'Show a persistent notification with shot count and duration while a session is running',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
-                            leading: Icon(Icons.emoji_events_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                            initialValue: _achievementNotifications,
+                            leading: Icon(Icons.sports_hockey_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                            initialValue: _activeSessionNotification,
                             onToggle: (bool value) async {
                               final prefs = await SharedPreferences.getInstance();
-                              await prefs.setBool('achievement_notifications', value);
-                              if (mounted) setState(() => _achievementNotifications = value);
+                              await prefs.setBool('active_session_notification', value);
+                              if (mounted) setState(() => _activeSessionNotification = value);
+                              if (!value) await LocalNotificationService.cancelActiveSession();
                             },
                           ),
                           SettingsTile.switchTile(

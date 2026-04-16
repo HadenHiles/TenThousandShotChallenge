@@ -28,25 +28,15 @@ class LocalNotificationService {
   static const _streakChannelId = 'streak_alerts';
   static const _motivationChannelId = 'motivation';
   static const _achievementChannelId = 'achievements';
+  static const _activeSessionChannelId = 'active_session';
 
   // ── Fixed notification IDs so repeating ones can be cancelled ────────────
   static const int _dailyReminderId = 1;
   static const int _streakAtRiskId = 2;
   static const int _weeklyProgressId = 3;
+  static const int _activeSessionId = 10;
   // Immediate notifications use base + (counter % 50) so they don't stomp each other
-  static const int _sessionCompleteBase = 100;
   static const int _milestoneBase = 300;
-
-  // ── Motivational messages for session-complete notification ───────────────
-  static const _sessionMessages = [
-    "Keep it up — consistency is everything!",
-    "Great work! Your game is getting sharper.",
-    "Every shot counts. See you tomorrow!",
-    "Grinders make champions. See you on the ice!",
-    "That's how legends are built — one session at a time.",
-    "Another day, another step closer to 10,000!",
-    "Your future self will thank you. Great session!",
-  ];
 
   // ── Initialisation ───────────────────────────────────────────────────────
 
@@ -98,6 +88,14 @@ class LocalNotificationService {
         description: 'Achievement and milestone notifications',
         importance: Importance.high,
       ));
+      await android?.createNotificationChannel(const AndroidNotificationChannel(
+        _activeSessionChannelId,
+        'Active Session',
+        description: 'Live status of your current shooting session',
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+      ));
     }
 
     _initialized = true;
@@ -112,6 +110,8 @@ class LocalNotificationService {
         router.go('/history');
       case 'achievements':
         router.go('/profile/achievements');
+      case 'session':
+        router.go('/app?tab=train');
       case 'train':
       default:
         router.go('/app?tab=train');
@@ -163,7 +163,7 @@ class LocalNotificationService {
       "Don't forget to log your shots today. Every rep counts!",
       scheduled,
       _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time, // repeat at same time every day
       payload: 'train',
     );
@@ -203,25 +203,50 @@ class LocalNotificationService {
     await _plugin.cancel(_streakAtRiskId);
   }
 
-  // ── 3. Session complete (immediate) ──────────────────────────────────────
+  // ── 3. Active shooting session (persistent, updated live) ─────────────────
 
-  static Future<void> showSessionComplete({
-    required int totalShots,
-    required int sessionCount,
-    bool isPro = false,
+  /// Show (or update) a persistent notification while a shooting session is
+  /// active. Call this when the session starts and whenever the shot count
+  /// or duration changes. The notification is dismissed by [cancelActiveSession].
+  static Future<void> showActiveSession({
+    required int shotCount,
+    required Duration duration,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    if (!(prefs.getBool('achievement_notifications') ?? true)) return;
+    if (!(prefs.getBool('active_session_notification') ?? true)) return;
 
-    final msg = _sessionMessages[sessionCount % _sessionMessages.length];
+    final minutes = duration.inMinutes;
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    final durationStr = '${minutes}m ${seconds}s';
 
     await _plugin.show(
-      _sessionCompleteBase + (sessionCount % 50),
-      'Session logged — $totalShots shots! 🎯',
-      isPro ? '$msg View your stats for full details.' : msg,
-      _details(_motivationChannelId, 'Motivation'),
-      payload: 'history',
+      _activeSessionId,
+      '🏒 Session in progress — $shotCount shots',
+      'Duration: $durationStr • Tap to return to your session',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _activeSessionChannelId,
+          'Active Session',
+          importance: Importance.low,
+          priority: Priority.low,
+          ongoing: true,
+          autoCancel: false,
+          icon: '@mipmap/launcher_icon',
+          playSound: false,
+          enableVibration: false,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: false,
+          presentBadge: false,
+          presentSound: false,
+        ),
+      ),
+      payload: 'session',
     );
+  }
+
+  static Future<void> cancelActiveSession() async {
+    await _plugin.cancel(_activeSessionId);
   }
 
   // ── 4. Achievement unlocked (in-app only) ───────────────────────────────
@@ -246,9 +271,6 @@ class LocalNotificationService {
     required int totalShots,
     bool isPro = false,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!(prefs.getBool('achievement_notifications') ?? true)) return;
-
     await _plugin.show(
       _milestoneBase + (totalShots ~/ 1000),
       'Milestone Reached! 🎖️',

@@ -340,10 +340,34 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                         // FCM token lives on the *user* document, not the teammate relationship doc.
                         await db.collection("users").doc(t.id).get().then(async (tmDoc) => {
                             const friend = tmDoc.data();
-                            const friendNotifications = friend?.friend_notifications ?? false;
                             const fcmToken = friend?.fcm_token ?? null;
 
-                            if (friendNotifications && fcmToken != null) {
+                            // Use new per-friend mode logic only if the friend has explicitly
+                            // configured friend_notification_mode; otherwise fall back to the
+                            // legacy friend_notifications boolean so existing users are unaffected.
+                            let shouldNotify = false;
+                            const friendMode: string | undefined = friend?.friend_notification_mode;
+                            if (friendMode != null) {
+                                // New logic: respect the user's chosen mode.
+                                if (friendMode === 'all') {
+                                    shouldNotify = true;
+                                } else if (friendMode === 'selected') {
+                                    // Only notify if this friend has explicitly subscribed to the session author.
+                                    const subDoc = await db
+                                        .collection('users')
+                                        .doc(t.id)
+                                        .collection('friend_subscriptions')
+                                        .doc(context.params.userId)
+                                        .get();
+                                    shouldNotify = subDoc.exists;
+                                }
+                                // 'off' → shouldNotify stays false
+                            } else {
+                                // Legacy logic: simple boolean opt-in.
+                                shouldNotify = friend?.friend_notifications === true;
+                            }
+
+                            if (shouldNotify && fcmToken != null) {
                                 // Use a notification payload so the OS displays it automatically,
                                 // plus a fun randomised body from getFriendNotificationMessage.
                                 const friendData = {
@@ -2186,7 +2210,7 @@ export const swapAchievement = onCall(async (req) => {
         swapCount: swapCount + 1,
         nextAvailable: nextSwapTime.toISOString(),
     };
-}
+});
 
 // ── Practice Reminders ─────────────────────────────────────────────────────────
 // Runs daily at 11am ET. Finds users who have opted in to practice reminders
@@ -2252,4 +2276,3 @@ export const sendPracticeReminders = onSchedule(
         logger.info('Practice reminders complete.');
     }
 );
-});

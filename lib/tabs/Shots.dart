@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/models/ShotCount.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/ShotBreakdownDonut.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
@@ -1021,6 +1022,7 @@ class _ShotsState extends State<Shots> {
                               if (!sessionService.isRunning) {
                                 Feedback.forTap(context);
                                 sessionService.start();
+                                LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
                                 widget.sessionPanelController.show();
                                 widget.sessionPanelController.open();
                               } else {
@@ -1044,6 +1046,7 @@ class _ShotsState extends State<Shots> {
                                       sessionService.reset();
                                       Navigator.of(context).pop();
                                       sessionService.start();
+                                      LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
                                       widget.sessionPanelController.show();
                                       widget.sessionPanelController.open();
                                     },
