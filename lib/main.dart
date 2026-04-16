@@ -77,6 +77,11 @@ Future<void> main() async {
   // Initialize local notifications (channels + timezone setup).
   await LocalNotificationService.initialize();
 
+  // Re-schedule the daily reminder so it survives reboots and reinstalls.
+  final reminderH = prefs.getInt('reminder_hour') ?? 17;
+  final reminderM = prefs.getInt('reminder_minute') ?? 0;
+  await LocalNotificationService.scheduleDailyReminder(hour: reminderH, minute: reminderM);
+
   // Initialize navigation environment (Android SDK + system paddings)
   await initNavigationEnvironment();
 
