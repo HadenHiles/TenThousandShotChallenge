@@ -6,7 +6,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'services/RevenueCatConfig.dart';
 import 'services/RevenueCat.dart';
@@ -135,9 +134,6 @@ Future<void> main() async {
   FirebaseMessaging.onBackgroundMessage(_messageHandler);
   // Listen for message clicks
   FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
-
-  // Check for camera permissions
-  await Permission.camera.request();
 
   runApp(
     MultiProvider(

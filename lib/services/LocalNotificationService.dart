@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -158,30 +159,47 @@ class LocalNotificationService {
     if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
 
     // On Android 12+, SCHEDULE_EXACT_ALARM requires the user to grant it via
-    // system settings. Fall back to inexact scheduling when not permitted so the
-    // app doesn't crash — the notification will still fire, just within a short
-    // delivery window rather than at the exact second.
-    AndroidScheduleMode scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
-    if (Platform.isAndroid) {
-      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      final canExact = await android?.canScheduleExactAlarms() ?? false;
-      if (canExact) scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+    // system settings. Try exact first; fall back to inexact on PlatformException
+    // so the app doesn't crash — the notification will still fire.
+    try {
+      await _plugin.zonedSchedule(
+        _dailyReminderId,
+        'Time to hit the ice! 🏒',
+        "Don't forget to log your shots today. Every rep counts!",
+        scheduled,
+        _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
+        androidScheduleMode: Platform.isAndroid ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'train',
+      );
+    } on PlatformException catch (e) {
+      if (e.code == 'exact_alarms_not_permitted') {
+        await _plugin.zonedSchedule(
+          _dailyReminderId,
+          'Time to hit the ice! 🏒',
+          "Don't forget to log your shots today. Every rep counts!",
+          scheduled,
+          _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+          payload: 'train',
+        );
+      } else {
+        rethrow;
+      }
     }
-
-    await _plugin.zonedSchedule(
-      _dailyReminderId,
-      'Time to hit the ice! 🏒',
-      "Don't forget to log your shots today. Every rep counts!",
-      scheduled,
-      _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
-      androidScheduleMode: scheduleMode,
-      matchDateTimeComponents: DateTimeComponents.time, // repeat at same time every day
-      payload: 'train',
-    );
   }
 
   static Future<void> cancelDailyReminder() async {
     await _plugin.cancel(_dailyReminderId);
+  }
+
+  /// On Android 12+, open the system "Alarms & reminders" settings so the
+  /// user can grant SCHEDULE_EXACT_ALARM. No-op on iOS / older Android.
+  static Future<void> requestExactAlarmPermission() async {
+    if (!Platform.isAndroid) return;
+    final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await android?.requestExactAlarmsPermission();
   }
 
   // ── 2. Streak-at-risk (scheduled once for 6 PM today) ───────────────────
