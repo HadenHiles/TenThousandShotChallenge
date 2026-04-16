@@ -486,7 +486,9 @@ class _TestNavigationHomeState extends State<TestNavigationHome> {
     _router = createAppRouter(
       FirebaseAnalytics.instance,
       authNotifier: _authNotifier,
-      introShownNotifier: _introShownNotifier,      permissionsNotifier: PermissionsNotifier.withGranted(),      initialLocation: '/app?tab=${widget.tabId ?? 'start'}',
+      introShownNotifier: _introShownNotifier,
+      permissionsNotifier: PermissionsNotifier.withGranted(),
+      initialLocation: '/app?tab=${widget.tabId ?? 'start'}',
     );
   }
 
