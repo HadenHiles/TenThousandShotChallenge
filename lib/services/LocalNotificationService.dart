@@ -58,7 +58,7 @@ class LocalNotificationService {
     final tzName = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(tzName));
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('@mipmap/launcher_icon');
     const iosInit = DarwinInitializationSettings(
       // Permissions are already requested via firebase_messaging at startup.
       requestAlertPermission: false,
@@ -133,7 +133,7 @@ class LocalNotificationService {
         channelName,
         importance: importance,
         priority: priority,
-        icon: '@mipmap/ic_launcher',
+        icon: '@mipmap/launcher_icon',
       ),
       iOS: DarwinNotificationDetails(
         sound: 'default',
