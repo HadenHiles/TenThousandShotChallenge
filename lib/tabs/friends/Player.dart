@@ -1131,7 +1131,7 @@ class _PlayerState extends State<Player> {
                   ),
                 ),
                 Text(
-                  printDuration(s.duration!, true),
+                  s.duration == Duration.zero ? '0s' : printDuration(s.duration!, true),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 18,
