@@ -134,7 +134,7 @@ class _IntroScreenState extends State<IntroScreen> {
           body: "View eachother's shooting sessions, and see who can reach 10,000 first!",
           image: Icon(
             Icons.people_rounded,
-            size: MediaQuery.of(context).size.width * 0.5,
+            size: MediaQuery.of(context).size.width * 0.35,
             color: Colors.white,
           ),
           decoration: pageDecoration,
@@ -216,7 +216,7 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
           image: Icon(
             Icons.brightness_4,
-            size: MediaQuery.of(context).size.width * 0.5,
+            size: MediaQuery.of(context).size.width * 0.35,
             color: _darkMode! ? Colors.black : Colors.white,
           ),
           decoration: pageDecoration,
@@ -267,7 +267,7 @@ class _IntroScreenState extends State<IntroScreen> {
               children: [
                 Icon(
                   FontAwesomeIcons.hockeyPuck,
-                  size: MediaQuery.of(context).size.width * 0.25,
+                  size: MediaQuery.of(context).size.width * 0.35,
                   color: Colors.white,
                 ),
                 // Top Left
@@ -417,7 +417,7 @@ class _IntroScreenState extends State<IntroScreen> {
               ),
               Icon(
                 FontAwesomeIcons.calendarCheck,
-                size: MediaQuery.of(context).size.width * 0.5,
+                size: MediaQuery.of(context).size.width * 0.35,
                 color: Colors.white,
               ),
             ],
@@ -491,7 +491,7 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
           image: Icon(
             Icons.shield_rounded,
-            size: MediaQuery.of(context).size.width * 0.4,
+            size: MediaQuery.of(context).size.width * 0.35,
             color: Colors.white,
           ),
           decoration: permissionsPageDecoration,
