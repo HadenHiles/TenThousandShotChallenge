@@ -721,6 +721,8 @@ class _LoginState extends State<Login> {
           'display_name': auth.currentUser?.email,
           'email': auth.currentUser?.email,
           'photo_url': null,
+          'is_pro': false,
+          'subscription_level': 'free',
           'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
 
@@ -772,6 +774,8 @@ class _LoginState extends State<Login> {
               'display_name': auth.currentUser?.email,
               'email': auth.currentUser?.email,
               'public': true,
+              'is_pro': false,
+              'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => null);
           }
@@ -833,6 +837,8 @@ class _LoginState extends State<Login> {
               'email': auth.currentUser?.email,
               'photo_url': auth.currentUser?.photoURL,
               'public': true,
+              'is_pro': false,
+              'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});
           }
@@ -864,6 +870,8 @@ class _LoginState extends State<Login> {
               'email': auth.currentUser?.email,
               'photo_url': auth.currentUser?.photoURL,
               'public': true,
+              'is_pro': false,
+              'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
             }).then((value) => () {});
           }

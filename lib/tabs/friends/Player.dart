@@ -9,6 +9,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
@@ -44,6 +45,8 @@ class _PlayerState extends State<Player> {
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
   bool _showAchievements = false;
+  bool _isPlayersTeamPublic = false;
+  String? _playerTeamName;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _PlayerState extends State<Player> {
 
     FirebaseFirestore.instance.collection('users').doc(widget.uid).get().then((uDoc) {
       _userPlayer = UserProfile.fromSnapshot(uDoc);
+      _loadPlayerTeamVisibility();
 
       setState(() {
         _loadingPlayer = false;
@@ -73,6 +77,229 @@ class _PlayerState extends State<Player> {
         _isFriend = snapshot.exists;
       });
     });
+  }
+
+  Future<void> _loadPlayerTeamVisibility() async {
+    final teamId = _userPlayer?.teamId;
+    if (teamId == null || teamId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isPlayersTeamPublic = false;
+          _playerTeamName = null;
+        });
+      }
+      return;
+    }
+
+    final teamDoc = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
+    if (!mounted) return;
+    if (!teamDoc.exists) {
+      setState(() {
+        _isPlayersTeamPublic = false;
+        _playerTeamName = null;
+      });
+      return;
+    }
+
+    final data = teamDoc.data();
+    setState(() {
+      _isPlayersTeamPublic = data?['public'] == true;
+      _playerTeamName = data?['name']?.toString();
+    });
+  }
+
+  void _showInviteDialog() {
+    if (_userPlayer == null || widget.uid == null) return;
+    Feedback.forTap(context);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Invite ${_userPlayer!.displayName} to be your friend?",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 20,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          content: Text(
+            "They will receive an invite notification from you.",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                inviteFriend(user!.uid, widget.uid!, Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
+                  if (!mounted) return;
+                  if (success == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Theme.of(context).cardTheme.color,
+                        content: Text(
+                          "${_userPlayer!.displayName} Invited!",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Theme.of(context).cardTheme.color,
+                        content: Text(
+                          "Failed to invite ${_userPlayer!.displayName} :(",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                });
+              },
+              child: Text(
+                "Invite",
+                style: TextStyle(color: Theme.of(context).primaryColor),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRemoveFriendDialog() {
+    if (_userPlayer == null) return;
+    Feedback.forTap(context);
+    dialog(
+      context,
+      ConfirmDialog(
+        "Remove Friend?",
+        Text(
+          "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        "Cancel",
+        () {
+          Navigator.of(context).pop();
+        },
+        "Continue",
+        () {
+          goToAppSection(
+            context,
+            AppSection.community,
+            communitySection: CommunitySection.friends,
+          );
+
+          removePlayerFromFriends(
+            _userPlayer!.reference!.id,
+            Provider.of<FirebaseAuth>(context, listen: false),
+            Provider.of<FirebaseFirestore>(context, listen: false),
+          ).then((success) {
+            if (!mounted) return;
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  duration: const Duration(milliseconds: 2500),
+                  content: Text(
+                    '${_userPlayer!.displayName} was removed.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  duration: const Duration(milliseconds: 4000),
+                  content: Text(
+                    'Error removing Player :(',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              );
+              Navigator.of(context).pop();
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  List<UserAvatarPopoverAction> _buildPlayerPopoverActions() {
+    final actions = <UserAvatarPopoverAction>[];
+    final viewingOtherUser = widget.uid != null && widget.uid != user!.uid;
+    if (!viewingOtherUser || widget.uid == null) return actions;
+
+    actions.add(
+      UserAvatarPopoverAction(
+        label: 'Compare Stats',
+        icon: Icons.compare_arrows_rounded,
+        onTap: () {
+          Feedback.forTap(context);
+          context.push(AppRoutePaths.compareStatsPathFor(widget.uid!));
+        },
+      ),
+    );
+
+    if (_isFriend == true) {
+      actions.add(
+        UserAvatarPopoverAction(
+          label: 'Remove Friend',
+          icon: Icons.person_remove_rounded,
+          onTap: _showRemoveFriendDialog,
+        ),
+      );
+    } else {
+      actions.add(
+        UserAvatarPopoverAction(
+          label: 'Add Friend',
+          icon: Icons.person_add_alt_1_rounded,
+          onTap: _showInviteDialog,
+        ),
+      );
+    }
+
+    if (_isPlayersTeamPublic) {
+      actions.add(
+        UserAvatarPopoverAction(
+          label: _playerTeamName == null || _playerTeamName!.isEmpty ? 'View Team' : 'View Team (${_playerTeamName!})',
+          icon: Icons.groups_rounded,
+          onTap: () {
+            Feedback.forTap(context);
+            context.push(AppRoutePaths.joinTeam);
+          },
+        ),
+      );
+    }
+
+    return actions;
   }
 
   Future<void> _getAttempts() async {
@@ -103,6 +330,7 @@ class _PlayerState extends State<Player> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isProForDisplay = _userPlayer?.isPro == true;
     return StreamProvider<NetworkStatus>(
       create: (context) {
         return NetworkStatusService().networkStatusController.stream;
@@ -170,6 +398,22 @@ class _PlayerState extends State<Player> {
                     ),
                   ),
                   actions: [
+                    if (widget.uid != null && widget.uid != user!.uid)
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        child: IconButton(
+                          tooltip: 'Compare stats',
+                          icon: Icon(
+                            Icons.compare_arrows_rounded,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 26,
+                          ),
+                          onPressed: () {
+                            Feedback.forTap(context);
+                            context.push(AppRoutePaths.compareStatsPathFor(widget.uid!));
+                          },
+                        ),
+                      ),
                     !_isFriend!
                         ? widget.uid == user!.uid
                             ? const SizedBox()
@@ -390,6 +634,9 @@ class _PlayerState extends State<Player> {
                                           child: UserAvatarCrPopover(
                                             userId: widget.uid ?? '',
                                             menuColor: Theme.of(context).colorScheme.primary,
+                                            showAccomplishment: isProForDisplay,
+                                            showProFallback: isProForDisplay,
+                                            extraActions: _buildPlayerPopoverActions(),
                                             child: UserAvatar(
                                               user: _userPlayer,
                                               backgroundColor: Colors.transparent,
@@ -403,6 +650,8 @@ class _PlayerState extends State<Player> {
                                         child: CrAvatarBadgeStream(
                                           userId: widget.uid!,
                                           size: 22,
+                                          enabled: isProForDisplay,
+                                          showProFallback: isProForDisplay,
                                         ),
                                       ),
                                     ],

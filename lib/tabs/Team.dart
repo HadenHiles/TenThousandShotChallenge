@@ -21,6 +21,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamLeaderboardPdf.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 
@@ -741,6 +742,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place, bool isDeletedUser) {
+    final bool isProForDisplay = plyr.profile?.isPro == true;
     // Raw photo URL from profile (can be network URL, asset path, or an unintended file URI)
     final String? rawPhotoUrl = plyr.profile?.photoUrl;
     String? photoUrl = rawPhotoUrl;
@@ -852,24 +854,53 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             UserAvatarCrPopover(
               userId: plyr.profile?.reference?.id ?? '',
               menuColor: Theme.of(context).colorScheme.primary,
+              showAccomplishment: isProForDisplay,
+              showProFallback: isProForDisplay,
+              extraActions: isDeletedUser || (plyr.profile?.reference?.id ?? '').isEmpty || (plyr.profile?.reference?.id == user?.uid)
+                  ? const <UserAvatarPopoverAction>[]
+                  : [
+                      UserAvatarPopoverAction(
+                        label: 'Compare Stats',
+                        icon: Icons.compare_arrows_rounded,
+                        onTap: () {
+                          Feedback.forTap(context);
+                          context.push(AppRoutePaths.compareStatsPathFor(plyr.profile!.reference!.id));
+                        },
+                      ),
+                    ],
               onViewProfile: isDeletedUser || (plyr.profile?.reference?.id ?? '').isEmpty
                   ? null
                   : () {
                       Feedback.forTap(context);
                       context.push(AppRoutePaths.playerPathFor(plyr.profile?.reference?.id ?? ''));
                     },
-              child: CircleAvatar(
-                radius: avatarRadius,
-                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                backgroundImage: avatarImage,
-                child: (avatarImage == null)
-                    ? Text(
-                        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
-                      )
-                    : null,
+              child: SizedBox(
+                width: avatarRadius * 2,
+                height: avatarRadius * 2,
+                child: CircleAvatar(
+                  radius: avatarRadius,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  backgroundImage: avatarImage,
+                  child: (avatarImage == null)
+                      ? Text(
+                          displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
+                        )
+                      : null,
+                ),
               ),
             ),
+            if (!isDeletedUser && (plyr.profile?.reference?.id ?? '').isNotEmpty)
+              Positioned(
+                bottom: -2,
+                right: -3,
+                child: CrAvatarBadgeStream(
+                  userId: plyr.profile!.reference!.id,
+                  size: 18,
+                  enabled: isProForDisplay,
+                  showProFallback: isProForDisplay,
+                ),
+              ),
             Positioned(
               bottom: -4,
               right: -4,

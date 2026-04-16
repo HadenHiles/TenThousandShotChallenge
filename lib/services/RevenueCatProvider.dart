@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'RevenueCatConfig.dart';
@@ -8,6 +12,8 @@ import 'RevenueCatConfig.dart';
 class CustomerInfoNotifier extends ChangeNotifier {
   CustomerInfo? _info;
   bool _attached = false;
+  String? _lastSyncedUid;
+  bool? _lastSyncedIsPro;
 
   CustomerInfo? get info => _info;
   bool get isPro => _info?.entitlements.active.isNotEmpty ?? false;
@@ -30,6 +36,7 @@ class CustomerInfoNotifier extends ChangeNotifier {
     Purchases.addCustomerInfoUpdateListener((CustomerInfo customerInfo) {
       _info = customerInfo;
       notifyListeners();
+      unawaited(_syncProStatusToUserDoc());
     });
     _attached = true;
   }
@@ -41,8 +48,28 @@ class CustomerInfoNotifier extends ChangeNotifier {
       final ci = await Purchases.getCustomerInfo();
       _info = ci;
       notifyListeners();
+      await _syncProStatusToUserDoc();
     } catch (_) {
       // Swallow errors; callers can inspect state if needed
+    }
+  }
+
+  Future<void> _syncProStatusToUserDoc() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final bool proNow = isPro;
+    if (_lastSyncedUid == user.uid && _lastSyncedIsPro == proNow) return;
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'is_pro': proNow,
+        'subscription_level': proNow ? 'pro' : 'free',
+      }, SetOptions(merge: true));
+      _lastSyncedUid = user.uid;
+      _lastSyncedIsPro = proNow;
+    } catch (_) {
+      // Ignore sync failures; next refresh/listener event will retry.
     }
   }
 }
