@@ -3,27 +3,47 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSumm
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
 
+class UserAvatarPopoverAction {
+  const UserAvatarPopoverAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+}
+
 class UserAvatarCrPopover extends StatelessWidget {
   const UserAvatarCrPopover({
     super.key,
     required this.userId,
     required this.child,
     this.menuColor,
+    this.showAccomplishment = true,
     this.showProFallback = false,
     this.summaryStream,
     this.onViewProfile,
     this.onEditAvatar,
     this.onShowQrCode,
+    this.extraActions = const <UserAvatarPopoverAction>[],
+    this.viewProfileActionLabel = 'Continue / View Profile',
   });
 
   final String userId;
   final Widget child;
   final Color? menuColor;
+  final bool showAccomplishment;
   final bool showProFallback;
   final Stream<ChallengerRoadUserSummary>? summaryStream;
   final VoidCallback? onViewProfile;
   final VoidCallback? onEditAvatar;
   final VoidCallback? onShowQrCode;
+  final List<UserAvatarPopoverAction> extraActions;
+  final String viewProfileActionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +59,16 @@ class UserAvatarCrPopover extends StatelessWidget {
         );
 
         final bool hasCrActivity = summary.totalAttempts > 0 || summary.allTimeBestLevel > 0 || summary.badges.isNotEmpty;
-        final bool shouldShowAccomplishment = accomplishment != null && (hasCrActivity || showProFallback);
+        final bool shouldShowAccomplishment = showAccomplishment && accomplishment != null && (hasCrActivity || showProFallback);
+        final bool canOnlyViewProfile = onViewProfile != null && onEditAvatar == null && onShowQrCode == null && extraActions.isEmpty;
+
+        if (!shouldShowAccomplishment && canOnlyViewProfile) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onViewProfile,
+            child: child,
+          );
+        }
 
         return Material(
           type: MaterialType.transparency,
@@ -52,6 +81,12 @@ class UserAvatarCrPopover extends StatelessWidget {
                 onEditAvatar?.call();
               } else if (value == 'qr') {
                 onShowQrCode?.call();
+              } else if (value.startsWith('extra:')) {
+                final idx = int.tryParse(value.substring(6));
+                if (idx != null && idx >= 0 && idx < extraActions.length) {
+                  final action = extraActions[idx];
+                  if (action.enabled) action.onTap();
+                }
               }
             },
             itemBuilder: (_) {
@@ -66,10 +101,29 @@ class UserAvatarCrPopover extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          accomplishment.icon ?? Icons.emoji_events_rounded,
+                          accomplishment.icon ?? Icons.stairs_rounded,
                           color: accomplishment.color,
-                          size: 20,
+                          size: accomplishment.label == null ? 20 : 0,
                         ),
+                        if (accomplishment.label != null)
+                          Container(
+                            width: 24,
+                            height: 24,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: accomplishment.color,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              accomplishment.label!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -109,7 +163,7 @@ class UserAvatarCrPopover extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'View Profile'.toUpperCase(),
+                          viewProfileActionLabel.toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             color: Theme.of(context).colorScheme.onPrimary,
@@ -162,6 +216,34 @@ class UserAvatarCrPopover extends StatelessWidget {
                     ),
                   ),
                 );
+              }
+
+              if (extraActions.isNotEmpty) {
+                for (int i = 0; i < extraActions.length; i++) {
+                  final action = extraActions[i];
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: 'extra:$i',
+                      enabled: action.enabled,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            action.label.toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              color: action.enabled ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                            ),
+                          ),
+                          Icon(
+                            action.icon,
+                            color: action.enabled ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
               }
 
               if (items.isEmpty) {

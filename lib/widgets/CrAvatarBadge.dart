@@ -21,35 +21,6 @@ class _CrBadgeAttrs {
   }) : assert(icon != null || label != null, 'icon or label required');
 }
 
-// IDs from ChallengerRoadService.badgeCatalog grouped by tier.
-// cr_playoff_mode kept here for backward-compat: users who earned it before removal keep the visual.
-const _kRoadCompleteIds = {'the_general', 'playoff_mode'};
-const _kLegendaryIds = {
-  'hockey_god',
-  'hall_of_famer',
-  'the_machine',
-  'all_stars',
-  'clean_sweep',
-  'three_periods',
-  'well_never_runs_dry',
-  'all_net',
-  'the_sniper',
-  'career_year',
-};
-const _kEpicIds = {
-  'freight_train',
-  'dialed_in',
-  'redemption_arc',
-  'cr_game_7',
-  'team_captain',
-  'buzzer_beater',
-  'top_cheese',
-  'pure',
-  'unstoppable',
-  'full_send',
-  'earned_a_salary',
-};
-
 class CrProfileAccomplishment {
   final Color color;
   final IconData? icon;
@@ -66,81 +37,25 @@ class CrProfileAccomplishment {
   }) : assert(icon != null || label != null, 'icon or label required');
 }
 
-int _badgeTierRank(ChallengerRoadBadgeTier tier) {
-  switch (tier) {
-    case ChallengerRoadBadgeTier.legendary:
-      return 6;
-    case ChallengerRoadBadgeTier.epic:
-      return 5;
-    case ChallengerRoadBadgeTier.hidden:
-      return 4;
-    case ChallengerRoadBadgeTier.rare:
-      return 3;
-    case ChallengerRoadBadgeTier.uncommon:
-      return 2;
-    case ChallengerRoadBadgeTier.common:
-      return 1;
-  }
+int _profileDisplayLevel(ChallengerRoadUserSummary summary) {
+  if (summary.allTimeBestLevel > 0) return summary.allTimeBestLevel;
+  if (summary.currentAttemptId != null || summary.totalAttempts > 0) return 1;
+  return 0;
 }
 
-Color _tierColor(ChallengerRoadBadgeTier tier) {
-  switch (tier) {
-    case ChallengerRoadBadgeTier.legendary:
-      return const Color(0xFFFFD700);
-    case ChallengerRoadBadgeTier.epic:
-      return const Color(0xFFAB47BC);
-    case ChallengerRoadBadgeTier.rare:
-      return const Color(0xFF42A5F5);
-    case ChallengerRoadBadgeTier.uncommon:
-      return const Color(0xFF66BB6A);
-    case ChallengerRoadBadgeTier.hidden:
-      return const Color(0xFF78909C);
-    case ChallengerRoadBadgeTier.common:
-      return const Color(0xFF90A4AE);
-  }
+Color _levelColor(int level) {
+  if (level >= 10) return const Color(0xFF7E57C2);
+  if (level >= 7) return const Color(0xFF26A69A);
+  if (level >= 4) return const Color(0xFF42A5F5);
+  return const Color(0xFF5C6BC0);
 }
 
 CrProfileAccomplishment? resolveCrProfileAccomplishment(
   ChallengerRoadUserSummary summary, {
   bool showProFallback = false,
 }) {
-  final badges = summary.badges.toSet();
-
-  if (badges.intersection(_kRoadCompleteIds).isNotEmpty) {
-    final shots = summary.allTimeBestLevelShots;
-    final fast = shots != null && shots < 10000;
-    final shotCopy = shots == null ? null : '${_fmtN(shots)} shots';
-    return CrProfileAccomplishment(
-      color: const Color(0xFFFFD700),
-      icon: fast ? Icons.bolt_rounded : Icons.check_circle_rounded,
-      headline: fast ? 'Road Complete (Sub-10k)' : 'Road Complete',
-      subtitle: shotCopy == null ? 'Completed the full Challenger Road' : 'Completed the full Challenger Road in $shotCopy',
-    );
-  }
-
-  final badgeById = {
-    for (final def in ChallengerRoadService.badgeCatalog) def.id: def,
-  };
-  ChallengerRoadBadgeDefinition? bestBadge;
-  for (final id in badges) {
-    final def = badgeById[id];
-    if (def == null) continue;
-    if (bestBadge == null || _badgeTierRank(def.tier) > _badgeTierRank(bestBadge.tier)) {
-      bestBadge = def;
-    }
-  }
-
-  if (bestBadge != null) {
-    return CrProfileAccomplishment(
-      color: _tierColor(bestBadge.tier),
-      icon: ChallengerRoadService.iconForBadge(bestBadge),
-      headline: bestBadge.effectiveName,
-      subtitle: bestBadge.effectiveDescription,
-    );
-  }
-
-  if (summary.allTimeBestLevel > 0) {
-    final lvl = summary.allTimeBestLevel;
+  final lvl = _profileDisplayLevel(summary);
+  if (lvl > 0) {
     final color = lvl >= 10
         ? const Color(0xFFAB47BC)
         : lvl >= 5
@@ -149,17 +64,17 @@ CrProfileAccomplishment? resolveCrProfileAccomplishment(
     return CrProfileAccomplishment(
       color: color,
       label: '$lvl',
-      headline: 'Best Level: $lvl',
-      subtitle: 'Best Challenger Road progression so far',
+      headline: 'Challenger Road Level $lvl',
+      subtitle: summary.allTimeBestLevel > 0 ? 'Highest completed Challenger Road level' : 'Currently on Challenger Road level $lvl',
     );
   }
 
   if (showProFallback) {
     return const CrProfileAccomplishment(
       color: Color(0xFF78909C),
-      icon: Icons.workspace_premium_rounded,
-      headline: 'Pro Subscriber',
-      subtitle: 'No Challenger Road milestone yet',
+      label: 'PRO',
+      headline: 'Pro',
+      subtitle: 'Pro user with no Challenger Road run yet',
     );
   }
 
@@ -169,81 +84,31 @@ CrProfileAccomplishment? resolveCrProfileAccomplishment(
 /// Resolves which badge to show for [summary], or null if nothing useful.
 ///
 /// Priority:
-///   1. Road complete (cr_the_general / cr_playoff_mode) → gold, lightning/check
-///   2. Other legendary badge                            → gold, auto-awesome star
-///   3. Epic badge                                       → purple, fire
-///   4. Any level reached (allTimeBestLevel > 0)         → colored, level number
-///   5. showProFallback = true, no CR activity           → steel, pro star
+///   1. Highest completed level (or level 1 if attempt started) → colored label
+///   2. showProFallback = true, no CR attempt yet               → steel PRO label
 _CrBadgeAttrs? _resolveCrBadge(
   ChallengerRoadUserSummary summary, {
   bool showProFallback = false,
 }) {
-  final badges = summary.badges.toSet();
-
-  // Tier 1 — road complete
-  if (badges.intersection(_kRoadCompleteIds).isNotEmpty) {
-    final shots = summary.allTimeBestLevelShots;
-    final fast = shots != null && shots < 10000;
+  final lvl = _profileDisplayLevel(summary);
+  if (lvl > 0) {
     return _CrBadgeAttrs(
-      color: const Color(0xFFFFD700),
-      icon: fast ? Icons.bolt_rounded : Icons.check_circle_rounded,
-      tooltip: fast ? 'Challenger Road: Complete in ${_fmtN(shots)} shots!' : 'Challenger Road: Full Road Completed',
-    );
-  }
-
-  // Tier 2 — legendary
-  if (badges.intersection(_kLegendaryIds).isNotEmpty) {
-    return const _CrBadgeAttrs(
-      color: Color(0xFFFFD700),
-      icon: Icons.auto_awesome_rounded,
-      tooltip: 'Legendary Challenger Road achievement',
-    );
-  }
-
-  // Tier 3 — epic
-  if (badges.intersection(_kEpicIds).isNotEmpty) {
-    return const _CrBadgeAttrs(
-      color: Color(0xFFAB47BC),
-      icon: Icons.local_fire_department_rounded,
-      tooltip: 'Epic Challenger Road achievement',
-    );
-  }
-
-  // Tier 4 — best level
-  if (summary.allTimeBestLevel > 0) {
-    final lvl = summary.allTimeBestLevel;
-    final color = lvl >= 10
-        ? const Color(0xFFAB47BC)
-        : lvl >= 5
-            ? const Color(0xFF26A69A)
-            : const Color(0xFF42A5F5);
-    return _CrBadgeAttrs(
-      color: color,
+      color: _levelColor(lvl),
       label: '$lvl',
-      tooltip: 'Best Challenger Road Level: $lvl',
+      tooltip: summary.allTimeBestLevel > 0 ? 'Highest completed Challenger Road level: $lvl' : 'Currently on Challenger Road level $lvl',
     );
   }
 
-  // Tier 5 — pro fallback
+  // Pro fallback
   if (showProFallback) {
     return const _CrBadgeAttrs(
       color: Color(0xFF78909C),
-      icon: Icons.workspace_premium_rounded,
-      tooltip: 'Pro Subscriber',
+      label: 'PRO',
+      tooltip: 'Pro user',
     );
   }
 
   return null;
-}
-
-String _fmtN(int n) {
-  final s = n.toString();
-  final buf = StringBuffer();
-  for (int i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-  }
-  return buf.toString();
 }
 
 // ── Badge widget ─────────────────────────────────────────────────────────────
@@ -259,6 +124,7 @@ class CrAvatarBadge extends StatelessWidget {
     super.key,
     required this.summary,
     this.size = 22,
+    this.enabled = true,
     this.showProFallback = false,
   });
 
@@ -267,12 +133,16 @@ class CrAvatarBadge extends StatelessWidget {
   /// Diameter of the badge circle in logical pixels.
   final double size;
 
+  /// Master visibility switch for this overlay.
+  final bool enabled;
+
   /// When true, renders a "PRO" badge even if there is no CR activity yet.
   /// Use for the current user's own profile photo only.
   final bool showProFallback;
 
   @override
   Widget build(BuildContext context) {
+    if (!enabled) return const SizedBox.shrink();
     final attrs = _resolveCrBadge(summary, showProFallback: showProFallback);
     if (attrs == null) return const SizedBox.shrink();
 
@@ -328,15 +198,18 @@ class CrAvatarBadgeStream extends StatelessWidget {
     super.key,
     required this.userId,
     this.size = 22,
+    this.enabled = true,
     this.showProFallback = false,
   });
 
   final String userId;
   final double size;
+  final bool enabled;
   final bool showProFallback;
 
   @override
   Widget build(BuildContext context) {
+    if (!enabled) return const SizedBox.shrink();
     return StreamBuilder<ChallengerRoadUserSummary>(
       stream: ChallengerRoadService().watchUserSummary(userId),
       builder: (context, snap) {
@@ -344,6 +217,7 @@ class CrAvatarBadgeStream extends StatelessWidget {
         return CrAvatarBadge(
           summary: snap.data!,
           size: size,
+          enabled: enabled,
           showProFallback: showProFallback,
         );
       },

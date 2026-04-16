@@ -224,6 +224,7 @@ class _ProfileState extends State<Profile> {
                     child: UserAvatarCrPopover(
                       userId: currentUser.uid,
                       menuColor: Theme.of(context).colorScheme.primary,
+                      showAccomplishment: _subscriptionLevel == 'pro',
                       showProFallback: _subscriptionLevel == 'pro',
                       onEditAvatar: () {
                         Feedback.forTap(context);
@@ -263,6 +264,7 @@ class _ProfileState extends State<Profile> {
                     child: CrAvatarBadgeStream(
                       userId: currentUser.uid,
                       size: 22,
+                      enabled: _subscriptionLevel == 'pro',
                       showProFallback: _subscriptionLevel == 'pro',
                     ),
                   ),
