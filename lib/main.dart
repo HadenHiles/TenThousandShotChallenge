@@ -89,19 +89,9 @@ Future<void> main() async {
    */
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
 
-  // Only relevant for IOS
-  NotificationSettings settings = await firebaseMessaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
-  print('User granted permission: \\${settings.authorizationStatus}');
-
   // Get the user's FCM token
+  // Note: the OS notification permission dialog is now requested during the
+  // onboarding intro / permissions screen — not here at cold start.
   firebaseMessaging.getToken().then((token) {
     if (token != null && preferences!.fcmToken != token) {
       prefs.setString('fcm_token', token);
@@ -155,6 +145,9 @@ Future<void> main() async {
           ),
         ),
         ChangeNotifierProvider<IntroShownNotifier>.value(value: introShownNotifier),
+        ChangeNotifierProvider<PermissionsNotifier>(
+          create: (_) => PermissionsNotifier(),
+        ),
       ],
       child: Home(introShownNotifier: introShownNotifier),
     ),
@@ -251,6 +244,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       Provider.of<FirebaseAnalytics>(context, listen: false),
       authNotifier: _authNotifier,
       introShownNotifier: widget.introShownNotifier,
+      permissionsNotifier: Provider.of<PermissionsNotifier>(context, listen: false),
     );
     // Give LocalNotificationService a reference so notification taps can navigate.
     LocalNotificationService.setRouter(_router);

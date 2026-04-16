@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
@@ -29,6 +30,7 @@ import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 const _playerRoutePath = '/player/:id';
 
 abstract final class AppRouteNames {
+  static const permissions = 'auth_permissions';
   static const login = 'auth_login';
   static const intro = 'auth_intro';
   static const train = 'train_home';
@@ -117,6 +119,37 @@ class IntroShownNotifier extends ChangeNotifier {
   }
 }
 
+/// Tracks whether the user has granted the permissions the app needs.
+/// Checks status at startup; existing users who are missing permissions
+/// are redirected to [PermissionsScreen] automatically.
+class PermissionsNotifier extends ChangeNotifier {
+  bool? _needsPermissions; // null while the async check is pending
+
+  bool get needsPermissions => _needsPermissions ?? false;
+  bool get checked => _needsPermissions != null;
+
+  PermissionsNotifier() {
+    _check();
+  }
+
+  Future<void> _check() async {
+    final camera = await Permission.camera.status;
+    final notification = await Permission.notification.status;
+    _needsPermissions = !camera.isGranted || !notification.isGranted;
+    notifyListeners();
+  }
+
+  /// Re-run the permission check (call after granting permissions).
+  Future<void> refresh() => _check();
+
+  /// Mark permissions as handled for this session so the router won't
+  /// redirect. The next cold start will re-check actual OS status.
+  void markGranted() {
+    _needsPermissions = false;
+    notifyListeners();
+  }
+}
+
 List<RouteBase> _buildAuthRoutes() {
   return [
     GoRoute(
@@ -128,6 +161,11 @@ List<RouteBase> _buildAuthRoutes() {
       path: AppRoutePaths.intro,
       name: AppRouteNames.intro,
       builder: (context, state) => const IntroScreen(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.permissions,
+      name: AppRouteNames.permissions,
+      builder: (context, state) => const PermissionsScreen(),
     ),
   ];
 }
@@ -244,11 +282,12 @@ GoRouter createAppRouter(
   FirebaseAnalytics analytics, {
   required AuthChangeNotifier authNotifier,
   required IntroShownNotifier introShownNotifier,
+  required PermissionsNotifier permissionsNotifier,
   String initialLocation = AppRoutePaths.app,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
-    refreshListenable: Listenable.merge([authNotifier, introShownNotifier]),
+    refreshListenable: Listenable.merge([authNotifier, introShownNotifier, permissionsNotifier]),
     observers: [FirebaseAnalyticsObserver(analytics: analytics)],
     routes: [
       ..._buildAuthRoutes(),
@@ -268,8 +307,16 @@ GoRouter createAppRouter(
       if (user != null && path == AppRoutePaths.login) {
         return appSectionLocation(AppSection.train);
       }
+      // New user: show full intro flow first
       if (!introShown && path != AppRoutePaths.intro) return AppRoutePaths.intro;
-      if (user == null && path != AppRoutePaths.login && path != AppRoutePaths.intro) {
+      // Existing user with missing permissions: show permissions screen
+      if (introShown &&
+          permissionsNotifier.checked &&
+          permissionsNotifier.needsPermissions &&
+          path != AppRoutePaths.permissions) {
+        return AppRoutePaths.permissions;
+      }
+      if (user == null && path != AppRoutePaths.login && path != AppRoutePaths.intro && path != AppRoutePaths.permissions) {
         return AppRoutePaths.login;
       }
       return null;
