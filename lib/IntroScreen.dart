@@ -88,6 +88,19 @@ class _IntroScreenState extends State<IntroScreen> {
       imagePadding: EdgeInsets.zero,
     );
 
+    const welcomePageDecoration = PageDecoration(
+      titleTextStyle: TextStyle(
+        fontSize: 32.0,
+        fontFamily: 'NovecentoSans',
+        color: Colors.white,
+      ),
+      bodyTextStyle: TextStyle(fontSize: 22.0, color: Color.fromRGBO(255, 255, 255, 0.9)),
+      bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      pageColor: Color(0xffCC3333),
+      imagePadding: EdgeInsets.only(bottom: 30),
+      bodyFlex: 2,
+    );
+
     return IntroductionScreen(
       key: introKey,
       globalBackgroundColor: const Color(0xffcc3333),
@@ -96,7 +109,7 @@ class _IntroScreenState extends State<IntroScreen> {
           title: "Take the 10,000 shot challenge".toUpperCase(),
           body: "See how much you can improve",
           image: _buildImage('logo-small.png', MediaQuery.of(context).size.width * 0.7),
-          decoration: pageDecoration,
+          decoration: welcomePageDecoration,
         ),
         PageViewModel(
           title: "Track your progress".toUpperCase(),
