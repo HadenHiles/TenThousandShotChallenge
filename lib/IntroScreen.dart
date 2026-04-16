@@ -98,7 +98,6 @@ class _IntroScreenState extends State<IntroScreen> {
       bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       pageColor: Color(0xffCC3333),
       imagePadding: EdgeInsets.only(bottom: 30),
-      bodyFlex: 2,
     );
 
     return IntroductionScreen(
