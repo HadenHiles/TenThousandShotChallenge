@@ -100,6 +100,19 @@ class _IntroScreenState extends State<IntroScreen> {
       imagePadding: EdgeInsets.only(bottom: 30),
     );
 
+    const permissionsPageDecoration = PageDecoration(
+      titleTextStyle: TextStyle(
+        fontSize: 32.0,
+        fontFamily: 'NovecentoSans',
+        color: Colors.white,
+      ),
+      bodyTextStyle: bodyStyle,
+      bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      pageColor: Color(0xffCC3333),
+      imagePadding: EdgeInsets.zero,
+      bodyFlex: 2,
+    );
+
     return IntroductionScreen(
       key: introKey,
       globalBackgroundColor: const Color(0xffcc3333),
@@ -481,7 +494,7 @@ class _IntroScreenState extends State<IntroScreen> {
             size: MediaQuery.of(context).size.width * 0.4,
             color: Colors.white,
           ),
-          decoration: pageDecoration,
+          decoration: permissionsPageDecoration,
         ),
       ],
       onDone: () async {
