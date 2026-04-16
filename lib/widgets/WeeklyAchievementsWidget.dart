@@ -23,6 +23,70 @@ class WeeklyAchievementsWidget extends StatefulWidget {
 
 class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   String? _userTimezone;
+  bool _hasPrimedCompletionState = false;
+  final Set<String> _knownCompletedWeeklyAchievementIds = <String>{};
+
+  void _handleInAppCompletionNotifications(List<QueryDocumentSnapshot> achievements) {
+    final completedDocs = achievements.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['completed'] == true;
+    }).toList();
+
+    final completedIds = completedDocs.map((doc) => doc.id).toSet();
+
+    if (!_hasPrimedCompletionState) {
+      _hasPrimedCompletionState = true;
+      _knownCompletedWeeklyAchievementIds
+        ..clear()
+        ..addAll(completedIds);
+      return;
+    }
+
+    final newlyCompleted = completedDocs.where((doc) => !_knownCompletedWeeklyAchievementIds.contains(doc.id)).toList();
+
+    _knownCompletedWeeklyAchievementIds
+      ..clear()
+      ..addAll(completedIds);
+
+    if (newlyCompleted.isEmpty || !mounted) return;
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) return;
+
+      if (newlyCompleted.length == 1) {
+        final data = newlyCompleted.first.data() as Map<String, dynamic>;
+        final description = (data['description'] as String?)?.trim();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              description != null && description.isNotEmpty ? '🏒  Weekly achievement completed: $description' : '🏒  Weekly achievement completed!',
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              '🏒  ${newlyCompleted.length} weekly achievements completed!',
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+  }
+
   // Widget builder for checkbox circle
   Widget _buildCheckboxCircle(bool checked) {
     return Container(
@@ -852,6 +916,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                   if (aIsBonus == bIsBonus) return 0;
                   return aIsBonus ? 1 : -1;
                 });
+                _handleInAppCompletionNotifications(achievements);
                 if (_expanded.length != achievements.length) {
                   _expanded = List.filled(achievements.length, false);
                 }
