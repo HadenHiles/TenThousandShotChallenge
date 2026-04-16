@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,11 +8,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/router.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 
 class IntroScreen extends StatefulWidget {
@@ -26,6 +30,7 @@ class _IntroScreenState extends State<IntroScreen> {
   final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences!.targetDate!));
 
   bool? _darkMode = preferences?.darkMode;
+  bool _permissionsGranted = false;
 
   DateTime? _targetDate;
   int? _shotsPerDay;
@@ -42,6 +47,10 @@ class _IntroScreenState extends State<IntroScreen> {
     preferences?.puckCount = int.tryParse(_puckCountTextFieldController.text) ?? 25;
     preferences?.targetDate = _targetDate;
     Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
+    // Re-schedule the daily reminder now that exact alarm permission may have been granted.
+    final h = prefs.getInt('reminder_hour') ?? 17;
+    final m = prefs.getInt('reminder_minute') ?? 0;
+    await LocalNotificationService.scheduleDailyReminder(hour: h, minute: m);
     // Routing to main app after intro (ensure navigation happens after UI updates)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.go(AppRoutePaths.app);
@@ -387,6 +396,78 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
           decoration: pageDecoration,
         ),
+        PageViewModel(
+          title: "Allow permissions".toUpperCase(),
+          bodyWidget: Column(
+            children: [
+              const Text(
+                'This app needs a couple of permissions to work properly:',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 18,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              _PermissionRow(icon: Icons.camera_alt_rounded, label: 'Camera - scan QR codes to connect with teammates'),
+              const SizedBox(height: 8),
+              _PermissionRow(icon: Icons.notifications_active_rounded, label: 'Notifications - daily practice reminders & streak alerts'),
+              if (Platform.isAndroid) ...[
+                const SizedBox(height: 8),
+                _PermissionRow(icon: Icons.alarm_rounded, label: 'Exact alarms - deliver reminders at your chosen time'),
+              ],
+              const SizedBox(height: 24),
+              if (_permissionsGranted)
+                const Text(
+                  '✓ Permissions granted',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                )
+              else
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xffCC3333),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    textStyle: const TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: () async {
+                    await Permission.camera.request();
+                    if (Platform.isAndroid) {
+                      await Permission.notification.request();
+                      await LocalNotificationService.requestExactAlarmPermission();
+                    }
+                    if (mounted) setState(() => _permissionsGranted = true);
+                  },
+                  child: const Text('Grant Permissions'),
+                ),
+              const SizedBox(height: 8),
+              const Text(
+                'You can change these later in your device settings',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 14,
+                  color: Colors.white54,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          image: Icon(
+            Icons.shield_rounded,
+            size: MediaQuery.of(context).size.width * 0.4,
+            color: Colors.white,
+          ),
+          decoration: pageDecoration,
+        ),
       ],
       onDone: () async {
         await _onIntroEnd(context);
@@ -433,6 +514,33 @@ class _IntroScreenState extends State<IntroScreen> {
           borderRadius: BorderRadius.all(Radius.circular(8.0)),
         ),
       ),
+    );
+  }
+}
+
+class _PermissionRow extends StatelessWidget {
+  const _PermissionRow({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.white, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 17,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
