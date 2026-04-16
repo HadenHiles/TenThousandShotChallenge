@@ -563,41 +563,163 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildNoTeamUI() {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width - 30,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text("Tap + to create a team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15.0),
-            child: Container(
-              decoration: ShapeDecoration(
-                color: Theme.of(context).cardTheme.color,
-                shape: const CircleBorder(),
-              ),
-              child: IconButton(
-                iconSize: 40,
-                icon: Icon(Icons.add, size: 40, color: Theme.of(context).colorScheme.onPrimary),
-                onPressed: () {
-                  context.push(AppRoutePaths.createTeam);
-                },
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.group_outlined,
+              size: 72,
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Team Challenge".toUpperCase(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 30,
+                color: Theme.of(context).colorScheme.onPrimary,
+                letterSpacing: 1.5,
               ),
             ),
-          ),
-          const Divider(height: 30),
-          Text("Or join an existing team".toUpperCase(), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
-          Padding(
-            padding: const EdgeInsets.only(top: 15.0),
-            child: MaterialButton(
-                color: Theme.of(context).cardTheme.color,
-                child: Text("Join Team".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onPrimary)),
-                onPressed: () {
-                  context.push(AppRoutePaths.joinTeam);
-                }),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              "Create or join a team to track shots together and compete.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: 40),
+            // Create a Team card
+            Card(
+              elevation: 2,
+              color: Theme.of(context).cardTheme.color,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => context.push(AppRoutePaths.createTeam),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Create a Team".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 20,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              "Set a goal and invite players",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.35)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                  child: Text(
+                    "OR",
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Join a Team card
+            Card(
+              elevation: 2,
+              color: Theme.of(context).cardTheme.color,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => context.push(AppRoutePaths.joinTeam),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.qr_code_scanner, color: Theme.of(context).colorScheme.onPrimary, size: 26),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Join a Team".toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 20,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              "Scan a QR code or enter a team code",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.35)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
