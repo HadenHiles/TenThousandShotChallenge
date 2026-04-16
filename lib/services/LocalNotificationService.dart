@@ -157,13 +157,24 @@ class LocalNotificationService {
     var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
 
+    // On Android 12+, SCHEDULE_EXACT_ALARM requires the user to grant it via
+    // system settings. Fall back to inexact scheduling when not permitted so the
+    // app doesn't crash — the notification will still fire, just within a short
+    // delivery window rather than at the exact second.
+    AndroidScheduleMode scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
+    if (Platform.isAndroid) {
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final canExact = await android?.canScheduleExactAlarms() ?? false;
+      if (canExact) scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+    }
+
     await _plugin.zonedSchedule(
       _dailyReminderId,
       'Time to hit the ice! 🏒',
       "Don't forget to log your shots today. Every rep counts!",
       scheduled,
       _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       matchDateTimeComponents: DateTimeComponents.time, // repeat at same time every day
       payload: 'train',
     );
