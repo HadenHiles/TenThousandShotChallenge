@@ -42,6 +42,7 @@ class _PlayerState extends State<Player> {
   bool _loadingPlayer = false;
   ScrollController? sessionsController;
   bool? _isFriend = false;
+  bool _isSubscribedToFriendNotifications = false;
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
   bool _showAchievements = false;
@@ -68,6 +69,7 @@ class _PlayerState extends State<Player> {
     sessionsController = ScrollController();
 
     _loadIsFriend();
+    _loadFriendSubscription();
     _getAttempts();
   }
 
@@ -77,6 +79,106 @@ class _PlayerState extends State<Player> {
         _isFriend = snapshot.exists;
       });
     });
+  }
+
+  Future<void> _loadFriendSubscription() async {
+    if (widget.uid == null || widget.uid == user!.uid) return;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('friend_subscriptions').doc(widget.uid).get();
+    if (mounted) {
+      setState(() {
+        _isSubscribedToFriendNotifications = doc.exists;
+      });
+    }
+  }
+
+  Future<void> _toggleFriendSubscription() async {
+    if (widget.uid == null) return;
+    final ref = FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('friend_subscriptions').doc(widget.uid);
+    if (_isSubscribedToFriendNotifications) {
+      await ref.delete();
+    } else {
+      await ref.set({'subscribed': true, 'subscribed_at': FieldValue.serverTimestamp()});
+    }
+    if (mounted) {
+      setState(() {
+        _isSubscribedToFriendNotifications = !_isSubscribedToFriendNotifications;
+      });
+    }
+  }
+
+  void _showFriendNotificationDialog() {
+    if (_userPlayer == null) return;
+    Feedback.forTap(context);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.notifications_rounded, color: Theme.of(ctx).primaryColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Session Notifications',
+                      style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Get notified when ${_userPlayer!.displayName} finishes a shooting session.',
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    value: _isSubscribedToFriendNotifications,
+                    activeColor: Theme.of(ctx).primaryColor,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      _isSubscribedToFriendNotifications ? 'Subscribed' : 'Not subscribed',
+                      style: TextStyle(
+                        color: Theme.of(ctx).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onChanged: (v) async {
+                      await _toggleFriendSubscription();
+                      setDialogState(() {});
+                    },
+                  ),
+                  if (_isSubscribedToFriendNotifications)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'You\'ll receive a push notification whenever they log a session.',
+                        style: TextStyle(
+                          color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+                  ),
+                  child: const Text('Done'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _loadPlayerTeamVisibility() async {
@@ -398,6 +500,19 @@ class _PlayerState extends State<Player> {
                     ),
                   ),
                   actions: [
+                    if (widget.uid != null && widget.uid != user!.uid && _isFriend == true)
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        child: IconButton(
+                          tooltip: _isSubscribedToFriendNotifications ? 'Session notifications on' : 'Get session notifications',
+                          icon: Icon(
+                            _isSubscribedToFriendNotifications ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+                            color: _isSubscribedToFriendNotifications ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onPrimary,
+                            size: 26,
+                          ),
+                          onPressed: _showFriendNotificationDialog,
+                        ),
+                      ),
                     if (widget.uid != null && widget.uid != user!.uid)
                       Container(
                         margin: const EdgeInsets.only(top: 10),

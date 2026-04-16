@@ -1434,6 +1434,12 @@ class _StartShootingState extends State<StartShooting> {
               setState(() {
                 _shots.insert(0, shots);
               });
+              // Update the persistent active-session notification with the new shot total.
+              final updatedTotal = _shots.fold(0, (sum, s) => sum + (s.count ?? 0));
+              await LocalNotificationService.showActiveSession(
+                shotCount: updatedTotal,
+                duration: sessionService.currentDuration,
+              );
             },
             style: ButtonStyle(
               padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 10, horizontal: 5)),
@@ -1501,6 +1507,7 @@ class _StartShootingState extends State<StartShooting> {
                         Feedback.forLongPress(context);
                         // Close the panel before reset; avoid hidden state that blocks reopening.
                         await widget.sessionPanelController.close();
+                        await LocalNotificationService.cancelActiveSession();
                         sessionService.reset();
                         if (mounted) {
                           setState(() {
@@ -1560,6 +1567,7 @@ class _StartShootingState extends State<StartShooting> {
                           );
                           final pending = await OfflineSessionQueue.instance.pendingCount();
                           await widget.sessionPanelController.close();
+                          await LocalNotificationService.cancelActiveSession();
                           sessionService.reset();
                           if (mounted) {
                             setState(() {
@@ -1603,6 +1611,7 @@ class _StartShootingState extends State<StartShooting> {
                           }
                           // Close the panel before reset; avoid hidden state that blocks reopening.
                           await widget.sessionPanelController.close();
+                          await LocalNotificationService.cancelActiveSession();
                           sessionService.reset();
                           if (mounted) {
                             setState(() {
@@ -1625,16 +1634,6 @@ class _StartShootingState extends State<StartShooting> {
                                   backgroundColor: Theme.of(context).cardTheme.color,
                                   textColor: Theme.of(context).colorScheme.onPrimary,
                                   fontSize: 16.0,
-                                );
-
-                                // Fire session-complete local notification.
-                                final sessionPrefs = await SharedPreferences.getInstance();
-                                final sessionCount = (sessionPrefs.getInt('session_count') ?? 0) + 1;
-                                await sessionPrefs.setInt('session_count', sessionCount);
-                                await LocalNotificationService.showSessionComplete(
-                                  totalShots: totalShots,
-                                  sessionCount: sessionCount,
-                                  isPro: _subscriptionLevel == 'pro',
                                 );
 
                                 // Check if a sub-milestone was crossed this session
