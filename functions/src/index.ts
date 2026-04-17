@@ -2259,7 +2259,7 @@ export const sendPracticeReminders = onSchedule(
                 await messaging.send({
                     token,
                     notification: {
-                        title: "Time to hit the ice! 🏒",
+                        title: "Grab your stick! 🏒",
                         body: "You haven't practised in 2 days. Keep your streak alive!",
                     },
                     data: { type: 'practice_reminder' },
