@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -140,7 +142,12 @@ class PermissionsNotifier extends ChangeNotifier {
   Future<void> _check() async {
     final camera = await Permission.camera.status;
     final notification = await Permission.notification.status;
-    _needsPermissions = !camera.isGranted || !notification.isGranted;
+    bool batteryOk = true;
+    if (Platform.isAndroid) {
+      final battery = await Permission.ignoreBatteryOptimizations.status;
+      batteryOk = battery.isGranted;
+    }
+    _needsPermissions = !camera.isGranted || !notification.isGranted || !batteryOk;
     notifyListeners();
   }
 

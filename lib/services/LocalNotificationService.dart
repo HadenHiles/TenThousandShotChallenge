@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -202,6 +203,22 @@ class LocalNotificationService {
     await android?.requestExactAlarmsPermission();
   }
 
+  /// On Android, request that the system exclude this app from battery
+  /// optimisation ("Sleeping apps" on Samsung One UI). Without this,
+  /// AlarmManager alarms can be deferred or suppressed entirely on devices
+  /// with aggressive power management such as the Samsung Galaxy S-series.
+  /// No-op on iOS.
+  static Future<void> requestBatteryOptimizationExemption() async {
+    if (!Platform.isAndroid) return;
+    // Sends ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS which opens the system
+    // dialog letting the user whitelist this app for unrestricted background
+    // operation. Required permission: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS.
+    final status = await Permission.ignoreBatteryOptimizations.status;
+    if (!status.isGranted) {
+      await Permission.ignoreBatteryOptimizations.request();
+    }
+  }
+
   // ── 2. Streak-at-risk (scheduled once for 6 PM today) ───────────────────
 
   /// Schedule a 6 PM streak-alert if the user has a streak ≥ 2 and hasn't
@@ -217,15 +234,31 @@ class LocalNotificationService {
     var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, 18, 0);
     if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
 
-    await _plugin.zonedSchedule(
-      _streakAtRiskId,
-      '🔥 Don\'t break your streak!',
-      '$streakDays-day streak on the line — log a session today to keep it alive!',
-      scheduled,
-      _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: 'train',
-    );
+    try {
+      await _plugin.zonedSchedule(
+        _streakAtRiskId,
+        '🔥 Don\'t break your streak!',
+        '$streakDays-day streak on the line — log a session today to keep it alive!',
+        scheduled,
+        _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
+        androidScheduleMode: Platform.isAndroid ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: 'train',
+      );
+    } on PlatformException catch (e) {
+      if (e.code == 'exact_alarms_not_permitted') {
+        await _plugin.zonedSchedule(
+          _streakAtRiskId,
+          '🔥 Don\'t break your streak!',
+          '$streakDays-day streak on the line — log a session today to keep it alive!',
+          scheduled,
+          _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: 'train',
+        );
+      } else {
+        rethrow;
+      }
+    }
   }
 
   static Future<void> cancelStreakAtRisk() async {

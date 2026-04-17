@@ -472,6 +472,7 @@ class _IntroScreenState extends State<IntroScreen> {
                     await Permission.notification.request();
                     if (Platform.isAndroid) {
                       await LocalNotificationService.requestExactAlarmPermission();
+                      await LocalNotificationService.requestBatteryOptimizationExemption();
                     }
                     if (mounted) setState(() => _permissionsGranted = true);
                   },
@@ -590,6 +591,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     await Permission.notification.request();
     if (Platform.isAndroid) {
       await LocalNotificationService.requestExactAlarmPermission();
+      await LocalNotificationService.requestBatteryOptimizationExemption();
     }
     final prefs = await SharedPreferences.getInstance();
     await LocalNotificationService.scheduleDailyReminder(
