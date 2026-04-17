@@ -25,7 +25,6 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
-import 'package:tenthousandshotchallenge/theme/Theme.dart';
 
 class Player extends StatefulWidget {
   const Player({super.key, this.uid});
@@ -733,8 +732,6 @@ class _PlayerState extends State<Player> {
                         const SizedBox(height: 12),
                         _buildAccuracyCard(context),
                         const SizedBox(height: 12),
-                        _buildCrSection(context),
-                        const SizedBox(height: 12),
                         _buildActivityCalendarCard(context),
                         const SizedBox(height: 12),
                         _buildSessionsCard(context),
@@ -750,6 +747,73 @@ class _PlayerState extends State<Player> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Widget _buildCrHeaderSummary(BuildContext context) {
+    if (widget.uid == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return StreamBuilder<ChallengerRoadUserSummary>(
+      stream: ChallengerRoadService().watchUserSummary(widget.uid!),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final summary = snap.data!;
+        final bool hasActivity = summary.totalAttempts > 0 || summary.badges.isNotEmpty;
+        if (!hasActivity) return const SizedBox.shrink();
+
+        final badges = summary.badges.toSet();
+        final bool roadComplete = badges.contains('the_general') || badges.contains('playoff_mode');
+        final int? shots = summary.allTimeBestLevelShots;
+        String headline;
+        if (roadComplete) {
+          if (shots != null && shots == 10000) {
+            headline = 'road complete — exactly\n10,000 shots';
+          } else if (shots != null) {
+            headline = 'road complete —\n${_fmtShots(shots)} shots';
+          } else {
+            headline = 'road complete!';
+          }
+        } else if (summary.allTimeBestLevel > 0) {
+          final t = summary.totalAttempts;
+          headline = 'level ${summary.allTimeBestLevel}\n$t attempt${t == 1 ? '' : 's'}';
+        } else {
+          headline = '${summary.badges.length} badge${summary.badges.length == 1 ? '' : 's'} earned';
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.route_rounded, size: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.45)),
+                const SizedBox(width: 4),
+                Text(
+                  'CHALLENGER ROAD',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              headline,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 15,
+                color: roadComplete ? const Color(0xFFFFD700) : theme.colorScheme.onSurface,
+                shadows: roadComplete ? [const Shadow(color: Color(0xFFFFD700), blurRadius: 6)] : null,
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildPlayerHeader(BuildContext context) {
@@ -804,7 +868,7 @@ class _PlayerState extends State<Player> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: (MediaQuery.of(context).size.width - 130) * 0.65,
+                  width: (MediaQuery.of(context).size.width - 130) * 0.55,
                   child: StreamBuilder<DocumentSnapshot>(
                     stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
                     builder: (context, snapshot) {
@@ -832,6 +896,7 @@ class _PlayerState extends State<Player> {
             ),
           ],
         ),
+        _buildCrHeaderSummary(context),
       ],
     );
   }
@@ -968,26 +1033,58 @@ class _PlayerState extends State<Player> {
 
   Widget _buildAccuracyCard(BuildContext context) {
     final theme = Theme.of(context);
-    return _PlayerDashboardCard(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.track_changes_rounded, color: theme.colorScheme.onPrimary, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Shot Accuracy'.toUpperCase(), style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 6),
-              _buildAccuracyGlanceChips(context),
-            ]),
-          ),
-        ]),
-      ),
+    final playerIsPro = _userPlayer?.isPro ?? false;
+    final playerName = _userPlayer?.displayName ?? 'This player';
+
+    Widget cardContent = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.track_changes_rounded, color: theme.colorScheme.onPrimary, size: 24),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Shot Accuracy'.toUpperCase(), style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 6),
+            _buildAccuracyGlanceChips(context),
+          ]),
+        ),
+      ]),
     );
+
+    if (!playerIsPro) {
+      cardContent = Stack(
+        children: [
+          // Blurred / dimmed content underneath
+          Opacity(opacity: 0.25, child: cardContent),
+          // Lock overlay
+          Positioned.fill(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_outline_rounded, size: 28, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                  const SizedBox(height: 6),
+                  Text(
+                    "$playerName doesn't have pro access",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _PlayerDashboardCard(child: cardContent);
   }
 
   Widget _buildAccuracyGlanceChips(BuildContext context) {
@@ -1113,25 +1210,6 @@ class _PlayerState extends State<Player> {
       ),
     );
   }
-
-  Widget _buildCrSection(BuildContext context) {
-    if (widget.uid == null) return const SizedBox.shrink();
-    return StreamBuilder<ChallengerRoadUserSummary>(
-      stream: ChallengerRoadService().watchUserSummary(widget.uid!),
-      builder: (context, snap) {
-        // Show nothing while still loading the first event.
-        if (!snap.hasData && snap.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
-        }
-        final summary = snap.data ?? ChallengerRoadUserSummary.empty();
-        return _CrPlayerCard(
-          userId: widget.uid!,
-          summary: summary,
-          playerName: _userPlayer?.displayName?.split(' ').first ?? 'Player',
-        );
-      },
-    );
-  }
 }
 
 // ── Shared dashboard card widget ─────────────────────────────────────────────
@@ -1155,429 +1233,6 @@ class _PlayerDashboardCard extends StatelessWidget {
         child: child,
       ),
     );
-  }
-}
-
-// ── Challenger Road player card ───────────────────────────────────────────────
-
-class _CrPlayerCard extends StatelessWidget {
-  const _CrPlayerCard({
-    required this.userId,
-    required this.summary,
-    required this.playerName,
-  });
-
-  final String userId;
-  final ChallengerRoadUserSummary summary;
-  final String playerName;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final badges = summary.badges.toSet();
-    final bool hasActivity = summary.totalAttempts > 0 || badges.isNotEmpty;
-
-    // No-activity placeholder
-    if (!hasActivity) {
-      return Container(
-        margin: const EdgeInsets.only(top: 8),
-        decoration: BoxDecoration(
-          color: lighten(theme.colorScheme.primary, 0.08),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-          child: Row(
-            children: [
-              Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.35), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'challenger road — no activity yet',
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 15,
-                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.35),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Derive the headline based on outcomes.
-    final bool roadComplete = badges.contains('the_general') || badges.contains('playoff_mode');
-    final int? shots = summary.allTimeBestLevelShots;
-    String headline;
-    if (roadComplete) {
-      if (shots != null && shots < 10000) {
-        headline = 'road complete — ${_fmtShots(shots)} shots';
-      } else if (shots != null && shots == 10000) {
-        headline = 'road complete — exactly 10,000 shots';
-      } else if (shots != null) {
-        headline = 'road complete — ${_fmtShots(shots)} shots';
-      } else {
-        headline = 'challenger road: complete!';
-      }
-    } else if (summary.allTimeBestLevel > 0) {
-      final t = summary.totalAttempts;
-      headline = 'reached level ${summary.allTimeBestLevel} · $t attempt${t == 1 ? '' : 's'}';
-    } else {
-      headline = '${summary.badges.length} badge${summary.badges.length == 1 ? '' : 's'} earned';
-    }
-
-    return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-      future: ChallengerRoadService().getBadgeCatalogForUser(userId),
-      builder: (context, catSnap) {
-        final catalog = catSnap.data ?? const [];
-        final byId = {for (final d in catalog) d.id: d};
-        final featured = summary.featuredBadges;
-
-        return Container(
-          margin: const EdgeInsets.only(top: 8),
-          decoration: BoxDecoration(
-            color: lighten(theme.colorScheme.primary, 0.08),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    Icon(Icons.route_rounded, color: theme.primaryColor, size: 15),
-                    const SizedBox(width: 6),
-                    Text(
-                      'CHALLENGER ROAD',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 13,
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.65),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Headline
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: Text(
-                  headline,
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 19,
-                    color: roadComplete ? const Color(0xFFFFD700) : theme.colorScheme.onSurface,
-                    shadows: roadComplete ? [const Shadow(color: Color(0xFFFFD700), blurRadius: 8)] : null,
-                  ),
-                ),
-              ),
-              // Stats chips
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: Row(
-                  children: [
-                    _statPill(context, '${summary.totalAttempts}', 'attempts'),
-                    const SizedBox(width: 6),
-                    _statPill(context, _fmtShots(summary.allTimeTotalChallengerRoadShots), 'cr shots'),
-                    const SizedBox(width: 6),
-                    _statPill(context, '${summary.badges.length}', 'badges'),
-                  ],
-                ),
-              ),
-              // Featured badges
-              if (featured.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                  child: Text(
-                    'FEATURED',
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 6, 16, 0),
-                  child: Row(
-                    children: [
-                      for (final id in featured.take(3)) _featuredBadge(context, byId[id]),
-                    ],
-                  ),
-                ),
-              ],
-              // View all
-              if (summary.badges.isNotEmpty)
-                InkWell(
-                  onTap: () => _showAllBadges(context, catalog, byId),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'view all ${summary.badges.length} badge${summary.badges.length == 1 ? '' : 's'}',
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 15,
-                            color: theme.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded, color: theme.primaryColor, size: 16),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _statPill(BuildContext context, String value, String label) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Column(
-          children: [
-            Text(value, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: theme.colorScheme.onSurface)),
-            Text(label, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.6), letterSpacing: 0.5)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _featuredBadge(BuildContext context, ChallengerRoadBadgeDefinition? def) {
-    if (def == null) return const SizedBox(width: 70);
-    final color = _badgeColor(def);
-    final icon = _badgeIcon(def);
-    return GestureDetector(
-      onTap: () => _showBadgeDetail(context, def, color, icon),
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        child: Column(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.15),
-                border: Border.all(color: color, width: 2),
-                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: 62,
-              child: Text(
-                def.effectiveName,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 9, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), height: 1.2),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showBadgeDetail(BuildContext context, ChallengerRoadBadgeDefinition def, Color color, IconData icon) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: 8),
-                Expanded(child: Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: Theme.of(context).colorScheme.onSurface))),
-              ]),
-              const SizedBox(height: 8),
-              Text('Unlocked', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Colors.green)),
-              const SizedBox(height: 10),
-              Text(def.effectiveDescription, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85))),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAllBadges(BuildContext context, List<ChallengerRoadBadgeDefinition> catalog, Map<String, ChallengerRoadBadgeDefinition> byId) {
-    final earned = summary.badges;
-    final earnedDefs = earned.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList()
-      ..sort((a, b) {
-        // Sort: legendary first, then by name
-        int tierVal(ChallengerRoadBadgeTier t) {
-          switch (t) {
-            case ChallengerRoadBadgeTier.legendary:
-              return 0;
-            case ChallengerRoadBadgeTier.epic:
-              return 1;
-            case ChallengerRoadBadgeTier.hidden:
-              return 2;
-            case ChallengerRoadBadgeTier.rare:
-              return 3;
-            case ChallengerRoadBadgeTier.uncommon:
-              return 4;
-            case ChallengerRoadBadgeTier.common:
-              return 5;
-          }
-        }
-
-        final tv = tierVal(a.tier).compareTo(tierVal(b.tier));
-        return tv != 0 ? tv : a.name.compareTo(b.name);
-      });
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.92,
-        minChildSize: 0.35,
-        expand: false,
-        builder: (_, controller) => Column(
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-              child: Row(
-                children: [
-                  Icon(Icons.military_tech_rounded, color: Theme.of(context).primaryColor, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    "$playerName's badges".toUpperCase(),
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                controller: controller,
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                itemCount: earnedDefs.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.95,
-                ),
-                itemBuilder: (_, i) {
-                  final def = earnedDefs[i];
-                  final color = _badgeColor(def);
-                  final icon = _badgeIcon(def);
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () => _showBadgeDetail(context, def, color, icon),
-                    child: SizedBox(
-                      width: 104,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color.withValues(alpha: 0.18),
-                              border: Border.all(color: color, width: 2.0),
-                              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8)],
-                            ),
-                            child: Icon(icon, size: 26, color: color),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            def.effectiveName,
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: Theme.of(context).colorScheme.onSurface, height: 1.2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Color _badgeColor(ChallengerRoadBadgeDefinition def) {
-    switch (def.tier) {
-      case ChallengerRoadBadgeTier.legendary:
-        return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeTier.epic:
-        return const Color(0xFFAB47BC);
-      case ChallengerRoadBadgeTier.hidden:
-        return const Color(0xFF78909C);
-      default:
-        break;
-    }
-    switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
-        return const Color(0xFF42A5F5);
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
-        return const Color(0xFF26C6DA);
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
-        return const Color(0xFF66BB6A);
-      case ChallengerRoadBadgeCategory.grindAndResilience:
-        return const Color(0xFF8D6E63);
-      case ChallengerRoadBadgeCategory.levelAdvancement:
-        return const Color(0xFF26A69A);
-      case ChallengerRoadBadgeCategory.crShotMilestones:
-        return const Color(0xFFFF7043);
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
-        return const Color(0xFF5C6BC0);
-      case ChallengerRoadBadgeCategory.hotStreaks:
-        return const Color(0xFFEF5350);
-      case ChallengerRoadBadgeCategory.challengeMastery:
-        return const Color(0xFF5C6BC0);
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
-        return const Color(0xFF29B6F6);
-      case ChallengerRoadBadgeCategory.eliteEndgame:
-        return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeCategory.chirpy:
-        return const Color(0xFF78909C);
-    }
-  }
-
-  static IconData _badgeIcon(ChallengerRoadBadgeDefinition def) {
-    return ChallengerRoadService.iconForBadge(def);
   }
 }
 
