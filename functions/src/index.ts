@@ -1361,15 +1361,17 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                 weeklyAllCompletedStreak = prevStreak + 1;
             } else {
                 weeklyAllCompletedStreak = 0;
-
-                // totalAchievementsCompleted is a running total (previous + new completions this week)
-                const totalAchievementsCompleted = prevTotal + completedThisWeek;
-                const updatedHistory = {
-                    totalAchievementsCompleted,
-                    weeklyAllCompletedStreak
-                };
-                await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
             }
+
+            // totalAchievementsCompleted is a running total (previous + new completions this week)
+            const totalAchievementsCompleted = prevTotal + completedThisWeek;
+            const bestWeeklyAllCompletedStreak = Math.max((history.bestWeeklyAllCompletedStreak as number) || 0, weeklyAllCompletedStreak);
+            const updatedHistory = {
+                totalAchievementsCompleted,
+                weeklyAllCompletedStreak,
+                bestWeeklyAllCompletedStreak,
+            };
+            await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
 
             // --- Move completed achievements to stats/history/completed_achievements before deleting ---
             const movePromises: Promise<any>[] = [];

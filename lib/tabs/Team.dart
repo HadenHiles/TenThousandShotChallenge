@@ -565,7 +565,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   Widget _buildNoTeamUI() {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+        padding: const EdgeInsets.only(left: 32.0, right: 32.0, top: 32.0, bottom: 48.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,

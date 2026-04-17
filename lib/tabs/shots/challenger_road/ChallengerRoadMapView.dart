@@ -31,6 +31,11 @@ const double _roadBoundaryLineHeight = 82.0;
 const double _edgeFocusBufferMin = 100.0;
 const double _edgeFocusBufferMax = 200.0;
 const double _edgeFocusBufferFactor = 0.22;
+// Fixed content-height from the top of the top buffer to the centre of the
+// first (highest) challenge node.  Used to ensure the top buffer is always
+// tall enough that the highest challenge can be scrolled into the focus zone
+// on any screen size.
+const double _firstNodeBelowTopBuffer = _roadBoundaryLineHeight + _levelSectionExtraTop + _levelTopPad + _nodeDiameter / 2;
 const double _victoryBannerHeight = 290.0;
 // Column x-fractions for the 3-column zigzag
 const List<double> _xFractions = [0.18, 0.50, 0.82];
@@ -1061,8 +1066,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           _edgeFocusBufferMin,
           _edgeFocusBufferMax,
         );
+        // Ensure the top buffer is always large enough that the highest
+        // challenge node can be scrolled into the focus acquisition zone
+        // on every screen size (including small devices like the S20 Ultra).
+        // Formula: at minScrollExtent the node must be within _focusAcquireDistance
+        // of the viewport centre → topBuffer ≥ viewportH/2 - _firstNodeBelowTopBuffer + _focusAcquireDistance.
+        final topEdgeFocusBuffer = math.max(
+          edgeFocusBuffer,
+          viewportConstraints.maxHeight / 2 - _firstNodeBelowTopBuffer + _focusAcquireDistance,
+        );
         final roadComplete = _isRoadComplete(data);
-        final topStaticHeight = edgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0) + _roadBoundaryLineHeight;
+        final topStaticHeight = topEdgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0) + _roadBoundaryLineHeight;
 
         // Compute cumulative offsets for scroll-to-level after top buffer + finish line.
         double cumulativeOffset = topStaticHeight;
@@ -1081,7 +1095,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
         // Store the finish line scroll position so the confetti listener knows
         // when the user has crossed it. Victory banner sits above the line.
-        final finishLineY = edgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0);
+        final finishLineY = topEdgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0);
         _finishLineContentY = finishLineY;
 
         if (interactive) {
@@ -1092,7 +1106,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           controller: interactive ? _scrollController : null,
           child: Column(
             children: [
-              SizedBox(height: edgeFocusBuffer),
+              SizedBox(height: topEdgeFocusBuffer),
               if (roadComplete) _buildVictoryBanner(context, data),
               _buildRoadBoundaryLine(
                 context,

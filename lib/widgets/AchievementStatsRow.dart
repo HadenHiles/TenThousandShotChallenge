@@ -27,6 +27,7 @@ class AchievementStatsRow extends StatelessWidget {
           final data = snapshot.data?.data() ?? const <String, dynamic>{};
           final totalCompleted = (data['totalAchievementsCompleted'] is num) ? (data['totalAchievementsCompleted'] as num).toInt() : 0;
           final streak = (data['weeklyAllCompletedStreak'] is num) ? (data['weeklyAllCompletedStreak'] as num).toInt() : 0;
+          final bestStreak = (data['bestWeeklyAllCompletedStreak'] is num) ? (data['bestWeeklyAllCompletedStreak'] as num).toInt() : 0;
 
           final chips = <Widget>[
             _StatChip(
@@ -42,6 +43,14 @@ class AchievementStatsRow extends StatelessWidget {
               color: Colors.orange,
               label: 'Streak',
               value: '${streak}x',
+              dense: inline,
+            ),
+            SizedBox(width: inline ? 6 : 10, height: inline ? 6 : 8),
+            _StatChip(
+              icon: Icons.military_tech,
+              color: Colors.deepOrange,
+              label: 'Best',
+              value: '${bestStreak}x',
               dense: inline,
             ),
           ];
