@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/ShootingStreakRow.dart';
 import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:provider/provider.dart';
@@ -769,6 +770,8 @@ class _ProfileState extends State<Profile> {
                   Text('Achievements'.toUpperCase(), style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   AchievementStatsRow(userId: currentUser.uid, padding: EdgeInsets.zero, inline: true),
+                  const SizedBox(height: 6),
+                  ShootingStreakRow(userId: currentUser.uid, padding: EdgeInsets.zero, inline: true),
                 ],
               ),
             ),

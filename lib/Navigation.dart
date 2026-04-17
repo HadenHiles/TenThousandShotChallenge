@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -79,7 +80,7 @@ class Navigation extends StatefulWidget {
 }
 
 /// This is the private State class that goes with MyStatefulWidget.
-class _NavigationState extends State<Navigation> {
+class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   final ValueNotifier<CommunitySection> _communitySectionNotifier = ValueNotifier(CommunitySection.team);
 
   // Update last_seen in Firestore if not already set to today
@@ -127,6 +128,10 @@ class _NavigationState extends State<Navigation> {
   UserProfile? userProfile;
   bool _startTabHasChallengerRoadAccess = false;
 
+  /// Periodic timer that ticks the active-session notification during a
+  /// Challenger Road session (normal sessions are ticked via sessionService).
+  Timer? _crSessionTimer;
+
   // Remove the field initializer for _tabs
   late List<NavigationTab> _tabs;
 
@@ -166,7 +171,31 @@ class _NavigationState extends State<Navigation> {
   }
 
   void _onChallengeSessionChanged() {
+    final config = activeChallengeSession.value;
+    if (config != null) {
+      // Show the notification immediately when a CR session starts.
+      final elapsed = DateTime.now().difference(config.startedAt);
+      LocalNotificationService.showActiveSession(shotCount: 0, duration: elapsed);
+      // Tick the elapsed time every second (shots are tracked inside the panel).
+      _crSessionTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        final current = activeChallengeSession.value;
+        if (current == null) {
+          _cancelCRSessionTimer();
+          return;
+        }
+        LocalNotificationService.tickActiveSession(DateTime.now().difference(current.startedAt));
+      });
+    } else {
+      // Session ended — stop timer and dismiss the notification.
+      _cancelCRSessionTimer();
+      LocalNotificationService.cancelActiveSession();
+    }
     if (mounted) setState(() {});
+  }
+
+  void _cancelCRSessionTimer() {
+    _crSessionTimer?.cancel();
+    _crSessionTimer = null;
   }
 
   void _onChallengerRoadAvailabilityChanged(bool hasAccess) {
@@ -250,6 +279,7 @@ class _NavigationState extends State<Navigation> {
 
   @override
   void initState() {
+    WidgetsBinding.instance.addObserver(this);
     sessionService.addListener(_onSessionChanged);
     activeChallengeSession.addListener(_onChallengeSessionChanged);
     _communitySectionNotifier.value = _normalizeCommunitySection(widget.communitySection);
@@ -384,9 +414,23 @@ class _NavigationState extends State<Navigation> {
   void dispose() {
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
+    _cancelCRSessionTimer();
+    WidgetsBinding.instance.removeObserver(this);
     _communitySectionNotifier.dispose();
     _trainResetSignal.dispose();
     super.dispose();
+  }
+
+  /// Cancel any stale active-session notification when the app returns to the
+  /// foreground and no session is running (e.g. after the app was killed and
+  /// restarted, or after a session completed while the device was locked).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!sessionService.isRunning && activeChallengeSession.value == null) {
+        LocalNotificationService.cancelActiveSession();
+      }
+    }
   }
 
   // Helper to select a tab by id

@@ -23,6 +23,7 @@ import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/ShootingStreakRow.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAchievementsReadOnly.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 
@@ -980,6 +981,22 @@ class _PlayerState extends State<Player> {
                           crossFadeState: _showAchievements ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                           duration: const Duration(milliseconds: 300),
                           sizeCurve: Curves.easeInOut,
+                        ),
+                        // ── Shooting Streak ───────────────────────────────
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              ShootingStreakRow(
+                                userId: widget.uid!,
+                                padding: EdgeInsets.zero,
+                                inline: true,
+                              ),
+                            ],
+                          ),
                         ),
                         // ── Challenger Road card ──────────────────────────
                         _buildCrSection(context),
