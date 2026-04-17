@@ -208,7 +208,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
             _ChipSpec(
               icon: Icons.sports_hockey,
               color: Colors.deepOrange,
-              label: 'Shot Streak',
+              label: 'Streak',
               value: sLoad ? '…' : '${_shootStreak}d',
               tooltipMessage: 'Consecutive days you\'ve logged at least one shooting session. Resets if you miss a day.',
               isAchievement: false,
@@ -224,7 +224,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
             _ChipSpec(
               icon: Icons.timer_outlined,
               color: Colors.teal.shade400,
-              label: 'Ice Time',
+              label: 'Shooting Time',
               value: sLoad ? '…' : _fmtDuration(_totalDuration),
               tooltipMessage: 'Total time spent shooting across all sessions in your history.',
               isAchievement: false,
@@ -307,23 +307,21 @@ class _StatChip extends StatelessWidget {
         height: 1.45,
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: borderColor, width: 1.5),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(spec.icon, size: 14, color: spec.color),
-            const SizedBox(width: 3),
-            Flexible(
+            // Label — auto-scales to fit without truncating
+            FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
                 spec.label,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -331,14 +329,23 @@ class _StatChip extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 3),
-            Text(
-              spec.value,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: valueColor,
-              ),
+            const SizedBox(height: 3),
+            // Icon + value
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(spec.icon, size: 14, color: spec.color),
+                const SizedBox(width: 3),
+                Text(
+                  spec.value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: valueColor,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

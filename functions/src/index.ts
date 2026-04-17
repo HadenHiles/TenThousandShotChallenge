@@ -39,35 +39,41 @@ function getAccessToken() {
  * Send HTTP request to FCM with given message.
  *
  * @param {object} fcmMessage will make up the body of the request.
+ * Returns a Promise that resolves when the HTTP response has been fully received.
  */
-function sendFcmMessage(fcmMessage: any) {
-    getAccessToken().then(function (accessToken) {
-        const options = {
-            hostname: HOST,
-            path: PATH,
-            method: 'POST',
-            // [START use_access_token]
-            headers: {
-                'Authorization': 'Bearer ' + accessToken
-            }
-            // [END use_access_token]
-        };
+function sendFcmMessage(fcmMessage: any): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        getAccessToken().then(function (accessToken) {
+            const options = {
+                hostname: HOST,
+                path: PATH,
+                method: 'POST',
+                // [START use_access_token]
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+                // [END use_access_token]
+            };
 
-        const request = https.request(options, function (resp: any) {
-            resp.setEncoding('utf8');
-            resp.on('data', function (data: any) {
-                logger.log('Message sent to Firebase for delivery, response:');
-                logger.log(data);
+            const request = https.request(options, function (resp: any) {
+                resp.setEncoding('utf8');
+                resp.on('data', function (data: any) {
+                    logger.log('Message sent to Firebase for delivery, response:');
+                    logger.log(data);
+                });
+                resp.on('end', () => resolve());
+                resp.on('error', (err: any) => reject(err));
             });
-        });
 
-        request.on('error', function (err: any) {
-            logger.log('Unable to send message to Firebase');
-            logger.error(err);
-        });
+            request.on('error', function (err: any) {
+                logger.log('Unable to send message to Firebase');
+                logger.error(err);
+                reject(err);
+            });
 
-        request.write(JSON.stringify(fcmMessage));
-        request.end();
+            request.write(JSON.stringify(fcmMessage));
+            request.end();
+        }).catch(reject);
     });
 }
 
@@ -121,7 +127,7 @@ export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invite
 
         if (fcmToken != null) {
             // Retrieve the teammate who sent the invite
-            await db.collection("users").doc(context.params.teammateId).get().then((tDoc) => {
+            await db.collection("users").doc(context.params.teammateId).get().then(async (tDoc) => {
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = teammate != undefined ? teammate.display_name : "Someone";
@@ -129,7 +135,7 @@ export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invite
 
                 logger.log("Sending notification with data: " + JSON.stringify(data));
 
-                sendFcmMessage(data);
+                await sendFcmMessage(data);
             }).catch((err) => {
                 logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -165,7 +171,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
 
         if (fcmToken != null) {
             // Retrieve the teammate who accepted the invite
-            await db.collection("users").doc(context.params.userId).get().then((tDoc) => {
+            await db.collection("users").doc(context.params.userId).get().then(async (tDoc) => {
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = teammate != undefined ? teammate.display_name : "Someone";
@@ -173,7 +179,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
 
                 logger.log("Sending notification with data: " + JSON.stringify(data));
 
-                sendFcmMessage(data);
+                await sendFcmMessage(data);
             }).catch((err) => {
                 logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -336,7 +342,9 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                 await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
                     teammates = tDoc.docs;
 
-                    teammates.forEach(async (t) => {
+                    // Use Promise.all so the function waits for all notifications to be sent
+                    // before it returns. forEach does not await async callbacks.
+                    await Promise.all(teammates.map(async (t) => {
                         // FCM token lives on the *user* document, not the teammate relationship doc.
                         await db.collection("users").doc(t.id).get().then(async (tmDoc) => {
                             const friend = tmDoc.data();
@@ -385,10 +393,10 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                                     }
                                 };
                                 logger.debug("Sending friend notification: " + JSON.stringify(friendData));
-                                sendFcmMessage(friendData);
+                                await sendFcmMessage(friendData);
                             }
                         });
-                    });
+                    }));
 
                     return true;
                 }).catch((err) => {

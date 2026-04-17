@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAchievementsReadOnly.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 
 /// Full-screen achievements view for another player's profile.
@@ -35,6 +38,40 @@ class PlayerAchievementsScreen extends StatelessWidget {
               ),
             ),
             actions: const [],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(32),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+                builder: (context, snap) {
+                  final profile = snap.hasData ? UserProfile.fromSnapshot(snap.data!) : null;
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: SizedBox(
+                            width: 26,
+                            height: 26,
+                            child: UserAvatar(user: profile, backgroundColor: Colors.transparent),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          playerName,
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 15,
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
             flexibleSpace: DecoratedBox(
               decoration: BoxDecoration(color: theme.colorScheme.primaryContainer),
               child: FlexibleSpaceBar(

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ShootingSession.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 /// Full-screen sessions list for another player's profile.
 class PlayerSessionsScreen extends StatefulWidget {
@@ -82,6 +84,40 @@ class _PlayerSessionsScreenState extends State<PlayerSessionsScreen> {
               ),
             ),
             actions: const [],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(32),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
+                builder: (context, snap) {
+                  final profile = snap.hasData ? UserProfile.fromSnapshot(snap.data!) : null;
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: SizedBox(
+                            width: 26,
+                            height: 26,
+                            child: UserAvatar(user: profile, backgroundColor: Colors.transparent),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.playerName,
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 15,
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
             flexibleSpace: DecoratedBox(
               decoration: BoxDecoration(color: theme.colorScheme.primaryContainer),
               child: FlexibleSpaceBar(
