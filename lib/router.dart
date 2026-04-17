@@ -16,6 +16,8 @@ import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/CompareStats.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/PlayerAchievementsScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/friends/PlayerSessionsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/AccuracyScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/AchievementsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileScreen.dart';
@@ -212,6 +214,29 @@ List<RouteBase> _buildCommunityRoutes() {
       builder: (context, state) {
         final playerId = state.pathParameters['id'];
         return Player(uid: playerId);
+      },
+    ),
+    GoRoute(
+      path: '/player/:id/achievements',
+      builder: (context, state) {
+        final playerId = state.pathParameters['id']!;
+        final extra = state.extra as Map<String, String?>?;
+        return PlayerAchievementsScreen(
+          userId: playerId,
+          playerName: extra?['playerName'] ?? '',
+        );
+      },
+    ),
+    GoRoute(
+      path: '/player/:id/sessions',
+      builder: (context, state) {
+        final playerId = state.pathParameters['id']!;
+        final extra = state.extra as Map<String, String?>?;
+        return PlayerSessionsScreen(
+          userId: playerId,
+          playerName: extra?['playerName'] ?? '',
+          initialIterationId: extra?['iterationId'],
+        );
       },
     ),
     GoRoute(

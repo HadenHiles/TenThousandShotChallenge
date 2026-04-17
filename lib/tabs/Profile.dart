@@ -14,8 +14,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
-import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
-import 'package:tenthousandshotchallenge/widgets/ShootingStreakRow.dart';
+import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:provider/provider.dart';
@@ -190,6 +189,9 @@ class _ProfileState extends State<Profile> {
             _buildHeader(context, currentUser),
             const SizedBox(height: 8),
             _buildProgressCard(context, currentUser),
+            const SizedBox(height: 12),
+            _buildStatsChips(context, currentUser),
+            const SizedBox(height: 12),
             _buildAchievementsCard(context, currentUser),
             const SizedBox(height: 12),
             _buildAccuracyCard(context, currentUser),
@@ -747,6 +749,12 @@ class _ProfileState extends State<Profile> {
     return {for (var t in shotTypes) t: totalShots[t]! > 0 ? (totalHits[t]! / totalShots[t]!) * 100.0 : 0.0};
   }
 
+  // ── Stats chips ───────────────────────────────────────────────────────────
+
+  Widget _buildStatsChips(BuildContext context, User currentUser) {
+    return UserStatsChipsRow(userId: currentUser.uid, showAchievementChips: false);
+  }
+
   // ── Achievements card ─────────────────────────────────────────────────────
 
   Widget _buildAchievementsCard(BuildContext context, User currentUser) {
@@ -764,16 +772,7 @@ class _ProfileState extends State<Profile> {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Achievements'.toUpperCase(), style: theme.textTheme.headlineSmall),
-                  const SizedBox(height: 4),
-                  AchievementStatsRow(userId: currentUser.uid, padding: EdgeInsets.zero, inline: true),
-                  const SizedBox(height: 6),
-                  ShootingStreakRow(userId: currentUser.uid, padding: EdgeInsets.zero, inline: true),
-                ],
-              ),
+              child: Text('Achievements'.toUpperCase(), style: theme.textTheme.headlineSmall),
             ),
             Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
           ],

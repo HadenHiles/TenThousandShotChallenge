@@ -11,7 +11,11 @@ import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart'
 /// - Below the grid: current streak and longest-streak labels.
 /// - Tapping a cell shows a tooltip with the date and shot count.
 class ActivityCalendar extends StatefulWidget {
-  const ActivityCalendar({super.key});
+  /// When provided, loads activity for this user instead of the signed-in user.
+  /// Streak notifications are only scheduled for the current user (when null).
+  final String? userId;
+
+  const ActivityCalendar({super.key, this.userId});
 
   @override
   State<ActivityCalendar> createState() => _ActivityCalendarState();
@@ -38,7 +42,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
   Future<void> _load() async {
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-    final uid = auth.currentUser?.uid;
+    final uid = widget.userId ?? auth.currentUser?.uid;
     if (uid == null) {
       setState(() => _loading = false);
       return;
@@ -73,8 +77,10 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
           _loading = false;
         });
 
-        // Schedule or cancel streak-at-risk notification based on today's activity.
-        _updateStreakNotification(daily);
+        // Only manage streak notifications for the current user's own calendar.
+        if (widget.userId == null) {
+          _updateStreakNotification(daily);
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
