@@ -6,6 +6,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/main.dart';
@@ -158,6 +159,9 @@ class _NavigationState extends State<Navigation> {
   }
 
   void _onSessionChanged() {
+    if (sessionService.isRunning) {
+      LocalNotificationService.tickActiveSession(sessionService.currentDuration);
+    }
     if (mounted) setState(() {});
   }
 
