@@ -72,7 +72,7 @@ class _PlayerSessionsScreenState extends State<PlayerSessionsScreen> {
         headerSliverBuilder: (context, _) => [
           SliverAppBar(
             collapsedHeight: 65,
-            expandedHeight: 85,
+            expandedHeight: 170,
             backgroundColor: theme.colorScheme.primary,
             floating: true,
             pinned: true,
@@ -84,54 +84,51 @@ class _PlayerSessionsScreenState extends State<PlayerSessionsScreen> {
               ),
             ),
             actions: const [],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(32),
-              child: StreamBuilder<DocumentSnapshot>(
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              centerTitle: true,
+              titlePadding: const EdgeInsets.only(bottom: 16),
+              title: Text(
+                'Sessions'.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 18,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+              background: StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots(),
                 builder: (context, snap) {
                   final profile = snap.hasData ? UserProfile.fromSnapshot(snap.data!) : null;
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  return Container(
+                    color: theme.colorScheme.primaryContainer,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.only(top: 48, bottom: 36),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(24),
                           child: SizedBox(
-                            width: 26,
-                            height: 26,
+                            width: 48,
+                            height: 48,
                             child: UserAvatar(user: profile, backgroundColor: Colors.transparent),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Text(
                           widget.playerName,
                           style: TextStyle(
                             fontFamily: 'NovecentoSans',
-                            fontSize: 15,
-                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
+                            fontSize: 20,
+                            color: theme.colorScheme.onPrimary,
                           ),
                         ),
                       ],
                     ),
                   );
                 },
-              ),
-            ),
-            flexibleSpace: DecoratedBox(
-              decoration: BoxDecoration(color: theme.colorScheme.primaryContainer),
-              child: FlexibleSpaceBar(
-                collapseMode: CollapseMode.parallax,
-                centerTitle: true,
-                title: Text(
-                  "Sessions".toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 20,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
-                background: Container(color: theme.colorScheme.primaryContainer),
               ),
             ),
           ),

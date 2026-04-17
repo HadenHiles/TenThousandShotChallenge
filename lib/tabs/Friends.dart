@@ -579,47 +579,43 @@ class _FriendsState extends State<Friends> {
           children: [
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 15),
-              width: 60,
-              height: 60,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(60),
-              ),
               child: SizedBox(
                 width: 60,
                 height: 60,
                 child: Stack(
-                  fit: StackFit.expand,
                   clipBehavior: Clip.none,
                   children: [
                     Positioned.fill(
-                      child: UserAvatarCrPopover(
-                        userId: friend.reference?.id ?? '',
-                        menuColor: Theme.of(context).colorScheme.primary,
-                        showAccomplishment: isProForDisplay,
-                        showProFallback: isProForDisplay,
-                        extraActions: friend.reference == null
-                            ? const <UserAvatarPopoverAction>[]
-                            : [
-                                UserAvatarPopoverAction(
-                                  label: 'Compare Stats',
-                                  icon: Icons.compare_arrows_rounded,
-                                  onTap: () {
-                                    Feedback.forTap(context);
-                                    context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
-                                  },
-                                ),
-                              ],
-                        onViewProfile: friend.reference == null
-                            ? null
-                            : () {
-                                Feedback.forTap(context);
-                                context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
-                              },
-                        child: UserAvatar(
-                          user: friend,
-                          radius: 30,
-                          backgroundColor: Colors.transparent,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(60),
+                        child: UserAvatarCrPopover(
+                          userId: friend.reference?.id ?? '',
+                          menuColor: Theme.of(context).colorScheme.primary,
+                          showAccomplishment: isProForDisplay,
+                          showProFallback: isProForDisplay,
+                          extraActions: friend.reference == null
+                              ? const <UserAvatarPopoverAction>[]
+                              : [
+                                  UserAvatarPopoverAction(
+                                    label: 'Compare Stats',
+                                    icon: Icons.compare_arrows_rounded,
+                                    onTap: () {
+                                      Feedback.forTap(context);
+                                      context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
+                                    },
+                                  ),
+                                ],
+                          onViewProfile: friend.reference == null
+                              ? null
+                              : () {
+                                  Feedback.forTap(context);
+                                  context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                                },
+                          child: UserAvatar(
+                            user: friend,
+                            radius: 30,
+                            backgroundColor: Colors.transparent,
+                          ),
                         ),
                       ),
                     ),
@@ -904,98 +900,94 @@ class _FriendsState extends State<Friends> {
                     children: [
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 15),
-                        width: 60,
-                        height: 60,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(60),
-                        ),
                         child: SizedBox(
                           width: 60,
                           height: 60,
                           child: Stack(
-                            fit: StackFit.expand,
                             clipBehavior: Clip.none,
                             children: [
                               Positioned.fill(
-                                child: UserAvatarCrPopover(
-                                  userId: friend.reference?.id ?? '',
-                                  menuColor: Theme.of(context).colorScheme.primary,
-                                  showAccomplishment: isProForDisplay,
-                                  showProFallback: isProForDisplay,
-                                  extraActions: friend.reference == null || user == null
-                                      ? const <UserAvatarPopoverAction>[]
-                                      : [
-                                          UserAvatarPopoverAction(
-                                            label: 'Accept Invite',
-                                            icon: Icons.check_circle_outline_rounded,
-                                            onTap: () async {
-                                              final accepted = await acceptInvite(
-                                                invite,
-                                                Provider.of<FirebaseAuth>(context, listen: false),
-                                                Provider.of<FirebaseFirestore>(context, listen: false),
-                                              );
-                                              if (!mounted) return;
-                                              if (accepted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    duration: const Duration(milliseconds: 1500),
-                                                    content: Text(
-                                                      'Invite accepted',
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(60),
+                                  child: UserAvatarCrPopover(
+                                    userId: friend.reference?.id ?? '',
+                                    menuColor: Theme.of(context).colorScheme.primary,
+                                    showAccomplishment: isProForDisplay,
+                                    showProFallback: isProForDisplay,
+                                    extraActions: friend.reference == null || user == null
+                                        ? const <UserAvatarPopoverAction>[]
+                                        : [
+                                            UserAvatarPopoverAction(
+                                              label: 'Accept Invite',
+                                              icon: Icons.check_circle_outline_rounded,
+                                              onTap: () async {
+                                                final accepted = await acceptInvite(
+                                                  invite,
+                                                  Provider.of<FirebaseAuth>(context, listen: false),
+                                                  Provider.of<FirebaseFirestore>(context, listen: false),
+                                                );
+                                                if (!mounted) return;
+                                                if (accepted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                                      duration: const Duration(milliseconds: 1500),
+                                                      content: Text(
+                                                        'Invite accepted',
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
+                                                  );
+                                                  _invites.clear();
+                                                  _friends.clear();
+                                                  await _loadInvites();
+                                                  await _loadFriends();
+                                                }
+                                              },
+                                            ),
+                                            UserAvatarPopoverAction(
+                                              label: 'Delete Invite',
+                                              icon: Icons.delete_outline_rounded,
+                                              onTap: () async {
+                                                final deleted = await deleteInvite(
+                                                  friend.reference!.id,
+                                                  user.uid,
+                                                  Provider.of<FirebaseAuth>(context, listen: false),
+                                                  Provider.of<FirebaseFirestore>(context, listen: false),
                                                 );
-                                                _invites.clear();
-                                                _friends.clear();
-                                                await _loadInvites();
-                                                await _loadFriends();
-                                              }
-                                            },
-                                          ),
-                                          UserAvatarPopoverAction(
-                                            label: 'Delete Invite',
-                                            icon: Icons.delete_outline_rounded,
-                                            onTap: () async {
-                                              final deleted = await deleteInvite(
-                                                friend.reference!.id,
-                                                user.uid,
-                                                Provider.of<FirebaseAuth>(context, listen: false),
-                                                Provider.of<FirebaseFirestore>(context, listen: false),
-                                              );
-                                              if (!mounted) return;
-                                              if (deleted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    content: Text(
-                                                      'Invite from ${friend.displayName} deleted',
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                if (!mounted) return;
+                                                if (deleted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                                      content: Text(
+                                                        'Invite from ${friend.displayName} deleted',
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                        ),
                                                       ),
+                                                      duration: const Duration(milliseconds: 1500),
                                                     ),
-                                                    duration: const Duration(milliseconds: 1500),
-                                                  ),
-                                                );
-                                                _invites.clear();
-                                                await _loadInvites();
-                                              }
-                                            },
-                                          ),
-                                        ],
-                                  onViewProfile: friend.reference == null
-                                      ? null
-                                      : () {
-                                          Feedback.forTap(context);
-                                          context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
-                                        },
-                                  child: UserAvatar(
-                                    user: friend,
-                                    radius: 30,
-                                    backgroundColor: Colors.transparent,
+                                                  );
+                                                  _invites.clear();
+                                                  await _loadInvites();
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                    onViewProfile: friend.reference == null
+                                        ? null
+                                        : () {
+                                            Feedback.forTap(context);
+                                            context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                                          },
+                                    child: UserAvatar(
+                                      user: friend,
+                                      radius: 30,
+                                      backgroundColor: Colors.transparent,
+                                    ),
                                   ),
                                 ),
                               ),

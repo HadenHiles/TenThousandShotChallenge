@@ -17,7 +17,6 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class History extends StatefulWidget {
@@ -139,9 +138,7 @@ class _HistoryState extends State<History> {
                   collapsedHeight: 65,
                   expandedHeight: 85,
                   automaticallyImplyLeading: false,
-                  backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
-                  iconTheme: Theme.of(context).iconTheme,
-                  actionsIconTheme: Theme.of(context).iconTheme,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   floating: true,
                   pinned: true,
                   leading: Container(
@@ -149,7 +146,7 @@ class _HistoryState extends State<History> {
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
-                        color: Theme.of(context).appBarTheme.backgroundColor,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 28,
                       ),
                       onPressed: () {
@@ -160,14 +157,21 @@ class _HistoryState extends State<History> {
                   actions: const [],
                   flexibleSpace: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: HomeTheme.darkTheme.colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.primaryContainer,
                     ),
                     child: FlexibleSpaceBar(
                       collapseMode: CollapseMode.parallax,
                       centerTitle: true,
-                      title: NavigationTitle(title: "Shooting History".toUpperCase()),
+                      title: Text(
+                        'Shooting History'.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 20,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
                       background: Container(
-                        color: HomeTheme.darkTheme.colorScheme.primaryContainer,
+                        color: Theme.of(context).colorScheme.primaryContainer,
                       ),
                     ),
                   ),
