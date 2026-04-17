@@ -687,12 +687,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               if (mounted) setState(() => _practiceReminders = value);
                             },
                           ),
-                        ],
-                      ),
-                      // ── Local Notifications ───────────────────────────────────────
-                      SettingsSection(
-                        title: Text('On-Device Notifications', style: Theme.of(context).textTheme.titleLarge),
-                        tiles: [
                           SettingsTile.switchTile(
                             title: Text('Daily Practice Reminder', style: Theme.of(context).textTheme.bodyLarge),
                             description: Text(

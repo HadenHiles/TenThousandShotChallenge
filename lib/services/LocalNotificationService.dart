@@ -165,8 +165,8 @@ class LocalNotificationService {
     try {
       await _plugin.zonedSchedule(
         _dailyReminderId,
-        'Time to hit the ice! 🏒',
-        "Don't forget to log your shots today. Every rep counts!",
+        'Time to snipe! 🏒',
+        "Don't forget to train today. Every shot counts!",
         scheduled,
         _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
         androidScheduleMode: Platform.isAndroid ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
@@ -177,8 +177,8 @@ class LocalNotificationService {
       if (e.code == 'exact_alarms_not_permitted') {
         await _plugin.zonedSchedule(
           _dailyReminderId,
-          'Time to hit the ice! 🏒',
-          "Don't forget to log your shots today. Every rep counts!",
+          'Time to snipe! 🏒',
+          "Don't forget to train today. Every shot counts!",
           scheduled,
           _details(_practiceChannelId, 'Practice Reminders', importance: Importance.high, priority: Priority.high, badgeNumber: 1),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -267,10 +267,28 @@ class LocalNotificationService {
 
   // ── 3. Active shooting session (persistent, updated live) ─────────────────
 
+  /// Stores the latest shot count so [tickActiveSession] can update the
+  /// notification every second without needing the caller to pass it again.
+  static int _activeSessionShotCount = 0;
+
   /// Show (or update) a persistent notification while a shooting session is
   /// active. Call this when the session starts and whenever the shot count
-  /// or duration changes. The notification is dismissed by [cancelActiveSession].
+  /// changes. The notification is dismissed by [cancelActiveSession].
   static Future<void> showActiveSession({
+    required int shotCount,
+    required Duration duration,
+  }) async {
+    _activeSessionShotCount = shotCount;
+    await _postActiveSession(shotCount: shotCount, duration: duration);
+  }
+
+  /// Called every second by the session timer so the elapsed-time display
+  /// stays current. Uses the shot count last set by [showActiveSession].
+  static Future<void> tickActiveSession(Duration duration) async {
+    await _postActiveSession(shotCount: _activeSessionShotCount, duration: duration);
+  }
+
+  static Future<void> _postActiveSession({
     required int shotCount,
     required Duration duration,
   }) async {
@@ -283,8 +301,8 @@ class LocalNotificationService {
 
     await _plugin.show(
       _activeSessionId,
-      '🏒 Session in progress — $shotCount shots',
-      'Duration: $durationStr • Tap to return to your session',
+      '🏒 Session in progress',
+      '$shotCount shots • $durationStr • Tap to return',
       NotificationDetails(
         android: AndroidNotificationDetails(
           _activeSessionChannelId,
@@ -308,6 +326,7 @@ class LocalNotificationService {
   }
 
   static Future<void> cancelActiveSession() async {
+    _activeSessionShotCount = 0;
     await _plugin.cancel(_activeSessionId);
   }
 
