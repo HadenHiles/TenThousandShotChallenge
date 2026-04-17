@@ -370,6 +370,18 @@ class _CompareStatsState extends State<CompareStats> {
     await _reloadStatsOnly();
   }
 
+  bool get _myHasAccuracyData {
+    final s = _myStats;
+    if (s == null) return false;
+    return (s.wrist + s.snap + s.slap + s.backhand) > 0;
+  }
+
+  bool get _friendHasAccuracyData {
+    final s = _friendStats;
+    if (s == null) return false;
+    return (s.wrist + s.snap + s.slap + s.backhand) > 0;
+  }
+
   Future<void> _setScope(_CompareScope nextScope) async {
     if (_scope == nextScope) return;
     setState(() => _scope = nextScope);
@@ -486,6 +498,35 @@ class _CompareStatsState extends State<CompareStats> {
                               _SectionHeader(label: 'Accuracy'),
                               const SizedBox(height: 8),
                               if (canCompareAccuracy) ...[
+                                Builder(builder: (context) {
+                                  final myMissing = (_myStats?.sessionCount ?? 0) > 0 && !_myHasAccuracyData;
+                                  final frMissing = (_friendStats?.sessionCount ?? 0) > 0 && !_friendHasAccuracyData;
+                                  if (!myMissing && !frMissing) return const SizedBox.shrink();
+                                  final names = [
+                                    if (myMissing) (_myProfile?.displayName ?? 'You'),
+                                    if (frMissing) (_friendProfile?.displayName ?? 'Friend'),
+                                  ];
+                                  final subject = names.join(' and ');
+                                  final verb = names.length == 1 ? 'has' : 'have';
+                                  return Container(
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
+                                    ),
+                                    child: Text(
+                                      '$subject $verb sessions without accuracy tracking in this scope — those shot types are shown as —.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                                      ),
+                                    ),
+                                  );
+                                }),
                                 _buildAccuracyRow(context, 'Wrist', _myStats?.wrist, _myStats?.wristHits, _friendStats?.wrist, _friendStats?.wristHits, Colors.cyan),
                                 _buildAccuracyRow(context, 'Snap', _myStats?.snap, _myStats?.snapHits, _friendStats?.snap, _friendStats?.snapHits, Colors.blue),
                                 _buildAccuracyRow(context, 'Slap', _myStats?.slap, _myStats?.slapHits, _friendStats?.slap, _friendStats?.slapHits, Colors.teal),
@@ -763,10 +804,10 @@ class _CompareStatsState extends State<CompareStats> {
   }
 
   Widget _buildAccuracyRow(BuildContext context, String label, int? myShots, int? myHits, int? frShots, int? frHits, Color color) {
-    final myPct = (myShots ?? 0) > 0 ? ((myHits ?? 0) / (myShots ?? 1) * 100) : 0.0;
-    final frPct = (frShots ?? 0) > 0 ? ((frHits ?? 0) / (frShots ?? 1) * 100) : 0.0;
-    final myWins = myPct > frPct;
-    final frWins = frPct > myPct;
+    final double? myPct = (myShots ?? 0) > 0 ? ((myHits ?? 0) / (myShots ?? 1) * 100) : null;
+    final double? frPct = (frShots ?? 0) > 0 ? ((frHits ?? 0) / (frShots ?? 1) * 100) : null;
+    final myWins = myPct != null && frPct != null && myPct > frPct;
+    final frWins = myPct != null && frPct != null && frPct > myPct;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -774,7 +815,7 @@ class _CompareStatsState extends State<CompareStats> {
         children: [
           Row(
             children: [
-              _StatValue(value: '${myPct.round()}%', highlight: myWins, color: color),
+              _StatValue(value: myPct != null ? '${myPct.round()}%' : '—', highlight: myWins, color: color),
               Expanded(
                 child: Center(
                   child: Text(
@@ -788,7 +829,7 @@ class _CompareStatsState extends State<CompareStats> {
                   ),
                 ),
               ),
-              _StatValue(value: '${frPct.round()}%', highlight: frWins, alignRight: true, color: color),
+              _StatValue(value: frPct != null ? '${frPct.round()}%' : '—', highlight: frWins, alignRight: true, color: color),
             ],
           ),
           const SizedBox(height: 4),
@@ -912,15 +953,32 @@ class _StatValue extends StatelessWidget {
 class _CompareBar extends StatelessWidget {
   const _CompareBar({required this.myVal, required this.friendVal, this.color});
 
-  final double myVal;
-  final double friendVal;
+  final double? myVal;
+  final double? friendVal;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final total = myVal + friendVal;
-    final myFraction = total > 0 ? myVal / total : 0.5;
     final c = color ?? Theme.of(context).primaryColor;
+    // When either side has no data, show a neutral grey bar instead of a
+    // misleading skewed result.
+    if (myVal == null || friendVal == null) {
+      final greyColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: SizedBox(
+          height: 6,
+          child: Row(
+            children: [
+              Flexible(flex: 50, child: Container(color: myVal != null ? c : greyColor)),
+              Flexible(flex: 50, child: Container(color: friendVal != null ? c.withValues(alpha: 0.25) : greyColor)),
+            ],
+          ),
+        ),
+      );
+    }
+    final total = myVal! + friendVal!;
+    final myFraction = total > 0 ? myVal! / total : 0.5;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
