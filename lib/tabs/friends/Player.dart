@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +24,7 @@ import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
-import 'package:tenthousandshotchallenge/widgets/ShootingStreakRow.dart';
-import 'package:tenthousandshotchallenge/widgets/UserAchievementsReadOnly.dart';
+import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 
 class Player extends StatefulWidget {
@@ -41,12 +41,10 @@ class _PlayerState extends State<Player> {
 
   UserProfile? _userPlayer;
   bool _loadingPlayer = false;
-  ScrollController? sessionsController;
   bool? _isFriend = false;
   bool _isSubscribedToFriendNotifications = false;
   List<DropdownMenuItem<dynamic>>? _attemptDropdownItems = [];
   String? _selectedIterationId;
-  bool _showAchievements = false;
   bool _isPlayersTeamPublic = false;
   String? _playerTeamName;
 
@@ -66,8 +64,6 @@ class _PlayerState extends State<Player> {
         _loadingPlayer = false;
       });
     });
-
-    sessionsController = ScrollController();
 
     _loadIsFriend();
     _loadFriendSubscription();
@@ -433,7 +429,6 @@ class _PlayerState extends State<Player> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isProForDisplay = _userPlayer?.isPro == true;
     return StreamProvider<NetworkStatus>(
       create: (context) {
         return NetworkStatusService().networkStatusController.stream;
@@ -723,482 +718,26 @@ class _PlayerState extends State<Player> {
                       ),
                     ],
                   )
-                : Container(
-                    padding: const EdgeInsets.only(top: 15),
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 15),
-                                  width: 60,
-                                  height: 60,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(60),
-                                        child: SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: UserAvatarCrPopover(
-                                            userId: widget.uid ?? '',
-                                            menuColor: Theme.of(context).colorScheme.primary,
-                                            showAccomplishment: isProForDisplay,
-                                            showProFallback: isProForDisplay,
-                                            extraActions: _buildPlayerPopoverActions(),
-                                            child: UserAvatar(
-                                              user: _userPlayer,
-                                              backgroundColor: Colors.transparent,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: -4,
-                                        bottom: -4,
-                                        child: CrAvatarBadgeStream(
-                                          userId: widget.uid!,
-                                          size: 22,
-                                          enabled: isProForDisplay,
-                                          showProFallback: isProForDisplay,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: (MediaQuery.of(context).size.width - 100) * 0.6,
-                                      child: StreamBuilder<DocumentSnapshot>(
-                                        // ignore: deprecated_member_use
-                                        stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
-                                        builder: (context, snapshot) {
-                                          if (!snapshot.hasData) {
-                                            return const Column(
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Center(
-                                                  child: SizedBox(
-                                                    height: 20,
-                                                    width: 20,
-                                                    child: CircularProgressIndicator(),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }
-
-                                          UserProfile userProfile = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
-
-                                          return AutoSizeText(
-                                            userProfile.displayName != null && userProfile.displayName!.isNotEmpty ? userProfile.displayName! : _userPlayer!.displayName!,
-                                            maxLines: 1,
-                                            style: TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).textTheme.bodyLarge!.color,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    StreamBuilder(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                          if (!snapshot.hasData) {
-                                            return const Center(
-                                              child: SizedBox(
-                                                width: 120,
-                                                height: 2,
-                                                child: LinearProgressIndicator(),
-                                              ),
-                                            );
-                                          } else {
-                                            int total = 0;
-                                            for (var doc in snapshot.data!.docs) {
-                                              total += Iteration.fromSnapshot(doc).total!;
-                                            }
-
-                                            return Text(
-                                              total.toString() + " Lifetime Shots".toLowerCase(),
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontFamily: 'NovecentoSans',
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                              ),
-                                            );
-                                          }
-                                        }),
-                                    StreamBuilder(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                                          if (!snapshot.hasData) {
-                                            return const Center(
-                                              child: SizedBox(
-                                                width: 120,
-                                                height: 2,
-                                                child: LinearProgressIndicator(),
-                                              ),
-                                            );
-                                          } else {
-                                            Duration totalDuration = const Duration();
-                                            for (var doc in snapshot.data!.docs) {
-                                              totalDuration += Iteration.fromSnapshot(doc).totalDuration!;
-                                            }
-
-                                            return totalDuration > const Duration()
-                                                ? Text(
-                                                    "IN ${printDuration(totalDuration, true)}",
-                                                    style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontFamily: 'NovecentoSans',
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  )
-                                                : Container();
-                                          }
-                                        }),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Container(
-                              width: (MediaQuery.of(context).size.width - 100) * 0.4,
-                              margin: const EdgeInsets.only(right: 10),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  AutoSizeText(
-                                    _userPlayer?.email ?? 'Private Email',
-                                    maxLines: 1,
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 22,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 10, right: 5),
-                                        child: Text(
-                                          "challenge ".toUpperCase(),
-                                          textAlign: TextAlign.right,
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 20,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                      ),
-                                      StreamBuilder<QuerySnapshot>(
-                                        stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            return Text(
-                                              (snapshot.data!.docs.length).toString(),
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.onPrimary,
-                                                fontSize: 34,
-                                                fontFamily: 'NovecentoSans',
-                                              ),
-                                            );
-                                          }
-
-                                          return Container();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Achievements section: collapsible header with inline badges (mirror Profile)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() => _showAchievements = !_showAchievements);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: lighten(Theme.of(context).colorScheme.primary, 0.1),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                            margin: const EdgeInsets.only(top: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Achievements'.toUpperCase(),
-                                        style: Theme.of(context).textTheme.headlineSmall,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Flexible(
-                                        child: AchievementStatsRow(
-                                          userId: widget.uid!,
-                                          padding: EdgeInsets.zero,
-                                          inline: true,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  _showAchievements ? Icons.expand_less : Icons.expand_more,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        AnimatedCrossFade(
-                          firstChild: const SizedBox.shrink(),
-                          secondChild: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                            child: UserAchievementsReadOnly(userId: widget.uid!),
-                          ),
-                          crossFadeState: _showAchievements ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                          duration: const Duration(milliseconds: 300),
-                          sizeCurve: Curves.easeInOut,
-                        ),
-                        // ── Shooting Streak ───────────────────────────────
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              ShootingStreakRow(
-                                userId: widget.uid!,
-                                padding: EdgeInsets.zero,
-                                inline: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // ── Challenger Road card ──────────────────────────
-                        _buildCrSection(context),
+                        _buildPlayerHeader(context),
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            DropdownButton<dynamic>(
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedIterationId = value;
-                                });
-                              },
-                              underline: Container(),
-                              dropdownColor: Theme.of(context).colorScheme.primary,
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              value: _selectedIterationId,
-                              items: _attemptDropdownItems,
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  "Wrist".toUpperCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 18,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                                Container(
-                                  width: 30,
-                                  height: 25,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: wristShotColor),
-                                  child: const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Opacity(
-                                        opacity: 0.75,
-                                        child: Text(
-                                          "W",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  "Snap".toUpperCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 18,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                                Container(
-                                  width: 30,
-                                  height: 25,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: snapShotColor),
-                                  child: const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Opacity(
-                                        opacity: 0.75,
-                                        child: Text(
-                                          "SN",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  "Backhand".toUpperCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 18,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                                Container(
-                                  width: 30,
-                                  height: 25,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: backhandShotColor),
-                                  child: const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Opacity(
-                                        opacity: 0.75,
-                                        child: Text(
-                                          "B",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  "Slap".toUpperCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 18,
-                                    fontFamily: 'NovecentoSans',
-                                  ),
-                                ),
-                                Container(
-                                  width: 30,
-                                  height: 25,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: const BoxDecoration(color: slapShotColor),
-                                  child: const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Opacity(
-                                        opacity: 0.75,
-                                        child: Text(
-                                          "SL",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontFamily: 'NovecentoSans',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        Expanded(
-                          child: StreamBuilder<QuerySnapshot>(
-                            stream: _selectedIterationId == null ? null : FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).snapshots(),
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator());
-                              }
-                              final sessions = snapshot.data!.docs;
-                              if (sessions.isEmpty) {
-                                return Center(
-                                  child: Text(
-                                    "${_userPlayer?.displayName?.split(' ').first ?? 'Player'} doesn't have any sessions yet".toLowerCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                );
-                              }
-                              return RefreshIndicator(
-                                color: Theme.of(context).primaryColor,
-                                onRefresh: () async {}, // Optionally implement refresh logic
-                                child: ListView.builder(
-                                  controller: sessionsController,
-                                  itemCount: sessions.length,
-                                  itemBuilder: (_, int index) {
-                                    final doc = sessions[index];
-                                    return _buildSessionItem(ShootingSession.fromSnapshot(doc), index % 2 == 0);
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                        _buildProgressCard(context),
+                        const SizedBox(height: 12),
+                        _buildStatsChips(context),
+                        const SizedBox(height: 12),
+                        _buildAchievementsCard(context),
+                        const SizedBox(height: 12),
+                        _buildAccuracyCard(context),
+                        const SizedBox(height: 12),
+                        _buildCrSection(context),
+                        const SizedBox(height: 12),
+                        _buildActivityCalendarCard(context),
+                        const SizedBox(height: 12),
+                        _buildSessionsCard(context),
                       ],
                     ),
                   ),
@@ -1210,8 +749,369 @@ class _PlayerState extends State<Player> {
 
   @override
   void dispose() {
-    sessionsController!.dispose();
     super.dispose();
+  }
+
+  Widget _buildPlayerHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final isProForDisplay = _userPlayer?.isPro == true;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(right: 12),
+              width: 60,
+              height: 60,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(60),
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: UserAvatarCrPopover(
+                        userId: widget.uid ?? '',
+                        menuColor: theme.colorScheme.primary,
+                        showAccomplishment: isProForDisplay,
+                        showProFallback: isProForDisplay,
+                        extraActions: _buildPlayerPopoverActions(),
+                        child: UserAvatar(
+                          user: _userPlayer,
+                          backgroundColor: Colors.transparent,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -4,
+                    bottom: -4,
+                    child: CrAvatarBadgeStream(
+                      userId: widget.uid!,
+                      size: 22,
+                      enabled: isProForDisplay,
+                      showProFallback: isProForDisplay,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: (MediaQuery.of(context).size.width - 130) * 0.65,
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(widget.uid).snapshots(),
+                    builder: (context, snapshot) {
+                      String name = _userPlayer?.displayName ?? 'Player';
+                      if (snapshot.hasData) {
+                        final p = UserProfile.fromSnapshot(snapshot.data as DocumentSnapshot);
+                        if (p.displayName?.isNotEmpty == true) name = p.displayName!;
+                      }
+                      return AutoSizeText(name, maxLines: 1, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge!.color));
+                    },
+                  ),
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const SizedBox(width: 120, height: 2, child: LinearProgressIndicator());
+                    int total = 0;
+                    for (final doc in snapshot.data!.docs) {
+                      total += Iteration.fromSnapshot(doc).total!;
+                    }
+                    return Text('$total lifetime shots', style: TextStyle(fontSize: 16, fontFamily: 'NovecentoSans', color: theme.colorScheme.onPrimary));
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressCard(BuildContext context) {
+    final theme = Theme.of(context);
+    if (_selectedIterationId == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).snapshots(),
+      builder: (context, iterSnap) {
+        if (!iterSnap.hasData || !iterSnap.data!.exists) {
+          return Container(height: 120, decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), color: theme.cardTheme.color), child: const Center(child: CircularProgressIndicator()));
+        }
+
+        final iteration = Iteration.fromSnapshot(iterSnap.data!);
+        final int iterTotal = (iteration.total ?? 0).clamp(0, 10000);
+        final double progress = iterTotal / 10000.0;
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: LinearGradient(
+              colors: [theme.colorScheme.primaryContainer.withValues(alpha: 0.94), theme.colorScheme.primary.withValues(alpha: 0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(iterTotal.toString(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 36, color: theme.colorScheme.onPrimary, height: 1.0)),
+                      Text('/ 10,000 shots', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7))),
+                    ],
+                  ),
+                  if (_attemptDropdownItems != null && _attemptDropdownItems!.length > 1)
+                    DropdownButton<dynamic>(
+                      value: _selectedIterationId,
+                      items: _attemptDropdownItems,
+                      dropdownColor: theme.colorScheme.primary,
+                      underline: const SizedBox.shrink(),
+                      onChanged: (v) => setState(() => _selectedIterationId = v),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _buildProgressBar(context, iteration, progress),
+              const SizedBox(height: 10),
+              _buildShotTypeRow(context, iteration),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProgressBar(BuildContext context, Iteration iteration, double progress) {
+    final theme = Theme.of(context);
+    final total = iteration.total ?? 0;
+    return LayoutBuilder(builder: (context, constraints) {
+      final barWidth = constraints.maxWidth * progress.clamp(0.0, 1.0);
+      final seg = total == 0 ? 1.0 : total.toDouble();
+      Widget seg_(int count, Color color) => Container(height: 8, width: count > 0 ? (count / seg) * barWidth : 0, color: color);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: Stack(children: [
+          Container(height: 8, width: constraints.maxWidth, color: theme.colorScheme.onPrimary.withValues(alpha: 0.12)),
+          Row(children: [
+            seg_(iteration.totalWrist ?? 0, wristShotColor),
+            seg_(iteration.totalSnap ?? 0, snapShotColor),
+            seg_(iteration.totalBackhand ?? 0, backhandShotColor),
+            seg_(iteration.totalSlap ?? 0, slapShotColor),
+          ]),
+        ]),
+      );
+    });
+  }
+
+  Widget _buildShotTypeRow(BuildContext context, Iteration iteration) {
+    final types = [
+      ('Wrist', iteration.totalWrist ?? 0, wristShotColor),
+      ('Snap', iteration.totalSnap ?? 0, snapShotColor),
+      ('Backhand', iteration.totalBackhand ?? 0, backhandShotColor),
+      ('Slap', iteration.totalSlap ?? 0, slapShotColor),
+    ];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: types.map((t) {
+        final (label, count, color) = t;
+        return Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(label.toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 14, fontFamily: 'NovecentoSans')),
+          const SizedBox(height: 2),
+          Container(width: 28, height: 4, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 2),
+          Text(count.toString(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16, fontFamily: 'NovecentoSans')),
+        ]);
+      }).toList(),
+    );
+  }
+
+  Widget _buildStatsChips(BuildContext context) {
+    return UserStatsChipsRow(userId: widget.uid!, showAchievementChips: false);
+  }
+
+  Widget _buildAchievementsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return _PlayerDashboardCard(
+      onTap: () => context.push(
+        AppRoutePaths.playerAchievementsPathFor(widget.uid!),
+        extra: {'playerName': _userPlayer?.displayName ?? ''},
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(child: Text('Achievements'.toUpperCase(), style: theme.textTheme.headlineSmall)),
+          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildAccuracyCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return _PlayerDashboardCard(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.track_changes_rounded, color: theme.colorScheme.onPrimary, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Shot Accuracy'.toUpperCase(), style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 6),
+              _buildAccuracyGlanceChips(context),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildAccuracyGlanceChips(BuildContext context) {
+    const shotTypes = ['wrist', 'snap', 'slap', 'backhand'];
+    const shotTypeColors = {'wrist': wristShotColor, 'snap': snapShotColor, 'slap': slapShotColor, 'backhand': backhandShotColor};
+    const shotTypeLabels = {'wrist': 'W', 'snap': 'SN', 'slap': 'SL', 'backhand': 'B'};
+
+    if (_selectedIterationId == null) {
+      return Row(children: shotTypes.map((t) => _accuracyChip(context, shotTypeLabels[t]!, 0, shotTypeColors[t]!, loading: true)).toList());
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return Row(children: shotTypes.map((t) => _accuracyChip(context, shotTypeLabels[t]!, 0, shotTypeColors[t]!, loading: true)).toList());
+        }
+        return FutureBuilder<Map<String, double>>(
+          future: _computeAvgAccuracy(snap.data!.docs, shotTypes),
+          builder: (context, asyncSnap) {
+            final acc = asyncSnap.data ?? {for (var t in shotTypes) t: 0.0};
+            return Row(children: shotTypes.map((type) => _accuracyChip(context, shotTypeLabels[type]!, acc[type] ?? 0, shotTypeColors[type]!)).toList());
+          },
+        );
+      },
+    );
+  }
+
+  Widget _accuracyChip(BuildContext context, String label, double pct, Color color, {bool loading = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'NovecentoSans', fontWeight: FontWeight.bold, fontSize: 12)),
+        Stack(alignment: Alignment.center, children: [
+          Container(width: 32, height: 26, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
+          if (loading) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) else Text('${pct.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontFamily: 'NovecentoSans', fontWeight: FontWeight.bold, fontSize: 12)),
+        ]),
+      ]),
+    );
+  }
+
+  Future<Map<String, double>> _computeAvgAccuracy(List<QueryDocumentSnapshot> sessionDocs, List<String> shotTypes) async {
+    final totalHits = {for (var t in shotTypes) t: 0};
+    final totalShots = {for (var t in shotTypes) t: 0};
+    for (final doc in sessionDocs) {
+      try {
+        final shotsSnap = await doc.reference.collection('shots').get();
+        for (final shotDoc in shotsSnap.docs) {
+          final shot = Shots.fromSnapshot(shotDoc);
+          if (shot.type != null && shotTypes.contains(shot.type) && shot.targetsHit != null && shot.count != null && shot.count! > 0) {
+            totalHits[shot.type!] = (totalHits[shot.type!] ?? 0) + (shot.targetsHit as num).toInt();
+            totalShots[shot.type!] = (totalShots[shot.type!] ?? 0) + (shot.count as num).toInt();
+          }
+        }
+      } catch (_) {}
+    }
+    return {for (var t in shotTypes) t: totalShots[t]! > 0 ? (totalHits[t]! / totalShots[t]!) * 100.0 : 0.0};
+  }
+
+  Widget _buildActivityCalendarCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.calendar_month_rounded, color: theme.colorScheme.onPrimary, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Text('Training Activity'.toUpperCase(), style: theme.textTheme.headlineSmall),
+            ]),
+            const SizedBox(height: 10),
+            ActivityCalendar(userId: widget.uid!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSessionsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return _PlayerDashboardCard(
+      onTap: () => context.push(
+        AppRoutePaths.playerSessionsPathFor(widget.uid!),
+        extra: {'playerName': _userPlayer?.displayName ?? '', 'iterationId': _selectedIterationId},
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.history_rounded, color: theme.colorScheme.onPrimary, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Sessions'.toUpperCase(), style: theme.textTheme.headlineSmall),
+              if (_selectedIterationId != null)
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').doc(_selectedIterationId).collection('sessions').orderBy('date', descending: true).limit(1).snapshots(),
+                  builder: (context, snap) {
+                    if (!snap.hasData || snap.data!.docs.isEmpty) {
+                      return Text('No sessions yet', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.6)));
+                    }
+                    final last = ShootingSession.fromSnapshot(snap.data!.docs.first);
+                    return Text(
+                      'Last: ${printDate(last.date!)}  ·  ${last.total} shots',
+                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
+                    );
+                  },
+                ),
+            ]),
+          ),
+          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
+        ]),
+      ),
+    );
   }
 
   Widget _buildCrSection(BuildContext context) {
@@ -1232,285 +1132,29 @@ class _PlayerState extends State<Player> {
       },
     );
   }
+}
 
-  Widget _buildSessionItem(ShootingSession s, bool showBackground) {
-    // Skip sessions with 0 total shots to prevent rendering issues
-    if (s.total == null || s.total! <= 0) {
-      return const SizedBox.shrink();
-    }
+// ── Shared dashboard card widget ─────────────────────────────────────────────
 
-    return Container(
-      padding: const EdgeInsets.only(top: 5, bottom: 15),
-      decoration: BoxDecoration(
-        color: showBackground ? Theme.of(context).cardTheme.color : Colors.transparent,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  printDate(s.date!),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 18,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-                Text(
-                  s.duration == Duration.zero ? '0s' : printDuration(s.duration!, true),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 18,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-                Text(
-                  s.total.toString() + " Shots".toLowerCase(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 18,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width - 30,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      width: calculateSessionShotWidth(s, s.totalWrist!),
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: wristShotColor,
-                      ),
-                      child: s.totalWrist! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  s.totalWrist.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                    ),
-                    Container(
-                      width: calculateSessionShotWidth(s, s.totalSnap!),
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: snapShotColor,
-                      ),
-                      child: s.totalSnap! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  s.totalSnap.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                    ),
-                    Container(
-                      width: calculateSessionShotWidth(s, s.totalBackhand!),
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: backhandShotColor,
-                      ),
-                      child: s.totalBackhand! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  s.totalBackhand.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                    ),
-                    Container(
-                      width: calculateSessionShotWidth(s, s.totalSlap!),
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: slapShotColor,
-                      ),
-                      child: s.totalSlap! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  s.totalSlap.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.clip,
-                                ),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width - 30,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    SizedBox(
-                      width: calculateSessionShotWidth(s, s.totalWrist!),
-                      child: s.totalWrist! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.5,
-                                  child: Text(
-                                    "W",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    SizedBox(
-                      width: calculateSessionShotWidth(s, s.totalSnap!),
-                      child: s.totalSnap! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.5,
-                                  child: Text(
-                                    "SN",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    SizedBox(
-                      width: calculateSessionShotWidth(s, s.totalBackhand!),
-                      child: s.totalBackhand! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.5,
-                                  child: Text(
-                                    "B",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    SizedBox(
-                      width: calculateSessionShotWidth(s, s.totalSlap!),
-                      child: s.totalSlap! < 1
-                          ? Container()
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: 0.5,
-                                  child: Text(
-                                    "SL",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 16,
-                                      fontFamily: 'NovecentoSans',
-                                    ),
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+class _PlayerDashboardCard extends StatelessWidget {
+  const _PlayerDashboardCard({required this.child, this.onTap});
+
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.surfaceContainerHighest;
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: child,
       ),
     );
-  }
-
-  double calculateSessionShotWidth(ShootingSession session, int shotCount) {
-    // Prevent division by zero
-    if (session.total == null || session.total! <= 0) {
-      return 0.0;
-    }
-    double percentage = (shotCount / session.total!);
-    return (MediaQuery.of(context).size.width - 30) * percentage;
   }
 }
 

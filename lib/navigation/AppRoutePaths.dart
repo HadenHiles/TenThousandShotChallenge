@@ -24,6 +24,12 @@ abstract final class AppRoutePaths {
   /// Parameterised player-profile path: `/player/<id>`.
   static String playerPathFor(String id) => '/player/$id';
 
+  /// Parameterised player achievements path: `/player/<id>/achievements`.
+  static String playerAchievementsPathFor(String id) => '/player/$id/achievements';
+
+  /// Parameterised player sessions path: `/player/<id>/sessions`.
+  static String playerSessionsPathFor(String id) => '/player/$id/sessions';
+
   /// Parameterised compare-stats path: `/compare-stats/<friendUid>`.
   static String compareStatsPathFor(String friendUid) => '/compare-stats/$friendUid';
 }

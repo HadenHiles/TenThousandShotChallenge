@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tenthousandshotchallenge/widgets/AchievementStatsRow.dart';
+import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 
 /// Full-screen achievements view, extracted from the Profile accordion.
@@ -55,8 +55,9 @@ class AchievementsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AchievementStatsRow(
+                    UserStatsChipsRow(
                       userId: user.uid,
+                      showShootingChips: false,
                       padding: const EdgeInsets.only(bottom: 16),
                     ),
                     const WeeklyAchievementsWidget(showResetCountdown: true),
