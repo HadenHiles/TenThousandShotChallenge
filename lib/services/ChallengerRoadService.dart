@@ -79,7 +79,7 @@ enum ChallengerRoadBadgeCategory {
 
 /// Immutable definition of a single Challenger Road badge.
 ///
-/// Instances live exclusively in [ChallengerRoadService.badgeCatalog] — they
+/// Instances live exclusively in [ChallengerRoadService.badgeCatalog] - they
 /// are `const` and never stored in Firestore.  Only the [id] is persisted
 /// (as a string) in the user's `badges` array inside the
 /// `users/{uid}/challenger_road/summary` document.
@@ -478,7 +478,7 @@ class ChallengerRoadService {
   }
 
   // ---------------------------------------------------------------------------
-  // Badge catalog — static, hockey-voice, CR-only
+  // Badge catalog - static, hockey-voice, CR-only
   // ---------------------------------------------------------------------------
 
   /// The full badge catalog. Every badge here is earned exclusively through
@@ -622,7 +622,7 @@ class ChallengerRoadService {
     ChallengerRoadBadgeDefinition(
       id: 'old_grudge',
       name: 'Old Grudge',
-      description: 'Failed this challenge in two straight attempts — then finally passed it.',
+      description: 'Failed this challenge in two straight attempts - then finally passed it.',
       category: ChallengerRoadBadgeCategory.grindAndResilience,
       tier: ChallengerRoadBadgeTier.rare,
     ),
@@ -903,7 +903,7 @@ class ChallengerRoadService {
   /// [ChallengerRoadBadgeDefinition.effectiveDescription]. Icon precedence is
   /// resolved by [badgeIconWidget].
   ///
-  /// Award logic is never affected — it always uses [badgeCatalog] directly.
+  /// Award logic is never affected - it always uses [badgeCatalog] directly.
   Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
     final overridesSnap = await _badgeOverridesRef.get();
     if (overridesSnap.docs.isEmpty) return badgeCatalog;
@@ -943,7 +943,7 @@ class ChallengerRoadService {
     final levelSnap = await _findActiveLevelSnapshot(level);
     if (levelSnap == null) return [];
 
-    // level_name is authoritative on the parent level document — override
+    // level_name is authoritative on the parent level document - override
     // whatever the challenge sub-docs carry so a single field update is enough.
     final parentData = levelSnap.data() as Map<String, dynamic>?;
     final parentLevelName = (parentData?['level_name'] as String?)?.trim();
@@ -1078,7 +1078,7 @@ class ChallengerRoadService {
 
     await batch.commit();
 
-    // Compute badge stats once — shared by both stat-based and contextual checks
+    // Compute badge stats once - shared by both stat-based and contextual checks
     // to avoid loading all Firestore session data twice per save.
     // getUserSummary is kicked off in parallel with the stats load.
     final badgeStatsFuture = _loadRoadBadgeStats(userId);
@@ -1108,7 +1108,7 @@ class ChallengerRoadService {
   }
 
   /// Awards session-level contextual badges that need the current [session]
-  /// object in scope — things like new personal-best accuracy, consecutive
+  /// object in scope - things like new personal-best accuracy, consecutive
   /// pass streaks checked live, and special per-challenge conditions.
   /// Returns the IDs of any badges newly awarded by this call.
   Future<List<String>> _checkContextualSessionBadges({
@@ -1132,7 +1132,7 @@ class ChallengerRoadService {
 
     // cr_greasy_but_goes_in was removed from the catalog (too niche).
 
-    // cr_lights_out: new personal best accuracy — compare against all previous CR sessions.
+    // cr_lights_out: new personal best accuracy - compare against all previous CR sessions.
     // Read all prior sessions for this challenge across all attempts to find the prior best.
     double priorBestAcc = 0.0;
     final allAttemptSnap = await _attemptsRef(userId).get();
@@ -1226,10 +1226,10 @@ class ChallengerRoadService {
       if (sessionAcc > priorBestAcc) maybeAward('sauce_boss');
     }
 
-    // cr_full_send: top-10 volume AND best accuracy simultaneously — simplified:
+    // cr_full_send: top-10 volume AND best accuracy simultaneously - simplified:
     // award if this session is the single best accuracy session and also has
     // >= 80% of the personal max totalShots seen in any session.
-    // (Full cross-session top-10 rank requires reading all sessions — too expensive
+    // (Full cross-session top-10 rank requires reading all sessions - too expensive
     // here. We use a reasonable approximation.)
     if (sessionAcc >= 0.85) {
       // Check if totalShots is within 80% of the max across recent sessions.
@@ -1266,7 +1266,7 @@ class ChallengerRoadService {
   /// Returns true if a passing session exists for [challengeId] at [level]
   /// within a given attempt.
   ///
-  /// Prefer [getChallengeProgress] for repeated/bulk checks — this method
+  /// Prefer [getChallengeProgress] for repeated/bulk checks - this method
   /// queries challenge_sessions directly and is best for one-off verification.
   Future<bool> isChallengePassedAtLevel(String userId, String attemptId, String challengeId, int level) async {
     // Fast path: read challenge_progress document (O(1) doc read).
@@ -1550,7 +1550,7 @@ class ChallengerRoadService {
   /// **Mid-attempt restart** (`resetCount == 0`, i.e. user has never hit the
   /// 10 000-shot milestone in the current attempt): the attempt is marked
   /// `cancelled` and a fresh attempt doc is created reusing the **same**
-  /// `attemptNumber` — `totalAttempts` in the user summary is NOT incremented.
+  /// `attemptNumber` - `totalAttempts` in the user summary is NOT incremented.
   ///
   /// **Post-completion restart** (`resetCount >= 1`): the attempt is marked
   /// `completed` and a genuinely new attempt is created with an incremented
@@ -1591,13 +1591,13 @@ class ChallengerRoadService {
         );
         final docRef = await _attemptsRef(userId).add(attempt.toMap());
         attempt.id = docRef.id;
-        // Only update the pointer — do NOT touch total_attempts.
+        // Only update the pointer - do NOT touch total_attempts.
         await updateUserSummary(userId, {'current_attempt_id': docRef.id});
         return attempt;
       }
     }
 
-    // Genuine new attempt (post-completion) — increment totalAttempts.
+    // Genuine new attempt (post-completion) - increment totalAttempts.
     final safeStartingLevel = inheritedUnlockedLevel > 0 && chosenStartingLevel != null ? chosenStartingLevel.clamp(1, inheritedUnlockedLevel + 1) : max(1, (active?.highestLevelReachedThisAttempt ?? 2) - 1);
     return createAttempt(userId, safeStartingLevel, inheritedUnlockedLevel: inheritedUnlockedLevel);
   }
@@ -1634,7 +1634,7 @@ class ChallengerRoadService {
     return ChallengerRoadUserSummary.fromSnapshot(snap);
   }
 
-  /// Live stream of the user summary — use in profile widgets.
+  /// Live stream of the user summary - use in profile widgets.
   Stream<ChallengerRoadUserSummary> watchUserSummary(String userId) {
     return _userSummaryRef(userId).snapshots().map((snap) {
       if (!snap.exists) return ChallengerRoadUserSummary.empty();
@@ -1645,7 +1645,7 @@ class ChallengerRoadService {
   /// Silently awards any badges the user has earned but doesn't yet have,
   /// based purely on their persisted stats (full session history scan).
   ///
-  /// Safe to call at any time — fully idempotent. Already-earned badges are
+  /// Safe to call at any time - fully idempotent. Already-earned badges are
   /// never re-awarded. This is useful after deploying new badge definitions: any
   /// user who already meets the criteria will receive the badge the next time
   /// this runs (e.g. when opening the Challenger Road map).
@@ -2091,7 +2091,7 @@ class ChallengerRoadService {
   }
 
   /// Returns true if every active challenge at [level] was completed on the
-  /// first try within [attemptId] — i.e., there is exactly one
+  /// first try within [attemptId] - i.e., there is exactly one
   /// [ChallengeLevelHistoryEntry] at this level in each progress entry.
   Future<bool> _isLevelPerfect(String userId, String attemptId, int level) async {
     try {
@@ -2117,13 +2117,13 @@ class ChallengerRoadService {
   /// Checks all **stat-based** badge conditions and persists any newly earned
   /// badges to the user's summary document.
   ///
-  /// Idempotent — will not re-award a badge already in the `badges` list.
+  /// Idempotent - will not re-award a badge already in the `badges` list.
   /// Preserves unknown/legacy badge IDs already present in the user summary,
   /// while using [badgeCatalog] as the source of truth for any matching IDs.
   /// This keeps grandfathered badges intact even if they are no longer in the
   /// global catalog.
   ///
-  /// **Award paths** — badges are awarded from one of four call sites:
+  /// **Award paths** - badges are awarded from one of four call sites:
   ///
   /// | Call site                         | Badges awarded there |
   /// |-----------------------------------|----------------------|
@@ -2165,23 +2165,23 @@ class ChallengerRoadService {
     if (stats.levelsEverCleared.contains(3)) maybeAward('made_the_show');
 
     // ── WITHIN-RUN EFFICIENCY ─────────────────────────────────────────────────
-    // cr_no_warmup_needed: any level completed with 0 failed sessions — computed
+    // cr_no_warmup_needed: any level completed with 0 failed sessions - computed
     // contextually in advanceLevel; mark here if already earned via stats proxy.
     // (The flag is set by advanceLevel; _checkAndAwardBadges won't re-compute it.)
 
     // cr_sharp removed (too close to cr_sauce at 5 passes).
 
-    // cr_greasy_but_goes_in: passed at exact shotsToPass — awarded contextually
+    // cr_greasy_but_goes_in: passed at exact shotsToPass - awarded contextually
     // in saveChallengeSession; check stats can't easily re-derive it, so we
     // rely on the contextual path. Skip here.
 
     // cr_breakaway: awarded contextually in advanceLevel.
 
-    // cr_freight_train: two consecutive levels with 0 failures — awarded contextually.
+    // cr_freight_train: two consecutive levels with 0 failures - awarded contextually.
 
-    // cr_clean_sweep: first-attempt pass on every challenge in a level — awarded contextually.
+    // cr_clean_sweep: first-attempt pass on every challenge in a level - awarded contextually.
 
-    // cr_barnburner_run: level cleared with 0 failures and 80%+ avg accuracy — contextually.
+    // cr_barnburner_run: level cleared with 0 failures and 80%+ avg accuracy - contextually.
 
     // ── CROSS-ATTEMPT IMPROVEMENT ─────────────────────────────────────────────
     if (stats.scoutingReportCount >= 1) maybeAward('scouting_report');
@@ -2202,16 +2202,16 @@ class ChallengerRoadService {
     }
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
-    // cr_battle_tested, cr_game_7, cr_old_grudge —
+    // cr_battle_tested, cr_game_7, cr_old_grudge -
     // all awarded contextually in saveChallengeSession.
     // cr_ghosts_in_the_machine removed (too close to cr_game_7).
-    // cr_third_period_heart — awarded contextually in advanceLevel.
-    // cr_short_handed, cr_didnt_quit, cr_takes_a_licking — removed from catalog.
+    // cr_third_period_heart - awarded contextually in advanceLevel.
+    // cr_short_handed, cr_didnt_quit, cr_takes_a_licking - removed from catalog.
 
     // ── LEVEL ADVANCEMENT ─────────────────────────────────────────────────────
     if (stats.levelsEverCleared.contains(5)) maybeAward('ice_time_earned');
     if (stats.levelsEverCleared.contains(10)) maybeAward('team_captain');
-    // cr_paying_your_dues, cr_franchise_player, cr_reclaiming_the_ice — removed.
+    // cr_paying_your_dues, cr_franchise_player, cr_reclaiming_the_ice - removed.
 
     // cr_the_climb: awarded contextually in advanceLevel when new all-time best hit.
 
@@ -2228,27 +2228,27 @@ class ChallengerRoadService {
     // ── CR SHOT MILESTONES ────────────────────────────────────────────────────
     if (shots >= 100) maybeAward('first_bucket');
     if (shots >= 1000) maybeAward('building_a_barn');
-    // cr_filling_the_net removed (2,500 — too granular).
+    // cr_filling_the_net removed (2,500 - too granular).
     if (shots >= 5000) maybeAward('ten_minute_major');
     if (shots >= 10000) maybeAward('buzzer_beater');
     // cr_and_again removed; cr_three_periods awarded contextually via incrementChallengerRoadShots.
     if (shots >= 25000) maybeAward('well_never_runs_dry');
-    // cr_tape_burner removed (50,000 — extremely hard to achieve).
+    // cr_tape_burner removed (50,000 - extremely hard to achieve).
 
     // ── CR SESSION ACCURACY ───────────────────────────────────────────────────
     // cr_lights_out: awarded contextually in saveChallengeSession (new PB).
     if (stats.bestSingleSessionAccuracy >= 0.90) maybeAward('bar_down');
     if (stats.bestSingleSessionAccuracy >= 0.95) maybeAward('top_cheese');
     if (stats.perfectSessions >= 1) maybeAward('pure');
-    // cr_snipe_artist, cr_dead_aim, cr_millimetre, cr_pinpoint — removed.
-    // cr_the_sniper — awarded contextually in advanceLevel.
+    // cr_snipe_artist, cr_dead_aim, cr_millimetre, cr_pinpoint - removed.
+    // cr_the_sniper - awarded contextually in advanceLevel.
     if (stats.perfectSessions >= 5) maybeAward('all_net');
 
     // ── HOT STREAKS ───────────────────────────────────────────────────────────
-    // cr_on_a_heater removed (3 passes — too close to cr_sauce at 5 passes).
+    // cr_on_a_heater removed (3 passes - too close to cr_sauce at 5 passes).
     if (stats.longestPassStreak >= 5) maybeAward('sauce');
     if (stats.longestPassStreak >= 10) maybeAward('unstoppable');
-    // cr_full_send — awarded contextually in saveChallengeSession.
+    // cr_full_send - awarded contextually in saveChallengeSession.
 
     // ── CHALLENGE MASTERY ─────────────────────────────────────────────────────
     if (stats.challengesWithPerfectRecord >= 5) maybeAward('never_missed');
@@ -2267,20 +2267,20 @@ class ChallengerRoadService {
     if (stats.totalPassedSessions >= 100) maybeAward('all_time_great');
 
     // ── ELITE / ENDGAME ───────────────────────────────────────────────────────
-    // cr_hall_of_famer — awarded contextually in advanceLevel.
-    // cr_hockey_god — awarded contextually in advanceLevel.
-    // cr_the_machine — awarded contextually after attempt completes.
-    // cr_the_road_ends_here, cr_sniper_mentality — removed from catalog.
-    // cr_all_stars — awarded contextually in advanceLevel (full road from level 1 with unlocks).
+    // cr_hall_of_famer - awarded contextually in advanceLevel.
+    // cr_hockey_god - awarded contextually in advanceLevel.
+    // cr_the_machine - awarded contextually after attempt completes.
+    // cr_the_road_ends_here, cr_sniper_mentality - removed from catalog.
+    // cr_all_stars - awarded contextually in advanceLevel (full road from level 1 with unlocks).
 
     // ── CHIRPY ────────────────────────────────────────────────────────────────
     if (stats.latestAttemptNumber >= 2 && stats.latestAttemptStartingLevel < stats.previousAttemptHighestLevel) {
       maybeAward('bender');
     }
 
-    // cr_pigeon: first-try 95%+ on a hard challenge — contextually.
-    // cr_sauce_boss — contextually.
-    // cr_old_habits, cr_just_visiting — removed from catalog.
+    // cr_pigeon: first-try 95%+ on a hard challenge - contextually.
+    // cr_sauce_boss - contextually.
+    // cr_old_habits, cr_just_visiting - removed from catalog.
     // cr_skip_the_tryout: awarded in createAttempt when startingLevel > 1 with inherited unlocks.
 
     // Persist only when this invocation awards at least one new badge.

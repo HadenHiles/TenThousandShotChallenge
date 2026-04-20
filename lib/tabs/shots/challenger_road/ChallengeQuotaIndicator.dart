@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 /// Pinned bar shown during a challenge session displaying the live on-target
 /// count against the required quota.
 ///
-/// [shotsMade]   — running total of on-target shots (may be null/unknown).
-/// [shotsToPass] — minimum on-target shots needed to pass.
-/// [shotsRequired] — total shots the player must take.
-/// [totalShots]  — running total of shots taken this session.
-/// [tryCount] — number of tries logged in this session.
+/// [shotsMade]   - running total of on-target shots (may be null/unknown).
+/// [shotsToPass] - minimum on-target shots needed to pass.
+/// [shotsRequired] - total shots the player must take.
+/// [totalShots]  - running total of shots taken this session.
+/// [tryCount] - number of tries logged in this session.
 class ChallengeQuotaIndicator extends StatelessWidget {
   final int shotsMade;
   final int shotsToPass;

@@ -161,7 +161,7 @@ class LocalNotificationService {
 
     // On Android 12+, SCHEDULE_EXACT_ALARM requires the user to grant it via
     // system settings. Try exact first; fall back to inexact on PlatformException
-    // so the app doesn't crash — the notification will still fire.
+    // so the app doesn't crash - the notification will still fire.
     try {
       await _plugin.zonedSchedule(
         _dailyReminderId,
@@ -238,7 +238,7 @@ class LocalNotificationService {
       await _plugin.zonedSchedule(
         _streakAtRiskId,
         '🔥 Don\'t break your streak!',
-        '$streakDays-day streak on the line — log a session today to keep it alive!',
+        '$streakDays-day streak on the line - log a session today to keep it alive!',
         scheduled,
         _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
         androidScheduleMode: Platform.isAndroid ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
@@ -249,7 +249,7 @@ class LocalNotificationService {
         await _plugin.zonedSchedule(
           _streakAtRiskId,
           '🔥 Don\'t break your streak!',
-          '$streakDays-day streak on the line — log a session today to keep it alive!',
+          '$streakDays-day streak on the line - log a session today to keep it alive!',
           scheduled,
           _details(_streakChannelId, 'Streak Alerts', importance: Importance.high, priority: Priority.high),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -334,7 +334,7 @@ class LocalNotificationService {
   //
   // Achievements only unlock during an active session, so the user is already
   // looking at the app. Return a record with the display data instead of
-  // posting a system notification — the caller shows an in-app banner/dialog.
+  // posting a system notification - the caller shows an in-app banner/dialog.
 
   static ({String title, String body}) buildAchievementUnlockedMessage({
     required String achievementName,

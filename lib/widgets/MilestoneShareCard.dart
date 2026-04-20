@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 /// A self-contained share card rendered off-screen via [ScreenshotController],
 /// then shared via the native share sheet.
 ///
-/// Call [shareMilestone] — it renders the card to PNG bytes and triggers
+/// Call [shareMilestone] - it renders the card to PNG bytes and triggers
 /// the system share sheet with the image and an optional text caption.
 Future<void> shareMilestone({
   required BuildContext context,

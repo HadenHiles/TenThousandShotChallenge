@@ -1109,7 +1109,7 @@ class _ShotsState extends State<Shots> {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Offline — sessions will sync when connection is restored.',
+                            'Offline - sessions will sync when connection is restored.',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,

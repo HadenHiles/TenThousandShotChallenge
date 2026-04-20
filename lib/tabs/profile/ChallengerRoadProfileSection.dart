@@ -7,7 +7,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 /// Drop-in Challenger Road section for the Profile tab.
 ///
 /// Pass [userId] and the current [isPro] flag.
-/// Both free and pro users can see their stats and badges — free users also
+/// Both free and pro users can see their stats and badges - free users also
 /// see a compact "Go Pro" nudge encouraging them to unlock full gameplay.
 class ChallengerRoadProfileSection extends StatelessWidget {
   const ChallengerRoadProfileSection({
@@ -22,7 +22,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
   final bool isPro;
 
   /// When true, shows a "PLAYER CARD" featured-badge showcase with an edit
-  /// button — only meaningful when this is the signed-in user's own profile.
+  /// button - only meaningful when this is the signed-in user's own profile.
   final bool isEditable;
   final VoidCallback? onGoProTap;
 

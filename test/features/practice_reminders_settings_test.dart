@@ -13,7 +13,7 @@ import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import '../mock_firebase.dart';
 
 void main() {
-  group('Settings — Practice Reminders & Health Sync tiles', () {
+  group('Settings - Practice Reminders & Health Sync tiles', () {
     late FakeFirebaseFirestore fakeFirestore;
     late MockFirebaseAuth mockAuth;
     late MockUser mockUser;

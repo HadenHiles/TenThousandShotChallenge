@@ -9,7 +9,7 @@
  *   - category:            read-only reference field for the admin dashboard
  *   - tier:                read-only reference field for the admin dashboard
  *
- * Idempotent — skips any document that already exists so existing admin edits
+ * Idempotent - skips any document that already exists so existing admin edits
  * are never overwritten.
  *
  * Usage (against real dev project):
@@ -40,7 +40,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // ---------------------------------------------------------------------------
-// Badge catalog — mirrors ChallengerRoadService.badgeCatalog in Dart.
+// Badge catalog - mirrors ChallengerRoadService.badgeCatalog in Dart.
 // Update this list whenever badges are added or removed in the Dart source.
 // ---------------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ const BADGES = [
     { id: 'battle_tested', name: 'Battle Tested', description: 'Failed the same challenge 5 times in a row, then passed it.', category: 'grindAndResilience', tier: 'uncommon' },
     { id: 'game_7', name: 'Game 7', description: "Passed the challenge you've failed more than any other.", category: 'grindAndResilience', tier: 'epic' },
     { id: 'third_period_heart', name: 'Third Period Heart', description: 'Cleared a level despite 10+ failed sessions inside it.', category: 'grindAndResilience', tier: 'rare' },
-    { id: 'old_grudge', name: 'Old Grudge', description: 'Failed this challenge in two straight attempts — then finally passed it.', category: 'grindAndResilience', tier: 'rare' },
+    { id: 'old_grudge', name: 'Old Grudge', description: 'Failed this challenge in two straight attempts - then finally passed it.', category: 'grindAndResilience', tier: 'rare' },
 
     // ── LEVEL ADVANCEMENT ─────────────────────────────────────────────────────
     { id: 'ice_time_earned', name: 'Ice Time Earned', description: 'Level 5 cleared.', category: 'levelAdvancement', tier: 'rare' },
@@ -163,7 +163,7 @@ async function seed() {
             display_name: badge.name,
             display_description: badge.description,
             display_icon: CATEGORY_ICON[badge.category] || 'sports_hockey_rounded',
-            // Reference fields — purely informational for the admin dashboard.
+            // Reference fields - purely informational for the admin dashboard.
             // These are never read by the Flutter app's award logic.
             category: badge.category,
             tier: badge.tier,

@@ -55,7 +55,7 @@ async function diagnose() {
         levelSnaps = { docs: [] };
     }
 
-    // 3. Attempts — ordered by attempt_number
+    // 3. Attempts - ordered by attempt_number
     console.log('\n=== Attempts (ordered by attempt_number) ===');
     let attemptsSnap;
     try {

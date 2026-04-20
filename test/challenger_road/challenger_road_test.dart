@@ -500,7 +500,7 @@ void main() {
       final attemptId = await _seedAttempt(db, userId: uid);
 
       await _seedPassingProgress(db, userId: uid, attemptId: attemptId, challengeId: 'ch_active', level: 1);
-      // ch_inactive NOT passed — but it's inactive, so level should still be complete.
+      // ch_inactive NOT passed - but it's inactive, so level should still be complete.
 
       final result = await service.isLevelComplete(uid, attemptId, 1);
       expect(result, true);
@@ -670,7 +670,7 @@ void main() {
     });
   });
 
-  group('ChallengerRoadService.saveChallengeSession() — updateChallengeProgress', () {
+  group('ChallengerRoadService.saveChallengeSession() - updateChallengeProgress', () {
     late FakeFirebaseFirestore db;
     late ChallengerRoadService service;
     const uid = 'test_user';
@@ -751,7 +751,7 @@ void main() {
     });
   });
 
-  group('ChallengerRoadService.saveChallengeSession() — updateChallengeAllTimeHistory', () {
+  group('ChallengerRoadService.saveChallengeSession() - updateChallengeAllTimeHistory', () {
     late FakeFirebaseFirestore db;
     late ChallengerRoadService service;
     const uid = 'test_user';
@@ -789,7 +789,7 @@ void main() {
       // Fail first.
       await service.saveChallengeSession(uid, attemptId, _makeSession(challengeId: 'ch_1', level: 1, shotsMade: 2, passed: false));
 
-      // Pass — this should set firstPassedAt.
+      // Pass - this should set firstPassedAt.
       await service.saveChallengeSession(uid, attemptId, _makeSession(challengeId: 'ch_1', level: 1, shotsMade: 8, passed: true));
       final snap1 = await db.collection('users').doc(uid).collection('challenger_road_challenge_history').doc('ch_1').get();
       final firstPassed = snap1.data()!['firstPassedAt'];
@@ -797,7 +797,7 @@ void main() {
 
       await Future.delayed(const Duration(milliseconds: 10));
 
-      // Pass again — firstPassedAt should stay the same.
+      // Pass again - firstPassedAt should stay the same.
       await service.saveChallengeSession(uid, attemptId, _makeSession(challengeId: 'ch_1', level: 1, shotsMade: 9, passed: true));
       final snap2 = await db.collection('users').doc(uid).collection('challenger_road_challenge_history').doc('ch_1').get();
       expect(snap2.data()!['firstPassedAt'], firstPassed);

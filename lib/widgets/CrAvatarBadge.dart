@@ -192,7 +192,7 @@ class CrAvatarBadge extends StatelessWidget {
 
 /// Listens to [ChallengerRoadService.watchUserSummary] and renders a
 /// [CrAvatarBadge] for [userId]. Safe to use in trees that do not already
-/// have a summary stream — it creates its own Firestore listener.
+/// have a summary stream - it creates its own Firestore listener.
 class CrAvatarBadgeStream extends StatelessWidget {
   const CrAvatarBadgeStream({
     super.key,

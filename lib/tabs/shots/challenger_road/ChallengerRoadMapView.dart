@@ -139,7 +139,7 @@ class _LevelPathPainter extends CustomPainter {
         final remaining = segLen - segConsumed;
 
         if (posInCycle < dashLen) {
-          // Inside a dash — draw up to the end of this dash or end of segment.
+          // Inside a dash - draw up to the end of this dash or end of segment.
           final dashRemaining = dashLen - posInCycle;
           final stepDist = math.min(dashRemaining, remaining);
           final t0 = (distAccum + segConsumed) / totalLength;
@@ -150,7 +150,7 @@ class _LevelPathPainter extends CustomPainter {
           segConsumed += stepDist;
           drawn += stepDist;
         } else {
-          // Inside a gap — skip.
+          // Inside a gap - skip.
           final gapRemaining = cycleLen - posInCycle;
           final stepDist = math.min(gapRemaining, remaining);
           segConsumed += stepDist;
@@ -167,7 +167,7 @@ class _LevelPathPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (centres.length < 2) return;
 
-    // Road surface — wide semi-transparent band follows the bezier.
+    // Road surface - wide semi-transparent band follows the bezier.
     final roadPaint = Paint()
       ..color = color.withValues(alpha: 0.13)
       ..strokeWidth = 18.0
@@ -175,7 +175,7 @@ class _LevelPathPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    // Centre dashed line — red, subtle.
+    // Centre dashed line - red, subtle.
     final dashPaint = Paint()
       ..color = color
       ..strokeWidth = 2.5
@@ -242,8 +242,8 @@ int _colForIndex(int i) {
 }
 
 /// Compute local Stack [Offset] for each node in a level section.
-/// [count]      — number of challenges
-/// [stackWidth] — pixel width of the containing Stack
+/// [count]      - number of challenges
+/// [stackWidth] - pixel width of the containing Stack
 /// Nodes are laid out top-to-bottom (seq 0 at top).
 /// The level banner now sits at the *bottom* of the section, so nodes start
 /// from the top with only the top padding offset.
@@ -414,7 +414,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     _lastData = result;
 
     // Silently catch up any badges the user earned before they were defined.
-    // Runs in the background — does not block map rendering.
+    // Runs in the background - does not block map rendering.
     if (!widget.isPreviewMode) {
       _service!.awardMissingBadges(widget.userId).catchError((Object e, StackTrace st) {
         debugPrint('[ChallengerRoad] awardMissingBadges failed: $e\n$st');
@@ -442,7 +442,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       _dataFuture = _loadMapData().then((data) {
         final newLevel = data.activeAttempt?.currentLevel;
         if (newLevel != null && _previousCurrentLevel != null && newLevel > _previousCurrentLevel!) {
-          // A level advance happened — flag the new level for its unlock animation.
+          // A level advance happened - flag the new level for its unlock animation.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) setState(() => _justUnlockedLevel = newLevel);
           });
@@ -517,7 +517,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
 
-      // Road complete — glide to the victory banner at the top.
+      // Road complete - glide to the victory banner at the top.
       if (_isRoadComplete(data)) {
         _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
@@ -859,7 +859,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               _refreshData(scrollToBottom: true);
             },
             child: Text(
-              nextInherited >= 1 ? 'Full Grind — Start from Level 1' : 'Let\'s Go',
+              nextInherited >= 1 ? 'Full Grind - Start from Level 1' : 'Let\'s Go',
               style: TextStyle(color: Theme.of(context).primaryColor),
             ),
           ),
@@ -879,7 +879,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         ? 'Your shot count and challenge progress for this attempt will be cleared. '
             'Your attempt number stays the same.\n\nThis is a do-over, not a new attempt.'
         : nextInherited >= 1
-            ? 'Your current attempt will end. Your last run unlocks levels 1–$nextInherited — pick where you start next.'
+            ? 'Your current attempt will end. Your last run unlocks levels 1–$nextInherited - pick where you start next.'
             : 'Your current attempt will end. Your next attempt will start one level below your current best.';
 
     showDialog<void>(
@@ -917,7 +917,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               isDoOver
                   ? 'Restart'
                   : nextInherited >= 1
-                      ? 'Full Grind — Start from Level 1'
+                      ? 'Full Grind - Start from Level 1'
                       : 'Restart',
               style: TextStyle(color: Theme.of(context).primaryColor),
             ),
@@ -1276,7 +1276,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   ),
                 ),
 
-              // ── Level banner (at bottom — acts as threshold into this level
+              // ── Level banner (at bottom - acts as threshold into this level
               // when scrolling upward through the map) ──────────────────────
               Positioned(
                 bottom: _levelBottomPad,
@@ -1812,14 +1812,14 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
     super.didUpdateWidget(old);
     if (!old.focused && widget.focused) {
       if (_frames.length > 1 && _timer == null) {
-        _startTimer(); // frames already ready — resume cycling
+        _startTimer(); // frames already ready - resume cycling
       } else if (!_allLoaded) {
-        _scheduleRemainingLoad(); // first time in focus — load frames
+        _scheduleRemainingLoad(); // first time in focus - load frames
       }
     } else if (old.focused && !widget.focused) {
       _timer?.cancel();
       _timer = null;
-      // Do NOT reset _frameIndex — resume from the same position on re-focus
+      // Do NOT reset _frameIndex - resume from the same position on re-focus
       // so the animation doesn't visibly jump back to the start.
     }
   }
@@ -1872,14 +1872,14 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
 
       // ── Duration detection ───────────────────────────────────────────────
       // On Android, MediaMetadataRetriever does NOT return null for timestamps
-      // past the video end — it clamps and returns the last frame. So we cannot
+      // past the video end - it clamps and returns the last frame. So we cannot
       // use null as a past-end sentinel. Instead:
       //   1. Fetch a guaranteed-past-end sentinel (24 h) at tiny quality.
       //   2. Run all probe candidates in parallel at the same tiny quality.
       //   3. The last frame for every out-of-bounds timestamp equals the sentinel
       //      byte-for-byte; the first probe that DIFFERS from the sentinel is
-      //      within the video — that gives us the approximate duration.
-      const sentinelMs = 24 * 60 * 60 * 1000; // 24 h — always past any video
+      //      within the video - that gives us the approximate duration.
+      const sentinelMs = 24 * 60 * 60 * 1000; // 24 h - always past any video
       const probeCandidatesMs = [300000, 120000, 60000, 30000, 10000, 5000, 3000, 1000];
 
       if (!mounted) return;

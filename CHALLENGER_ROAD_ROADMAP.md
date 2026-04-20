@@ -1,4 +1,4 @@
-# Challenger Road — Implementation Roadmap
+# Challenger Road - Implementation Roadmap
 
 > **Purpose of this document:** Living reference for implementing the Challenger Road feature end-to-end. Return here whenever context is running low. Every design decision is captured below so implementation stays consistent regardless of session breaks.
 
@@ -78,8 +78,8 @@ challenger_road/                          ← top-level collection
 
 **Key rules:**
 - A challenge that should only appear at Level 3+ simply has no Level 1 or Level 2 sub-documents.
-- Reordering challenges on any level means changing `sequence` on the level documents — no edits to the challenge document itself.
-- Adding new challenges to an existing level is non-breaking; users that have already completed that level will show the new challenge as "completed" only if they happen to attempt it (or it can be marked as bonus/optional — TBD).
+- Reordering challenges on any level means changing `sequence` on the level documents - no edits to the challenge document itself.
+- Adding new challenges to an existing level is non-breaking; users that have already completed that level will show the new challenge as "completed" only if they happen to attempt it (or it can be marked as bonus/optional - TBD).
 
 ---
 
@@ -166,17 +166,17 @@ users/{userId}/
 - `passed: true` sessions are what determine level advancement eligibility.
 - All shots in `challenge_sessions` also get written to the user's current `iterations/{iterationId}/sessions` via the existing session service (global shot count integration).
 - `challenge_progress/{challengeId}` is updated atomically with each `challenge_sessions` write (WriteBatch). Avoids scanning all sessions for per-challenge stats.
-- `challenger_road_challenge_history/{challengeId}` is also updated atomically on every session save — aggregates stats for that challenge across all attempts (used for profile display and badge math).
+- `challenger_road_challenge_history/{challengeId}` is also updated atomically on every session save - aggregates stats for that challenge across all attempts (used for profile display and badge math).
 
 ---
 
 ### 2c. Derived State (computed client-side, not stored)
 
-- **"Challenge passed at current level"** — query `challenge_sessions` in `currentAttemptId` where `challengeId == X`, `level == currentLevel`, `passed == true`. If any exist, the challenge is complete for this level.
-- **"All challenges complete at current level"** — check above for every active challenge that has a level doc for `currentLevel`.
-- **"Next attempt starting level"** — `max(1, highestLevelReachedThisAttempt - 1)` from the most recent completed attempt.
-- **"Best level for a challenge this attempt"** — read `challenge_progress/{challengeId}.bestLevel` (O(1) doc read; no session scan).
-- **"All-time best level for a challenge"** — read `challenger_road_challenge_history/{challengeId}.allTimeBestLevel` (O(1) doc read across all attempts).
+- **"Challenge passed at current level"** - query `challenge_sessions` in `currentAttemptId` where `challengeId == X`, `level == currentLevel`, `passed == true`. If any exist, the challenge is complete for this level.
+- **"All challenges complete at current level"** - check above for every active challenge that has a level doc for `currentLevel`.
+- **"Next attempt starting level"** - `max(1, highestLevelReachedThisAttempt - 1)` from the most recent completed attempt.
+- **"Best level for a challenge this attempt"** - read `challenge_progress/{challengeId}.bestLevel` (O(1) doc read; no session scan).
+- **"All-time best level for a challenge"** - read `challenger_road_challenge_history/{challengeId}.allTimeBestLevel` (O(1) doc read across all attempts).
 
 ---
 
@@ -297,7 +297,7 @@ Work through these phases in order. Each phase is self-contained and testable be
 
 ---
 
-### Phase 1 — Dart Models & Firestore Rules ✅ COMPLETE
+### Phase 1 - Dart Models & Firestore Rules ✅ COMPLETE
 
 **Files to create:**
 - `lib/models/firestore/ChallengeStep.dart`
@@ -311,7 +311,7 @@ Work through these phases in order. Each phase is self-contained and testable be
 
 **Firestore rules to add** (`firestore.rules`):
 ```
-// Global challenger road challenges — public read, admin write
+// Global challenger road challenges - public read, admin write
 match /challenger_road/challenges/{challengeId} {
   allow read: if request.auth != null;
   allow write: if false; // admin-only via Firebase Console / PushTable
@@ -321,7 +321,7 @@ match /challenger_road/challenges/{challengeId} {
   }
 }
 
-// User challenger road data — owner read/write
+// User challenger road data - owner read/write
 match /users/{userId}/challenger_road {
   allow read, write: if request.auth.uid == userId;
 }
@@ -351,13 +351,13 @@ match /users/{userId}/challenger_road_challenge_history/{challengeId} {
 
 ---
 
-### Phase 1b — Seed Test Data ✅ COMPLETE
+### Phase 1b - Seed Test Data ✅ COMPLETE
 
 > **Goal:** Have realistic Firestore data in place so every phase from Phase 2 onwards can be developed and tested against real map content without waiting for real challenge content from coaches/admins.
 
 **File to create:** `scripts/seed_challenger_road.js`  
-**Runtime:** Node.js — uses `firebase-admin` SDK (already available via the existing `functions/` setup).  
-**Run once** against your development Firebase project. Safe to re-run — script checks for existing documents and skips them (`{ merge: false }` on new writes, skips if doc already exists).
+**Runtime:** Node.js - uses `firebase-admin` SDK (already available via the existing `functions/` setup).  
+**Run once** against your development Firebase project. Safe to re-run - script checks for existing documents and skips them (`{ merge: false }` on new writes, skips if doc already exists).
 
 #### What to seed
 
@@ -373,11 +373,11 @@ This gives enough data to test:
 
 ```
 challenger_road/challenges/
-  seed_challenge_1   "Wrist Shot Warmup"          — 3 steps, levels 1/2/3
-  seed_challenge_2   "Snap Shot Precision"         — 2 steps, levels 1/2/3 (L2 has override steps)
-  seed_challenge_3   "Backhand Basics"             — 2 steps, levels 1/2/3
-  seed_challenge_4   "Slap Shot Power"             — 2 steps, levels 1/2/3
-  seed_challenge_5   "One-Timer Challenge"         — 2 steps, levels 2/3 ONLY (no Level 1 doc)
+  seed_challenge_1   "Wrist Shot Warmup"          - 3 steps, levels 1/2/3
+  seed_challenge_2   "Snap Shot Precision"         - 2 steps, levels 1/2/3 (L2 has override steps)
+  seed_challenge_3   "Backhand Basics"             - 2 steps, levels 1/2/3
+  seed_challenge_4   "Slap Shot Power"             - 2 steps, levels 1/2/3
+  seed_challenge_5   "One-Timer Challenge"         - 2 steps, levels 2/3 ONLY (no Level 1 doc)
 ```
 
 **Level quotas (intentionally easy for dev testing):**
@@ -388,9 +388,9 @@ challenger_road/challenges/
 | Snap Shot Precision | 2 | 10 / 6 | 2 | 15 / 10 | 2 | 20 / 14 |
 | Backhand Basics | 3 | 10 / 6 | 3 | 15 / 10 | 3 | 20 / 14 |
 | Slap Shot Power | 4 | 10 / 6 | 4 | 15 / 10 | 4 | 20 / 14 |
-| One-Timer Challenge | — | — | 5 | 15 / 10 | 5 | 20 / 14 |
+| One-Timer Challenge | - | - | 5 | 15 / 10 | 5 | 20 / 14 |
 
-**Steps use placeholder media** — public domain hockey image URLs (or a single reusable placeholder URL constant at the top of the script). No Firebase Storage upload required for dev.
+**Steps use placeholder media** - public domain hockey image URLs (or a single reusable placeholder URL constant at the top of the script). No Firebase Storage upload required for dev.
 
 #### Script outline
 
@@ -427,7 +427,7 @@ const challenges = [
     ],
   },
   // ... seed_challenge_2 through seed_challenge_5 following same shape
-  // seed_challenge_5 has NO level_1 entry — only level_2 and level_3
+  // seed_challenge_5 has NO level_1 entry - only level_2 and level_3
 ];
 
 async function seed() {
@@ -438,7 +438,7 @@ async function seed() {
                   .collection('challenges').doc(challenge.id);
     // Skip if already exists
     const snap = await ref.get();
-    if (snap.exists) { console.log(`Skipping ${challenge.id} — already exists`); continue; }
+    if (snap.exists) { console.log(`Skipping ${challenge.id} - already exists`); continue; }
     await ref.set({ ...challengeData, createdAt: admin.firestore.FieldValue.serverTimestamp(),
                                       updatedAt: admin.firestore.FieldValue.serverTimestamp() });
     for (const level of levels) {
@@ -455,7 +455,7 @@ seed().then(() => { console.log('Done.'); process.exit(0); })
 #### How to run
 
 ```bash
-# From repo root — uses the same firebase-admin already in functions/
+# From repo root - uses the same firebase-admin already in functions/
 cd functions && npm install   # already done if you've run functions before
 cd ..
 GOOGLE_APPLICATION_CREDENTIALS=path/to/dev-service-account.json \
@@ -470,7 +470,7 @@ FIRESTORE_EMULATOR_HOST=localhost:8080 \
 
 #### Cleanup script
 
-Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs start with `seed_`. Run this before promoting seed data to production or when real challenges are ready.
+Also add `scripts/unseed_challenger_road.js` - deletes all documents whose IDs start with `seed_`. Run this before promoting seed data to production or when real challenges are ready.
 
 ```js
 // Deletes seed_challenge_1 ... seed_challenge_N and all their subcollections
@@ -486,7 +486,7 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 ---
 
-### Phase 2 — ChallengerRoadService ✅ COMPLETE
+### Phase 2 - ChallengerRoadService ✅ COMPLETE
 
 **File to create:** `lib/services/ChallengerRoadService.dart`
 
@@ -497,7 +497,7 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 ---
 
-### Phase 3 — Profile Tab: Move Progress Section ✅ COMPLETE
+### Phase 3 - Profile Tab: Move Progress Section ✅ COMPLETE
 
 **File to modify:** `lib/tabs/Shots.dart` (Start tab) and `lib/tabs/Profile.dart`
 
@@ -512,14 +512,14 @@ Also add `scripts/unseed_challenger_road.js` — deletes all documents whose IDs
 
 **Add to Profile tab:**
 - A new `ExpansionTile` (or custom collapsible card) titled **"Progress"** that contains
-  all the above widgets verbatim — no logic changes, just relocated.
+  all the above widgets verbatim - no logic changes, just relocated.
 - This section should be expanded by default on first launch, collapsed on subsequent opens
   (persist state in `SharedPreferences`).
 - Free users keep the Start tab exactly as it is today.
 
 ---
 
-### Phase 4 — Start Tab Redesign (Pro Users) ✅ COMPLETE
+### Phase 4 - Start Tab Redesign (Pro Users) ✅ COMPLETE
 
 **File to heavily modify:** `lib/tabs/Shots.dart`
 
@@ -534,24 +534,24 @@ else:
 ```
 
 **Pro Start Tab layout (top to bottom):**
-1. `ChallengerRoadHeader` widget — shows current level badge, CR shot counter (X / 10,000), attempt number
-2. `ChallengerRoadMapView` — the snake map (fills remaining screen, scrollable)
-3. Pinned bottom bar — "Start Shooting" button (plain session, unchanged behavior)
+1. `ChallengerRoadHeader` widget - shows current level badge, CR shot counter (X / 10,000), attempt number
+2. `ChallengerRoadMapView` - the snake map (fills remaining screen, scrollable)
+3. Pinned bottom bar - "Start Shooting" button (plain session, unchanged behavior)
 
 ---
 
-### Phase 5 — Challenger Road Map UI ✅ COMPLETE
+### Phase 5 - Challenger Road Map UI ✅ COMPLETE
 
 **Files to create:**
-- `lib/tabs/shots/challenger_road/ChallengerRoadMapView.dart` — root scrollable map
-- `lib/tabs/shots/challenger_road/ChallengeMapNode.dart` — individual challenge bubble
-- `lib/tabs/shots/challenger_road/LevelBannerWidget.dart` — level header separating level groups
-- `lib/tabs/shots/challenger_road/ChallengerRoadHeader.dart` — top stats bar
+- `lib/tabs/shots/challenger_road/ChallengerRoadMapView.dart` - root scrollable map
+- `lib/tabs/shots/challenger_road/ChallengeMapNode.dart` - individual challenge bubble
+- `lib/tabs/shots/challenger_road/LevelBannerWidget.dart` - level header separating level groups
+- `lib/tabs/shots/challenger_road/ChallengerRoadHeader.dart` - top stats bar
 
 **Map layout algorithm:**
 - Fetch all distinct active levels sorted ascending.
 - For each level, fetch challenges ordered by `sequence`.
-- Render from bottom of scroll to top (Level 1 at bottom, higher levels above — feels like climbing).
+- Render from bottom of scroll to top (Level 1 at bottom, higher levels above - feels like climbing).
 - Snake pattern: alternate challenge nodes left-center-right across three columns per row, connected by a winding path drawn with `CustomPaint`.
 - Between level groups, render a `LevelBannerWidget`.
 
@@ -572,12 +572,12 @@ else:
 
 ---
 
-### Phase 6 — Challenge Detail & Start Challenge Flow ✅ COMPLETE
+### Phase 6 - Challenge Detail & Start Challenge Flow ✅ COMPLETE
 
 **Files to create:**
-- `lib/tabs/shots/challenger_road/ChallengeDetailSheet.dart` — bottom sheet or pushed screen
-- `lib/tabs/shots/challenger_road/ChallengeStepViewer.dart` — PageView of steps with media
-- `lib/tabs/shots/challenger_road/StartChallengeScreen.dart` — modified StartShooting for challenges
+- `lib/tabs/shots/challenger_road/ChallengeDetailSheet.dart` - bottom sheet or pushed screen
+- `lib/tabs/shots/challenger_road/ChallengeStepViewer.dart` - PageView of steps with media
+- `lib/tabs/shots/challenger_road/StartChallengeScreen.dart` - modified StartShooting for challenges
 
 **Challenge Detail Sheet:**
 - Triggered by tapping a `ChallengeMapNode`.
@@ -586,15 +586,15 @@ else:
 - If the level has its own `steps`, use those; otherwise fall back to parent challenge `steps`.
 - CTA button at bottom:
   - If `locked`: disabled, shows "Complete Level X first"
-  - If `completed` (current level): shows "Retry Challenge" (can re-attempt but won't re-count toward level pass — only first pass counts)
+  - If `completed` (current level): shows "Retry Challenge" (can re-attempt but won't re-count toward level pass - only first pass counts)
   - If `available`: shows "Start Challenge" → navigates to `StartChallengeScreen`
 
 **StartChallengeScreen:**
 - Pass `ChallengerRoadChallenge`, `ChallengerRoadLevel`, and `ChallengerRoadAttempt` as arguments.
 - Reuse `StartShooting` logic and widgets but:
   - Replace the normal session title with the challenge name + level badge.
-  - Show a pinned quota indicator at the top: "X / {shotsToPass} on target — need {shotsToPass}/{shotsRequired}" updating live.
-  - Shot type is free (user selects as normal) — quota is on total on-target, not shot-type specific.
+  - Show a pinned quota indicator at the top: "X / {shotsToPass} on target - need {shotsToPass}/{shotsRequired}" updating live.
+  - Shot type is free (user selects as normal) - quota is on total on-target, not shot-type specific.
   - On session end:
     1. Compute `passed = shotsMade >= shotsToPass`.
     2. Save `ChallengeSession` via `ChallengerRoadService.saveChallengeSession()`.
@@ -612,7 +612,7 @@ else:
 
 ---
 
-### Phase 7 — Level Advancement Logic ✅ COMPLETE
+### Phase 7 - Level Advancement Logic ✅ COMPLETE
 
 **In `ChallengerRoadService`:**
 ```
@@ -634,7 +634,7 @@ advanceLevel():
 
 ---
 
-### Phase 8 — 10K Milestone & Attempt Restart ✅ COMPLETE
+### Phase 8 - 10K Milestone & Attempt Restart ✅ COMPLETE
 
 **10K Milestone:**
 - Triggered in `ChallengerRoadService.incrementChallengerRoadShots()`.
@@ -653,9 +653,9 @@ advanceLevel():
 
 ---
 
-### Phase 9 — Badges & Profile Integration ✅ COMPLETE
+### Phase 9 - Badges & Profile Integration ✅ COMPLETE
 
-#### Badge Types (Challenger Road — pro only)
+#### Badge Types (Challenger Road - pro only)
 
 | Badge ID | Name | Trigger |
 |----------|------|---------|
@@ -683,7 +683,7 @@ advanceLevel():
 
 ---
 
-### Phase 10 — Free User Teaser View ✅ COMPLETE
+### Phase 10 - Free User Teaser View ✅ COMPLETE
 
 **File to create:** `lib/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart`
 
@@ -693,11 +693,11 @@ advanceLevel():
   - Centered `Card` overlay: "Challenger Road is a Pro feature", short description, "Go Pro" button → `presentPaywallIfNeeded(context)`.
 - Node taps are swallowed (no navigation).
 - Use `IgnorePointer` on the map to prevent interaction.
-- Still needs to load at least a few challenges from Firestore to look real — fetch the first level's challenges for visual authenticity.
+- Still needs to load at least a few challenges from Firestore to look real - fetch the first level's challenges for visual authenticity.
 
 ---
 
-### Phase 11 — Router Updates ✅ COMPLETE
+### Phase 11 - Router Updates ✅ COMPLETE
 
 **File to modify:** `lib/router.dart`
 
@@ -713,14 +713,14 @@ The map itself lives inside the Start tab body, so no top-level route needed for
 
 ---
 
-### Phase 12 — Unit Tests ✅ COMPLETE
+### Phase 12 - Unit Tests ✅ COMPLETE
 
 **File created:** `test/challenger_road/challenger_road_test.dart`
 
 31 tests covering all Section 10 unit and integration checklist items:
 - Model round-trips: `ChallengerRoadLevel`, `ChallengeSession`, `ChallengeProgressEntry`, `ChallengeAllTimeHistory`
 - Service: `isLevelComplete()`, `incrementChallengerRoadShots()`, `restartChallengerRoad()`
-- `saveChallengeSession()` — `updateChallengeProgress()` and `updateChallengeAllTimeHistory()` batch writes
+- `saveChallengeSession()` - `updateChallengeProgress()` and `updateChallengeAllTimeHistory()` batch writes
 
 **Bug fixed** (discovered by tests): `_buildChallengeProgressUpdate` and `_buildAllTimeHistoryUpdate` in `ChallengerRoadService` were using snake_case keys in Firestore `.update()` calls (`best_level`, `all_time_best_level`, etc.) while the model `fromMap()` methods read camelCase keys. This caused `bestLevel` and `allTimeBestLevel` to never advance past the first session's value. Fixed to use camelCase keys consistent with `toMap()`.
 
@@ -761,7 +761,7 @@ All badges are visually rendered as circular or shield-shaped widgets with the a
 - `cr_level_5`, `cr_level_10`: Trophy icons with level number. Awarded once per milestone.
 - `cr_perfect_level`: Star icon. Awarded first time a full level is cleared with zero retries.
 - `cr_comeback`: Phoenix/hockey stick rising icon.
-- `cr_all_challenges_v1`: Gold road icon. The `v1` suffix is intentional — when new challenges are added, a `v2` version can be introduced without invalidating existing earners.
+- `cr_all_challenges_v1`: Gold road icon. The `v1` suffix is intentional - when new challenges are added, a `v2` version can be introduced without invalidating existing earners.
 
 ---
 
@@ -770,8 +770,8 @@ All badges are visually rendered as circular or shield-shaped widgets with the a
 All global challenge data is managed directly in Firestore via **PushTable** (same workflow as the Explore tab content). No separate admin UI in the Flutter app is required.
 
 **Firestore paths to configure in PushTable:**
-- `challenger_road/challenges` — challenge documents
-- `challenger_road/challenges/{id}/levels` — level documents
+- `challenger_road/challenges` - challenge documents
+- `challenger_road/challenges/{id}/levels` - level documents
 
 **Field reference for admins:**
 
@@ -822,7 +822,7 @@ All global challenge data is managed directly in Firestore via **PushTable** (sa
 | `lib/services/session.dart` | After saving a `ChallengeSession`, call the same shot-saving logic to write a `ShootingSession` entry to the current `Iteration`. |
 | `ChallengerRoadService.saveChallengeSession()` | Must use a Firestore `WriteBatch` to atomically write: (1) `challenge_sessions/{sid}`, (2) upsert `challenge_progress/{challengeId}`, (3) upsert `challenger_road_challenge_history/{challengeId}`. All three succeed or none. |
 | `lib/models/firestore/Iteration.dart` | No changes needed. Challenge shots add to `total`, `totalWrist`, etc. via the existing service. |
-| `lib/tabs/shots/StartShooting.dart` | `StartChallengeScreen` is a new widget but reuses `ShotButton`, `TargetAccuracyVisualizer`, and `ShotBreakdownDonut` internally. Do not modify `StartShooting.dart` itself — compose from its children. |
+| `lib/tabs/shots/StartShooting.dart` | `StartChallengeScreen` is a new widget but reuses `ShotButton`, `TargetAccuracyVisualizer`, and `ShotBreakdownDonut` internally. Do not modify `StartShooting.dart` itself - compose from its children. |
 | `lib/services/RevenueCat.dart` / `RevenueCatProvider.dart` | Use `CustomerInfoNotifier.isPro` to gate Challenger Road map vs. teaser view. No changes to RevenueCat service. |
 | `lib/tabs/Shots.dart` | Conditionally render `ChallengerRoadMapView` (pro) or existing content (free) based on `isPro`. Free path unchanged. |
 | `lib/tabs/Profile.dart` | Add collapsible `ProgressSection` and `ChallengerRoadBadgeBar`. Pie chart / line chart moved here from Start tab (pro path). |
@@ -834,16 +834,16 @@ All global challenge data is managed directly in Firestore via **PushTable** (sa
 ## 10. Testing Checklist
 
 ### Unit Tests
-- [x] `ChallengerRoadService.isLevelComplete()` — returns false until all challenges pass _(Phase 12)_
-- [x] `ChallengerRoadService.incrementChallengerRoadShots()` — milestone detection at exactly 10,000 and over _(Phase 12)_
-- [x] `ChallengerRoadService.restartChallengerRoad()` — starting level = max(1, highest - 1) _(Phase 12)_
+- [x] `ChallengerRoadService.isLevelComplete()` - returns false until all challenges pass _(Phase 12)_
+- [x] `ChallengerRoadService.incrementChallengerRoadShots()` - milestone detection at exactly 10,000 and over _(Phase 12)_
+- [x] `ChallengerRoadService.restartChallengerRoad()` - starting level = max(1, highest - 1) _(Phase 12)_
 - [x] `ChallengerRoadLevel.fromMap()` / `toMap()` round-trip _(Phase 12)_
 - [x] `ChallengeSession.fromMap()` / `toMap()` round-trip _(Phase 12)_
 - [x] `ChallengeProgressEntry.fromMap()` / `toMap()` round-trip _(Phase 12)_
 - [x] `ChallengeAllTimeHistory.fromMap()` / `toMap()` round-trip _(Phase 12)_
-- [x] `updateChallengeProgress()` — `bestLevel` updates to max, `totalAttempts` increments, `levelHistory` appended _(Phase 12)_
-- [x] `updateChallengeAllTimeHistory()` — `allTimeBestLevel` is max across calls, `allTimeTotalAttempts` increments, `firstPassedAt` set only once _(Phase 12)_
-- [ ] Badge award logic — each badge condition fires exactly once (idempotent)
+- [x] `updateChallengeProgress()` - `bestLevel` updates to max, `totalAttempts` increments, `levelHistory` appended _(Phase 12)_
+- [x] `updateChallengeAllTimeHistory()` - `allTimeBestLevel` is max across calls, `allTimeTotalAttempts` increments, `firstPassedAt` set only once _(Phase 12)_
+- [ ] Badge award logic - each badge condition fires exactly once (idempotent)
 
 ### Integration Tests
 - [x] Saving a session atomically updates `challenge_sessions`, `challenge_progress`, and `challenger_road_challenge_history` (all three or none via WriteBatch) _(Phase 12)_

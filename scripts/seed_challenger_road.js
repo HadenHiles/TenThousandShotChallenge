@@ -5,7 +5,7 @@
  * Creates level documents that each own their challenge documents directly.
  * Repeated challenges across levels are duplicated as separate challenge docs.
  *
- * Idempotent — skips any document that already exists.
+ * Idempotent - skips any document that already exists.
  *
  * Usage (against real dev project):
  *   GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json \
@@ -26,10 +26,10 @@ const admin = require('firebase-admin');
 
 if (!admin.apps.length) {
     if (process.env.FIRESTORE_EMULATOR_HOST) {
-        // Emulator — no credentials needed.
+        // Emulator - no credentials needed.
         admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
     } else {
-        // Real project — accepts either:
+        // Real project - accepts either:
         //   1. GOOGLE_APPLICATION_CREDENTIALS pointing to a service account JSON, OR
         //   2. Application Default Credentials (run `firebase login` first).
         admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
@@ -207,7 +207,7 @@ const CHALLENGES = [
                 media_type: 'image',
                 media_url: IMG,
                 summary:
-                    'Begin your swing as the puck arrives. Let the pass power contribute to your shot — don\'t over-swing.',
+                    'Begin your swing as the puck arrives. Let the pass power contribute to your shot - don\'t over-swing.',
             },
         ],
         levels: [
@@ -393,7 +393,7 @@ async function seedChallenge(challenge) {
             updated_at: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        console.log(`  ✓  Seeded   ${challengeDocId} — "${level.name || challenge.name}" [Level ${level.level}]`);
+        console.log(`  ✓  Seeded   ${challengeDocId} - "${level.name || challenge.name}" [Level ${level.level}]`);
     }
 }
 

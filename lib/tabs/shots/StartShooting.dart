@@ -1554,7 +1554,7 @@ class _StartShootingState extends State<StartShooting> {
                         final auth = Provider.of<FirebaseAuth>(context, listen: false);
                         final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
 
-                        // Check connectivity — queue locally if offline
+                        // Check connectivity - queue locally if offline
                         final connectivity = await Connectivity().checkConnectivity();
                         final isOffline = connectivity.contains(ConnectivityResult.none);
                         if (isOffline) {
@@ -1576,7 +1576,7 @@ class _StartShootingState extends State<StartShooting> {
                               _chartCollapsed = true;
                             });
                             Fluttertoast.showToast(
-                              msg: 'No connection — session saved offline ($pending pending).',
+                              msg: 'No connection - session saved offline ($pending pending).',
                               toastLength: Toast.LENGTH_LONG,
                               gravity: ToastGravity.BOTTOM,
                               backgroundColor: Theme.of(context).cardTheme.color,

@@ -766,9 +766,9 @@ class _PlayerState extends State<Player> {
         String headline;
         if (roadComplete) {
           if (shots != null && shots == 10000) {
-            headline = 'road complete — exactly\n10,000 shots';
+            headline = 'road complete - exactly\n10,000 shots';
           } else if (shots != null) {
-            headline = 'road complete —\n${_fmtShots(shots)} shots';
+            headline = 'road complete -\n${_fmtShots(shots)} shots';
           } else {
             headline = 'road complete!';
           }

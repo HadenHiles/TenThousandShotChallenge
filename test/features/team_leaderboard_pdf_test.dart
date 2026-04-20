@@ -21,7 +21,7 @@ void main() {
     });
   });
 
-  group('UserProfile — practiceReminders and healthSync fields', () {
+  group('UserProfile - practiceReminders and healthSync fields', () {
     test('practiceReminders defaults to null when not provided', () {
       final profile = UserProfile('Alice', 'a@b.com', null, true, true, null, null);
       expect(profile.practiceReminders, isNull);

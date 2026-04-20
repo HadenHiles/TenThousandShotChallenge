@@ -186,7 +186,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         LocalNotificationService.tickActiveSession(DateTime.now().difference(current.startedAt));
       });
     } else {
-      // Session ended — stop timer and dismiss the notification.
+      // Session ended - stop timer and dismiss the notification.
       _cancelCRSessionTimer();
       LocalNotificationService.cancelActiveSession();
     }
@@ -926,7 +926,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             ),
             child: Column(
               children: [
-                // Panel header — switches between challenge mode and normal shooting.
+                // Panel header - switches between challenge mode and normal shooting.
                 activeChallengeSession.value != null
                     ? _buildChallengeSessionHeader(activeChallengeSession.value!)
                     : AnimatedBuilder(
@@ -1025,7 +1025,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                           );
                         },
                       ),
-                // Panel body — challenge session or normal shooting.
+                // Panel body - challenge session or normal shooting.
                 if (activeChallengeSession.value != null)
                   Expanded(
                     child: StartChallengeScreen(
@@ -1054,7 +1054,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             child: Builder(
               builder: (context) {
                 final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
-                // Train tab (index 0) is offline-capable — sessions are queued locally.
+                // Train tab (index 0) is offline-capable - sessions are queued locally.
                 if (!isOffline || _selectedIndex == 0) {
                   return _buildOnlineContent();
                 }

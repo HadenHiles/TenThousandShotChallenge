@@ -3,13 +3,13 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 /// The four visual states a challenge node can appear in on the snake map.
 enum ChallengeNodeState {
-  /// Level not yet reached — greyed out, lock icon, non-tappable.
+  /// Level not yet reached - greyed out, lock icon, non-tappable.
   locked,
 
   /// Level is current but this challenge has not been started yet.
   available,
 
-  /// The first incomplete challenge in the current level — gets extra glow emphasis.
+  /// The first incomplete challenge in the current level - gets extra glow emphasis.
   current,
 
   /// Challenge has been passed at this level (or level is already beaten).

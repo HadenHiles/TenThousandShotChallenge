@@ -13,8 +13,8 @@ class LeaderboardPlayer {
 }
 
 /// Generates and shares/prints a team leaderboard PDF.
-/// [team]    — the Team model (name, goal, dates)
-/// [players] — sorted list (highest shots first)
+/// [team]    - the Team model (name, goal, dates)
+/// [players] - sorted list (highest shots first)
 Future<void> shareTeamLeaderboardPdf(
   BuildContext context,
   Team team,
@@ -86,7 +86,7 @@ Future<void> shareTeamLeaderboardPdf(
                       _cell(players[i].name, accent: i == 0),
                       _cell(numberFmt.format(players[i].shots), alignRight: true, accent: i == 0),
                       _cell(
-                        (team.goalTotal ?? 0) > 0 ? '${(players[i].shots / team.goalTotal! * 100).toStringAsFixed(1)}%' : '—',
+                        (team.goalTotal ?? 0) > 0 ? '${(players[i].shots / team.goalTotal! * 100).toStringAsFixed(1)}%' : '-',
                         alignRight: true,
                       ),
                     ],
