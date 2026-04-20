@@ -1595,21 +1595,9 @@ class _StartShootingState extends State<StartShooting> {
                           auth,
                           firestore,
                         ).then((success) async {
-                          // Write workout to Apple Health / Google Fit if user opted in
-                          if (success) {
-                            final sessionEnd = DateTime.now();
-                            final sessionStart = sessionEnd.subtract(sessionService.currentDuration);
-                            final userDoc = await firestore.collection('users').doc(auth.currentUser?.uid).get();
-                            final healthSyncEnabled = (userDoc.data()?['health_sync'] as bool?) ?? false;
-                            if (healthSyncEnabled) {
-                              await HealthService.instance.writeSession(
-                                start: sessionStart,
-                                end: sessionEnd,
-                                shotCount: totalShots,
-                              );
-                            }
-                          }
-                          // Close the panel before reset; avoid hidden state that blocks reopening.
+                          // Always reset the session immediately — do NOT await
+                          // health sync first, as the health API can hang on
+                          // some Android devices (Google API Manager errors).
                           await widget.sessionPanelController.close();
                           await LocalNotificationService.cancelActiveSession();
                           sessionService.reset();
@@ -1618,6 +1606,31 @@ class _StartShootingState extends State<StartShooting> {
                               _shots = [];
                               _currentShotCount = preferences!.puckCount!;
                               _chartCollapsed = true;
+                            });
+                          }
+
+                          // Write workout to Apple Health / Google Fit if user opted in.
+                          // Fire-and-forget with a 10s timeout so a hanging API
+                          // cannot block the UI after the session has been reset.
+                          if (success) {
+                            Future(() async {
+                              try {
+                                final sessionEnd = DateTime.now();
+                                final sessionStart = sessionEnd.subtract(sessionService.currentDuration);
+                                final userDoc = await firestore.collection('users').doc(auth.currentUser?.uid).get();
+                                final healthSyncEnabled = (userDoc.data()?['health_sync'] as bool?) ?? false;
+                                if (healthSyncEnabled) {
+                                  await HealthService.instance
+                                      .writeSession(
+                                        start: sessionStart,
+                                        end: sessionEnd,
+                                        shotCount: totalShots,
+                                      )
+                                      .timeout(const Duration(seconds: 10), onTimeout: () => false);
+                                }
+                              } catch (_) {
+                                // Health sync is best-effort; never block the user.
+                              }
                             });
                           }
 
