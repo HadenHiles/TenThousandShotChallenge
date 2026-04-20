@@ -337,7 +337,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                 ? `${user.display_name} just took ${session.total} shots!`
                 : `Look out! ${user.display_name} is a shooting machine!`;
 
-            if (user != null && user.friend_notifications == true) {
+            if (user != null && user.friend_notifications !== false) {
                 // Fan out a notification to every mutual teammate who has opted in.
                 await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
                     teammates = tDoc.docs;
@@ -371,8 +371,8 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                                 }
                                 // 'off' → shouldNotify stays false
                             } else {
-                                // Legacy logic: simple boolean opt-in.
-                                shouldNotify = friend?.friend_notifications === true;
+                                // Legacy logic: default to notifying unless explicitly opted out.
+                                shouldNotify = friend?.friend_notifications !== false;
                             }
 
                             if (shouldNotify && fcmToken != null) {
@@ -406,7 +406,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
                 return true;
             } else {
-                logger.warn("user.friend_notifications is false or user is null, skipping friend notifications");
+                logger.warn("user.friend_notifications is explicitly false or user is null, skipping friend notifications");
                 return null;
             }
         }).catch((err) => {
