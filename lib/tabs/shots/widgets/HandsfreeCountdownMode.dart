@@ -134,7 +134,7 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
     _startArcUpdate();
   }
 
-  /// Smooth arc drain — updates ~30 fps.
+  /// Smooth arc drain - updates ~30 fps.
   void _startArcUpdate() {
     _arcTimer?.cancel();
     _arcTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
@@ -213,7 +213,7 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
 
   // ── WAV generator ─────────────────────────────────────────────────────
   /// Generates a short 880 Hz sine-wave beep as raw WAV bytes.
-  /// No asset file required — the sound is synthesised at runtime.
+  /// No asset file required - the sound is synthesised at runtime.
   static Uint8List _generateBeepWav({
     int frequency = 880,
     int durationMs = 70,
@@ -245,7 +245,7 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
     // data chunk
     writeAscii(36, 'data');
     buffer.setUint32(40, sampleCount * 2, Endian.little);
-    // PCM samples — 880 Hz sine wave with square-root fade out
+    // PCM samples - 880 Hz sine wave with square-root fade out
     for (var i = 0; i < sampleCount; i++) {
       final t = i / sampleRate;
       final envelope = sqrt(1.0 - i / sampleCount);
@@ -346,7 +346,7 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
 
         const Spacer(),
 
-        // ── Arc circle — progress display ─────────────────────────────
+        // ── Arc circle - progress display ─────────────────────────────
         ScaleTransition(
           scale: _pulseAnimation,
           child: SizedBox(

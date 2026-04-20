@@ -2263,7 +2263,7 @@ export const sendPracticeReminders = onSchedule(
                 .limit(1)
                 .get();
 
-            if (!sessionsSnap.empty) return; // practised recently — no reminder needed
+            if (!sessionsSnap.empty) return; // practised recently - no reminder needed
 
             try {
                 await messaging.send({

@@ -518,7 +518,7 @@ class _CompareStatsState extends State<CompareStats> {
                                       border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
                                     ),
                                     child: Text(
-                                      '$subject $verb sessions without accuracy tracking in this scope — those shot types are shown as —.',
+                                      '$subject $verb sessions without accuracy tracking in this scope - those shot types are shown as -.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13,
@@ -815,7 +815,7 @@ class _CompareStatsState extends State<CompareStats> {
         children: [
           Row(
             children: [
-              _StatValue(value: myPct != null ? '${myPct.round()}%' : '—', highlight: myWins, color: color),
+              _StatValue(value: myPct != null ? '${myPct.round()}%' : '-', highlight: myWins, color: color),
               Expanded(
                 child: Center(
                   child: Text(
@@ -829,7 +829,7 @@ class _CompareStatsState extends State<CompareStats> {
                   ),
                 ),
               ),
-              _StatValue(value: frPct != null ? '${frPct.round()}%' : '—', highlight: frWins, alignRight: true, color: color),
+              _StatValue(value: frPct != null ? '${frPct.round()}%' : '-', highlight: frWins, alignRight: true, color: color),
             ],
           ),
           const SizedBox(height: 4),

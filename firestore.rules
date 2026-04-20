@@ -1,5 +1,5 @@
 rules_version = '2';
-// Reference copy — deploy from the Flutter app repo:
+// Reference copy - deploy from the Flutter app repo:
 //   firebase deploy --only firestore:rules
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -132,14 +132,14 @@ service cloud.firestore {
       }
     }
 
-    // Challenger Road Badges — read by all authenticated users (Flutter app
+    // Challenger Road Badges - read by all authenticated users (Flutter app
     // displays badges); write/delete restricted to content admins (admin UI).
     match /challenger_road_badges/{badgeId} {
       allow read: if request.auth != null;
       allow write, delete: if isContentAdmin();
     }
 
-    // Per-user Challenger Road state — owner read/write only.
+    // Per-user Challenger Road state - owner read/write only.
     match /users/{userId}/challenger_road/{docId} {
       allow read, write: if request.auth.uid == userId;
     }

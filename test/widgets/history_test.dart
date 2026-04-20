@@ -91,7 +91,7 @@ void main() {
       );
     }
 
-    // Do NOT use tester.pump(duration) — advancing fake timers fires Firestore/rxdart
+    // Do NOT use tester.pump(duration) - advancing fake timers fires Firestore/rxdart
     // stream callbacks that create an infinite microtask chain at teardown.
     Future<void> pump(WidgetTester tester, [int times = 3]) async {
       for (int i = 0; i < times; i++) {

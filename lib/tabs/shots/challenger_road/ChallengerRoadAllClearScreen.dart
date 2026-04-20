@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Shown when the player advances past the last currently-available level.
 ///
-/// This is the "all challenges complete" edge case — admin hasn't published
+/// This is the "all challenges complete" edge case - admin hasn't published
 /// Level N+1 content yet. The player should return to the map and wait for
 /// new challenges to be added.
 class ChallengerRoadAllClearScreen extends StatelessWidget {

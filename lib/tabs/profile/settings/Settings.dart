@@ -110,7 +110,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         if (rawMode != null && ['all', 'selected', 'off'].contains(rawMode)) {
           _friendNotificationMode = rawMode;
         } else {
-          // Migrate from legacy bool — default to 'all' so existing users keep receiving notifications.
+          // Migrate from legacy bool - default to 'all' so existing users keep receiving notifications.
           final legacyBool = snapshot.data()?['friend_notifications'] as bool?;
           _friendNotificationMode = (legacyBool == false) ? 'off' : 'all';
           // Persist the migrated value so the function logic can use the new field immediately.

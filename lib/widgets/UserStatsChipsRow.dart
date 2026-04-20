@@ -316,7 +316,7 @@ class _StatChip extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Label — auto-scales to fit without truncating
+            // Label - auto-scales to fit without truncating
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(

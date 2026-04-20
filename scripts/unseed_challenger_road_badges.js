@@ -3,7 +3,7 @@
  * Remove all seeded challenger_road_badges documents from Firestore.
  *
  * Only deletes documents whose IDs are present in the known badge catalog
- * below — will not blindly wipe the entire collection in case you have
+ * below - will not blindly wipe the entire collection in case you have
  * added custom admin-only documents.
  *
  * Usage (against real dev project):

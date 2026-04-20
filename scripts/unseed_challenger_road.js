@@ -30,7 +30,7 @@ if (!admin.apps.length) {
     if (process.env.FIRESTORE_EMULATOR_HOST) {
         admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });
     } else {
-        // Real project — accepts either:
+        // Real project - accepts either:
         //   1. GOOGLE_APPLICATION_CREDENTIALS pointing to a service account JSON, OR
         //   2. Application Default Credentials (run `firebase login` first).
         admin.initializeApp({ projectId: 'ten-thousand-puck-challenge' });

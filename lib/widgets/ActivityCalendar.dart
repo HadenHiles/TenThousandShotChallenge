@@ -267,7 +267,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
           ),
         ),
         const SizedBox(height: 10),
-        // Streak badges + legend — outside the scroll so they pin to the card width.
+        // Streak badges + legend - outside the scroll so they pin to the card width.
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

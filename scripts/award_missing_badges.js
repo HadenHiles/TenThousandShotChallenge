@@ -25,7 +25,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Badge catalog — must stay in sync with badgeCatalog in ChallengerRoadService.dart.
+// Badge catalog - must stay in sync with badgeCatalog in ChallengerRoadService.dart.
 // Only the IDs matter here; we just need to know which ones are valid.
 const VALID_BADGE_IDS = new Set([
     'fresh_laces',
@@ -33,7 +33,7 @@ const VALID_BADGE_IDS = new Set([
     'clean_read',
     'level_clear',
     'made_the_show',
-    'sharp',               // removed from catalog — kept so existing earners aren't pruned
+    'sharp',               // removed from catalog - kept so existing earners aren't pruned
     'scouting_report',
     'the_rematch',
     'dialed_in',
@@ -41,7 +41,7 @@ const VALID_BADGE_IDS = new Set([
     'the_comeback_kid',
     'ice_time_earned',
     'team_captain',
-    'playoff_mode',        // removed from catalog — kept so existing earners aren't pruned
+    'playoff_mode',        // removed from catalog - kept so existing earners aren't pruned
     'the_general',
     'first_bucket',
     'building_a_barn',
@@ -62,7 +62,7 @@ const VALID_BADGE_IDS = new Set([
     'road_dog',
     'all_time_great',
     'bender',
-    // Contextually awarded — included so they're not pruned if present:
+    // Contextually awarded - included so they're not pruned if present:
     'no_warmup_needed',
     'breakaway',
     'freight_train',
@@ -70,7 +70,7 @@ const VALID_BADGE_IDS = new Set([
     'lights_out',
     'battle_tested',
     'game_7',
-    'ghosts_in_the_machine', // removed from catalog — kept so existing earners aren't pruned
+    'ghosts_in_the_machine', // removed from catalog - kept so existing earners aren't pruned
     'old_grudge',
     'redemption_arc',
     'pigeon',
@@ -342,7 +342,7 @@ async function main() {
     console.log('Total earned after award:', earned);
 
     if (newIds.length === 0 && !hadLegacy) {
-        console.log('\nNo changes needed — badges are already up to date.');
+        console.log('\nNo changes needed - badges are already up to date.');
         return;
     }
 

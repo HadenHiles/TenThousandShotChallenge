@@ -14,7 +14,7 @@ class ChallengerRoadAttempt {
   /// Challenger Road-scoped shot counter. Resets to 0 each time 10,000 is reached.
   final int challengerRoadShotCount;
 
-  /// Cumulative shots taken this attempt — never resets. Used for badge math.
+  /// Cumulative shots taken this attempt - never resets. Used for badge math.
   final int totalShotsThisAttempt;
 
   /// How many times the 10k milestone has been hit in this attempt.
@@ -26,12 +26,12 @@ class ChallengerRoadAttempt {
 
   /// Levels 1..inheritedUnlockedLevel were pre-unlocked when this attempt was
   /// created (carried over from the previous attempt's progress). A value of 0
-  /// means no inherited unlocks — this is the player's first attempt, or their
+  /// means no inherited unlocks - this is the player's first attempt, or their
   /// previous attempt had no level completions to carry forward.
   ///
   /// When > 0 the player chose either to start from Level 1 (completionist
   /// path) or skip to [startingLevel] (which may be > 1). Used for badge
-  /// tracking (e.g. "All Stars" — completing the full road from Level 1 despite
+  /// tracking (e.g. "All Stars" - completing the full road from Level 1 despite
   /// having levels to skip).
   final int inheritedUnlockedLevel;
 

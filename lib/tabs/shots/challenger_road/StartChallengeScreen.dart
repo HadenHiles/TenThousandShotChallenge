@@ -220,7 +220,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         shots: List.unmodifiable(_shots),
       );
 
-      // Save to ChallengerRoad sub-collection — this is the critical write.
+      // Save to ChallengerRoad sub-collection - this is the critical write.
       await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
 
       // Save to the global shooting session so the main iteration counter
@@ -299,7 +299,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         );
         if (!mounted) return;
         if (nextLevelChallenges.isEmpty) {
-          // All currently available challenges conquered — return to the map
+          // All currently available challenges conquered - return to the map
           // which will auto-scroll to the victory banner and fire confetti.
           sessionPanelController.close();
           widget.onDismiss?.call();
@@ -307,7 +307,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         }
       }
 
-      // Badge celebration — aggregate everything earned in this flow (session,
+      // Badge celebration - aggregate everything earned in this flow (session,
       // milestone, and level advancement) and show once.
       final afterSummary = await service.getUserSummary(widget.userId);
       final newlyUnlockedIds = afterSummary.badges.where((id) => !beforeBadgeIds.contains(id)).toSet();
@@ -406,7 +406,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Rendered inside the SlidingUpPanel — no Scaffold, no AppBar.
+    // Rendered inside the SlidingUpPanel - no Scaffold, no AppBar.
     return Column(
       children: [
         _buildChallengeDetailsLauncher(),
@@ -539,7 +539,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           ),
         ),
 
-        // Finish button — sticky at the bottom of the panel.
+        // Finish button - sticky at the bottom of the panel.
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -716,7 +716,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     return _shots.asMap().entries.map((entry) {
       final i = entry.key;
       final s = entry.value;
-      // Most recent is index 0 — try number counts from oldest.
+      // Most recent is index 0 - try number counts from oldest.
       final tryNumber = _shots.length - i;
       final count = s.count ?? 1;
       final hit = s.targetsHit ?? 0;

@@ -575,7 +575,7 @@ class _PermissionRow extends StatelessWidget {
 }
 
 /// Shown to existing users who are missing permissions after an app update.
-/// Displays only the permissions page — no full intro flow.
+/// Displays only the permissions page - no full intro flow.
 class PermissionsScreen extends StatefulWidget {
   const PermissionsScreen({super.key});
 
@@ -640,12 +640,12 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              _PermissionRow(icon: Icons.camera_alt_rounded, label: 'Camera — scan QR codes to connect with teammates'),
+              _PermissionRow(icon: Icons.camera_alt_rounded, label: 'Camera - scan QR codes to connect with teammates'),
               const SizedBox(height: 10),
-              _PermissionRow(icon: Icons.notifications_active_rounded, label: 'Notifications — daily practice reminders & streak alerts'),
+              _PermissionRow(icon: Icons.notifications_active_rounded, label: 'Notifications - daily practice reminders & streak alerts'),
               if (Platform.isAndroid) ...[
                 const SizedBox(height: 10),
-                _PermissionRow(icon: Icons.alarm_rounded, label: 'Exact alarms — deliver reminders at your chosen time'),
+                _PermissionRow(icon: Icons.alarm_rounded, label: 'Exact alarms - deliver reminders at your chosen time'),
               ],
               const SizedBox(height: 32),
               if (_granted)

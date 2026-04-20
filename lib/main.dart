@@ -91,7 +91,7 @@ Future<void> main() async {
 
   // Get the user's FCM token
   // Note: the OS notification permission dialog is now requested during the
-  // onboarding intro / permissions screen — not here at cold start.
+  // onboarding intro / permissions screen - not here at cold start.
   firebaseMessaging.getToken().then((token) {
     if (token != null && preferences!.fcmToken != token) {
       prefs.setString('fcm_token', token);
@@ -156,7 +156,7 @@ Future<void> main() async {
 
 /*
  * Called when a background FCM message is received.
- * Note: data-only messages have no notification field — guard against null.
+ * Note: data-only messages have no notification field - guard against null.
  */
 Future<void> _messageHandler(RemoteMessage message) async {
   final body = message.notification?.body ?? message.data['body'];

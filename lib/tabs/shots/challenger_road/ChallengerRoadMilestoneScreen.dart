@@ -7,7 +7,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 /// Shown from [StartChallengeScreen] when [ChallengerRoadMilestoneResult.didHitMilestone]
 /// is true. The user taps "Keep Going!" to continue to the result screen.
 ///
-/// Uses pure Flutter animations — no external Rive/Lottie dependency.
+/// Uses pure Flutter animations - no external Rive/Lottie dependency.
 ///
 /// Usage:
 /// ```dart

@@ -23,7 +23,7 @@ class ChallengeSession {
   /// True when shotsMade >= shotsToPass.
   final bool passed;
 
-  /// Individual shot records — reuses the existing Shots model.
+  /// Individual shot records - reuses the existing Shots model.
   final List<Shots> shots;
 
   DocumentReference? reference;

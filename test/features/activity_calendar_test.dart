@@ -49,7 +49,7 @@ void main() {
       expect(find.textContaining('streak', findRichText: true), findsWidgets);
     });
 
-    testWidgets('reflects session data — shows non-zero streak on training day', (tester) async {
+    testWidgets('reflects session data - shows non-zero streak on training day', (tester) async {
       // Insert today's session into fakeFirestore
       final today = DateTime.now();
       final iterRef = fakeFirestore.collection('iterations').doc('uid_cal').collection('iterations').doc('iter1');
