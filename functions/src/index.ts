@@ -6,75 +6,19 @@ import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
-import * as https from "https";
-import { google } from "googleapis";
-
-const PROJECT_ID = 'ten-thousand-puck-challenge';
-const HOST = 'fcm.googleapis.com';
-const PATH = '/v1/projects/' + PROJECT_ID + '/messages:send';
-const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
-const SCOPES = [MESSAGING_SCOPE];
-
-function getAccessToken() {
-    return new Promise(function (resolve, reject) {
-        const key = require('../service-account.json');
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            undefined,
-            key.private_key,
-            SCOPES,
-            undefined
-        );
-        jwtClient.authorize(function (err: any, tokens: any) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(tokens.access_token);
-        });
-    });
-}
 
 /**
- * Send HTTP request to FCM with given message.
+ * Send an FCM message using the Firebase Admin SDK.
+ * Uses the Cloud Function's default service account credentials automatically —
+ * no separate service-account.json file is required.
  *
- * @param {object} fcmMessage will make up the body of the request.
- * Returns a Promise that resolves when the HTTP response has been fully received.
+ * @param {object} fcmMessage Object with a top-level "message" key matching the
+ *   FCM HTTP v1 message structure (token, notification, android, apns, …).
  */
-function sendFcmMessage(fcmMessage: any): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        getAccessToken().then(function (accessToken) {
-            const options = {
-                hostname: HOST,
-                path: PATH,
-                method: 'POST',
-                // [START use_access_token]
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken
-                }
-                // [END use_access_token]
-            };
-
-            const request = https.request(options, function (resp: any) {
-                resp.setEncoding('utf8');
-                resp.on('data', function (data: any) {
-                    logger.log('Message sent to Firebase for delivery, response:');
-                    logger.log(data);
-                });
-                resp.on('end', () => resolve());
-                resp.on('error', (err: any) => reject(err));
-            });
-
-            request.on('error', function (err: any) {
-                logger.log('Unable to send message to Firebase');
-                logger.error(err);
-                reject(err);
-            });
-
-            request.write(JSON.stringify(fcmMessage));
-            request.end();
-        }).catch(reject);
-    });
+async function sendFcmMessage(fcmMessage: any): Promise<void> {
+    const messagePayload = fcmMessage.message;
+    const response = await admin.messaging().send(messagePayload);
+    logger.log('FCM message sent successfully, messageId:', response);
 }
 
 initializeApp({ credential: applicationDefault() });
@@ -337,7 +281,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                 ? `${user.display_name} just took ${session.total} shots!`
                 : `Look out! ${user.display_name} is a shooting machine!`;
 
-            if (user != null && user.friend_notifications !== false) {
+            if (user != null) {
                 // Fan out a notification to every mutual teammate who has opted in.
                 await db.collection(`teammates/${context.params.userId}/teammates`).get().then(async (tDoc) => {
                     teammates = tDoc.docs;
@@ -406,7 +350,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
                 return true;
             } else {
-                logger.warn("user.friend_notifications is explicitly false or user is null, skipping friend notifications");
+                logger.warn("user is null, skipping friend notifications");
                 return null;
             }
         }).catch((err) => {
