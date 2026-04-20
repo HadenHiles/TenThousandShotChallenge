@@ -24,7 +24,7 @@ class Iteration {
         startDate = map['start_date']?.toDate(),
         targetDate = map['target_date']?.toDate(),
         endDate = map['end_date']?.toDate(),
-        totalDuration = Duration(seconds: map['total_duration']),
+        totalDuration = Duration(seconds: (map['total_duration'] as int?) ?? 0),
         total = map['total'],
         totalWrist = map['total_wrist'],
         totalSnap = map['total_snap'],

@@ -90,7 +90,6 @@ Future<bool> saveShootingSession(
     bool result = false;
     DocumentReference? iterationRef;
     if (snapshot.docs.isNotEmpty) {
-      iteration = Iteration.fromSnapshot(snapshot.docs[0]);
       iterationRef = snapshot.docs[0].reference;
       result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
     } else {
@@ -137,7 +136,7 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
         iteration.startDate,
         iteration.targetDate,
         iteration.endDate,
-        (iteration.totalDuration! + shootingSession.duration!),
+        ((iteration.totalDuration ?? Duration.zero) + (shootingSession.duration ?? Duration.zero)),
         (iteration.total! + shootingSession.total!),
         (iteration.totalWrist! + shootingSession.totalWrist!),
         (iteration.totalSnap! + shootingSession.totalSnap!),
