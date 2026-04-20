@@ -35,7 +35,6 @@ class LocalNotificationService {
   // ── Fixed notification IDs so repeating ones can be cancelled ────────────
   static const int _dailyReminderId = 1;
   static const int _streakAtRiskId = 2;
-  static const int _weeklyProgressId = 3;
   static const int _activeSessionId = 10;
   // Immediate notifications use base + (counter % 50) so they don't stomp each other
   static const int _milestoneBase = 300;
@@ -359,36 +358,6 @@ class LocalNotificationService {
       _details(_achievementChannelId, 'Achievements', importance: Importance.high, priority: Priority.high),
       payload: 'achievements',
     );
-  }
-
-  // ── 6. Weekly wrap-up (Pro only, Friday 6 PM, repeating) ─────────────────
-
-  static Future<void> scheduleWeeklyProgress() async {
-    await _plugin.cancel(_weeklyProgressId);
-
-    final prefs = await SharedPreferences.getInstance();
-    if (!(prefs.getBool('weekly_progress_notifications') ?? true)) return;
-
-    final now = tz.TZDateTime.now(tz.local);
-    int daysUntilFriday = (DateTime.friday - now.weekday + 7) % 7;
-    if (daysUntilFriday == 0 && now.hour >= 18) daysUntilFriday = 7;
-
-    final scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day + daysUntilFriday, 18, 0);
-
-    await _plugin.zonedSchedule(
-      _weeklyProgressId,
-      'Weekly Wrap-Up 📊',
-      'Check how many shots you logged this week. Are you on track for your goal?',
-      scheduled,
-      _details(_motivationChannelId, 'Motivation'),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-      payload: 'history',
-    );
-  }
-
-  static Future<void> cancelWeeklyProgress() async {
-    await _plugin.cancel(_weeklyProgressId);
   }
 
   // ── Cancel all ────────────────────────────────────────────────────────────

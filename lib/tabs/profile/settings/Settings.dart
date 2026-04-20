@@ -43,7 +43,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _localPracticeReminders = true;
   bool _streakNotifications = true;
   bool _activeSessionNotification = true;
-  bool _weeklyProgressNotifications = true;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 17, minute: 0); // 5 PM default
 
   // Simulated subscription level (replace with RevenueCat or your backend)
@@ -95,7 +94,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _localPracticeReminders = prefs.getBool('local_practice_reminders') ?? true;
       _streakNotifications = prefs.getBool('streak_notifications') ?? true;
       _activeSessionNotification = prefs.getBool('active_session_notification') ?? true;
-      _weeklyProgressNotifications = prefs.getBool('weekly_progress_notifications') ?? true;
       final h = prefs.getInt('reminder_hour') ?? 17;
       final m = prefs.getInt('reminder_minute') ?? 0;
       _reminderTime = TimeOfDay(hour: h, minute: m);
@@ -772,49 +770,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               await prefs.setBool('active_session_notification', value);
                               if (mounted) setState(() => _activeSessionNotification = value);
                               if (!value) await LocalNotificationService.cancelActiveSession();
-                            },
-                          ),
-                          SettingsTile.switchTile(
-                            title: Row(
-                              children: [
-                                Text('Weekly Wrap-Up', style: Theme.of(context).textTheme.bodyLarge),
-                                const SizedBox(width: 8),
-                                if (_subscriptionLevel != 'pro')
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      'PRO',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            description: Text(
-                              'Friday 6 PM reminder to review your week\'s shot count',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(Icons.bar_chart_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                            enabled: _subscriptionLevel == 'pro',
-                            initialValue: _weeklyProgressNotifications && _subscriptionLevel == 'pro',
-                            onToggle: (bool value) async {
-                              if (_subscriptionLevel != 'pro') return;
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.setBool('weekly_progress_notifications', value);
-                              if (mounted) setState(() => _weeklyProgressNotifications = value);
-                              if (value) {
-                                await LocalNotificationService.scheduleWeeklyProgress();
-                              } else {
-                                await LocalNotificationService.cancelWeeklyProgress();
-                              }
                             },
                           ),
                         ],
