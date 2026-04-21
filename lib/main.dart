@@ -113,12 +113,16 @@ Future<void> main() async {
   // in-app banner so no system notification is added to the tray.
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     final notification = message.notification;
-    if (notification != null) {
-      _showInAppBanner(
-        title: notification.title ?? 'New notification',
-        body: notification.body,
-      );
+    if (notification == null) return;
+    final title = notification.title ?? 'New notification';
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      _showInAppBanner(title: title, body: notification.body);
+      return;
     }
+    // Wait until the Firestore notification doc actually lands before
+    // showing the banner so the list is already populated when tapped.
+    _showBannerWhenReady(uid: uid, title: title, body: notification.body);
   });
 
   // Listen for firebase background messages
@@ -175,16 +179,51 @@ Future<void> _messageClickHandler(RemoteMessage message) async {
   LocalNotificationService.pendingRoute = '/notifications';
 }
 
-/// Show a top-of-screen in-app notification banner for a foreground FCM message.
-/// Delayed slightly so the Firestore notification document has time to propagate
-/// to the client before the user taps and the list opens.
+/// Show the in-app banner immediately (used as a fallback when uid is unknown).
 void _showInAppBanner({required String title, String? body}) {
-  Future.delayed(const Duration(milliseconds: 1500), () {
-    showOverlayNotification(
-      (context) => _FcmBanner(title: title, body: body),
-      duration: const Duration(seconds: 6),
-    );
+  showOverlayNotification(
+    (context) => _FcmBanner(title: title, body: body),
+    duration: const Duration(seconds: 6),
+  );
+}
+
+/// Listen for the Firestore notification document created by the Cloud Function
+/// and show the banner as soon as it arrives. Falls back to showing after 20s
+/// if Firestore is slow.
+void _showBannerWhenReady({
+  required String uid,
+  required String title,
+  String? body,
+}) {
+  // Accept any notification doc created within the last 60 seconds so we're
+  // tolerant of minor clock skew between server and client.
+  final cutoff = DateTime.now().subtract(const Duration(seconds: 60));
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? sub;
+  Timer? timer;
+
+  void show() {
+    timer?.cancel();
+    sub?.cancel();
+    _showInAppBanner(title: title, body: body);
+  }
+
+  sub = FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('notifications')
+      .orderBy('created_at', descending: true)
+      .limit(1)
+      .snapshots()
+      .listen((snapshot) {
+    if (snapshot.docs.isEmpty) return;
+    final ts = snapshot.docs.first.data()['created_at'];
+    if (ts is Timestamp && ts.toDate().isAfter(cutoff)) {
+      show();
+    }
   });
+
+  // Fallback: show after 20s even if Firestore hasn't synced.
+  timer = Timer(const Duration(seconds: 20), show);
 }
 
 Future<void> initRevenueCat(String? appUserID) async {
