@@ -9,7 +9,10 @@ import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileSecti
 /// Full-screen Challenger Road profile view,
 /// wrapping the existing [ChallengerRoadProfileSection] widget.
 class ChallengerRoadProfileScreen extends StatefulWidget {
-  const ChallengerRoadProfileScreen({super.key});
+  const ChallengerRoadProfileScreen({super.key, this.highlightBadgeId});
+
+  /// When set, the badge grid scrolls to this badge and briefly highlights it.
+  final String? highlightBadgeId;
 
   @override
   State<ChallengerRoadProfileScreen> createState() => _ChallengerRoadProfileScreenState();
@@ -106,6 +109,7 @@ class _ChallengerRoadProfileScreenState extends State<ChallengerRoadProfileScree
                   userId: user.uid,
                   isPro: _subscriptionLevel == 'pro',
                   isEditable: true,
+                  highlightBadgeId: widget.highlightBadgeId,
                   onGoProTap: () async {
                     await presentPaywallIfNeeded(context);
                   },
