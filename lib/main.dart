@@ -112,20 +112,25 @@ Future<void> main() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     final notification = message.notification;
     if (notification != null) {
-      final isFriendSession = message.data['type'] == 'friend_session';
       LocalNotificationService.showForegroundMessage(
         id: message.hashCode,
         title: notification.title ?? 'New notification',
         body: notification.body,
-        payload: isFriendSession ? 'notifications' : 'train',
+        payload: 'notifications',
       );
     }
   });
 
   // Listen for firebase background messages
   FirebaseMessaging.onBackgroundMessage(_messageHandler);
-  // Listen for message clicks
+  // Listen for message clicks (app in background, not terminated)
   FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
+
+  // Handle cold-start: app was terminated and launched by tapping a notification.
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    LocalNotificationService.pendingRoute = '/notifications';
+  }
 
   runApp(
     MultiProvider(
@@ -166,14 +171,8 @@ Future<void> _messageHandler(RemoteMessage message) async {
 }
 
 Future<void> _messageClickHandler(RemoteMessage message) async {
-  // Route friend session notification taps to the in-app notification centre.
-  if (message.data['type'] == 'friend_session') {
-    // The router may not be set yet if the app was launched cold from the notification.
-    // Store the pending route and let the Home widget pick it up on first navigation.
-    LocalNotificationService.pendingRoute = '/notifications';
-    return;
-  }
-  print('FCM message tapped: ${message.data}');
+  // Route all FCM notification taps to the in-app notification centre.
+  LocalNotificationService.pendingRoute = '/notifications';
 }
 
 Future<void> initRevenueCat(String? appUserID) async {
