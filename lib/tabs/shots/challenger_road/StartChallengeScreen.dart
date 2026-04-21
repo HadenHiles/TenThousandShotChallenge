@@ -320,11 +320,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           // Write an in-app notification for each newly earned badge.
           for (final badge in newBadges) {
             try {
-              await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(widget.userId)
-                  .collection('notifications')
-                  .add({
+              await FirebaseFirestore.instance.collection('users').doc(widget.userId).collection('notifications').add({
                 'type': 'cr_badge_earned',
                 'from_uid': widget.userId,
                 'from_name': '',
