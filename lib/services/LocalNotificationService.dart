@@ -412,8 +412,8 @@ class LocalNotificationService {
     _foregroundMessageIds.clear();
   }
 
-  /// Navigate to [route] immediately if the router is ready, or queue it for
-  /// when the router becomes available (e.g. on cold start).
+  /// Navigate to [route] using router.go() (replaces current stack).
+  /// Queues the route if the router is not yet ready (e.g. cold start).
   static void navigateTo(String route) {
     final router = _router;
     if (router == null) {
@@ -421,5 +421,16 @@ class LocalNotificationService {
       return;
     }
     router.go(route);
+  }
+
+  /// Push [route] onto the navigation stack so the back button still works.
+  /// Falls back to navigateTo if the router is not yet ready.
+  static void pushTo(String route) {
+    final router = _router;
+    if (router == null) {
+      pendingRoute = route;
+      return;
+    }
+    router.push(route);
   }
 }

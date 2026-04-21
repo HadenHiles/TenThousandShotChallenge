@@ -176,11 +176,15 @@ Future<void> _messageClickHandler(RemoteMessage message) async {
 }
 
 /// Show a top-of-screen in-app notification banner for a foreground FCM message.
+/// Delayed slightly so the Firestore notification document has time to propagate
+/// to the client before the user taps and the list opens.
 void _showInAppBanner({required String title, String? body}) {
-  showOverlayNotification(
-    (context) => _FcmBanner(title: title, body: body),
-    duration: const Duration(seconds: 6),
-  );
+  Future.delayed(const Duration(milliseconds: 1500), () {
+    showOverlayNotification(
+      (context) => _FcmBanner(title: title, body: body),
+      duration: const Duration(seconds: 6),
+    );
+  });
 }
 
 Future<void> initRevenueCat(String? appUserID) async {
@@ -395,7 +399,7 @@ class _FcmBanner extends StatelessWidget {
             onTap: () {
               OverlaySupportEntry.of(context)!.dismiss();
               LocalNotificationService.cancelForegroundMessages();
-              LocalNotificationService.navigateTo('/notifications');
+              LocalNotificationService.pushTo('/notifications');
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
