@@ -1484,7 +1484,7 @@ class ChallengerRoadService {
         'read': false,
       });
     } catch (_) {
-      // Non-fatal — notification failure should never block level progression.
+      // Non-fatal - notification failure should never block level progression.
     }
 
     return attempt.copyWith(

@@ -10,7 +10,7 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 class NotificationBell extends StatelessWidget {
   const NotificationBell({super.key, this.color});
 
-  /// Icon colour — defaults to the app bar's onPrimary colour.
+  /// Icon colour - defaults to the app bar's onPrimary colour.
   final Color? color;
 
   @override

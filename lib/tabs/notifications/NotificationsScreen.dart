@@ -243,7 +243,7 @@ class _NotificationTile extends StatelessWidget {
       } else if (n.isWeeklyAvailable || n.isAchievementCompleted) {
         context.push(AppRoutePaths.profileAchievements);
       } else {
-        // friend_session / friend_challenge — go to player profile
+        // friend_session / friend_challenge - go to player profile
         context.push(AppRoutePaths.playerPathFor(n.fromUid));
       }
     }
@@ -260,7 +260,7 @@ class _NotificationTile extends StatelessWidget {
       avatarFg = Colors.amber[700]!;
       avatarIcon = Icons.emoji_events_rounded;
       headline = '${n.fromName} passed a Challenger Road challenge';
-      subtitleLine = 'Level ${n.level ?? '?'} — ${n.challengeName ?? 'Challenger Road'}';
+      subtitleLine = 'Level ${n.level ?? '?'} - ${n.challengeName ?? 'Challenger Road'}';
     } else if (n.isInviteReceived) {
       avatarBg = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15);
       avatarFg = Theme.of(context).colorScheme.secondary;
