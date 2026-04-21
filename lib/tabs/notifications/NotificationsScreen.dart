@@ -231,7 +231,14 @@ class _NotificationTile extends StatelessWidget {
       _markRead();
       if (n.isInviteReceived || n.isInviteAccepted) {
         context.push(AppRoutePaths.playerPathFor(n.fromUid));
-      } else if (n.isBadgeEarned || n.isLevelCompleted) {
+      } else if (n.isBadgeEarned) {
+        final badgeId = n.badgeId;
+        if (badgeId != null && badgeId.isNotEmpty) {
+          context.push(AppRoutePaths.profileChallengerRoadFor(badgeId));
+        } else {
+          context.push(AppRoutePaths.profileChallengerRoad);
+        }
+      } else if (n.isLevelCompleted) {
         context.push(AppRoutePaths.challengerRoad);
       } else if (n.isWeeklyAvailable || n.isAchievementCompleted) {
         context.push(AppRoutePaths.profileAchievements);

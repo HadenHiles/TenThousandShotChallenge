@@ -15,6 +15,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
     required this.userId,
     required this.isPro,
     this.isEditable = false,
+    this.highlightBadgeId,
     this.onGoProTap,
   });
 
@@ -24,6 +25,9 @@ class ChallengerRoadProfileSection extends StatelessWidget {
   /// When true, shows a "PLAYER CARD" featured-badge showcase with an edit
   /// button - only meaningful when this is the signed-in user's own profile.
   final bool isEditable;
+
+  /// When set, the badge grid scrolls to this badge ID and pulses it.
+  final String? highlightBadgeId;
   final VoidCallback? onGoProTap;
 
   @override
@@ -99,6 +103,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
                     earnedBadges: summary.badges,
                     summary: summary,
                     badgeDefs: badgeDefs,
+                    highlightBadgeId: highlightBadgeId,
                   ),
                 ],
               );
@@ -354,11 +359,13 @@ class _BadgeWrapGrid extends StatelessWidget {
     required this.earnedBadges,
     required this.summary,
     required this.badgeDefs,
+    this.highlightBadgeId,
   });
 
   final List<String> earnedBadges;
   final ChallengerRoadUserSummary summary;
   final List<ChallengerRoadBadgeDefinition> badgeDefs;
+  final String? highlightBadgeId;
 
   List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
     return ChallengerRoadService.buildDisplayBadgeDefs(
@@ -419,7 +426,12 @@ class _BadgeWrapGrid extends StatelessWidget {
               final earned = earnedBadges.contains(def.id);
               return Align(
                 alignment: Alignment.topCenter,
-                child: _BadgeChip(def: def, earned: earned, summary: summary),
+                child: _BadgeChip(
+                  def: def,
+                  earned: earned,
+                  summary: summary,
+                  highlight: highlightBadgeId != null && def.id == highlightBadgeId,
+                ),
               );
             },
           ),
@@ -430,11 +442,65 @@ class _BadgeWrapGrid extends StatelessWidget {
   }
 }
 
-class _BadgeChip extends StatelessWidget {
-  const _BadgeChip({required this.def, required this.earned, required this.summary});
+class _BadgeChip extends StatefulWidget {
+  const _BadgeChip({
+    required this.def,
+    required this.earned,
+    required this.summary,
+    this.highlight = false,
+  });
   final ChallengerRoadBadgeDefinition def;
   final bool earned;
   final ChallengerRoadUserSummary summary;
+  final bool highlight;
+
+  @override
+  State<_BadgeChip> createState() => _BadgeChipState();
+}
+
+class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnim;
+
+  ChallengerRoadBadgeDefinition get def => widget.def;
+  bool get earned => widget.earned;
+  ChallengerRoadUserSummary get summary => widget.summary;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.16).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    if (widget.highlight) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.35,
+        );
+        _pulseController.repeat(reverse: true);
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            _pulseController.stop();
+            _pulseController.animateTo(0);
+          }
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   Color _colorForBadge() {
     // Tier takes visual precedence for epic/legendary/hidden.
@@ -565,6 +631,8 @@ class _BadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final highlight = widget.highlight;
+    final badgeColor = _colorForBadge();
     return Tooltip(
       message: earned ? def.effectiveDescription : 'Locked: ${def.effectiveDescription}',
       child: InkWell(
@@ -577,29 +645,54 @@ class _BadgeChip extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: earned ? _colorForBadge().withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
-                    border: Border.all(
-                      color: earned ? _colorForBadge() : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                      width: earned ? 2.0 : 1.2,
+                AnimatedBuilder(
+                  animation: _pulseAnim,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: highlight ? _pulseAnim.value : 1.0,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: earned ? badgeColor.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
+                      border: Border.all(
+                        color: highlight
+                            ? Colors.amber
+                            : earned
+                                ? badgeColor
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                        width: highlight
+                            ? 3.0
+                            : earned
+                                ? 2.0
+                                : 1.2,
+                      ),
+                      boxShadow: highlight
+                          ? [
+                              BoxShadow(
+                                color: Colors.amber.withValues(alpha: 0.55),
+                                blurRadius: 14,
+                                spreadRadius: 2,
+                              )
+                            ]
+                          : earned
+                              ? [
+                                  BoxShadow(
+                                    color: badgeColor.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                  )
+                                ]
+                              : null,
                     ),
-                    boxShadow: earned
-                        ? [
-                            BoxShadow(
-                              color: _colorForBadge().withValues(alpha: 0.3),
-                              blurRadius: 8,
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: ChallengerRoadService.badgeIconWidget(
-                    def,
-                    size: 26,
-                    color: earned ? _colorForBadge() : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    child: ChallengerRoadService.badgeIconWidget(
+                      def,
+                      size: 26,
+                      color: earned ? badgeColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 5),

@@ -307,7 +307,9 @@ List<RouteBase> _buildMeRoutes() {
     GoRoute(
       path: AppRoutePaths.profileChallengerRoad,
       name: AppRouteNames.profileChallengerRoad,
-      builder: (context, state) => const ChallengerRoadProfileScreen(),
+      builder: (context, state) => ChallengerRoadProfileScreen(
+        highlightBadgeId: state.uri.queryParameters['badgeId'],
+      ),
     ),
   ];
 }
