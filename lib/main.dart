@@ -207,14 +207,7 @@ void _showBannerWhenReady({
     _showInAppBanner(title: title, body: body);
   }
 
-  sub = FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .collection('notifications')
-      .orderBy('created_at', descending: true)
-      .limit(1)
-      .snapshots()
-      .listen((snapshot) {
+  sub = FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').orderBy('created_at', descending: true).limit(1).snapshots().listen((snapshot) {
     if (snapshot.docs.isEmpty) return;
     final ts = snapshot.docs.first.data()['created_at'];
     if (ts is Timestamp && ts.toDate().isAfter(cutoff)) {
