@@ -589,10 +589,10 @@ function getFriendNotificationMessage(playerName: string, teammateName: string):
 function getChallengeNotificationMessage(playerName: string, teammateName: string, challengeName: string, level: number): string {
     const messages = [
         `${playerName} just passed "${challengeName}" on Level ${level}. Can you do the same, ${teammateName}?`,
-        `Challenger Road cleared! ${playerName} passed Level ${level}: "${challengeName}".`,
-        `${playerName} is blazing through Challenger Road. Level ${level} done!`,
+        `${playerName} passed a Level ${level} challenge: "${challengeName}".`,
+        `${playerName} is making moves on Challenger Road — Level ${level} challenge done!`,
         `${teammateName}, ${playerName} passed "${challengeName}". Your turn!`,
-        `Level ${level} down! ${playerName} is moving up on Challenger Road.`,
+        `${playerName} checked off another Level ${level} challenge on Challenger Road.`,
         `${playerName} nailed "${challengeName}". Don't let them get too far ahead!`,
     ];
     return messages[Math.floor(Math.random() * messages.length)];
