@@ -27,6 +27,7 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dar
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/notifications/NotificationsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
 
@@ -56,6 +57,7 @@ abstract final class AppRouteNames {
   static const profileChallengerRoad = 'me_challenger_road';
   static const challengerRoad = 'train_challenger_road';
   static const compareStats = 'community_compare_stats';
+  static const notifications = 'me_notifications';
 }
 
 String _appShellRouteName(GoRouterState state) {
@@ -267,6 +269,11 @@ List<RouteBase> _buildCommunityRoutes() {
 
 List<RouteBase> _buildMeRoutes() {
   return [
+    GoRoute(
+      path: AppRoutePaths.notifications,
+      name: AppRouteNames.notifications,
+      builder: (context, state) => const NotificationsScreen(),
+    ),
     GoRoute(
       path: AppRoutePaths.settings,
       name: AppRouteNames.settings,

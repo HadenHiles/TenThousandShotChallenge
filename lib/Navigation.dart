@@ -32,6 +32,7 @@ import 'package:tenthousandshotchallenge/NavigationTab.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/NotificationBell.dart';
 
 import 'models/Preferences.dart';
 
@@ -580,7 +581,10 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                     ),
                   ),
                   leading: _leading,
-                  actions: _tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : _actions,
+                  actions: [
+                    ...(_tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : (_actions ?? [])),
+                    const NotificationBell(),
+                  ],
                 ),
               ];
       },
