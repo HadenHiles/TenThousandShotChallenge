@@ -32,6 +32,34 @@ class NotificationsScreen extends StatelessWidget {
     await batch.commit();
   }
 
+  Future<void> _clearAll(BuildContext context, String uid) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear all notifications?'),
+        content: const Text('This will permanently delete all your notifications.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear all', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final all = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').get();
+    if (all.docs.isEmpty) return;
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in all.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -60,9 +88,14 @@ class NotificationsScreen extends StatelessWidget {
               icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onPrimary),
               onSelected: (value) {
                 if (value == 'mark_all_read') _markAllRead(uid);
+                if (value == 'clear_all') _clearAll(context, uid);
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'mark_all_read', child: Text('Mark all as read')),
+                PopupMenuItem(
+                  value: 'clear_all',
+                  child: Text('Clear all', style: TextStyle(color: Colors.red)),
+                ),
               ],
             ),
         ],
@@ -89,10 +122,24 @@ class NotificationsScreen extends StatelessWidget {
                     color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                     indent: 72,
                   ),
-                  itemBuilder: (context, i) => _NotificationTile(
-                    notification: notifications[i],
-                    timeLabel: _timeAgo(notifications[i].createdAt),
-                  ),
+                  itemBuilder: (context, i) {
+                    final notif = notifications[i];
+                    return Dismissible(
+                      key: ValueKey(notif.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                      ),
+                      onDismissed: (_) => notif.reference?.delete(),
+                      child: _NotificationTile(
+                        notification: notif,
+                        timeLabel: _timeAgo(notif.createdAt),
+                      ),
+                    );
+                  },
                 );
               },
             ),
