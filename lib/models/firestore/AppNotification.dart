@@ -6,14 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// notification-worthy event occurs.
 ///
 /// type values:
-///   'friend_session'               — a friend logged a practice session
-///   'friend_challenge'             — a friend passed a Challenger Road challenge
-///   'invite_received'              — someone sent you a teammate invite
-///   'invite_accepted'              — a teammate accepted your invite
-///   'weekly_achievements_available'— new weekly challenges have been assigned
-///   'achievement_completed'        — you completed a weekly achievement
-///   'cr_badge_earned'              — you earned a Challenger Road badge
-///   'cr_level_completed'           — you completed a Challenger Road level
+///   'friend_session'               - a friend logged a practice session
+///   'friend_challenge'             - a friend passed a Challenger Road challenge
+///   'invite_received'              - someone sent you a teammate invite
+///   'invite_accepted'              - a teammate accepted your invite
+///   'weekly_achievements_available'- new weekly challenges have been assigned
+///   'achievement_completed'        - you completed a weekly achievement
+///   'cr_badge_earned'              - you earned a Challenger Road badge
+///   'cr_level_completed'           - you completed a Challenger Road level
 class AppNotification {
   final String id;
   final String type;

@@ -9,7 +9,7 @@ import { initializeApp, applicationDefault } from "firebase-admin/app";
 
 /**
  * Send an FCM message using the Firebase Admin SDK.
- * Uses the Cloud Function's default service account credentials automatically —
+ * Uses the Cloud Function's default service account credentials automatically -
  * no separate service-account.json file is required.
  *
  * @param {object} fcmMessage Object with a top-level "message" key matching the
@@ -596,7 +596,7 @@ function getChallengeNotificationMessage(playerName: string, teammateName: strin
     const messages = [
         `${playerName} just passed "${challengeName}" on Level ${level}. Can you do the same, ${teammateName}?`,
         `${playerName} passed a Level ${level} challenge: "${challengeName}".`,
-        `${playerName} is making moves on Challenger Road — "${challengeName}" cleared!`,
+        `${playerName} is making moves on Challenger Road - "${challengeName}" cleared!`,
         `${teammateName}, ${playerName} passed "${challengeName}". Your turn!`,
         `${playerName} checked off "${challengeName}" on Challenger Road Level ${level}.`,
         `${playerName} nailed "${challengeName}". Don't let them get too far ahead!`,
@@ -684,7 +684,7 @@ export const challengeSessionCreated = onDocumentCreated(
         const session = event.data?.data();
         if (!session) return;
 
-        // Only notify on a pass — failed attempts are not shared.
+        // Only notify on a pass - failed attempts are not shared.
         if (session.passed !== true) return;
 
         const userId = event.params.userId;
@@ -712,11 +712,11 @@ export const challengeSessionCreated = onDocumentCreated(
     }
 );
 
-// Teammate Notification Messages — kept short so they read well in the system tray.
+// Teammate Notification Messages - kept short so they read well in the system tray.
 const motivationalMessages = [
     "${playerName} just put in work. Your move, ${teammateName}!",
     "Don't let ${playerName} outwork you today, ${teammateName}!",
-    "${playerName} is on the ice — are you, ${teammateName}?",
+    "${playerName} is on the ice - are you, ${teammateName}?",
     "Keep up! ${playerName} just logged a session.",
     "${teammateName}, ${playerName} is setting the pace. Get out there!",
     "${playerName} is grinding. Time to match that energy!",
@@ -727,26 +727,26 @@ const teasingMessages = [
     "${playerName} didn't wait for you, ${teammateName}.",
     "Shots fired! ${playerName} is putting in reps.",
     "${playerName} is staying sharp. Step it up, ${teammateName}!",
-    "Hot stick alert — ${playerName} just fired them up!",
+    "Hot stick alert - ${playerName} just fired them up!",
     "${playerName} didn't take a day off. Will you, ${teammateName}?",
 ];
 
 const razzingMessages = [
     "${playerName} just put you on notice, ${teammateName}.",
-    "The gap is growing — ${playerName} just trained.",
+    "The gap is growing - ${playerName} just trained.",
     "${playerName} going off. Wake up, ${teammateName}!",
     "While you were away, ${playerName} was shooting.",
     "Tick tock, ${teammateName}. ${playerName} isn't slowing down.",
-    "Someone call the fire department — ${playerName}'s on fire!",
+    "Someone call the fire department - ${playerName}'s on fire!",
 ];
 
 const friendlyMessages = [
-    "${playerName} just logged a session — nice work!",
+    "${playerName} just logged a session - nice work!",
     "Your friend ${playerName} hit the ice. How about you, ${teammateName}?",
     "Great session from ${playerName}! Keep the energy going.",
     "${playerName} is staying sharp out there. You next, ${teammateName}?",
     "Friendly nudge: ${playerName} just trained. 🏒",
-    "${playerName} is putting up shots — see their progress in the app!",
+    "${playerName} is putting up shots - see their progress in the app!",
 ];
 
 // Helper: Check if achievement is completed based on achievement criteria, using stats/weekly

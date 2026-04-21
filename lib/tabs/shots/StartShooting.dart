@@ -1595,7 +1595,7 @@ class _StartShootingState extends State<StartShooting> {
                           auth,
                           firestore,
                         ).then((success) async {
-                          // Always reset the session immediately — do NOT await
+                          // Always reset the session immediately - do NOT await
                           // health sync first, as the health API can hang on
                           // some Android devices (Google API Manager errors).
                           await widget.sessionPanelController.close();
