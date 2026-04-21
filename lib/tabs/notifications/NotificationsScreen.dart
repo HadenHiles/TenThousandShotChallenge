@@ -8,39 +8,9 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 /// Full-page notification centre showing the current user's friend activity.
 ///
 /// Opened when the user taps the bell icon or taps a friend-session system notification.
-/// All unread notifications are marked read when this screen is first rendered.
-class NotificationsScreen extends StatefulWidget {
+/// Individual notifications can be marked read/unread via long-press.
+class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
-
-  @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  bool _markedRead = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _markAllRead();
-  }
-
-  Future<void> _markAllRead() async {
-    if (_markedRead) return;
-    _markedRead = true;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    final unread = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('read', isEqualTo: false).get();
-
-    if (unread.docs.isEmpty) return;
-
-    final batch = FirebaseFirestore.instance.batch();
-    for (final doc in unread.docs) {
-      batch.update(doc.reference, {'read': true});
-    }
-    await batch.commit();
-  }
 
   String _timeAgo(DateTime? dt) {
     if (dt == null) return '';
@@ -50,6 +20,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
+  }
+
+  Future<void> _markAllRead(String uid) async {
+    final unread = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('read', isEqualTo: false).get();
+    if (unread.docs.isEmpty) return;
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in unread.docs) {
+      batch.update(doc.reference, {'read': true});
+    }
+    await batch.commit();
   }
 
   @override
@@ -74,6 +54,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          if (uid != null)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onPrimary),
+              onSelected: (value) {
+                if (value == 'mark_all_read') _markAllRead(uid);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'mark_all_read', child: Text('Mark all as read')),
+              ],
+            ),
+        ],
       ),
       body: uid == null
           ? const SizedBox.shrink()
@@ -85,9 +77,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 }
 
                 final docs = snapshot.data?.docs ?? [];
-                if (docs.isEmpty) {
-                  return _buildEmptyState(context);
-                }
+                if (docs.isEmpty) return _buildEmptyState(context);
 
                 final notifications = docs.map((d) => AppNotification.fromSnapshot(d)).toList();
 
@@ -132,7 +122,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "When your friends log sessions you'll see their activity here.",
+              "When your friends log sessions or pass Challenger Road challenges you'll see their activity here.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -156,28 +146,67 @@ class _NotificationTile extends StatelessWidget {
   final AppNotification notification;
   final String timeLabel;
 
+  void _toggleRead() {
+    notification.reference?.update({'read': !notification.read});
+  }
+
+  void _markRead() {
+    if (!notification.read) notification.reference?.update({'read': true});
+  }
+
+  void _showLongPressMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(notification.read ? Icons.mark_email_unread_outlined : Icons.mark_email_read_outlined),
+              title: Text(notification.read ? 'Mark as unread' : 'Mark as read'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _toggleRead();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isChallenge = notification.isChallenge;
+
+    // Avatar colours: gold for challenge, primary for regular session.
+    final avatarBg = isChallenge ? Colors.amber.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.15);
+    final avatarFg = isChallenge ? Colors.amber[700]! : Theme.of(context).primaryColor;
+    final avatarIcon = isChallenge ? Icons.emoji_events_rounded : Icons.sports_hockey_rounded;
+
+    // Headline line 2 — challenge shows level + name, session shows shot count.
+    final String subtitle = isChallenge ? 'Level ${notification.level ?? '?'} — ${notification.challengeName ?? 'Challenger Road'}' : 'logged ${notification.shots} shots';
+
+    // Score detail shown below for challenges (shots_made / shots_to_pass).
+    final String? scoreDetail = isChallenge && notification.shotsMade != null && notification.shotsToPass != null ? '${notification.shotsMade}/${notification.shotsToPass} shots on target' : null;
+
     return InkWell(
-      onTap: () => context.push(AppRoutePaths.playerPathFor(notification.fromUid)),
+      onTap: () {
+        _markRead();
+        context.push(AppRoutePaths.playerPathFor(notification.fromUid));
+      },
+      onLongPress: () => _showLongPressMenu(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Avatar circle with hockey icon
+            // Avatar
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.sports_hockey_rounded,
-                size: 22,
-                color: Theme.of(context).primaryColor,
-              ),
+              decoration: BoxDecoration(color: avatarBg, shape: BoxShape.circle),
+              child: Icon(avatarIcon, size: 22, color: avatarFg),
             ),
             const SizedBox(width: 12),
             // Text content
@@ -197,12 +226,22 @@ class _NotificationTile extends StatelessWidget {
                           text: notification.fromName,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        TextSpan(
-                          text: ' logged ${notification.shots} shots',
-                        ),
+                        TextSpan(text: ' $subtitle'),
                       ],
                     ),
                   ),
+                  if (scoreDetail != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      scoreDetail,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: avatarFg.withValues(alpha: 0.85),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                   if (notification.message.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
@@ -227,7 +266,7 @@ class _NotificationTile extends StatelessWidget {
                 ],
               ),
             ),
-            // Unread indicator
+            // Unread dot
             if (!notification.read)
               Padding(
                 padding: const EdgeInsets.only(top: 4, left: 8),
