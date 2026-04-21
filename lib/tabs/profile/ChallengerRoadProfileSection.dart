@@ -473,7 +473,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.16).animate(
+    _pulseAnim = Tween<double>(begin: 0.2, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     if (widget.highlight) {
@@ -648,8 +648,19 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                 AnimatedBuilder(
                   animation: _pulseAnim,
                   builder: (context, child) {
-                    return Transform.scale(
-                      scale: highlight ? _pulseAnim.value : 1.0,
+                    if (!highlight) return child!;
+                    final primary = Theme.of(context).colorScheme.primary;
+                    return Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: primary.withValues(alpha: 0.5 * _pulseAnim.value),
+                            blurRadius: 20,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
                       child: child,
                     );
                   },
@@ -661,7 +672,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                       color: earned ? badgeColor.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
                       border: Border.all(
                         color: highlight
-                            ? Colors.amber
+                            ? Theme.of(context).colorScheme.primary
                             : earned
                                 ? badgeColor
                                 : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
@@ -671,22 +682,14 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                                 ? 2.0
                                 : 1.2,
                       ),
-                      boxShadow: highlight
+                      boxShadow: !highlight && earned
                           ? [
                               BoxShadow(
-                                color: Colors.amber.withValues(alpha: 0.55),
-                                blurRadius: 14,
-                                spreadRadius: 2,
+                                color: badgeColor.withValues(alpha: 0.3),
+                                blurRadius: 8,
                               )
                             ]
-                          : earned
-                              ? [
-                                  BoxShadow(
-                                    color: badgeColor.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                  )
-                                ]
-                              : null,
+                          : null,
                     ),
                     child: ChallengerRoadService.badgeIconWidget(
                       def,
