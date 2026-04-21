@@ -356,6 +356,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           ),
         ),
         actions: [
+          NotificationBell(color: HomeTheme.darkTheme.colorScheme.onPrimary),
           Container(
             margin: const EdgeInsets.only(top: 10),
             child: Builder(
@@ -583,7 +584,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   leading: _leading,
                   actions: [
                     ...(_tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : (_actions ?? [])),
-                    const NotificationBell(),
+                    if (_tabs[_selectedIndex].id != 'me') NotificationBell(color: HomeTheme.darkTheme.colorScheme.onPrimary),
                   ],
                 ),
               ];

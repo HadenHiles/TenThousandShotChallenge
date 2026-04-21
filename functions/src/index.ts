@@ -556,6 +556,126 @@ function getFriendNotificationMessage(playerName: string, teammateName: string):
     }
 }
 
+function getChallengeNotificationMessage(playerName: string, teammateName: string, challengeName: string, level: number): string {
+    const messages = [
+        `${playerName} just passed "${challengeName}" on Level ${level}. Can you do the same, ${teammateName}?`,
+        `Challenger Road cleared! ${playerName} passed Level ${level}: "${challengeName}".`,
+        `${playerName} is blazing through Challenger Road. Level ${level} done!`,
+        `${teammateName}, ${playerName} passed "${challengeName}". Your turn!`,
+        `Level ${level} down! ${playerName} is moving up on Challenger Road.`,
+        `${playerName} nailed "${challengeName}". Don't let them get too far ahead!`,
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
+}
+
+// Fan out a challenge completion notification to all opted-in friends.
+// Extracted as a shared helper so it can be called from the Firestore trigger.
+async function fanOutChallengeNotification(
+    userId: string,
+    user: any,
+    challengeId: string,
+    challengeName: string,
+    level: number,
+    shotsMade: number,
+    shotsToPass: number,
+): Promise<void> {
+    const notifTitle = `${user.display_name} passed a Challenger Road challenge!`;
+
+    const teammatesSnap = await db.collection(`teammates/${userId}/teammates`).get();
+    await Promise.all(teammatesSnap.docs.map(async (t) => {
+        const friendDoc = await db.collection('users').doc(t.id).get();
+        const friend = friendDoc.data();
+        const fcmToken = friend?.fcm_token ?? null;
+
+        let shouldNotify = false;
+        const friendMode: string | undefined = friend?.friend_notification_mode;
+        if (friendMode != null) {
+            if (friendMode === 'all') {
+                shouldNotify = true;
+            } else if (friendMode === 'selected') {
+                const subDoc = await db
+                    .collection('users').doc(t.id)
+                    .collection('friend_subscriptions').doc(userId)
+                    .get();
+                shouldNotify = subDoc.exists;
+            }
+        } else {
+            shouldNotify = friend?.friend_notifications !== false;
+        }
+
+        if (shouldNotify && fcmToken != null) {
+            const notifBody = getChallengeNotificationMessage(
+                user.display_name,
+                friend?.display_name ?? '',
+                challengeName,
+                level,
+            );
+            await sendFcmMessage({
+                message: {
+                    token: fcmToken,
+                    notification: { title: notifTitle, body: notifBody },
+                    data: { type: 'friend_challenge', from_uid: userId },
+                    android: { priority: 'normal' },
+                    apns: { payload: { aps: { sound: 'default' } } },
+                }
+            });
+            try {
+                await db.collection('users').doc(t.id).collection('notifications').add({
+                    type: 'friend_challenge',
+                    from_uid: userId,
+                    from_name: user.display_name ?? '',
+                    shots: shotsMade,
+                    challenge_id: challengeId,
+                    challenge_name: challengeName,
+                    level: level,
+                    shots_made: shotsMade,
+                    shots_to_pass: shotsToPass,
+                    message: notifBody,
+                    created_at: admin.firestore.FieldValue.serverTimestamp(),
+                    read: false,
+                });
+            } catch (notifErr) {
+                logger.error('Error writing in-app challenge notification:', notifErr);
+            }
+        }
+    }));
+}
+
+// Trigger: send friends a notification when a Challenger Road challenge is PASSED.
+export const challengeSessionCreated = onDocumentCreated(
+    { document: "users/{userId}/challenger_road_attempts/{attemptId}/challenge_sessions/{sessionId}" },
+    async (event) => {
+        const session = event.data?.data();
+        if (!session) return;
+
+        // Only notify on a pass — failed attempts are not shared.
+        if (session.passed !== true) return;
+
+        const userId = event.params.userId;
+        const challengeId: string = session.challenge_id ?? '';
+        const level: number = session.level ?? 1;
+        const shotsMade: number = session.shots_made ?? 0;
+        const shotsToPass: number = session.shots_to_pass ?? 0;
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        const user = userDoc.data();
+        if (!user) return;
+
+        // Look up the challenge name via collection group query (challenges sub-collection
+        // lives at challenger_road_levels/{levelId}/challenges/{id}).
+        let challengeName = '';
+        try {
+            const challengeSnap = await db.collectionGroup('challenges').where('id', '==', challengeId).limit(1).get();
+            challengeName = challengeSnap.empty ? '' : (challengeSnap.docs[0].data().name ?? '');
+        } catch (e) {
+            logger.warn('Could not look up challenge name, falling back to empty string:', e);
+        }
+        if (!challengeName) challengeName = `Level ${level} challenge`;
+
+        await fanOutChallengeNotification(userId, user, challengeId, challengeName, level, shotsMade, shotsToPass);
+    }
+);
+
 // Teammate Notification Messages — kept short so they read well in the system tray.
 const motivationalMessages = [
     "${playerName} just put in work. Your move, ${teammateName}!",

@@ -34,7 +34,7 @@ class NotificationBell extends StatelessWidget {
                 icon: Icon(
                   unreadCount > 0 ? Icons.notifications_rounded : Icons.notifications_none_rounded,
                   color: iconColor,
-                  size: 26,
+                  size: 28,
                 ),
                 onPressed: () => context.push(AppRoutePaths.notifications),
               ),
