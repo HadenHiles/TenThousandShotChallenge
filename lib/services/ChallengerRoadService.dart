@@ -1470,6 +1470,29 @@ class ChallengerRoadService {
       if (changed) await updateUserSummary(userId, {'badges': earned});
     }
 
+    // Write an in-app notification for the level completion.
+    try {
+      final notifMsg = allLevelsComplete
+          ? 'You completed the full Challenger Road! 🏒'
+          : 'You completed Level $completedLevel on Challenger Road!';
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .add({
+        'type': 'cr_level_completed',
+        'from_uid': userId,
+        'from_name': '',
+        'shots': 0,
+        'level': completedLevel,
+        'message': notifMsg,
+        'created_at': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+    } catch (_) {
+      // Non-fatal — notification failure should never block level progression.
+    }
+
     return attempt.copyWith(
       currentLevel: newLevel,
       highestLevelReachedThisAttempt: newHighest,
