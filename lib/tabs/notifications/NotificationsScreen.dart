@@ -224,31 +224,94 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isChallenge = notification.isChallenge;
+    final n = notification;
 
-    // Avatar colours: gold for challenge, primary for regular session.
-    final avatarBg = isChallenge ? Colors.amber.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.15);
-    final avatarFg = isChallenge ? Colors.amber[700]! : Theme.of(context).primaryColor;
-    final avatarIcon = isChallenge ? Icons.emoji_events_rounded : Icons.sports_hockey_rounded;
+    // --- Routing on tap ---
+    void handleTap() {
+      _markRead();
+      if (n.isInviteReceived || n.isInviteAccepted) {
+        context.push(AppRoutePaths.playerPathFor(n.fromUid));
+      } else if (n.isBadgeEarned || n.isLevelCompleted) {
+        context.push(AppRoutePaths.challengerRoad);
+      } else if (n.isWeeklyAvailable || n.isAchievementCompleted) {
+        context.push(AppRoutePaths.profileAchievements);
+      } else {
+        // friend_session / friend_challenge — go to player profile
+        context.push(AppRoutePaths.playerPathFor(n.fromUid));
+      }
+    }
 
-    // Headline line 2 — challenge shows level + name, session shows shot count.
-    final String subtitle = isChallenge ? 'Level ${notification.level ?? '?'} — ${notification.challengeName ?? 'Challenger Road'}' : 'logged ${notification.shots} shots';
+    // --- Visual config per type ---
+    final Color avatarBg;
+    final Color avatarFg;
+    final IconData avatarIcon;
+    final String headline;
+    final String? subtitleLine;
 
-    // Score detail shown below for challenges (shots_made / shots_to_pass).
-    final String? scoreDetail = isChallenge && notification.shotsMade != null && notification.shotsToPass != null ? '${notification.shotsMade}/${notification.shotsToPass} shots on target' : null;
+    if (n.isChallenge) {
+      avatarBg = Colors.amber.withValues(alpha: 0.18);
+      avatarFg = Colors.amber[700]!;
+      avatarIcon = Icons.emoji_events_rounded;
+      headline = '${n.fromName} passed a Challenger Road challenge';
+      subtitleLine = 'Level ${n.level ?? '?'} — ${n.challengeName ?? 'Challenger Road'}';
+    } else if (n.isInviteReceived) {
+      avatarBg = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15);
+      avatarFg = Theme.of(context).colorScheme.secondary;
+      avatarIcon = Icons.person_add_rounded;
+      headline = '${n.fromName} sent you a teammate invite';
+      subtitleLine = null;
+    } else if (n.isInviteAccepted) {
+      avatarBg = Colors.green.withValues(alpha: 0.15);
+      avatarFg = Colors.green[700]!;
+      avatarIcon = Icons.handshake_rounded;
+      headline = '${n.fromName} accepted your invite';
+      subtitleLine = "You're now teammates!";
+    } else if (n.isWeeklyAvailable) {
+      avatarBg = Colors.purple.withValues(alpha: 0.15);
+      avatarFg = Colors.purple[600]!;
+      avatarIcon = Icons.calendar_today_rounded;
+      headline = 'New weekly challenges available';
+      subtitleLine = null;
+    } else if (n.isAchievementCompleted) {
+      avatarBg = Colors.green.withValues(alpha: 0.15);
+      avatarFg = Colors.green[700]!;
+      avatarIcon = Icons.check_circle_rounded;
+      headline = 'Challenge complete!';
+      subtitleLine = n.achievementTitle;
+    } else if (n.isBadgeEarned) {
+      avatarBg = Colors.amber.withValues(alpha: 0.18);
+      avatarFg = Colors.amber[800]!;
+      avatarIcon = Icons.military_tech_rounded;
+      headline = 'New badge earned!';
+      subtitleLine = n.badgeName;
+    } else if (n.isLevelCompleted) {
+      avatarBg = Theme.of(context).primaryColor.withValues(alpha: 0.15);
+      avatarFg = Theme.of(context).primaryColor;
+      avatarIcon = Icons.stairs_rounded;
+      headline = 'Level ${n.level ?? '?'} complete!';
+      subtitleLine = 'Challenger Road';
+    } else {
+      // friend_session (default)
+      avatarBg = Theme.of(context).primaryColor.withValues(alpha: 0.15);
+      avatarFg = Theme.of(context).primaryColor;
+      avatarIcon = Icons.sports_hockey_rounded;
+      headline = '${n.fromName} logged ${n.shots} shots';
+      subtitleLine = null;
+    }
+
+    // Score detail for challenges
+    final String? scoreDetail = n.isChallenge && n.shotsMade != null && n.shotsToPass != null
+        ? '${n.shotsMade}/${n.shotsToPass} shots on target'
+        : null;
 
     return InkWell(
-      onTap: () {
-        _markRead();
-        context.push(AppRoutePaths.playerPathFor(notification.fromUid));
-      },
+      onTap: handleTap,
       onLongPress: () => _showLongPressMenu(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Avatar
             Container(
               width: 44,
               height: 44,
@@ -256,27 +319,31 @@ class _NotificationTile extends StatelessWidget {
               child: Icon(avatarIcon, size: 22, color: avatarFg),
             ),
             const SizedBox(width: 12),
-            // Text content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        height: 1.3,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: notification.fromName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        TextSpan(text: ' $subtitle'),
-                      ],
+                  Text(
+                    headline,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      height: 1.3,
                     ),
                   ),
+                  if (subtitleLine != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitleLine,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: avatarFg.withValues(alpha: 0.85),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                   if (scoreDetail != null) ...[
                     const SizedBox(height: 2),
                     Text(
@@ -289,10 +356,10 @@ class _NotificationTile extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (notification.message.isNotEmpty) ...[
+                  if (n.message.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      notification.message,
+                      n.message,
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
@@ -313,8 +380,7 @@ class _NotificationTile extends StatelessWidget {
                 ],
               ),
             ),
-            // Unread dot
-            if (!notification.read)
+            if (!n.read)
               Padding(
                 padding: const EdgeInsets.only(top: 4, left: 8),
                 child: Container(

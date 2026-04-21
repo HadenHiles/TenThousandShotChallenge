@@ -80,6 +80,21 @@ export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invite
                 logger.log("Sending notification with data: " + JSON.stringify(data));
 
                 await sendFcmMessage(data);
+
+                // Write in-app notification for the recipient.
+                try {
+                    await db.collection('users').doc(context.params.userId).collection('notifications').add({
+                        type: 'invite_received',
+                        from_uid: context.params.teammateId,
+                        from_name: teammateName,
+                        shots: 0,
+                        message: `${teammateName} sent you a teammate invite.`,
+                        created_at: admin.firestore.FieldValue.serverTimestamp(),
+                        read: false,
+                    });
+                } catch (notifErr) {
+                    logger.error('Error writing invite_received notification:', notifErr);
+                }
             }).catch((err) => {
                 logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -124,6 +139,21 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
                 logger.log("Sending notification with data: " + JSON.stringify(data));
 
                 await sendFcmMessage(data);
+
+                // Write in-app notification for the original inviter.
+                try {
+                    await db.collection('users').doc(context.params.teammateId).collection('notifications').add({
+                        type: 'invite_accepted',
+                        from_uid: context.params.userId,
+                        from_name: teammateName,
+                        shots: 0,
+                        message: `${teammateName} accepted your teammate invite!`,
+                        created_at: admin.firestore.FieldValue.serverTimestamp(),
+                        read: false,
+                    });
+                } catch (notifErr) {
+                    logger.error('Error writing invite_accepted notification:', notifErr);
+                }
             }).catch((err) => {
                 logger.log("Error fetching firestore users (teammate) collection: " + err);
             });
@@ -1217,6 +1247,7 @@ async function updateAchievementsAfterSessionChange(userId: string, session: any
     const batch = db.batch();
     const statsDoc = await db.collection('users').doc(userId).collection('stats').doc('weekly').get();
     const stats = (statsDoc && statsDoc.exists && statsDoc.data()) ? statsDoc.data() : {};
+    const newlyCompleted: any[] = [];
     for (const doc of achievementsSnap.docs) {
         const achievement = doc.data();
         const isManual = achievement?.style === 'fun' || achievement?.style === 'social' || achievement?.isBonus === true;
@@ -1227,11 +1258,52 @@ async function updateAchievementsAfterSessionChange(userId: string, session: any
         const completed = await checkAchievementCompletion(userId, achievement, stats);
         if (completed && !achievement.completed) {
             batch.update(doc.ref, { completed: true, completed_at: require('firebase-admin').firestore.FieldValue.serverTimestamp() });
+            newlyCompleted.push(achievement);
         } else if (!completed && achievement.completed) {
             batch.update(doc.ref, { completed: false, completed_at: null });
         }
     }
     await batch.commit();
+
+    // Write in-app + push notifications for each newly completed achievement.
+    for (const achievement of newlyCompleted) {
+        const title = achievement.title ?? 'Achievement';
+        const description = achievement.description ?? '';
+        const msg = `You completed a weekly challenge: ${title}`;
+        try {
+            await db.collection('users').doc(userId).collection('notifications').add({
+                type: 'achievement_completed',
+                from_uid: userId,
+                from_name: '',
+                shots: 0,
+                achievement_title: title,
+                achievement_description: description,
+                message: msg,
+                created_at: admin.firestore.FieldValue.serverTimestamp(),
+                read: false,
+            });
+        } catch (notifErr) {
+            logger.error('Error writing achievement_completed notification:', notifErr);
+        }
+        // FCM push to the user themselves.
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const fcmToken: string | null = userDoc.data()?.fcm_token ?? null;
+            if (fcmToken) {
+                await sendFcmMessage({
+                    message: {
+                        token: fcmToken,
+                        notification: { title: '🏆 Challenge Complete!', body: msg },
+                        data: { type: 'achievement_completed' },
+                        android: { priority: 'normal' },
+                        apns: { payload: { aps: { sound: 'default' } } },
+                    },
+                });
+            }
+        } catch (fcmErr) {
+            logger.error('Error sending achievement_completed FCM:', fcmErr);
+        }
+    }
 }
 
 async function updateAchievementsAfterSessionDelete(userId: string) {
@@ -1878,6 +1950,40 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
             }
             for (const achievement of achievements) {
                 await db.collection('users').doc(userId).collection('achievements').add(achievement);
+            }
+
+            // Notify the user that their new weekly challenges are ready.
+            if (!test && achievements.length > 0) {
+                const msg = `Your ${achievements.length} new weekly challenge${achievements.length > 1 ? 's are' : ' is'} ready. Tap to check them out!`;
+                try {
+                    await db.collection('users').doc(userId).collection('notifications').add({
+                        type: 'weekly_achievements_available',
+                        from_uid: userId,
+                        from_name: '',
+                        shots: 0,
+                        message: msg,
+                        created_at: admin.firestore.FieldValue.serverTimestamp(),
+                        read: false,
+                    });
+                } catch (notifErr) {
+                    logger.error('Error writing weekly_achievements_available notification:', notifErr);
+                }
+                try {
+                    const fcmToken: string | null = userData.fcm_token ?? null;
+                    if (fcmToken) {
+                        await sendFcmMessage({
+                            message: {
+                                token: fcmToken,
+                                notification: { title: '🎯 New Weekly Challenges!', body: msg },
+                                data: { type: 'weekly_achievements_available' },
+                                android: { priority: 'normal' },
+                                apns: { payload: { aps: { sound: 'default' } } },
+                            },
+                        });
+                    }
+                } catch (fcmErr) {
+                    logger.error('Error sending weekly_achievements_available FCM:', fcmErr);
+                }
             }
         }
         logger.info('assignWeeklyAchievements executed successfully.');

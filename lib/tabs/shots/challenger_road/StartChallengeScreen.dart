@@ -317,6 +317,28 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         final newBadges = newlyUnlockedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList();
 
         if (newBadges.isNotEmpty) {
+          // Write an in-app notification for each newly earned badge.
+          for (final badge in newBadges) {
+            try {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.userId)
+                  .collection('notifications')
+                  .add({
+                'type': 'cr_badge_earned',
+                'from_uid': widget.userId,
+                'from_name': '',
+                'shots': 0,
+                'badge_id': badge.id,
+                'badge_name': badge.name,
+                'message': 'You earned the "${badge.name}" badge!',
+                'created_at': FieldValue.serverTimestamp(),
+                'read': false,
+              });
+            } catch (_) {
+              // Non-fatal.
+            }
+          }
           await Navigator.of(context).push<void>(
             MaterialPageRoute(
               fullscreenDialog: true,
