@@ -596,9 +596,9 @@ function getChallengeNotificationMessage(playerName: string, teammateName: strin
     const messages = [
         `${playerName} just passed "${challengeName}" on Level ${level}. Can you do the same, ${teammateName}?`,
         `${playerName} passed a Level ${level} challenge: "${challengeName}".`,
-        `${playerName} is making moves on Challenger Road — Level ${level} challenge done!`,
+        `${playerName} is making moves on Challenger Road — "${challengeName}" cleared!`,
         `${teammateName}, ${playerName} passed "${challengeName}". Your turn!`,
-        `${playerName} checked off another Level ${level} challenge on Challenger Road.`,
+        `${playerName} checked off "${challengeName}" on Challenger Road Level ${level}.`,
         `${playerName} nailed "${challengeName}". Don't let them get too far ahead!`,
     ];
     return messages[Math.floor(Math.random() * messages.length)];
@@ -615,7 +615,7 @@ async function fanOutChallengeNotification(
     shotsMade: number,
     shotsToPass: number,
 ): Promise<void> {
-    const notifTitle = `${user.display_name} passed a Challenger Road challenge!`;
+    const notifTitle = `${user.display_name} passed "${challengeName}" on Challenger Road!`;
 
     const teammatesSnap = await db.collection(`teammates/${userId}/teammates`).get();
     await Promise.all(teammatesSnap.docs.map(async (t) => {
