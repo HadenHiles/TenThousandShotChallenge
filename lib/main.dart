@@ -29,6 +29,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'router.dart';
 import 'package:go_router/go_router.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 // Global variables
 final user = FirebaseAuth.instance.currentUser;
@@ -108,15 +109,14 @@ Future<void> main() async {
     }
   });
 
-  // Show FCM messages that arrive while the app is in the foreground.
+  // Show FCM messages that arrive while the app is in the foreground as an
+  // in-app banner so no system notification is added to the tray.
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     final notification = message.notification;
     if (notification != null) {
-      LocalNotificationService.showForegroundMessage(
-        id: message.hashCode,
+      _showInAppBanner(
         title: notification.title ?? 'New notification',
         body: notification.body,
-        payload: 'notifications',
       );
     }
   });
@@ -173,6 +173,14 @@ Future<void> _messageHandler(RemoteMessage message) async {
 Future<void> _messageClickHandler(RemoteMessage message) async {
   // Route all FCM notification taps to the in-app notification centre.
   LocalNotificationService.pendingRoute = '/notifications';
+}
+
+/// Show a top-of-screen in-app notification banner for a foreground FCM message.
+void _showInAppBanner({required String title, String? body}) {
+  showOverlayNotification(
+    (context) => _FcmBanner(title: title, body: body),
+    duration: const Duration(seconds: 6),
+  );
 }
 
 Future<void> initRevenueCat(String? appUserID) async {
@@ -343,23 +351,101 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     return Consumer<PreferencesStateNotifier>(
       builder: (context, settingsState, child) {
         preferences = settingsState.preferences;
-        return MaterialApp.router(
-          title: '10,000 Shot Challenge',
-          routerConfig: _router,
-          debugShowCheckedModeBanner: false,
-          theme: (preferences!.darkMode! || MediaQuery.of(context).platformBrightness == Brightness.dark) ? HomeTheme.darkTheme : HomeTheme.lightTheme,
-          darkTheme: HomeTheme.darkTheme,
-          themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
-          builder: (ctx, child) {
-            // Safe MediaQuery available here
-            final extraBottom = isThreeButtonAndroidNavigation(ctx) ? MediaQuery.paddingOf(ctx).bottom : 0.0;
-            return Padding(
-              padding: EdgeInsets.only(bottom: extraBottom),
-              child: child,
-            );
-          },
+        return OverlaySupport.global(
+          child: MaterialApp.router(
+            title: '10,000 Shot Challenge',
+            routerConfig: _router,
+            debugShowCheckedModeBanner: false,
+            theme: (preferences!.darkMode! || MediaQuery.of(context).platformBrightness == Brightness.dark) ? HomeTheme.darkTheme : HomeTheme.lightTheme,
+            darkTheme: HomeTheme.darkTheme,
+            themeMode: preferences!.darkMode! ? ThemeMode.dark : ThemeMode.system,
+            builder: (ctx, child) {
+              // Safe MediaQuery available here
+              final extraBottom = isThreeButtonAndroidNavigation(ctx) ? MediaQuery.paddingOf(ctx).bottom : 0.0;
+              return Padding(
+                padding: EdgeInsets.only(bottom: extraBottom),
+                child: child,
+              );
+            },
+          ),
         );
       },
+    );
+  }
+}
+
+/// Top-of-screen banner shown when an FCM message arrives while the app is
+/// in the foreground. Tapping it navigates to the in-app notification centre.
+class _FcmBanner extends StatelessWidget {
+  const _FcmBanner({required this.title, this.body});
+
+  final String title;
+  final String? body;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              OverlaySupportEntry.of(context)!.dismiss();
+              LocalNotificationService.cancelForegroundMessages();
+              LocalNotificationService.navigateTo('/notifications');
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Icon(Icons.notifications_active_rounded, color: Colors.amber, size: 26),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (body != null && body!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            body!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    onPressed: () => OverlaySupportEntry.of(context)!.dismiss(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
