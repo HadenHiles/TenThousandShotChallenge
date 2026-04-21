@@ -21,6 +21,10 @@ class LocalNotificationService {
   static bool _initialized = false;
   static GoRouter? _router;
 
+  // Tracks IDs of locally-posted foreground FCM notifications so they can be
+  // dismissed when the user views them in the in-app notification centre.
+  static final Set<int> _foregroundMessageIds = {};
+
   /// Route to navigate to as soon as the router becomes available.
   /// Set by [_messageClickHandler] in main.dart when the app is launched cold
   /// from a background FCM notification tap.
@@ -388,6 +392,7 @@ class LocalNotificationService {
     String? body,
     String payload = 'train',
   }) async {
+    _foregroundMessageIds.add(id);
     await _plugin.show(
       id,
       title,
@@ -395,5 +400,26 @@ class LocalNotificationService {
       _details(_motivationChannelId, 'Motivation'),
       payload: payload,
     );
+  }
+
+  /// Cancel all locally-posted foreground FCM notifications.
+  /// Call this when the user views the in-app notification centre so the
+  /// corresponding system notifications are dismissed.
+  static Future<void> cancelForegroundMessages() async {
+    for (final id in _foregroundMessageIds) {
+      await _plugin.cancel(id);
+    }
+    _foregroundMessageIds.clear();
+  }
+
+  /// Navigate to [route] immediately if the router is ready, or queue it for
+  /// when the router becomes available (e.g. on cold start).
+  static void navigateTo(String route) {
+    final router = _router;
+    if (router == null) {
+      pendingRoute = route;
+      return;
+    }
+    router.go(route);
   }
 }

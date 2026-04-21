@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/models/firestore/AppNotification.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 
 /// Full-page notification centre showing the current user's friend activity.
 ///
@@ -229,6 +230,8 @@ class _NotificationTile extends StatelessWidget {
     // --- Routing on tap ---
     void handleTap() {
       _markRead();
+      // Dismiss any lingering system notifications for this message.
+      LocalNotificationService.cancelForegroundMessages();
       if (n.isInviteReceived || n.isInviteAccepted) {
         context.push(AppRoutePaths.playerPathFor(n.fromUid));
       } else if (n.isBadgeEarned) {
