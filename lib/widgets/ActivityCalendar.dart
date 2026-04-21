@@ -164,8 +164,8 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
     const cols = 52;
     const rows = 7;
 
-    final months = <String>[];
     DateTime? lastMonthDate;
+    int? lastLabelYear;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +176,7 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Month labels
+              // Month labels (left = most recent, right = oldest)
               SizedBox(
                 width: cols * (cellSize + cellGap),
                 height: 16,
@@ -184,14 +184,17 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                   final colWidth = cellSize + cellGap;
                   final labels = <Widget>[];
                   for (int col = 0; col < cols; col++) {
-                    final day = gridStart.add(Duration(days: col * 7));
-                    final month = DateFormat('MMM').format(day);
+                    // Reversed: col 0 = most recent week, col 51 = oldest week
+                    final day = gridStart.add(Duration(days: (cols - 1 - col) * 7));
                     if (lastMonthDate == null || day.month != lastMonthDate!.month) {
                       lastMonthDate = day;
-                      months.add(month);
+                      // Show year whenever the year changes (or on the very first label)
+                      final showYear = lastLabelYear == null || day.year != lastLabelYear;
+                      lastLabelYear = day.year;
+                      final label = showYear ? DateFormat("MMM ''yy").format(day) : DateFormat('MMM').format(day);
                       labels.add(Positioned(
                         left: col * colWidth,
-                        child: Text(month, style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                        child: Text(label, style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                       ));
                     }
                   }
@@ -206,8 +209,8 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
                   final rowHeight = cellSize + cellGap;
                   final col = (details.localPosition.dx / colWidth).floor().clamp(0, cols - 1);
                   final row = (details.localPosition.dy / rowHeight).floor().clamp(0, rows - 1);
-                  final dayIndex = col * 7 + row;
-                  final date = gridStart.add(Duration(days: dayIndex));
+                  // Reversed: col 0 = most recent week
+                  final date = gridStart.add(Duration(days: (cols - 1 - col) * 7 + row));
                   if (date.isAfter(today)) return;
                   final key = DateFormat('yyyy-MM-dd').format(date);
                   setState(() {
@@ -347,8 +350,8 @@ class _HeatmapPainter extends CustomPainter {
 
     for (int col = 0; col < cols; col++) {
       for (int row = 0; row < rows; row++) {
-        final dayIndex = col * 7 + row;
-        final date = gridStart.add(Duration(days: dayIndex));
+        // Reversed: col 0 = most recent week, col (cols-1) = oldest week
+        final date = gridStart.add(Duration(days: (cols - 1 - col) * 7 + row));
         if (date.isAfter(today)) continue;
 
         final key = fmt.format(date);
