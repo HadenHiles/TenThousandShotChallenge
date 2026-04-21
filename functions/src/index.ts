@@ -306,6 +306,12 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
         await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).doc(context.params.sessionId).get().then(async (sDoc) => {
             session = sDoc.data();
+
+            // Challenger Road sessions are written to this collection for shot
+            // counting, but friend notifications are handled by challengeSessionCreated.
+            // Skip them here to avoid duplicate / misleading notifications.
+            if (session?.is_challenger_road === true) return;
+
             // Build the notification title based on session data.
             const notifTitle = session != null
                 ? `${user.display_name} just took ${session.total} shots!`
