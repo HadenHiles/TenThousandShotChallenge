@@ -1472,14 +1472,8 @@ class ChallengerRoadService {
 
     // Write an in-app notification for the level completion.
     try {
-      final notifMsg = allLevelsComplete
-          ? 'You completed the full Challenger Road! 🏒'
-          : 'You completed Level $completedLevel on Challenger Road!';
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('notifications')
-          .add({
+      final notifMsg = allLevelsComplete ? 'You completed the full Challenger Road! 🏒' : 'You completed Level $completedLevel on Challenger Road!';
+      await _firestore.collection('users').doc(userId).collection('notifications').add({
         'type': 'cr_level_completed',
         'from_uid': userId,
         'from_name': '',

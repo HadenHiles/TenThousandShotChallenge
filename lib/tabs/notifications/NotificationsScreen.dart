@@ -300,9 +300,7 @@ class _NotificationTile extends StatelessWidget {
     }
 
     // Score detail for challenges
-    final String? scoreDetail = n.isChallenge && n.shotsMade != null && n.shotsToPass != null
-        ? '${n.shotsMade}/${n.shotsToPass} shots on target'
-        : null;
+    final String? scoreDetail = n.isChallenge && n.shotsMade != null && n.shotsToPass != null ? '${n.shotsMade}/${n.shotsToPass} shots on target' : null;
 
     return InkWell(
       onTap: handleTap,
