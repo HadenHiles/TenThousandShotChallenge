@@ -322,15 +322,21 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                             if (shouldNotify && fcmToken != null) {
                                 // Use a notification payload so the OS displays it automatically,
                                 // plus a fun randomised body from getFriendNotificationMessage.
+                                const notifBody = getFriendNotificationMessage(
+                                    user.display_name,
+                                    friend?.display_name ?? "",
+                                );
                                 const friendData = {
                                     "message": {
                                         "token": fcmToken,
                                         "notification": {
                                             "title": notifTitle,
-                                            "body": getFriendNotificationMessage(
-                                                user.display_name,
-                                                friend?.display_name ?? "",
-                                            ),
+                                            "body": notifBody,
+                                        },
+                                        // Data payload lets the Flutter app route the tap to /notifications.
+                                        "data": {
+                                            "type": "friend_session",
+                                            "from_uid": context.params.userId,
                                         },
                                         "android": { "priority": "normal" },
                                         "apns": { "payload": { "aps": { "sound": "default" } } },
@@ -338,6 +344,26 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                                 };
                                 logger.debug("Sending friend notification: " + JSON.stringify(friendData));
                                 await sendFcmMessage(friendData);
+
+                                // Write an in-app notification record so the recipient can view
+                                // their friend's activity history in the notification centre.
+                                try {
+                                    await db
+                                        .collection('users')
+                                        .doc(t.id)
+                                        .collection('notifications')
+                                        .add({
+                                            type: 'friend_session',
+                                            from_uid: context.params.userId,
+                                            from_name: user.display_name ?? '',
+                                            shots: session?.total ?? 0,
+                                            message: notifBody,
+                                            created_at: admin.firestore.FieldValue.serverTimestamp(),
+                                            read: false,
+                                        });
+                                } catch (notifErr) {
+                                    logger.error('Error writing in-app notification:', notifErr);
+                                }
                             }
                         });
                     }));
@@ -530,59 +556,41 @@ function getFriendNotificationMessage(playerName: string, teammateName: string):
     }
 }
 
-// Teammate Notification Messages (generated with help from Google Gemini AI)
+// Teammate Notification Messages — kept short so they read well in the system tray.
 const motivationalMessages = [
-    "Hey ${teammateName}, looks like someone's slacking while ${playerName} lights up the net! Get out there and join the party!",
-    "Feeling inspired by ${playerName}'s shot? Grab your stick and show them what you've got!",
-    "${playerName} is on FIRE! Don't let them steal all the glory! Get out there and score some of your own!",
-    "Is ${playerName} trying to win this challenge ALL ALONE? Get on the ice and show them some teamwork!",
-    "Taking notes, ${teammateName}? ${playerName} is setting the bar high!",
-    "Just a friendly reminder, ${teammateName}: GOALS require SHOTS! Get out there and make it happen!",
-    "Feeling intimidated by ${playerName}'s shot selection? Don't be! Just grab your stick and focus on your own game!",
-    "Looking a little rusty, ${teammateName}? Maybe ${playerName}'s got a contagious case of \"hot stick\"! Get out there and catch it!",
-    "${playerName} is making it look easy! Think you can keep up? Get out there and prove it!",
-    "Breaking news, ${playerName} is on a shooting rampage! The ice needs more targets! Get out there, ${teammateName}, and be a teammate!"
+    "${playerName} just put in work. Your move, ${teammateName}!",
+    "Don't let ${playerName} outwork you today, ${teammateName}!",
+    "${playerName} is on the ice — are you, ${teammateName}?",
+    "Keep up! ${playerName} just logged a session.",
+    "${teammateName}, ${playerName} is setting the pace. Get out there!",
+    "${playerName} is grinding. Time to match that energy!",
 ];
 
 const teasingMessages = [
-    "Uh oh, ${teammateName}! Looks like ${playerName} is lighting the lamp without you, better get out there and start shooting!",
-    "Someone's gotta take ${playerName}'s stick away! They're taking all the shots! Better get out there and steal some of the glory!",
-    "Hey ${teammateName}, saving all your energy for the post-game celebrations? This is a shooting CHALLENGE, remember?",
-    "Looks like ${playerName} found the fountain of youth... and it involves a puck and a net! Get out there and show them you're still the GOAT!",
-    "Fun fact, ${playerName} is averaging 20 shots per minute. Just sayin', ${teammateName}.",
-    "Theory, the more shots ${playerName} takes, the stronger their wifi signal gets. Maybe you should get out there and improve yours too, ${teammateName}?",
-    "Warning, letting ${playerName} take all the shots may result in spontaneous celebrations. Get out there and join the party, ${teammateName}!"
+    "Another session from ${playerName}. Still watching, ${teammateName}?",
+    "${playerName} didn't wait for you, ${teammateName}.",
+    "Shots fired! ${playerName} is putting in reps.",
+    "${playerName} is staying sharp. Step it up, ${teammateName}!",
+    "Hot stick alert — ${playerName} just fired them up!",
+    "${playerName} didn't take a day off. Will you, ${teammateName}?",
 ];
 
 const razzingMessages = [
-    "Target acquired, ${playerName} has set their sights on the net... and maybe your reputation as the team's top shooter? Get out there and defend your title!",
-    "Breaking news, ${playerName} is on a TEAR! Get out there before they forget what their teammates look like!",
-    "Friendly competition turning into a ROUT? Get out there and remind ${playerName} who's boss, ${teammateName}!",
-    "Looks like someone's got a case of \"shotgun fever\"! Don't worry, ${teammateName}, there are plenty of pucks to go around!",
-    "Easy there, ${playerName}! Save some shots for the rest of us mortals!",
-    "Is ${playerName} training for the Olympics... or just trying to win this little challenge? Get out there and show them what real competition looks like!",
-    "Theory, the faster ${playerName} shoots, the faster practice ends. Get out there and make it happen... for the sake of everyone's sanity!",
-    "Breaking news, ${playerName} has declared themselves the official goalie tormentor. Get out there and show them some mercy, ${teammateName}!",
-    "Looks like ${playerName} is putting on a one-man show! Get out there and turn it into a TEAM effort, ${teammateName}!",
-    "Someone call the fire department! ${playerName}'s on a shooting rampage!"
+    "${playerName} just put you on notice, ${teammateName}.",
+    "The gap is growing — ${playerName} just trained.",
+    "${playerName} going off. Wake up, ${teammateName}!",
+    "While you were away, ${playerName} was shooting.",
+    "Tick tock, ${teammateName}. ${playerName} isn't slowing down.",
+    "Someone call the fire department — ${playerName}'s on fire!",
 ];
 
 const friendlyMessages = [
-    "Is that the sound of the net SINGING, or is it just ${playerName}'s shots getting more impressive? Get out there and show them some competition, ${teammateName}!",
-    "Breaking news: ${playerName} has filed a formal complaint about the lack of competition. Get your sticks ready, team!",
-    "Hey ${teammateName}, careful not to get caught in the slipstream of ${playerName}'s shots! They're on a TEAR!",
-    "Looks like ${playerName} found their power button! Get out there and show them what yours looks like, ${teammateName}!",
-    "Someone get a sharpshooter badge for ${playerName}! They're on fire! (Don't worry, the nets are fireproof... mostly.)",
-    "Ruh roh! Looks like ${playerName} is having a monopoly on the net! Get out there and break the bank, ${teammateName}!",
-    "PSA: There's plenty of net to go around! Share the love, ${playerName} (and ${teammateName})!",
-    "Just saw a puck with ${playerName}'s name on it circling the net. Get out there and claim yours, ${teammateName}!",
-    "Is ${playerName} auditioning for a slap shot competition or just practicing? Either way, get out there and steal the show!",
-    "Warning: Letting ${playerName} take all the shots may result in an inflated ego. Get out there and keep them grounded, ${teammateName}!",
-    "Theory: The more pucks ${playerName} shoots, the faster their skating gets. Get out there and test that theory, ${teammateName}!",
-    "Breaking news: ${playerName} has been promoted to team mascot... unless someone else steps up their shot game! Get out there, ${teammateName}!",
-    "Is this target practice or a shooting competition, ${playerName}? Get out there and show some mercy to the goalies!",
-    "Looks like someone's got a case of the \"shotgun blues\" and they're taking it out on the nets! Get out there and show them some fancy stickwork, ${teammateName}!",
-    "Is ${playerName} channeling their inner superhero? All they need is a cape to complete the look! Get out there and show them your own moves, ${teammateName}!"
+    "${playerName} just logged a session — nice work!",
+    "Your friend ${playerName} hit the ice. How about you, ${teammateName}?",
+    "Great session from ${playerName}! Keep the energy going.",
+    "${playerName} is staying sharp out there. You next, ${teammateName}?",
+    "Friendly nudge: ${playerName} just trained. 🏒",
+    "${playerName} is putting up shots — see their progress in the app!",
 ];
 
 // Helper: Check if achievement is completed based on achievement criteria, using stats/weekly

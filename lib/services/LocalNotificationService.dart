@@ -21,9 +21,22 @@ class LocalNotificationService {
   static bool _initialized = false;
   static GoRouter? _router;
 
+  /// Route to navigate to as soon as the router becomes available.
+  /// Set by [_messageClickHandler] in main.dart when the app is launched cold
+  /// from a background FCM notification tap.
+  static String? pendingRoute;
+
   /// Call this once after [createAppRouter] so that notification taps can
   /// navigate without a [BuildContext].
-  static void setRouter(GoRouter router) => _router = router;
+  static void setRouter(GoRouter router) {
+    _router = router;
+    // Drain any route that was queued before the router was ready.
+    final pending = pendingRoute;
+    if (pending != null) {
+      pendingRoute = null;
+      router.go(pending);
+    }
+  }
 
   // ── Channel IDs ──────────────────────────────────────────────────────────
   static const _practiceChannelId = 'practice_reminders';
@@ -107,6 +120,8 @@ class LocalNotificationService {
     if (router == null) return;
 
     switch (response.payload) {
+      case 'notifications':
+        router.go('/notifications');
       case 'history':
         router.go('/history');
       case 'achievements':
@@ -371,13 +386,14 @@ class LocalNotificationService {
     required int id,
     required String title,
     String? body,
+    String payload = 'train',
   }) async {
     await _plugin.show(
       id,
       title,
       body,
       _details(_motivationChannelId, 'Motivation'),
-      payload: 'train',
+      payload: payload,
     );
   }
 }

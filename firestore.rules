@@ -39,6 +39,13 @@ service cloud.firestore {
           allow read: if request.auth != null
           allow write, delete: if request.auth.uid == userId
         }
+
+        match /notifications/{notifId} {
+          // Only the owner can read or update their own notifications (e.g. mark read).
+          // Cloud Functions write these using the Admin SDK so no client write rule is needed.
+          allow read, update: if request.auth.uid == userId;
+          allow delete: if request.auth.uid == userId;
+        }
       }
     }
     match /iterations {

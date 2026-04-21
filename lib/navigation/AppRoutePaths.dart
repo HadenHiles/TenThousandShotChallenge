@@ -32,4 +32,7 @@ abstract final class AppRoutePaths {
 
   /// Parameterised compare-stats path: `/compare-stats/<friendUid>`.
   static String compareStatsPathFor(String friendUid) => '/compare-stats/$friendUid';
+
+  /// In-app notification centre.
+  static const notifications = '/notifications';
 }
