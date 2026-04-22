@@ -479,12 +479,13 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
     if (widget.highlight) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          alignment: 0.35,
-        );
+        final renderObj = context.findRenderObject();
+        if (renderObj != null) {
+          renderObj.showOnScreen(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
         _pulseController.repeat(reverse: true);
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
