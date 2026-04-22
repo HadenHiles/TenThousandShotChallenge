@@ -81,7 +81,13 @@ class NotificationsScreen extends StatelessWidget {
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutePaths.app);
+            }
+          },
         ),
         actions: [
           if (uid != null)
