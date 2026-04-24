@@ -50,11 +50,12 @@ class _JoinTeamState extends State<JoinTeam> {
       await FirebaseFirestore.instance.collection('teams').where('code', isEqualTo: value.toUpperCase()).get().then((snap) => teams.addAll(snap.docs));
     }
     await Future.delayed(const Duration(milliseconds: 250));
-    if (mounted)
+    if (mounted) {
       setState(() {
         _teams = teams;
         _isSearching = false;
       });
+    }
   }
 
   Future<void> _joinTeam(BuildContext ctx, String teamId, String teamName) async {
