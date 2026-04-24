@@ -128,7 +128,7 @@ class _PlayerState extends State<Player> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Get notified when ${_userPlayer!.displayName} finishes a shooting session.',
+                    'Get notified when ${_userPlayer!.notifName} finishes a shooting session.',
                     style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface),
                   ),
                   const SizedBox(height: 16),
@@ -215,7 +215,7 @@ class _PlayerState extends State<Player> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
-            "Invite ${_userPlayer!.displayName} to be your friend?",
+            "Invite ${_userPlayer!.notifName} to be your friend?",
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
@@ -250,7 +250,7 @@ class _PlayerState extends State<Player> {
                       SnackBar(
                         backgroundColor: Theme.of(context).cardTheme.color,
                         content: Text(
-                          "${_userPlayer!.displayName} Invited!",
+                          "${_userPlayer!.notifName} Invited!",
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onPrimary,
                           ),
@@ -263,7 +263,7 @@ class _PlayerState extends State<Player> {
                       SnackBar(
                         backgroundColor: Theme.of(context).cardTheme.color,
                         content: Text(
-                          "Failed to invite ${_userPlayer!.displayName} :(",
+                          "Failed to invite ${_userPlayer!.notifName} :(",
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onPrimary,
                           ),
@@ -293,7 +293,7 @@ class _PlayerState extends State<Player> {
       ConfirmDialog(
         "Remove Friend?",
         Text(
-          "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
+          "Are you sure you want to unfriend ${_userPlayer!.notifName}?",
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -322,7 +322,7 @@ class _PlayerState extends State<Player> {
                   backgroundColor: Theme.of(context).cardTheme.color,
                   duration: const Duration(milliseconds: 2500),
                   content: Text(
-                    '${_userPlayer!.displayName} was removed.',
+                    '${_userPlayer!.notifName} was removed.',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
@@ -543,7 +543,7 @@ class _PlayerState extends State<Player> {
                                       builder: (BuildContext context) {
                                         return AlertDialog(
                                           title: Text(
-                                            "Invite ${_userPlayer!.displayName} to be your friend?",
+                                            "Invite ${_userPlayer!.notifName} to be your friend?",
                                             style: TextStyle(
                                               color: Theme.of(context).colorScheme.onSurface,
                                               fontSize: 20,
@@ -578,7 +578,7 @@ class _PlayerState extends State<Player> {
                                                       SnackBar(
                                                         backgroundColor: Theme.of(context).cardTheme.color,
                                                         content: Text(
-                                                          "${_userPlayer!.displayName} Invited!",
+                                                          "${_userPlayer!.notifName} Invited!",
                                                           style: TextStyle(
                                                             color: Theme.of(context).colorScheme.onPrimary,
                                                           ),
@@ -591,7 +591,7 @@ class _PlayerState extends State<Player> {
                                                       SnackBar(
                                                         backgroundColor: Theme.of(context).cardTheme.color,
                                                         content: Text(
-                                                          "Failed to invite ${_userPlayer!.displayName} :(",
+                                                          "Failed to invite ${_userPlayer!.notifName} :(",
                                                           style: TextStyle(
                                                             color: Theme.of(context).colorScheme.onPrimary,
                                                           ),
@@ -631,7 +631,7 @@ class _PlayerState extends State<Player> {
                                       ConfirmDialog(
                                         "Remove Friend?",
                                         Text(
-                                          "Are you sure you want to unfriend ${_userPlayer!.displayName}?",
+                                          "Are you sure you want to unfriend ${_userPlayer!.notifName}?",
                                           style: TextStyle(
                                             color: Theme.of(context).colorScheme.onSurface,
                                           ),
@@ -660,7 +660,7 @@ class _PlayerState extends State<Player> {
                                                   backgroundColor: Theme.of(context).cardTheme.color,
                                                   duration: const Duration(milliseconds: 2500),
                                                   content: Text(
-                                                    '${_userPlayer!.displayName} was removed.',
+                                                    '${_userPlayer!.notifName} was removed.',
                                                     style: TextStyle(
                                                       color: Theme.of(context).colorScheme.onPrimary,
                                                     ),
@@ -1034,7 +1034,7 @@ class _PlayerState extends State<Player> {
   Widget _buildAccuracyCard(BuildContext context) {
     final theme = Theme.of(context);
     final playerIsPro = _userPlayer?.isPro ?? false;
-    final playerName = _userPlayer?.displayName ?? 'This player';
+    final playerName = _userPlayer?.notifName ?? 'This player';
 
     Widget cardContent = Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
