@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/Login.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/AddFriend.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/CompareStats.dart';
 import 'package:tenthousandshotchallenge/tabs/friends/Player.dart';
@@ -30,6 +31,7 @@ import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/notifications/NotificationsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/team/JoinTeam.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamActivity.dart';
 
 /// Route path pattern for the player detail route (go_router syntax).
 const _playerRoutePath = '/player/:id';
@@ -48,6 +50,7 @@ abstract final class AppRouteNames {
   static const createTeam = 'community_create_team';
   static const editTeam = 'community_edit_team';
   static const joinTeam = 'community_join_team';
+  static const teamActivity = 'community_team_activity';
   static const settings = 'me_settings';
   static const editProfile = 'me_edit_profile';
   static const editPuckCount = 'me_edit_puck_count';
@@ -263,6 +266,11 @@ List<RouteBase> _buildCommunityRoutes() {
       path: AppRoutePaths.joinTeam,
       name: AppRouteNames.joinTeam,
       builder: (context, state) => const JoinTeam(),
+    ),
+    GoRoute(
+      path: AppRoutePaths.teamActivity,
+      name: AppRouteNames.teamActivity,
+      builder: (context, state) => TeamActivity(team: state.extra as Team),
     ),
   ];
 }

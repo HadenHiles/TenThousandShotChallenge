@@ -224,38 +224,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     if (_communitySectionNotifier.value == CommunitySection.friends) {
       return NavigationTitle(title: 'Friends');
     }
-
-    final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-    if (user == null) {
-      return NavigationTitle(title: 'Team');
-    }
-
-    final userProfileStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: userProfileStream,
-      builder: (context, userSnapshot) {
-        if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-          return NavigationTitle(title: 'Team');
-        }
-        final userProfile = userSnapshot.data!.data();
-        final teamId = userProfile != null ? userProfile['team_id'] as String? : null;
-        if (teamId == null || teamId.isEmpty) {
-          return NavigationTitle(title: 'Team');
-        }
-        final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: teamStream,
-          builder: (context, teamSnapshot) {
-            if (!teamSnapshot.hasData || !teamSnapshot.data!.exists) {
-              return NavigationTitle(title: 'Team');
-            }
-            final teamData = teamSnapshot.data!.data();
-            final teamName = teamData != null && teamData['name'] != null ? teamData['name'] as String : 'Team';
-            return NavigationTitle(title: teamName);
-          },
-        );
-      },
-    );
+    // Team title is shown inside the Team page content — return empty so it
+    // doesn't overlap the action icons in the AppBar.
+    return const SizedBox.shrink();
   }
 
   List<Widget> _buildCommunityActions(BuildContext context) {
