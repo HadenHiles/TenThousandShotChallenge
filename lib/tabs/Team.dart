@@ -409,11 +409,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   );
 
                   // Cache team for use in helper methods
-                  if (_currentTeam != safeTeam) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) setState(() => _currentTeam = safeTeam);
-                    });
-                  }
+                  _currentTeam = safeTeam;
                   final Color teamPrimaryColor = colorFromHex(team.primaryColor);
 
                   final shotTexts = _calculateShotTexts(currentTeamTotalShots, safeTeam, numActivePlayers);
@@ -434,21 +430,65 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       mainAxisAlignment: MainAxisAlignment.start,
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        // Team logo header
-                        if (team.logoAsset != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16, bottom: 4),
-                            child: buildTeamLogoWidget(
-                              context: context,
-                              logoAsset: team.logoAsset,
-                              primaryColorHex: team.primaryColor,
-                              size: 64,
-                              iconSize: 32,
-                            ),
+                        // ── In-content team header (logo + name + activity) ──
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              buildTeamLogoWidget(
+                                context: context,
+                                logoAsset: team.logoAsset,
+                                primaryColorHex: team.primaryColor,
+                                size: 56,
+                                iconSize: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  safeName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 26,
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Team Activity button
+                              InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => context.push(AppRoutePaths.teamActivity, extra: team),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: teamPrimaryColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: teamPrimaryColor.withValues(alpha: 0.4), width: 1),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.dynamic_feed_rounded, color: teamPrimaryColor, size: 18),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Activity'.toUpperCase(),
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: teamPrimaryColor),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.only(top: 5, bottom: 0),
-                          margin: const EdgeInsets.only(bottom: 10, top: 15),
+                          margin: const EdgeInsets.only(bottom: 10, top: 4),
                           child: Row(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

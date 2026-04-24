@@ -14,6 +14,7 @@ abstract final class AppRoutePaths {
   static const createTeam = '/create-team';
   static const editTeam = '/edit-team';
   static const joinTeam = '/join-team';
+  static const teamActivity = '/team-activity';
   static const history = '/history';
   static const challengerRoad = '/challenger-road';
 
