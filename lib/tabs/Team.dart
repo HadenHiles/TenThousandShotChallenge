@@ -445,13 +445,14 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
+                                child: AutoSizeText(
                                   safeName,
                                   maxLines: 2,
+                                  minFontSize: 12,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontFamily: 'NovecentoSans',
-                                    fontSize: 26,
+                                    fontSize: 20,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                     height: 1.1,
                                   ),
