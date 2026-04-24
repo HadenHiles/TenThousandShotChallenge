@@ -21,6 +21,7 @@ import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamLeaderboardPdf.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
@@ -138,6 +139,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   bool _showShotsPerDay = true;
 
   final NumberFormat numberFormat = NumberFormat("###,###,###", "en_US");
+
+  // Cached team for use in builder helper methods
+  Team? _currentTeam;
 
   @override
   void initState() {
@@ -404,6 +408,14 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     safePlayers,
                   );
 
+                  // Cache team for use in helper methods
+                  if (_currentTeam != safeTeam) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _currentTeam = safeTeam);
+                    });
+                  }
+                  final Color teamPrimaryColor = colorFromHex(team.primaryColor);
+
                   final shotTexts = _calculateShotTexts(currentTeamTotalShots, safeTeam, numActivePlayers);
                   String displayShotsPerDayText = shotTexts['shotsPerDayText']!;
                   String displayShotsPerWeekText = shotTexts['shotsPerWeekText']!;
@@ -422,6 +434,18 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       mainAxisAlignment: MainAxisAlignment.start,
                       mainAxisSize: MainAxisSize.max,
                       children: [
+                        // Team logo header
+                        if (team.logoAsset != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 4),
+                            child: buildTeamLogoWidget(
+                              context: context,
+                              logoAsset: team.logoAsset,
+                              primaryColorHex: team.primaryColor,
+                              size: 64,
+                              iconSize: 32,
+                            ),
+                          ),
                         Container(
                           padding: const EdgeInsets.only(top: 5, bottom: 0),
                           margin: const EdgeInsets.only(bottom: 10, top: 15),
@@ -485,7 +509,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
                                 textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: Theme.of(context).primaryColor)),
+                                child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: teamPrimaryColor)),
                               ),
                             ]),
                           ),
@@ -748,7 +772,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: colorFromHex(_currentTeam?.primaryColor),
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: Text("Ok".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)),
@@ -835,14 +859,16 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         actions: <Widget>[
                           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text("Cancel".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onPrimary))),
-                          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text("Delete".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor))),
+                          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text("Delete".toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', color: colorFromHex(_currentTeam?.primaryColor)))),
                         ],
                       ),
                     ) ??
                     false;
               },
               background: Container(
-                  color: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(horizontal: 15), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
+                  color: colorFromHex(_currentTeam?.primaryColor),
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
               child: _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
             )
           : _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
@@ -858,7 +884,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           context.push(AppRoutePaths.editTeam);
         },
         style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
-        child: FittedBox(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Edit Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: Theme.of(context).primaryColor, size: 24))])),
+        child: FittedBox(
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.center, children: [Text("Edit Team".toUpperCase(), style: TextStyle(color: colorFromHex(_currentTeam?.primaryColor), fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: colorFromHex(_currentTeam?.primaryColor), size: 24))])),
       ),
     );
   }
@@ -923,7 +951,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         ),
       ];
     } else {
-      badgeColor = (user?.uid == plyr.profile?.reference?.id) ? Theme.of(context).primaryColor.withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.3);
+      badgeColor = (user?.uid == plyr.profile?.reference?.id) ? colorFromHex(_currentTeam?.primaryColor).withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.3);
     }
     badgeWidget = Container(
       padding: EdgeInsets.symmetric(horizontal: badgePaddingH, vertical: badgePaddingV),
@@ -1006,7 +1034,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   child: (avatarImage == null)
                       ? Text(
                           displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).primaryColor),
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: colorFromHex(_currentTeam?.primaryColor)),
                         )
                       : null,
                 ),
@@ -1038,7 +1066,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             color: isDeletedUser
                 ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
                 : (plyr.profile?.reference?.id == user?.uid)
-                    ? Theme.of(context).primaryColor
+                    ? colorFromHex(_currentTeam?.primaryColor)
                     : Theme.of(context).colorScheme.onSurface,
             fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
           ),
@@ -1107,8 +1135,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         },
         style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
-            child:
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Leave Team".toUpperCase(), style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: Theme.of(context).primaryColor, size: 24))])),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Text("Leave Team".toUpperCase(), style: TextStyle(color: colorFromHex(_currentTeam?.primaryColor), fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.exit_to_app_rounded, color: colorFromHex(_currentTeam?.primaryColor), size: 24))])),
       ),
     );
   }

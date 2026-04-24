@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart'; // For BuildContext & MediaQuery (three-button nav heuristic)
 import 'dart:io' show Platform; // For platform check
 import 'package:device_info_plus/device_info_plus.dart'; // For Android version
@@ -132,3 +133,20 @@ bool isThreeButtonAndroidNavigation(BuildContext context) {
 
 // Optional exposure for debugging / metrics.
 double? debugRawSystemBottomPaddingDp() => _rawSystemBottomPaddingDp;
+
+/// Parses a hex color string (e.g. '#CC3333' or 'CC3333') into a [Color].
+/// Falls back to [fallback] (default: app red #CC3333) if null or invalid.
+Color colorFromHex(String? hex, {Color fallback = const Color(0xffCC3333)}) {
+  if (hex == null || hex.isEmpty) return fallback;
+  final clean = hex.replaceFirst('#', '');
+  if (clean.length == 6) {
+    final value = int.tryParse('ff$clean', radix: 16);
+    return value != null ? Color(value) : fallback;
+  }
+  return fallback;
+}
+
+/// Returns the hex string for a [Color] (e.g. '#CC3333').
+String colorToHex(Color color) {
+  return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+}
