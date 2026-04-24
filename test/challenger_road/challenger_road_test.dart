@@ -134,6 +134,7 @@ ChallengeSession _makeSession({
   final p = passed ?? (shotsMade >= shotsToPass);
   return ChallengeSession(
     challengeId: challengeId,
+    challengeName: '',
     level: level,
     date: DateTime.now(),
     duration: const Duration(minutes: 5),

@@ -209,6 +209,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
       final session = ChallengeSession(
         challengeId: widget.challenge.id!,
+        challengeName: widget.challenge.name,
         level: widget.levelDoc.level,
         date: DateTime.now(),
         duration: duration,

@@ -81,6 +81,7 @@ const _firstMilestone = ChallengerRoadMilestoneResult(
 ChallengeSession _makeSession({required bool passed}) {
   return ChallengeSession(
     challengeId: 'challenge_1',
+    challengeName: '',
     level: 1,
     date: DateTime(2024, 1, 1),
     duration: const Duration(minutes: 5),
