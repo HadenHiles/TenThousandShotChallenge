@@ -48,6 +48,20 @@ function requireAdminKey(req: any, res: any): boolean {
     return true;
 }
 
+/**
+ * Returns the preferred display name for notifications.
+ * Uses the user's `nickname` field if set; otherwise falls back to the first
+ * word of `display_name` (e.g. "Haden Hiles #9" → "Haden").
+ */
+function getNotifName(userDoc: any): string {
+    const nickname: string | undefined = userDoc?.nickname;
+    if (nickname && nickname.trim() !== '') {
+        return nickname.trim();
+    }
+    const displayName: string = userDoc?.display_name ?? '';
+    return displayName.split(' ')[0] || 'Someone';
+}
+
 export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invites/{teammateId}" }, async (event) => {
     const context = event;
     let user;
@@ -74,7 +88,7 @@ export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invite
             await db.collection("users").doc(context.params.teammateId).get().then(async (tDoc) => {
                 // Get the teammates name
                 teammate = tDoc.data();
-                teammateName = teammate != undefined ? teammate.display_name : "Someone";
+                teammateName = getNotifName(teammate);
                 data.message.notification.body = `${teammateName} has sent you an invite.`;
 
                 logger.log("Sending notification with data: " + JSON.stringify(data));
@@ -133,7 +147,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
             await db.collection("users").doc(context.params.userId).get().then(async (tDoc) => {
                 // Get the teammates name
                 teammate = tDoc.data();
-                teammateName = teammate != undefined ? teammate.display_name : "Someone";
+                teammateName = getNotifName(teammate);
                 data.message.notification.body = `${teammateName} has accepted your invite.`;
 
                 logger.log("Sending notification with data: " + JSON.stringify(data));
@@ -314,8 +328,8 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
 
             // Build the notification title based on session data.
             const notifTitle = session != null
-                ? `${user.display_name} just took ${session.total} shots!`
-                : `Look out! ${user.display_name} is a shooting machine!`;
+                ? `${getNotifName(user)} just took ${session.total} shots!`
+                : `Look out! ${getNotifName(user)} is a shooting machine!`;
 
             if (user != null) {
                 // Fan out a notification to every mutual teammate who has opted in.
@@ -359,8 +373,8 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                                 // Use a notification payload so the OS displays it automatically,
                                 // plus a fun randomised body from getFriendNotificationMessage.
                                 const notifBody = getFriendNotificationMessage(
-                                    user.display_name,
-                                    friend?.display_name ?? "",
+                                    getNotifName(user),
+                                    getNotifName(friend),
                                 );
                                 const friendData = {
                                     "message": {
@@ -391,7 +405,7 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
                                         .add({
                                             type: 'friend_session',
                                             from_uid: context.params.userId,
-                                            from_name: user.display_name ?? '',
+                                            from_name: getNotifName(user),
                                             shots: session?.total ?? 0,
                                             message: notifBody,
                                             created_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -615,7 +629,7 @@ async function fanOutChallengeNotification(
     shotsMade: number,
     shotsToPass: number,
 ): Promise<void> {
-    const notifTitle = `${user.display_name} passed "${challengeName}" on Challenger Road!`;
+    const notifTitle = `${getNotifName(user)} passed "${challengeName}" on Challenger Road!`;
 
     const teammatesSnap = await db.collection(`teammates/${userId}/teammates`).get();
     await Promise.all(teammatesSnap.docs.map(async (t) => {
@@ -641,8 +655,8 @@ async function fanOutChallengeNotification(
 
         if (shouldNotify && fcmToken != null) {
             const notifBody = getChallengeNotificationMessage(
-                user.display_name,
-                friend?.display_name ?? '',
+                getNotifName(user),
+                getNotifName(friend),
                 challengeName,
                 level,
             );
@@ -659,7 +673,7 @@ async function fanOutChallengeNotification(
                 await db.collection('users').doc(t.id).collection('notifications').add({
                     type: 'friend_challenge',
                     from_uid: userId,
-                    from_name: user.display_name ?? '',
+                    from_name: getNotifName(user),
                     shots: shotsMade,
                     challenge_id: challengeId,
                     challenge_name: challengeName,

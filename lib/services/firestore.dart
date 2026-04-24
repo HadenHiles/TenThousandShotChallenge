@@ -333,11 +333,11 @@ Future<bool?> inviteFriend(String fromUid, String toUid, FirebaseFirestore fires
               String? friendFCMToken = UserProfile.fromSnapshot(t).fcmToken;
 
               if (friendFCMToken!.isNotEmpty) {
-                // Get the current user profile
-                return await firestore.collection('users').doc(toUid).get().then((u) async {
-                  UserProfile user = UserProfile.fromSnapshot(u);
+                // Get the sender's profile to use their preferred name in the notification
+                return await firestore.collection('users').doc(fromUid).get().then((u) async {
+                  UserProfile sender = UserProfile.fromSnapshot(u);
                   // Send the teammate a push notification! WOW
-                  return sendPushMessage(friendFCMToken, "Someone has challenged you!", "${user.displayName} has sent you an friend invitation.").then((value) => true);
+                  return sendPushMessage(friendFCMToken, "Someone has challenged you!", "${sender.notifName} has sent you a friend invitation.").then((value) => true);
                 }).onError((error, stackTrace) => false);
               }
 

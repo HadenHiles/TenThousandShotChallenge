@@ -25,6 +25,7 @@ class _EditProfileState extends State<EditProfile> {
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController displayNameTextFieldController = TextEditingController();
+  final TextEditingController nicknameTextFieldController = TextEditingController();
 
   final List<String> _avatars = [];
   String _avatar = "";
@@ -37,6 +38,7 @@ class _EditProfileState extends State<EditProfile> {
       _avatar = userProfile.photoUrl!;
 
       displayNameTextFieldController.text = userProfile.displayName != null ? userProfile.displayName! : user!.displayName!;
+      nicknameTextFieldController.text = userProfile.nickname ?? '';
     });
 
     _loadAvatars();
@@ -57,6 +59,7 @@ class _EditProfileState extends State<EditProfile> {
     Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
       'display_name': displayNameTextFieldController.text.toString(),
       'display_name_lowercase': displayNameTextFieldController.text.toString().toLowerCase(),
+      'nickname': nicknameTextFieldController.text.trim(),
       'photo_url': _avatar,
     }).then((value) {});
 
@@ -195,6 +198,15 @@ class _EditProfileState extends State<EditProfile> {
                                 }
                                 return null;
                               },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: BasicTextField(
+                              keyboardType: TextInputType.text,
+                              hintText: 'Nickname (used in notifications)',
+                              controller: nicknameTextFieldController,
+                              validator: (_) => null,
                             ),
                           ),
                         ],
