@@ -1,5 +1,8 @@
 import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
@@ -12,13 +15,10 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
-import 'package:tenthousandshotchallenge/theme/Theme.dart';
-import 'package:tenthousandshotchallenge/widgets/BasicTextField.dart';
-import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
+import 'package:tenthousandshotchallenge/theme/Theme.dart';
+import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditTeam extends StatefulWidget {
   const EditTeam({super.key});
@@ -28,18 +28,23 @@ class EditTeam extends StatefulWidget {
 }
 
 class _EditTeamState extends State<EditTeam> {
-  final user = FirebaseAuth.instance.currentUser;
+  final _user = FirebaseAuth.instance.currentUser;
   final _formKey = GlobalKey<FormState>();
-  final f = NumberFormat("###,###,###", "en_US");
-  final TextEditingController teamNameTextFieldController = TextEditingController();
-  final TextEditingController teamShotGoalTextFieldController = TextEditingController();
-  int? _goalTotal = 0;
-  final TextEditingController startDateController = TextEditingController();
-  DateTime? _startDate = DateTime.now();
-  final TextEditingController targetDateController = TextEditingController();
-  DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
-  Team? team;
+  final NumberFormat _nf = NumberFormat('###,###,###', 'en_US');
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _goalController = TextEditingController();
+  final TextEditingController _startDateController = TextEditingController();
+  final TextEditingController _targetDateController = TextEditingController();
+
+  int _goalTotal = 0;
+  DateTime _startDate = DateTime.now();
+  DateTime _targetDate = DateTime.now().add(const Duration(days: 100));
   bool _public = false;
+  bool _saving = false;
+  bool _loading = true;
+  Team? _team;
+
   // Team identity
   String? _logoAsset;
   String _primaryColor = '#CC3333';
@@ -48,97 +53,132 @@ class _EditTeamState extends State<EditTeam> {
 
   @override
   void initState() {
-    FirebaseFirestore.instance.collection('users').doc(user!.uid).get().then((uDoc) {
-      UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
-
-      FirebaseFirestore.instance.collection('teams').doc(userProfile.teamId).get().then((tDoc) {
-        setState(() {
-          team = Team.fromSnapshot(tDoc);
-          _goalTotal = team!.goalTotal;
-          _startDate = team!.startDate;
-          _targetDate = team!.targetDate;
-          _public = team!.public!;
-        });
-
-        teamNameTextFieldController.text = team!.name!;
-        teamShotGoalTextFieldController.text = team!.goalTotal!.toString();
-        startDateController.text = DateFormat('MMMM d, y').format(team!.startDate!);
-        targetDateController.text = DateFormat('MMMM d, y').format(team!.targetDate!);
-        // Load team identity
-        setState(() {
-          _logoAsset = team!.logoAsset;
-          _primaryColor = team!.primaryColor ?? '#CC3333';
-          _darkAccent = team!.darkAccentColor ?? '#111111';
-          _lightAccent = team!.lightAccentColor ?? '#FFFFFF';
-        });
-        // Load team identity
-        setState(() {
-          _logoAsset = team!.logoAsset;
-          _primaryColor = team!.primaryColor ?? '#CC3333';
-          _darkAccent = team!.darkAccentColor ?? '#111111';
-          _lightAccent = team!.lightAccentColor ?? '#FFFFFF';
-        });
-      });
-    });
-
     super.initState();
+    _loadTeam();
   }
 
-  Future<DateTime> _editDate(TextEditingController dateController, DateTime currentDate, DateTime minTime, DateTime maxTime) async {
-    DateTime returnDate = currentDate;
+  Future<void> _loadTeam() async {
+    final uDoc = await FirebaseFirestore.instance.collection('users').doc(_user!.uid).get();
+    final userProfile = UserProfile.fromSnapshot(uDoc);
+    final tDoc = await FirebaseFirestore.instance.collection('teams').doc(userProfile.teamId).get();
+    if (!mounted) return;
+    final t = Team.fromSnapshot(tDoc);
+    setState(() {
+      _team = t;
+      _goalTotal = t.goalTotal ?? 0;
+      _startDate = t.startDate ?? DateTime.now();
+      _targetDate = t.targetDate ?? DateTime.now().add(const Duration(days: 100));
+      _public = t.public ?? false;
+      _nameController.text = t.name ?? '';
+      _goalController.text = _goalTotal.toString();
+      _startDateController.text = DateFormat('MMMM d, y').format(_startDate);
+      _targetDateController.text = DateFormat('MMMM d, y').format(_targetDate);
+      _logoAsset = t.logoAsset;
+      _primaryColor = t.primaryColor ?? '#CC3333';
+      _darkAccent = t.darkAccentColor ?? '#111111';
+      _lightAccent = t.lightAccentColor ?? '#FFFFFF';
+      _loading = false;
+    });
+  }
 
+  Future<DateTime> _pickDate(TextEditingController ctrl, DateTime current, DateTime min, DateTime max) async {
+    DateTime result = current;
     await DatePicker.showDatePicker(
       context,
       showTitleActions: true,
-      minTime: minTime,
-      maxTime: maxTime,
-      onChanged: (date) {},
-      onConfirm: (date) async {
-        dateController.text = DateFormat('MMMM d, y').format(date);
-        returnDate = date;
+      minTime: min,
+      maxTime: max,
+      onChanged: (_) {},
+      onConfirm: (date) {
+        ctrl.text = DateFormat('MMMM d, y').format(date);
+        result = date;
       },
-      currentTime: currentDate,
+      currentTime: current,
       locale: LocaleType.en,
     );
-
-    return returnDate;
+    return result;
   }
 
-  void _saveTeam() {
-    FirebaseFirestore.instance.collection('teams').doc(team!.id).update({
-      'name': teamNameTextFieldController.text.toUpperCase().toString(),
-      'goal_total': _goalTotal,
-      'start_date': _startDate,
-      'target_date': _targetDate,
-      'public': _public,
-      'primary_color': _primaryColor,
-      'dark_accent_color': _darkAccent,
-      'light_accent_color': _lightAccent,
-      if (_logoAsset != null) 'logo_asset': _logoAsset else 'logo_asset': FieldValue.delete(),
-    }).then((value) {});
-
-    Fluttertoast.showToast(
-      msg: 'Team saved!'.toUpperCase(),
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      textColor: Theme.of(context).colorScheme.onPrimary,
-      fontSize: 16.0,
-    );
-
-    _backToTeamPage();
-  }
-
-  void _backToTeamPage() {
-    // Use go_router to navigate back to team tab
-    if (mounted) {
-      goToAppSection(
-        context,
-        AppSection.community,
-        communitySection: CommunitySection.team,
+  Future<void> _saveTeam() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await FirebaseFirestore.instance.collection('teams').doc(_team!.id).update({
+        'name': _nameController.text.trim().toUpperCase(),
+        'goal_total': _goalTotal,
+        'start_date': _startDate,
+        'target_date': _targetDate,
+        'public': _public,
+        'primary_color': _primaryColor,
+        'dark_accent_color': _darkAccent,
+        'light_accent_color': _lightAccent,
+        if (_logoAsset != null) 'logo_asset': _logoAsset else 'logo_asset': FieldValue.delete(),
+      });
+      if (!mounted) return;
+      Fluttertoast.showToast(
+        msg: 'Team saved!'.toLowerCase(),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Theme.of(context).cardTheme.color,
+        textColor: Theme.of(context).colorScheme.onPrimary,
+        fontSize: 16.0,
+      );
+      goToAppSection(context, AppSection.community, communitySection: CommunitySection.team);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      Fluttertoast.showToast(
+        msg: 'Failed to save team :('.toLowerCase(),
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        textColor: Colors.white70,
+        fontSize: 16.0,
       );
     }
+  }
+
+  InputDecoration _fieldDecoration({String? hint, Widget? suffix}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.3), fontSize: 16),
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5)),
+      suffixIcon: suffix,
+    );
+  }
+
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'NovecentoSans',
+          fontSize: 12,
+          letterSpacing: 0.5,
+          color: (preferences?.darkMode ?? false) ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
+        ),
+      ),
+    );
+  }
+
+  Widget _card({required List<Widget> children}) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).cardTheme.color,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      ),
+    );
   }
 
   @override
@@ -146,43 +186,21 @@ class _EditTeamState extends State<EditTeam> {
     return Builder(
       builder: (context) {
         return StreamProvider<NetworkStatus>(
-          create: (context) {
-            return NetworkStatusService().networkStatusController.stream;
-          },
+          create: (_) => NetworkStatusService().networkStatusController.stream,
           initialData: NetworkStatus.Online,
           child: NetworkAwareWidget(
             offlineChild: Scaffold(
               body: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                ),
-                margin: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                  right: 0,
-                  bottom: 0,
-                  left: 0,
-                ),
+                color: Theme.of(context).primaryColor,
+                margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Image(
-                      image: AssetImage('assets/images/logo.png'),
-                    ),
-                    Text(
-                      "Where's the wifi bud?".toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontFamily: "NovecentoSans",
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 25,
-                    ),
-                    const CircularProgressIndicator(
-                      color: Colors.white70,
-                    ),
+                    const Image(image: AssetImage('assets/images/logo.png')),
+                    Text("Where's the wifi bud?".toUpperCase(), style: const TextStyle(color: Colors.white70, fontFamily: 'NovecentoSans', fontSize: 24)),
+                    const SizedBox(height: 25),
+                    const CircularProgressIndicator(color: Colors.white70),
                   ],
                 ),
               ),
@@ -190,377 +208,259 @@ class _EditTeamState extends State<EditTeam> {
             onlineChild: Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               body: NestedScrollView(
-                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return [
-                    SliverAppBar(
-                      collapsedHeight: 65,
-                      expandedHeight: 65,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      floating: true,
-                      pinned: true,
-                      leading: Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
+                headerSliverBuilder: (_, __) => [
+                  SliverAppBar(
+                    collapsedHeight: 65,
+                    expandedHeight: 65,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    floating: true,
+                    pinned: true,
+                    leading: Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary, size: 28),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
-                      flexibleSpace: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                        ),
-                        child: FlexibleSpaceBar(
-                          collapseMode: CollapseMode.parallax,
-                          titlePadding: null,
-                          centerTitle: false,
-                          title: const BasicTitle(title: "Edit Team"),
-                          background: Container(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                          ),
-                        ),
-                      ),
-                      actions: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 10),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.check,
-                              color: Colors.green.shade600,
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                _saveTeam();
-                              }
-                            },
-                          ),
-                        ),
-                      ],
                     ),
-                  ];
-                },
-                body: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
+                    flexibleSpace: DecoratedBox(
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+                      child: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.parallax,
+                        titlePadding: null,
+                        centerTitle: false,
+                        title: const BasicTitle(title: 'Edit Team'),
+                        background: Container(color: Theme.of(context).scaffoldBackgroundColor),
+                      ),
+                    ),
+                    actions: [
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        margin: const EdgeInsets.only(top: 10),
+                        child: _saving
+                            ? const Padding(padding: EdgeInsets.all(16), child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)))
+                            : IconButton(
+                                icon: Icon(Icons.check_rounded, color: Colors.green.shade500, size: 28),
+                                onPressed: _loading ? null : _saveTeam,
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+                body: _loading
+                    ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
+                    : GestureDetector(
+                        onTap: () => FocusScope.of(context).unfocus(),
+                        behavior: HitTestBehavior.translucent,
                         child: Form(
                           key: _formKey,
-                          child: Column(
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Team Name:".toLowerCase(),
-                                      style: TextStyle(
-                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    BasicTextField(
-                                      keyboardType: TextInputType.text,
-                                      hintText: 'Enter a team name',
-                                      controller: teamNameTextFieldController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please enter a team name';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ],
+                              // ── Team Name ──────────────────────────────
+                              _card(children: [
+                                _sectionLabel('Team Name'),
+                                TextFormField(
+                                  controller: _nameController,
+                                  keyboardType: TextInputType.text,
+                                  textCapitalization: TextCapitalization.words,
+                                  style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                                  decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Team Shooting Goal (number of total team shots)".toLowerCase(),
-                                      style: TextStyle(
-                                        color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                        fontFamily: "NovecentoSans",
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    BasicTextField(
-                                      keyboardType: TextInputType.number,
-                                      hintText: '# of shots the team is aiming to take',
-                                      controller: teamShotGoalTextFieldController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please enter a shooting goal (number of shots)';
-                                        } else if (int.tryParse(value) == null) {
-                                          return 'Please enter a valid number';
-                                        } else {
-                                          setState(() {
-                                            _goalTotal = int.parse(value);
-                                          });
-                                        }
+                              ]),
 
-                                        return null;
-                                      },
+                              const SizedBox(height: 12),
+
+                              // ── Shot Goal ──────────────────────────────
+                              _card(children: [
+                                _sectionLabel('Team Shot Goal'),
+                                Text(
+                                  'Combined shots the whole team aims to reach.',
+                                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                ),
+                                const SizedBox(height: 10),
+                                TextFormField(
+                                  controller: _goalController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                                  decoration: _fieldDecoration(hint: '100000'),
+                                  onChanged: (v) {
+                                    final parsed = int.tryParse(v);
+                                    if (parsed != null) setState(() => _goalTotal = parsed);
+                                  },
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty) return 'Please enter a shot goal';
+                                    if (int.tryParse(v) == null) return 'Enter a valid number';
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 10),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _goalTotal > 0
+                                      ? Text(
+                                          '${_nf.format(_goalTotal)} shots',
+                                          key: ValueKey(_goalTotal),
+                                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).primaryColor),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ]),
+
+                              const SizedBox(height: 12),
+
+                              // ── Dates ──────────────────────────────────
+                              _card(children: [
+                                _sectionLabel('Challenge Window'),
+                                Text(
+                                  'Set when the team challenge starts and ends.',
+                                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                ),
+                                const SizedBox(height: 12),
+                                _sectionLabel('Start Date'),
+                                AutoSizeTextField(
+                                  controller: _startDateController,
+                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                  maxLines: 1,
+                                  maxFontSize: 18,
+                                  decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
+                                  readOnly: true,
+                                  onTap: () async {
+                                    final date = await _pickDate(
+                                      _startDateController,
+                                      _startDate,
+                                      DateTime(DateTime.now().year - 5),
+                                      DateTime.now(),
+                                    );
+                                    setState(() => _startDate = date);
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                _sectionLabel('Target Completion Date'),
+                                AutoSizeTextField(
+                                  controller: _targetDateController,
+                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                  maxLines: 1,
+                                  maxFontSize: 18,
+                                  decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
+                                  readOnly: true,
+                                  onTap: () async {
+                                    final date = await _pickDate(
+                                      _targetDateController,
+                                      _targetDate,
+                                      _startDate,
+                                      DateTime(DateTime.now().year + 5),
+                                    );
+                                    setState(() => _targetDate = date);
+                                  },
+                                ),
+                              ]),
+
+                              const SizedBox(height: 12),
+
+                              // ── Visibility ─────────────────────────────
+                              _card(children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Public Team', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _public ? 'Anyone can search for and join your team.' : 'Only players with your team code can join.',
+                                            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: _public,
+                                      onChanged: (v) => setState(() => _public = v),
                                     ),
                                   ],
                                 ),
+                              ]),
+
+                              const SizedBox(height: 12),
+
+                              // ── Team Identity ───────────────────────────
+                              TeamIdentityPicker(
+                                initialLogoAsset: _logoAsset,
+                                initialPrimaryColor: _primaryColor,
+                                initialDarkAccent: _darkAccent,
+                                initialLightAccent: _lightAccent,
+                                onLogoChanged: (v) => setState(() => _logoAsset = v),
+                                onPrimaryColorChanged: (v) => setState(() => _primaryColor = v),
+                                onDarkAccentChanged: (v) => setState(() => _darkAccent = v),
+                                onLightAccentChanged: (v) => setState(() => _lightAccent = v),
                               ),
-                              Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              "Starting From:".toLowerCase(),
-                                              style: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.left,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              "By Target Completion Date:".toLowerCase(),
-                                              style: TextStyle(
-                                                color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                                fontFamily: "NovecentoSans",
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.right,
-                                            ),
-                                          ),
-                                        ],
+
+                              const SizedBox(height: 28),
+
+                              // ── Delete Team ─────────────────────────────
+                              TextButton.icon(
+                                onPressed: () {
+                                  dialog(
+                                    context,
+                                    ConfirmDialog(
+                                      "Delete team \"${_team!.name}\"?".toLowerCase(),
+                                      Text(
+                                        "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
+                                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                       ),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 5,
-                                            child: AutoSizeTextField(
-                                              controller: startDateController,
-                                              style: const TextStyle(fontSize: 12),
-                                              maxLines: 1,
-                                              maxFontSize: 18,
-                                              decoration: InputDecoration(
-                                                focusColor: Theme.of(context).colorScheme.primary,
-                                                contentPadding: const EdgeInsets.all(15),
-                                                fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                              ),
-                                              readOnly: true,
-                                              onTap: () async {
-                                                await _editDate(
-                                                  startDateController,
-                                                  team!.startDate!,
-                                                  DateTime(DateTime.now().year - 5, DateTime.now().month, DateTime.now().day),
-                                                  DateTime.now(),
-                                                ).then((date) {
-                                                  setState(() {
-                                                    _startDate = date;
-                                                  });
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'To'.toUpperCase(),
-                                            style: TextStyle(
-                                              color: preferences!.darkMode! ? darken(Theme.of(context).colorScheme.onPrimary, 0.4) : darken(Theme.of(context).colorScheme.primaryContainer, 0.3),
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 14,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            flex: 5,
-                                            child: AutoSizeTextField(
-                                              controller: targetDateController,
-                                              style: const TextStyle(fontSize: 12),
-                                              maxLines: 1,
-                                              maxFontSize: 18,
-                                              decoration: InputDecoration(
-                                                focusColor: Theme.of(context).colorScheme.primary,
-                                                contentPadding: const EdgeInsets.all(15),
-                                                fillColor: Theme.of(context).colorScheme.primaryContainer,
-                                              ),
-                                              readOnly: true,
-                                              onTap: () async {
-                                                await _editDate(
-                                                  targetDateController,
-                                                  team!.targetDate!,
-                                                  _startDate!,
-                                                  DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-                                                ).then((date) {
-                                                  setState(() {
-                                                    _targetDate = date;
-                                                  });
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 10),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.start,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              'Public',
-                                              style: Theme.of(context).textTheme.bodyLarge,
-                                            ),
-                                            Switch(
-                                              value: _public,
-                                              onChanged: (bool value) {
-                                                setState(() {
-                                                  _public = value;
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  )),
+                                      "Cancel",
+                                      () => Navigator.of(context).pop(),
+                                      "Continue",
+                                      () async {
+                                        await deleteTeam(
+                                          _team!.id!,
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                        ).then((r) {
+                                          if (r) {
+                                            Fluttertoast.showToast(
+                                              msg: 'Team deleted!'.toUpperCase(),
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              backgroundColor: Theme.of(context).cardTheme.color,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+                                            if (context.mounted) {
+                                              goToAppSection(context, AppSection.community, communitySection: CommunitySection.team);
+                                            }
+                                          } else {
+                                            Fluttertoast.showToast(
+                                              msg: 'Failed to delete team :('.toUpperCase(),
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              backgroundColor: Colors.redAccent,
+                                              textColor: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16.0,
+                                            );
+                                            Navigator.of(context).pop();
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
+                                label: Text(
+                                  'Delete Team'.toUpperCase(),
+                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.error),
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.error,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      // ── Team Identity ──────────────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                        child: TeamIdentityPicker(
-                          initialLogoAsset: _logoAsset,
-                          initialPrimaryColor: _primaryColor,
-                          initialDarkAccent: _darkAccent,
-                          initialLightAccent: _lightAccent,
-                          onLogoChanged: (v) => setState(() => _logoAsset = v),
-                          onPrimaryColorChanged: (v) => setState(() => _primaryColor = v),
-                          onDarkAccentChanged: (v) => setState(() => _darkAccent = v),
-                          onLightAccentChanged: (v) => setState(() => _lightAccent = v),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              bottomNavigationBar: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () {
-                        dialog(
-                          context,
-                          ConfirmDialog(
-                            "Delete team \"${team!.name}\"?".toLowerCase(),
-                            Text(
-                              "The team will be deleted and all its data will be lost.\n\nWould you like to continue?",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            "Cancel",
-                            () {
-                              Navigator.of(context).pop();
-                            },
-                            "Continue",
-                            () async {
-                              await deleteTeam(team!.id!, Provider.of<FirebaseAuth>(context, listen: false), Provider.of<FirebaseFirestore>(context, listen: false)).then((r) {
-                                if (r) {
-                                  Fluttertoast.showToast(
-                                    msg: 'Team deleted!'.toUpperCase(),
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.BOTTOM,
-                                    timeInSecForIosWeb: 1,
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                    textColor: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 16.0,
-                                  );
-
-                                  // Use go_router unified route
-                                  if (context.mounted) {
-                                    goToAppSection(
-                                      context,
-                                      AppSection.community,
-                                      communitySection: CommunitySection.team,
-                                    );
-                                  }
-                                } else {
-                                  Fluttertoast.showToast(
-                                    msg: 'Failed to delete team :('.toUpperCase(),
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.BOTTOM,
-                                    timeInSecForIosWeb: 1,
-                                    backgroundColor: Colors.redAccent,
-                                    textColor: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 16.0,
-                                  );
-
-                                  Navigator.of(context).pop();
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).cardTheme.color,
-                        backgroundColor: Theme.of(context).cardTheme.color,
-                        disabledForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0))),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Text(
-                            "Delete Team".toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontFamily: 'NovecentoSans',
-                              fontSize: 22,
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 3, left: 6),
-                            child: Icon(
-                              Icons.delete_forever,
-                              color: Theme.of(context).primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
           ),
