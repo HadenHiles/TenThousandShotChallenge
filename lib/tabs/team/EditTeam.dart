@@ -263,6 +263,7 @@ class _EditTeamState extends State<EditTeam> {
                                   keyboardType: TextInputType.text,
                                   textCapitalization: TextCapitalization.words,
                                   style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                                  inputFormatters: [LengthLimitingTextInputFormatter(52)],
                                   decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
                                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
                                 ),
