@@ -15,6 +15,11 @@ class Team {
   bool? ownerParticipating;
   bool? public;
   List<String>? players;
+  // Team identity — optional, null = use app defaults
+  String? primaryColor; // hex e.g. '#CC3333'
+  String? darkAccentColor; // hex e.g. '#111111'
+  String? lightAccentColor; // hex e.g. '#FFFFFF'
+  String? logoAsset; // key e.g. 'sharks', 'blackhawks' or null
   DocumentReference? reference;
 
   Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerId, this.ownerParticipating, this.public, this.players);
@@ -36,7 +41,11 @@ class Team {
         ownerId = map['owner_id'],
         ownerParticipating = map['owner_participating'],
         public = map['public'],
-        players = List<String>.from(map['players'] ?? [])..sort((a, b) => a.compareTo(b));
+        players = List<String>.from(map['players'] ?? [])..sort((a, b) => a.compareTo(b)),
+        primaryColor = map['primary_color']?.toString(),
+        darkAccentColor = map['dark_accent_color']?.toString(),
+        lightAccentColor = map['light_accent_color']?.toString(),
+        logoAsset = map['logo_asset']?.toString();
 
   Map<String, dynamic> toMap() {
     final wordGenerator = WordGenerator();
@@ -59,7 +68,11 @@ class Team {
       'owner_id': ownerId,
       'owner_participating': ownerParticipating,
       'public': public,
-      'players': players
+      'players': players,
+      if (primaryColor != null) 'primary_color': primaryColor,
+      if (darkAccentColor != null) 'dark_accent_color': darkAccentColor,
+      if (lightAccentColor != null) 'light_accent_color': lightAccentColor,
+      if (logoAsset != null) 'logo_asset': logoAsset,
     };
   }
 

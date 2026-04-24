@@ -18,6 +18,7 @@ import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 
 class EditTeam extends StatefulWidget {
   const EditTeam({super.key});
@@ -39,6 +40,11 @@ class _EditTeamState extends State<EditTeam> {
   DateTime? _targetDate = DateTime.now().add(const Duration(days: 100));
   Team? team;
   bool _public = false;
+  // Team identity
+  String? _logoAsset;
+  String _primaryColor = '#CC3333';
+  String _darkAccent = '#111111';
+  String _lightAccent = '#FFFFFF';
 
   @override
   void initState() {
@@ -58,6 +64,20 @@ class _EditTeamState extends State<EditTeam> {
         teamShotGoalTextFieldController.text = team!.goalTotal!.toString();
         startDateController.text = DateFormat('MMMM d, y').format(team!.startDate!);
         targetDateController.text = DateFormat('MMMM d, y').format(team!.targetDate!);
+        // Load team identity
+        setState(() {
+          _logoAsset = team!.logoAsset;
+          _primaryColor = team!.primaryColor ?? '#CC3333';
+          _darkAccent = team!.darkAccentColor ?? '#111111';
+          _lightAccent = team!.lightAccentColor ?? '#FFFFFF';
+        });
+        // Load team identity
+        setState(() {
+          _logoAsset = team!.logoAsset;
+          _primaryColor = team!.primaryColor ?? '#CC3333';
+          _darkAccent = team!.darkAccentColor ?? '#111111';
+          _lightAccent = team!.lightAccentColor ?? '#FFFFFF';
+        });
       });
     });
 
@@ -91,6 +111,10 @@ class _EditTeamState extends State<EditTeam> {
       'start_date': _startDate,
       'target_date': _targetDate,
       'public': _public,
+      'primary_color': _primaryColor,
+      'dark_accent_color': _darkAccent,
+      'light_accent_color': _lightAccent,
+      if (_logoAsset != null) 'logo_asset': _logoAsset else 'logo_asset': FieldValue.delete(),
     }).then((value) {});
 
     Fluttertoast.showToast(
@@ -423,6 +447,20 @@ class _EditTeamState extends State<EditTeam> {
                                   )),
                             ],
                           ),
+                        ),
+                      ),
+                      // ── Team Identity ──────────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        child: TeamIdentityPicker(
+                          initialLogoAsset: _logoAsset,
+                          initialPrimaryColor: _primaryColor,
+                          initialDarkAccent: _darkAccent,
+                          initialLightAccent: _lightAccent,
+                          onLogoChanged: (v) => setState(() => _logoAsset = v),
+                          onPrimaryColorChanged: (v) => setState(() => _primaryColor = v),
+                          onDarkAccentChanged: (v) => setState(() => _darkAccent = v),
+                          onLightAccentChanged: (v) => setState(() => _lightAccent = v),
                         ),
                       ),
                     ],
