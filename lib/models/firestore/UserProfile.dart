@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserProfile {
   String? id;
   final String? displayName;
+  final String? nickname;
   final String? email;
   final String? photoUrl;
   final bool? public;
@@ -15,6 +16,18 @@ class UserProfile {
   final String? fcmToken;
   DocumentReference? reference;
 
+  /// Returns the preferred name for use in notifications.
+  /// Uses [nickname] if set, otherwise the first word of [displayName].
+  String get notifName {
+    if (nickname != null && nickname!.trim().isNotEmpty) {
+      return nickname!.trim();
+    }
+    if (displayName != null && displayName!.isNotEmpty) {
+      return displayName!.split(' ').first;
+    }
+    return 'Someone';
+  }
+
   UserProfile(
     this.displayName,
     this.email,
@@ -23,6 +36,7 @@ class UserProfile {
     this.friendNotifications,
     this.teamId,
     this.fcmToken, {
+    this.nickname,
     this.practiceReminders,
     this.healthSync,
     this.isPro,
@@ -32,6 +46,7 @@ class UserProfile {
   UserProfile.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
         displayName = map['display_name'],
+        nickname = map['nickname'],
         email = map['email'],
         photoUrl = map['photo_url'],
         public = map['public'] ?? false,
@@ -47,6 +62,7 @@ class UserProfile {
     return {
       'id': id,
       'display_name': displayName,
+      'nickname': nickname,
       'email': email,
       'photo_url': photoUrl,
       'public': public ?? false,
