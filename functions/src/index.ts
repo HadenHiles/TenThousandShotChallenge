@@ -711,14 +711,17 @@ export const challengeSessionCreated = onDocumentCreated(
         const user = userDoc.data();
         if (!user) return;
 
-        // Look up the challenge name via collection group query (challenges sub-collection
-        // lives at challenger_road_levels/{levelId}/challenges/{id}).
-        let challengeName = '';
-        try {
-            const challengeSnap = await db.collectionGroup('challenges').where('id', '==', challengeId).limit(1).get();
-            challengeName = challengeSnap.empty ? '' : (challengeSnap.docs[0].data().name ?? '');
-        } catch (e) {
-            logger.warn('Could not look up challenge name, falling back to empty string:', e);
+        // Prefer the challenge name stored directly on the session document.
+        // Older documents may not have it, so fall back to a collection group
+        // lookup by document ID field before using the generic placeholder.
+        let challengeName: string = session.challenge_name ?? '';
+        if (!challengeName) {
+            try {
+                const challengeSnap = await db.collectionGroup('challenges').where('id', '==', challengeId).limit(1).get();
+                challengeName = challengeSnap.empty ? '' : (challengeSnap.docs[0].data().name ?? '');
+            } catch (e) {
+                logger.warn('Could not look up challenge name, falling back to empty string:', e);
+            }
         }
         if (!challengeName) challengeName = `Level ${level} challenge`;
 

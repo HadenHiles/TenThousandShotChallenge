@@ -4,6 +4,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 class ChallengeSession {
   String? id;
   final String challengeId;
+  final String challengeName;
   final int level;
   final DateTime date;
   final Duration duration;
@@ -31,6 +32,7 @@ class ChallengeSession {
   ChallengeSession({
     this.id,
     required this.challengeId,
+    required this.challengeName,
     required this.level,
     required this.date,
     required this.duration,
@@ -46,6 +48,7 @@ class ChallengeSession {
   ChallengeSession.fromMap(Map<String, dynamic> map, {this.reference})
       : id = map['id'],
         challengeId = map['challenge_id'] ?? '',
+        challengeName = map['challenge_name'] ?? '',
         level = map['level'] ?? 1,
         date = (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
         duration = Duration(seconds: map['duration'] ?? 0),
@@ -60,6 +63,7 @@ class ChallengeSession {
     return {
       'id': id,
       'challenge_id': challengeId,
+      'challenge_name': challengeName,
       'level': level,
       'date': date,
       'duration': duration.inSeconds,
