@@ -26,7 +26,9 @@ class _EditProfileState extends State<EditProfile> {
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
 
-  final List<String> _avatars = [];
+  final List<String> _mascotAvatars = [];
+  final List<String> _characterAvatars = [];
+  final List<String> _playerAvatars = [];
   String _avatar = '';
 
   @override
@@ -46,10 +48,21 @@ class _EditProfileState extends State<EditProfile> {
 
   Future<void> _loadAvatars() async {
     final manifest = await AssetManifest.loadFromAssetBundle(DefaultAssetBundle.of(context));
-    final List<String> avatars = manifest.listAssets().where((String key) => key.startsWith('assets/images/avatars')).toList();
+    final all = manifest.listAssets();
+    final mascots = all.where((k) => k.startsWith('assets/images/avatars/mascots/')).toList()..sort();
+    final characters = all.where((k) => k.startsWith('assets/images/avatars/characters/')).toList()..sort();
+    final players = all.where((k) => k.startsWith('assets/images/avatars/players/')).toList()..sort();
     if (!mounted) return;
     setState(() {
-      _avatars.addAll(avatars);
+      _mascotAvatars
+        ..clear()
+        ..addAll(mascots);
+      _characterAvatars
+        ..clear()
+        ..addAll(characters);
+      _playerAvatars
+        ..clear()
+        ..addAll(players);
     });
   }
 
@@ -235,11 +248,7 @@ class _EditProfileState extends State<EditProfile> {
                         style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
                       ),
                       const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 10,
-                        children: _buildAvatars(),
-                      ),
+                      _buildAvatarSections(),
                     ]),
                   ],
                 ),
@@ -251,89 +260,111 @@ class _EditProfileState extends State<EditProfile> {
     );
   }
 
-  List<Widget> _buildAvatars() {
+  Widget _buildAvatarSections() {
     final String googlePhoto = user!.photoURL ?? '';
-    final List<Widget> avatars = [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Google account photo
+        if (googlePhoto.isNotEmpty)
+          ..._avatarSection(
+            context,
+            label: 'Google Account',
+            items: [googlePhoto],
+            isNetwork: true,
+          ),
 
-    // Google account photo
-    if (googlePhoto.isNotEmpty) {
-      final bool selected = _avatar == googlePhoto;
-      avatars.add(
-        GestureDetector(
-          onTap: () {
-            Feedback.forTap(context);
-            _selectAvatar(googlePhoto);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10, right: 4),
-            width: 70,
-            height: 70,
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  backgroundImage: NetworkImage(googlePhoto),
-                ),
-                if (selected)
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Theme.of(context).primaryColor, width: 2),
-                    ),
-                  ),
-              ],
-            ),
+        // Mascots
+        if (_mascotAvatars.isNotEmpty)
+          ..._avatarSection(
+            context,
+            label: 'Mascots',
+            items: _mascotAvatars,
+          ),
+
+        // Characters
+        if (_characterAvatars.isNotEmpty)
+          ..._avatarSection(
+            context,
+            label: 'Characters',
+            items: _characterAvatars,
+          ),
+
+        // Players
+        if (_playerAvatars.isNotEmpty)
+          ..._avatarSection(
+            context,
+            label: 'Players',
+            items: _playerAvatars,
+          ),
+      ],
+    );
+  }
+
+  List<Widget> _avatarSection(
+    BuildContext context, {
+    required String label,
+    required List<String> items,
+    bool isNetwork = false,
+  }) {
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 8),
+        child: Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontFamily: 'NovecentoSans',
+            fontSize: 11,
+            letterSpacing: 0.8,
+            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.38),
           ),
         ),
-      );
-    }
-
-    // Asset avatars
-    for (final a in _avatars) {
-      final bool selected = _avatar == a;
-      avatars.add(
-        GestureDetector(
-          onTap: () {
-            Feedback.forTap(context);
-            _selectAvatar(a);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10, right: 4),
-            width: 70,
-            height: 70,
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  child: ClipOval(
-                    child: Image(
-                      image: AssetImage(a),
+      ),
+      Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: items.map((a) {
+          final bool selected = _avatar == a;
+          return GestureDetector(
+            onTap: () {
+              Feedback.forTap(context);
+              _selectAvatar(a);
+            },
+            child: SizedBox(
+              width: 70,
+              height: 70,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    backgroundImage: isNetwork ? NetworkImage(a) : null,
+                    child: isNetwork
+                        ? null
+                        : ClipOval(
+                            child: Image(
+                              image: AssetImage(a),
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                  ),
+                  if (selected)
+                    Container(
                       width: 70,
                       height: 70,
-                      fit: BoxFit.cover,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+                      ),
                     ),
-                  ),
-                ),
-                if (selected)
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Theme.of(context).primaryColor, width: 2),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
-
-    return avatars;
+          );
+        }).toList(),
+      ),
+    ];
   }
 }
