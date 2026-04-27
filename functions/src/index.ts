@@ -1977,7 +1977,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
 
             // Notify the user that their new weekly challenges are ready.
             if (!test && achievements.length > 0) {
-                const msg = `Your ${achievements.length} new weekly challenge${achievements.length > 1 ? 's are' : ' is'} ready. Tap to check them out!`;
+                const msg = `Your ${achievements.length} new weekly achievement${achievements.length > 1 ? 's are' : ' is'} ready. Tap to check them out!`;
                 try {
                     await db.collection('users').doc(userId).collection('notifications').add({
                         type: 'weekly_achievements_available',
@@ -1997,7 +1997,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                         await sendFcmMessage({
                             message: {
                                 token: fcmToken,
-                                notification: { title: '🎯 New Weekly Challenges!', body: msg },
+                                notification: { title: '🎯 New Weekly Achievements!', body: msg },
                                 data: { type: 'weekly_achievements_available' },
                                 android: { priority: 'normal' },
                                 apns: { payload: { aps: { sound: 'default' } } },
