@@ -107,11 +107,12 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
   Future<void> _loadPlayerTeamVisibility() async {
     final teamId = _userPlayer?.teamId;
     if (teamId == null || teamId.isEmpty) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isPlayersTeamPublic = false;
           _playerTeamName = null;
         });
+      }
       return;
     }
     final teamDoc = await FirebaseFirestore.instance.collection('teams').doc(teamId).get();
