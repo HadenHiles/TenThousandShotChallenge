@@ -497,7 +497,7 @@ class _ActivityCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: teamPrimaryColor.withValues(alpha: 0.3)),
                               ),
-                              child: Text('CR', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: teamPrimaryColor)),
+                              child: Text('Challenger Road', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: teamPrimaryColor)),
                             ),
                         ],
                       ),
