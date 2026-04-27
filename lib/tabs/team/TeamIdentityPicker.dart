@@ -8,13 +8,75 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 // ─── Logo catalog ────────────────────────────────────────────────────────────
 
 class TeamLogo {
-  final String key; // matches filename in assets/images/avatars/teams/
+  final String key;
   final String name;
-  final String mascot; // shown as subtitle hint
-  const TeamLogo(this.key, this.name, this.mascot);
-  String get assetPath => 'assets/images/avatars/teams/$key.png';
+  final String mascot; // shown as tooltip subtitle
+  final String _folder;
+  const TeamLogo(this.key, this.name, this.mascot, {String folder = 'teams'}) : _folder = folder;
+  String get assetPath => 'assets/images/avatars/$_folder/$key.png';
 }
 
+/// Resolves the asset path for any logo key, checking mascots first then
+/// falling back to the legacy teams/ folder for backward compatibility.
+String resolveTeamLogoPath(String key) {
+  try {
+    return kMascotLogos.firstWhere((l) => l.key == key).assetPath;
+  } catch (_) {}
+  return 'assets/images/avatars/teams/$key.png';
+}
+
+// ─── 50 pixel-art animal / mascot logos ──────────────────────────────────────
+// Place 64×64 or 128×128 pixel-art PNGs in assets/images/avatars/mascots/
+// Recommended source: game-icons.net (CC BY 3.0) or opengameart.org (CC0)
+// All filenames are lowercase with hyphens matching the key below.
+const List<TeamLogo> kMascotLogos = [
+  TeamLogo('alligator', 'Alligators', 'Alligator', folder: 'mascots'),
+  TeamLogo('bear', 'Bears', 'Bear', folder: 'mascots'),
+  TeamLogo('bison', 'Bison', 'Bison', folder: 'mascots'),
+  TeamLogo('bobcat', 'Bobcats', 'Bobcat', folder: 'mascots'),
+  TeamLogo('bull', 'Bulls', 'Bull', folder: 'mascots'),
+  TeamLogo('cobra', 'Cobras', 'Cobra', folder: 'mascots'),
+  TeamLogo('cougar', 'Cougars', 'Cougar', folder: 'mascots'),
+  TeamLogo('coyote', 'Coyotes', 'Coyote', folder: 'mascots'),
+  TeamLogo('deer', 'Deer', 'Deer', folder: 'mascots'),
+  TeamLogo('devil', 'Devils', 'Devil', folder: 'mascots'),
+  TeamLogo('dragon', 'Dragons', 'Dragon', folder: 'mascots'),
+  TeamLogo('duck', 'Ducks', 'Duck', folder: 'mascots'),
+  TeamLogo('eagle', 'Eagles', 'Eagle', folder: 'mascots'),
+  TeamLogo('falcon', 'Falcons', 'Falcon', folder: 'mascots'),
+  TeamLogo('fox', 'Foxes', 'Fox', folder: 'mascots'),
+  TeamLogo('gorilla', 'Gorillas', 'Gorilla', folder: 'mascots'),
+  TeamLogo('hammerhead', 'Hammerheads', 'Hammerhead', folder: 'mascots'),
+  TeamLogo('hawk', 'Hawks', 'Hawk', folder: 'mascots'),
+  TeamLogo('horse', 'Horses', 'Horse', folder: 'mascots'),
+  TeamLogo('jaguar', 'Jaguars', 'Jaguar', folder: 'mascots'),
+  TeamLogo('kraken', 'Krakens', 'Kraken', folder: 'mascots'),
+  TeamLogo('lion', 'Lions', 'Lion', folder: 'mascots'),
+  TeamLogo('lynx', 'Lynx', 'Lynx', folder: 'mascots'),
+  TeamLogo('mammoth', 'Mammoths', 'Mammoth', folder: 'mascots'),
+  TeamLogo('moose', 'Moose', 'Moose', folder: 'mascots'),
+  TeamLogo('narwhal', 'Narwhals', 'Narwhal', folder: 'mascots'),
+  TeamLogo('orca', 'Orcas', 'Orca', folder: 'mascots'),
+  TeamLogo('owl', 'Owls', 'Owl', folder: 'mascots'),
+  TeamLogo('panther', 'Panthers', 'Panther', folder: 'mascots'),
+  TeamLogo('penguin', 'Penguins', 'Penguin', folder: 'mascots'),
+  TeamLogo('phoenix', 'Phoenix', 'Phoenix', folder: 'mascots'),
+  TeamLogo('polar-bear', 'Polar Bears', 'Polar Bear', folder: 'mascots'),
+  TeamLogo('ram', 'Rams', 'Ram', folder: 'mascots'),
+  TeamLogo('rattlesnake', 'Rattlesnakes', 'Rattlesnake', folder: 'mascots'),
+  TeamLogo('raven', 'Ravens', 'Raven', folder: 'mascots'),
+  TeamLogo('rhino', 'Rhinos', 'Rhino', folder: 'mascots'),
+  TeamLogo('sabertooth', 'Sabertooths', 'Sabertooth', folder: 'mascots'),
+  TeamLogo('scorpion', 'Scorpions', 'Scorpion', folder: 'mascots'),
+  TeamLogo('shark', 'Sharks', 'Shark', folder: 'mascots'),
+  TeamLogo('stag', 'Stags', 'Stag', folder: 'mascots'),
+  TeamLogo('stingray', 'Stingrays', 'Stingray', folder: 'mascots'),
+  TeamLogo('tiger', 'Tigers', 'Tiger', folder: 'mascots'),
+  TeamLogo('wolf', 'Wolves', 'Wolf', folder: 'mascots'),
+  TeamLogo('wolverine', 'Wolverines', 'Wolverine', folder: 'mascots'),
+];
+
+// ─── NHL-style team logos (legacy — kept for teams that already selected one)
 const List<TeamLogo> kTeamLogos = [
   TeamLogo('blackhawks', 'Blackhawks', 'Hawk'),
   TeamLogo('ducks', 'Ducks', 'Duck'),
@@ -155,6 +217,9 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
   // ── Logo section ─────────────────────────────────────────────────────────
   Widget _buildLogoSection(BuildContext context) {
     final teamPrimary = colorFromHex(_primaryColor);
+    final allLogos = [...kMascotLogos, ...kTeamLogos];
+    final selectedLogo = _logoAsset != null ? allLogos.firstWhere((l) => l.key == _logoAsset, orElse: () => TeamLogo(_logoAsset!, _logoAsset!, '')) : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,6 +229,7 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
           style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
         ),
         const SizedBox(height: 12),
+
         // "No logo" chip + selected preview
         Row(
           children: [
@@ -184,29 +250,25 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
                 child: Icon(Icons.sports_hockey_rounded, size: 28, color: _logoAsset == null ? teamPrimary : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.35)),
               ),
             ),
-            if (_logoAsset != null) ...[
+            if (selectedLogo != null) ...[
               const SizedBox(width: 10),
-              Stack(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: teamPrimary, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset('assets/images/avatars/teams/$_logoAsset.png', fit: BoxFit.contain),
-                    ),
-                  ),
-                ],
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  border: Border.all(color: teamPrimary, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(selectedLogo.assetPath, fit: BoxFit.contain),
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  kTeamLogos.firstWhere((l) => l.key == _logoAsset, orElse: () => TeamLogo(_logoAsset!, _logoAsset!, '')).name,
+                  selectedLogo.name,
                   style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -222,38 +284,65 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
-        // Logo grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 1),
-          itemCount: kTeamLogos.length,
-          itemBuilder: (_, i) {
-            final logo = kTeamLogos[i];
-            final isSelected = _logoAsset == logo.key;
-            return GestureDetector(
-              onTap: () {
-                setState(() => _logoAsset = logo.key);
-                widget.onLogoChanged(logo.key);
-              },
-              child: Tooltip(
-                message: '${logo.name}\n${logo.mascot}',
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    color: isSelected ? teamPrimary.withValues(alpha: 0.1) : Colors.transparent,
-                    border: Border.all(color: isSelected ? teamPrimary : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.12), width: isSelected ? 2 : 1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: Image.asset(logo.assetPath, fit: BoxFit.contain),
-                ),
-              ),
-            );
-          },
-        ),
+
+        const SizedBox(height: 16),
+
+        // ── Animals & Mascots grid ──────────────────────────────────────
+        _miniSectionLabel(context, 'Animals & Mascots'),
+        const SizedBox(height: 8),
+        _buildLogoGrid(context, kMascotLogos, teamPrimary),
+
+        const SizedBox(height: 16),
+
+        // ── NHL-style logos grid ────────────────────────────────────────
+        _miniSectionLabel(context, 'NHL-Style Logos'),
+        const SizedBox(height: 8),
+        _buildLogoGrid(context, kTeamLogos, teamPrimary),
       ],
+    );
+  }
+
+  Widget _miniSectionLabel(BuildContext context, String text) {
+    return Text(
+      text.toUpperCase(),
+      style: TextStyle(
+        fontFamily: 'NovecentoSans',
+        fontSize: 11,
+        letterSpacing: 0.8,
+        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.38),
+      ),
+    );
+  }
+
+  Widget _buildLogoGrid(BuildContext context, List<TeamLogo> logos, Color teamPrimary) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 1),
+      itemCount: logos.length,
+      itemBuilder: (_, i) {
+        final logo = logos[i];
+        final isSelected = _logoAsset == logo.key;
+        return GestureDetector(
+          onTap: () {
+            setState(() => _logoAsset = logo.key);
+            widget.onLogoChanged(logo.key);
+          },
+          child: Tooltip(
+            message: '${logo.name}\n${logo.mascot}',
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              decoration: BoxDecoration(
+                color: isSelected ? teamPrimary.withValues(alpha: 0.1) : Colors.transparent,
+                border: Border.all(color: isSelected ? teamPrimary : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.12), width: isSelected ? 2 : 1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Image.asset(logo.assetPath, fit: BoxFit.contain),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -389,7 +478,7 @@ Widget buildTeamLogoWidget({
       width: size,
       height: size,
       decoration: BoxDecoration(color: teamColor.withValues(alpha: 0.10), shape: BoxShape.circle),
-      child: ClipOval(child: Padding(padding: EdgeInsets.all(size * 0.1), child: Image.asset('assets/images/avatars/teams/$logoAsset.png', fit: BoxFit.contain))),
+      child: ClipOval(child: Padding(padding: EdgeInsets.all(size * 0.1), child: Image.asset(resolveTeamLogoPath(logoAsset), fit: BoxFit.contain))),
     );
   }
   return Container(
