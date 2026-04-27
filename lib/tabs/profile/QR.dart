@@ -19,6 +19,18 @@ void showQRCode(BuildContext context, User? user) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
+      // Mirror the team QR container/ring colors using app surface colours:
+      //   darkSurface  = colorScheme.primary  (0xff1A1A1A dark / white light)
+      //   lightSurface = colorScheme.surface   (0xff222222 dark / white light)
+      final darkSurface = Theme.of(context).colorScheme.primary;
+      final lightSurface = Theme.of(context).colorScheme.surface;
+
+      // Ring geometry — same formula as buildTeamLogoWidget, size = 52
+      const double avatarSize = 52;
+      final double ringWidth = (avatarSize * 0.07).clamp(2.5, 5.0);
+      final double lightRingWidth = ringWidth * 0.5;
+      final double innerSize = avatarSize - ringWidth * 2 - lightRingWidth * 2;
+
       return AlertDialog(
         title: Text(
           "Friend QR Code".toUpperCase(),
@@ -28,7 +40,7 @@ void showQRCode(BuildContext context, User? user) {
             color: qrColor,
           ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: lightSurface,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -42,9 +54,9 @@ void showQRCode(BuildContext context, User? user) {
             ),
             Container(
               decoration: BoxDecoration(
-                color: qrColor.withValues(alpha: 0.1),
+                color: darkSurface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: ringWidth),
               ),
               padding: const EdgeInsets.all(10),
               child: SizedBox(
@@ -68,16 +80,38 @@ void showQRCode(BuildContext context, User? user) {
                         color: qrColor,
                       ),
                     ),
+                    // Profile photo with triple-ring structure matching buildTeamLogoWidget
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: avatarSize,
+                      height: avatarSize,
                       decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface,
                         shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(color: qrColor, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: qrColor.withValues(alpha: 0.40),
+                            blurRadius: avatarSize * 0.28,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: user.photoURL != null ? Image.network(user.photoURL!, fit: BoxFit.cover) : Icon(Icons.person_rounded, color: qrColor, size: 30),
+                      child: Center(
+                        child: Container(
+                          width: avatarSize - ringWidth * 2,
+                          height: avatarSize - ringWidth * 2,
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, shape: BoxShape.circle),
+                          child: Center(
+                            child: Container(
+                              width: innerSize,
+                              height: innerSize,
+                              decoration: BoxDecoration(color: darkSurface, shape: BoxShape.circle),
+                              clipBehavior: Clip.antiAlias,
+                              child: user.photoURL != null ? Image.network(user.photoURL!, fit: BoxFit.cover) : Icon(Icons.person_rounded, color: qrColor, size: innerSize * 0.55),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
