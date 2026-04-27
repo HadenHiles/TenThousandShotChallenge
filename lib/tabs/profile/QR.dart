@@ -8,6 +8,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:rotating_icon_button/rotating_icon_button.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:word_generator/word_generator.dart';
 
 void showQRCode(BuildContext context, User? user) {
@@ -89,10 +91,45 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                         SizedBox(
                           width: 200,
                           height: 200,
-                          child: QrImageView(
-                            data: team.id!,
-                            backgroundColor: Colors.white70,
-                          ),
+                          child: Builder(builder: (context) {
+                            final Color qrColor = colorFromHex(t.primaryColor);
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: colorFromHex(t.darkAccentColor).withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  QrImageView(
+                                    data: team.id!,
+                                    backgroundColor: Colors.white,
+                                    errorCorrectionLevel: QrErrorCorrectLevel.H,
+                                    eyeStyle: QrEyeStyle(
+                                      eyeShape: QrEyeShape.square,
+                                      color: qrColor,
+                                    ),
+                                    dataModuleStyle: QrDataModuleStyle(
+                                      dataModuleShape: QrDataModuleShape.square,
+                                      color: qrColor,
+                                    ),
+                                  ),
+                                  if (t.logoAsset != null)
+                                    buildTeamLogoWidget(
+                                      context: context,
+                                      logoAsset: t.logoAsset,
+                                      primaryColorHex: t.primaryColor,
+                                      darkAccentHex: t.darkAccentColor,
+                                      lightAccentHex: t.lightAccentColor,
+                                      size: 52,
+                                      iconSize: 26,
+                                    ),
+                                ],
+                              ),
+                            );
+                          }),
                         ),
                         Divider(
                           color: Theme.of(context).colorScheme.onPrimary,

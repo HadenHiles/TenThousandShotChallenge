@@ -37,8 +37,6 @@ const List<TeamLogo> kMascotLogos = [
   TeamLogo('bull', 'Bulls', 'Bull', folder: 'mascots'),
   TeamLogo('cobra', 'Cobras', 'Cobra', folder: 'mascots'),
   TeamLogo('cougar', 'Cougars', 'Cougar', folder: 'mascots'),
-  TeamLogo('coyote', 'Coyotes', 'Coyote', folder: 'mascots'),
-  TeamLogo('deer', 'Deer', 'Deer', folder: 'mascots'),
   TeamLogo('devil', 'Devils', 'Devil', folder: 'mascots'),
   TeamLogo('dragon', 'Dragons', 'Dragon', folder: 'mascots'),
   TeamLogo('duck', 'Ducks', 'Duck', folder: 'mascots'),
@@ -57,7 +55,6 @@ const List<TeamLogo> kMascotLogos = [
   TeamLogo('moose', 'Moose', 'Moose', folder: 'mascots'),
   TeamLogo('narwhal', 'Narwhals', 'Narwhal', folder: 'mascots'),
   TeamLogo('orca', 'Orcas', 'Orca', folder: 'mascots'),
-  TeamLogo('owl', 'Owls', 'Owl', folder: 'mascots'),
   TeamLogo('panther', 'Panthers', 'Panther', folder: 'mascots'),
   TeamLogo('penguin', 'Penguins', 'Penguin', folder: 'mascots'),
   TeamLogo('phoenix', 'Phoenix', 'Phoenix', folder: 'mascots'),
@@ -463,28 +460,68 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
 
 // ─── Shared team logo / color display helpers ─────────────────────────────────
 
-/// Builds a small round team logo widget. Shows the asset logo if [logoAsset]
-/// is set, otherwise falls back to a hockey icon using [primaryColorHex].
+/// Builds a styled team logo badge using all three team colors.
+/// - Dark accent circle as background (solid, jersey-like)
+/// - Primary color outer ring + ambient glow
+/// - Logo image or fallback icon centered inside
+///
+/// [darkAccentHex] and [lightAccentHex] are optional; a neutral dark fallback
+/// is used when not provided so the widget is safe in any context.
 Widget buildTeamLogoWidget({
   required BuildContext context,
   required String? logoAsset,
   required String? primaryColorHex,
+  String? darkAccentHex,
+  String? lightAccentHex,
   double size = 44,
   double iconSize = 22,
 }) {
   final teamColor = colorFromHex(primaryColorHex);
-  if (logoAsset != null) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: teamColor.withValues(alpha: 0.10), shape: BoxShape.circle),
-      child: ClipOval(child: Padding(padding: EdgeInsets.all(size * 0.1), child: Image.asset(resolveTeamLogoPath(logoAsset), fit: BoxFit.contain))),
-    );
-  }
+  final darkColor = darkAccentHex != null ? colorFromHex(darkAccentHex) : const Color(0xFF1A1A1A);
+  final lightColor = lightAccentHex != null ? colorFromHex(lightAccentHex) : teamColor;
+  final ringWidth = (size * 0.07).clamp(2.5, 5.0);
+  final lightRingWidth = ringWidth * 0.5;
+  final innerSize = size - ringWidth * 2 - lightRingWidth * 2;
+
+  // Innermost: dark fill + logo/icon
+  final Widget content = Container(
+    width: innerSize,
+    height: innerSize,
+    decoration: BoxDecoration(color: darkColor, shape: BoxShape.circle),
+    child: logoAsset != null
+        ? ClipOval(
+            child: Padding(
+              padding: EdgeInsets.all(innerSize * 0.1),
+              child: Image.asset(resolveTeamLogoPath(logoAsset), fit: BoxFit.contain),
+            ),
+          )
+        : Center(child: Icon(Icons.group_rounded, color: teamColor, size: iconSize)),
+  );
+
+  // Middle ring: lightAccent — half thickness of the dark ring
+  final Widget lightRing = Container(
+    width: size - ringWidth * 2,
+    height: size - ringWidth * 2,
+    decoration: BoxDecoration(color: lightColor, shape: BoxShape.circle),
+    child: Center(child: content),
+  );
+
+  // Outer ring: darkAccent + glow shadow
   return Container(
     width: size,
     height: size,
-    decoration: BoxDecoration(color: teamColor.withValues(alpha: 0.12), shape: BoxShape.circle),
-    child: Icon(Icons.group_rounded, color: teamColor, size: iconSize),
+    decoration: BoxDecoration(
+      color: darkColor,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: teamColor.withValues(alpha: 0.40),
+          blurRadius: size * 0.28,
+          spreadRadius: 0,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Center(child: lightRing),
   );
 }

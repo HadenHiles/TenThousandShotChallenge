@@ -33,23 +33,28 @@ class QRCodeDialog extends StatelessWidget {
   final String title;
   final String data;
   final String? message;
+  // When provided, team colors + logo are applied to the QR code
+  final Team? team;
 
   const QRCodeDialog({
     super.key,
     required this.title,
     required this.data,
     this.message,
+    this.team,
   });
 
   @override
   Widget build(BuildContext context) {
+    final Color qrColor = team != null ? colorFromHex(team!.primaryColor) : Theme.of(context).colorScheme.onSurface;
+
     return AlertDialog(
       title: Text(
         title.toUpperCase(),
         style: TextStyle(
           fontFamily: 'NovecentoSans',
           fontSize: 20,
-          color: Theme.of(context).primaryColor,
+          color: qrColor,
         ),
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -67,21 +72,47 @@ class QRCodeDialog extends StatelessWidget {
                 ),
               ),
             ),
-          SizedBox(
-            width: 200,
-            height: 200,
-            child: QrImageView(
-              data: data,
-              version: QrVersions.auto,
-              size: 200.0,
-              backgroundColor: Colors.white, // Ensure QR is visible in dark mode
-              eyeStyle: QrEyeStyle(
-                eyeShape: QrEyeShape.square,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              dataModuleStyle: QrDataModuleStyle(
-                dataModuleShape: QrDataModuleShape.square,
-                color: Theme.of(context).colorScheme.onSurface,
+          Container(
+            decoration: team != null
+                ? BoxDecoration(
+                    color: colorFromHex(team!.darkAccentColor).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
+                  )
+                : null,
+            padding: team != null ? const EdgeInsets.all(10) : EdgeInsets.zero,
+            child: SizedBox(
+              width: 200,
+              height: 200,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  QrImageView(
+                    data: data,
+                    version: QrVersions.auto,
+                    size: 200.0,
+                    backgroundColor: Colors.white,
+                    errorCorrectionLevel: QrErrorCorrectLevel.H,
+                    eyeStyle: QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: qrColor,
+                    ),
+                    dataModuleStyle: QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: qrColor,
+                    ),
+                  ),
+                  if (team?.logoAsset != null)
+                    buildTeamLogoWidget(
+                      context: context,
+                      logoAsset: team!.logoAsset,
+                      primaryColorHex: team!.primaryColor,
+                      darkAccentHex: team!.darkAccentColor,
+                      lightAccentHex: team!.lightAccentColor,
+                      size: 52,
+                      iconSize: 26,
+                    ),
+                ],
               ),
             ),
           ),
@@ -103,7 +134,7 @@ class QRCodeDialog extends StatelessWidget {
 }
 
 // displayTeamQRCodeDialog function (Included directly in this file for simplicity)
-Future<bool> displayTeamQRCodeDialog(BuildContext context, String? teamId, String? teamName) async {
+Future<bool> displayTeamQRCodeDialog(BuildContext context, String? teamId, String? teamName, {Team? team}) async {
   if (teamId != null && teamId.isNotEmpty && teamName != null && teamName.isNotEmpty) {
     await showDialog(
       context: context,
@@ -111,6 +142,7 @@ Future<bool> displayTeamQRCodeDialog(BuildContext context, String? teamId, Strin
         title: "Team QR Code",
         data: teamId,
         message: "Have new players scan this code to join '$teamName'.",
+        team: team,
       ),
     );
     return true;
@@ -430,9 +462,23 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       mainAxisAlignment: MainAxisAlignment.start,
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        // ── In-content team header (logo + name + activity) ──
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                        // ── Team header banner ─────────────────────────────
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: colorFromHex(team.darkAccentColor).withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: teamPrimaryColor.withValues(alpha: 0.55), width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: teamPrimaryColor.withValues(alpha: 0.18),
+                                blurRadius: 18,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -440,6 +486,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                 context: context,
                                 logoAsset: team.logoAsset,
                                 primaryColorHex: team.primaryColor,
+                                darkAccentHex: team.darkAccentColor,
+                                lightAccentHex: team.lightAccentColor,
                                 size: 56,
                                 iconSize: 28,
                               ),
@@ -452,8 +500,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontFamily: 'NovecentoSans',
-                                    fontSize: 20,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 22,
+                                    color: colorFromHex(team.lightAccentColor),
                                     height: 1.1,
                                   ),
                                 ),
@@ -461,23 +509,23 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                               const SizedBox(width: 8),
                               // Team Activity button
                               InkWell(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 onTap: () => context.push(AppRoutePaths.teamActivity, extra: team),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: teamPrimaryColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: teamPrimaryColor.withValues(alpha: 0.4), width: 1),
+                                    color: teamPrimaryColor.withValues(alpha: 0.22),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: teamPrimaryColor, width: 1),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.dynamic_feed_rounded, color: teamPrimaryColor, size: 18),
-                                      const SizedBox(width: 6),
+                                      Icon(Icons.dynamic_feed_rounded, color: colorFromHex(team.lightAccentColor), size: 16),
+                                      const SizedBox(width: 5),
                                       Text(
                                         'Activity'.toUpperCase(),
-                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: teamPrimaryColor),
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: colorFromHex(team.lightAccentColor)),
                                       ),
                                     ],
                                   ),
@@ -495,7 +543,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text("Goal".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 26, fontFamily: 'NovecentoSans')),
+                              Text("Goal".toUpperCase(), style: TextStyle(color: teamPrimaryColor, fontSize: 26, fontFamily: 'NovecentoSans')),
                               SizedBox(
                                 width: 150,
                                 child: AutoSizeTextField(
@@ -537,13 +585,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                             ],
                           ),
                         ),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Progress".toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22, fontFamily: 'NovecentoSans'))]),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Progress".toUpperCase(), style: TextStyle(color: teamPrimaryColor, fontSize: 22, fontFamily: 'NovecentoSans'))]),
                         const SizedBox(height: 5),
                         Column(children: [
                           Container(
                             width: (MediaQuery.of(context).size.width),
                             margin: const EdgeInsets.symmetric(horizontal: 30),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).cardTheme.color),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: _teamAccentShade(context).withValues(alpha: 0.45)),
                             clipBehavior: Clip.antiAlias,
                             child: Row(children: [
                               Tooltip(
@@ -836,7 +884,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       iconSize: 40,
                       icon: Icon(Icons.share, size: 40, color: Theme.of(context).colorScheme.onPrimary),
                       onPressed: () async {
-                        bool teamQrWasDisplayed = await displayTeamQRCodeDialog(context, teamData.id, teamData.name);
+                        bool teamQrWasDisplayed = await displayTeamQRCodeDialog(context, teamData.id, teamData.name, team: teamData);
 
                         if (!teamQrWasDisplayed) {
                           if (!mounted) return;
@@ -916,6 +964,16 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     );
   }
 
+  /// Returns the team's appropriate accent shade for background shading.
+  /// Uses darkAccentColor in dark mode, lightAccentColor in light mode.
+  /// Falls back to the theme card color when the accent is not configured.
+  Color _teamAccentShade(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hex = isDark ? _currentTeam?.darkAccentColor : _currentTeam?.lightAccentColor;
+    if (hex != null) return colorFromHex(hex);
+    return Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+  }
+
   Widget _buildEditTeamButton() {
     // Simple placeholder button for editing team
     return SizedBox(
@@ -924,7 +982,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         onPressed: () {
           context.push(AppRoutePaths.editTeam);
         },
-        style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        style: TextButton.styleFrom(foregroundColor: colorFromHex(_currentTeam?.primaryColor), backgroundColor: _teamAccentShade(context), shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.center, children: [Text("Edit Team".toUpperCase(), style: TextStyle(color: colorFromHex(_currentTeam?.primaryColor), fontFamily: 'NovecentoSans', fontSize: 24)), Padding(padding: const EdgeInsets.only(top: 3, left: 4), child: Icon(Icons.edit, color: colorFromHex(_currentTeam?.primaryColor), size: 24))])),
@@ -1034,7 +1092,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       opacity: isDeletedUser ? 0.5 : 1.0,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        tileColor: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+        tileColor: bg ? _teamAccentShade(context).withValues(alpha: 0.22) : Colors.transparent,
         leading: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
@@ -1180,7 +1238,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 });
               }));
         },
-        style: TextButton.styleFrom(foregroundColor: Theme.of(context).cardTheme.color, backgroundColor: Theme.of(context).cardTheme.color, shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
+        style: TextButton.styleFrom(foregroundColor: colorFromHex(_currentTeam?.primaryColor), backgroundColor: _teamAccentShade(context), shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(0)))),
         child: FittedBox(
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
