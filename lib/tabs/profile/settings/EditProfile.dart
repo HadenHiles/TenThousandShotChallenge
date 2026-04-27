@@ -11,7 +11,6 @@ import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
-import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -258,6 +257,7 @@ class _EditProfileState extends State<EditProfile> {
 
     // Google account photo
     if (googlePhoto.isNotEmpty) {
+      final bool selected = _avatar == googlePhoto;
       avatars.add(
         GestureDetector(
           onTap: () {
@@ -266,16 +266,25 @@ class _EditProfileState extends State<EditProfile> {
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 10, right: 4),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(55),
-              border: _avatar == googlePhoto ? Border.all(color: Theme.of(context).primaryColor, width: 2) : Border.all(width: 0),
-            ),
             width: 70,
             height: 70,
-            child: UserAvatar(
-              user: UserProfile(user!.displayName, user!.email, googlePhoto, true, preferences!.friendNotifications, null, preferences!.fcmToken),
-              backgroundColor: _avatar == googlePhoto ? Theme.of(context).cardTheme.color : Colors.transparent,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 35,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  backgroundImage: NetworkImage(googlePhoto),
+                ),
+                if (selected)
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -284,6 +293,7 @@ class _EditProfileState extends State<EditProfile> {
 
     // Asset avatars
     for (final a in _avatars) {
+      final bool selected = _avatar == a;
       avatars.add(
         GestureDetector(
           onTap: () {
@@ -292,16 +302,32 @@ class _EditProfileState extends State<EditProfile> {
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 10, right: 4),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(55),
-              border: _avatar == a ? Border.all(color: Theme.of(context).primaryColor, width: 2) : Border.all(width: 1, color: Colors.transparent),
-            ),
             width: 70,
             height: 70,
-            child: UserAvatar(
-              user: UserProfile(user!.displayName, user!.email, a, true, preferences!.friendNotifications, null, preferences!.fcmToken),
-              backgroundColor: _avatar == a ? Theme.of(context).cardTheme.color : Colors.transparent,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 35,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  child: ClipOval(
+                    child: Image(
+                      image: AssetImage(a),
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                if (selected)
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

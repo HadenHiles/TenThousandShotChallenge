@@ -1018,18 +1018,15 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         ),
       ),
     );
-    // Decide which ImageProvider to use
-    ImageProvider? avatarImage;
+    // Decide how to render the avatar image
+    ImageProvider? networkAvatarImage;
+    String? assetAvatarPath;
     if (photoUrl != null && photoUrl.isNotEmpty) {
       if (photoUrl.startsWith('http')) {
-        // Network image
-        avatarImage = NetworkImage(photoUrl);
-      } else if (photoUrl.startsWith('assets/')) {
-        // Asset image in bundled assets
-        avatarImage = AssetImage(photoUrl);
+        networkAvatarImage = NetworkImage(photoUrl);
       } else {
-        // Fallback: if it's some other non-empty string treat as asset path attempt
-        avatarImage = AssetImage(photoUrl);
+        // Asset path (e.g. assets/images/avatars/...)
+        assetAvatarPath = photoUrl;
       }
     }
 
@@ -1071,13 +1068,22 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 child: CircleAvatar(
                   radius: avatarRadius,
                   backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  backgroundImage: avatarImage,
-                  child: (avatarImage == null)
-                      ? Text(
-                          displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: colorFromHex(_currentTeam?.primaryColor)),
+                  backgroundImage: networkAvatarImage,
+                  child: assetAvatarPath != null
+                      ? ClipOval(
+                          child: Image(
+                            image: AssetImage(assetAvatarPath),
+                            width: avatarRadius * 2,
+                            height: avatarRadius * 2,
+                            fit: BoxFit.cover,
+                          ),
                         )
-                      : null,
+                      : (networkAvatarImage == null)
+                          ? Text(
+                              displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: colorFromHex(_currentTeam?.primaryColor)),
+                            )
+                          : null,
                 ),
               ),
             ),
