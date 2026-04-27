@@ -11,12 +11,17 @@ class UserStatsChipsRow extends StatefulWidget {
   final bool showAchievementChips;
   final bool showShootingChips;
 
+  /// When viewing another player's profile, pass their preferred display name
+  /// so tooltip text uses third-person language instead of "your / you've".
+  final String? playerName;
+
   const UserStatsChipsRow({
     super.key,
     required this.userId,
     this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     this.showAchievementChips = true,
     this.showShootingChips = true,
+    this.playerName,
   });
 
   @override
@@ -188,13 +193,14 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
 
           final sLoad = _shootingLoading;
 
+          final n = widget.playerName;
           final chips = <_ChipSpec>[
             _ChipSpec(
               icon: Icons.local_fire_department,
               color: Colors.orange,
               label: 'Current Streak',
               value: '${achStreak}w',
-              tooltipMessage: 'Consecutive weeks you\'ve completed all your weekly achievements. Missing a week resets this to zero.',
+              tooltipMessage: n != null ? 'Consecutive weeks $n has completed all weekly achievements. Missing a week resets this to zero.' : "Consecutive weeks you've completed all your weekly achievements. Missing a week resets this to zero.",
               isAchievement: true,
             ),
             _ChipSpec(
@@ -202,7 +208,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
               color: Colors.amber.shade700,
               label: 'Best Streak',
               value: '${achBest}w',
-              tooltipMessage: 'Your longest-ever streak of completing all weekly achievements in a row, in weeks.',
+              tooltipMessage: n != null ? "$n's longest-ever streak of completing all weekly achievements in a row, in weeks." : "Your longest-ever streak of completing all weekly achievements in a row, in weeks.",
               isAchievement: true,
             ),
             _ChipSpec(
@@ -210,7 +216,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
               color: Colors.deepOrange,
               label: 'Streak',
               value: sLoad ? '…' : '${_shootStreak}d',
-              tooltipMessage: 'Consecutive days you\'ve logged at least one shooting session. Resets if you miss a day.',
+              tooltipMessage: n != null ? 'Consecutive days $n has logged at least one shooting session. Resets if a day is missed.' : "Consecutive days you've logged at least one shooting session. Resets if you miss a day.",
               isAchievement: false,
             ),
             _ChipSpec(
@@ -218,7 +224,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
               color: Colors.deepOrange.shade700,
               label: 'Best Streak',
               value: sLoad ? '…' : '${_shootBest}d',
-              tooltipMessage: 'Your longest-ever consecutive daily shooting streak, in days.',
+              tooltipMessage: n != null ? "$n's longest-ever consecutive daily shooting streak, in days." : 'Your longest-ever consecutive daily shooting streak, in days.',
               isAchievement: false,
             ),
             _ChipSpec(
@@ -226,7 +232,7 @@ class _UserStatsChipsRowState extends State<UserStatsChipsRow> {
               color: Colors.teal.shade400,
               label: 'Shooting Time',
               value: sLoad ? '…' : _fmtDuration(_totalDuration),
-              tooltipMessage: 'Total time spent shooting across all sessions in your history.',
+              tooltipMessage: n != null ? 'Total time $n has spent shooting across all sessions.' : 'Total time spent shooting across all sessions in your history.',
               isAchievement: false,
             ),
           ];

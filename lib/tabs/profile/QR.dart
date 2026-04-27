@@ -13,42 +13,84 @@ import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:word_generator/word_generator.dart';
 
 void showQRCode(BuildContext context, User? user) {
+  if (user == null) return;
+  final Color qrColor = Theme.of(context).primaryColor;
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text(
-          "Friends can add you with this".toUpperCase(),
-          style: const TextStyle(
+          "Friend QR Code".toUpperCase(),
+          style: TextStyle(
             fontFamily: 'NovecentoSans',
-            fontSize: 24,
+            fontSize: 20,
+            color: qrColor,
           ),
         ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: QrImageView(
-                data: user!.uid,
-                backgroundColor: Colors.white70,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 15.0),
+              child: Text(
+                "Have friends scan this code to add you.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: qrColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    QrImageView(
+                      data: user.uid,
+                      version: QrVersions.auto,
+                      size: 200.0,
+                      backgroundColor: Colors.white,
+                      errorCorrectionLevel: QrErrorCorrectLevel.H,
+                      eyeStyle: QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: qrColor,
+                      ),
+                      dataModuleStyle: QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: qrColor,
+                      ),
+                    ),
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: qrColor, width: 2),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: user.photoURL != null ? Image.network(user.photoURL!, fit: BoxFit.cover) : Icon(Icons.person_rounded, color: qrColor, size: 30),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        actions: <Widget>[
+        actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(),
             child: Text(
               "Close".toUpperCase(),
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
+              style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
         ],

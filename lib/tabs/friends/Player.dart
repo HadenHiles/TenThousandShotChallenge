@@ -1005,7 +1005,7 @@ class _PlayerState extends State<Player> {
   }
 
   Widget _buildStatsChips(BuildContext context) {
-    return UserStatsChipsRow(userId: widget.uid!, showAchievementChips: false);
+    return UserStatsChipsRow(userId: widget.uid!, showAchievementChips: false, playerName: _userPlayer?.notifName);
   }
 
   Widget _buildAchievementsCard(BuildContext context) {
