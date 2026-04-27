@@ -329,21 +329,28 @@ class _AddFriendState extends State<AddFriend> {
           _card(children: [
             _sectionLabel("Can't find them?"),
             Text(
-              "They may not have an account yet — challenge them to join!",
-              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+              "They may not have an account yet - challenge them to join!",
+              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              height: 52,
+              child: ElevatedButton.icon(
                 onPressed: () {
                   SharePlus.instance.share(ShareParams(
                     text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
                     subject: 'Take the How To Hockey 10,000 Shot Challenge!',
                   ));
                 },
-                icon: const Icon(Icons.share_rounded),
-                label: Text('Share Challenge Link'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.share_rounded, size: 20),
+                label: const Text('Invite to Download', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20)),
               ),
             ),
           ]),
