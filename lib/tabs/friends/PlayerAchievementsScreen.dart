@@ -95,6 +95,7 @@ class PlayerAchievementsScreen extends StatelessWidget {
               UserStatsChipsRow(
                 userId: userId,
                 showShootingChips: false,
+                playerName: playerName.split(' ').first,
                 padding: const EdgeInsets.only(bottom: 16),
               ),
               UserAchievementsReadOnly(userId: userId),
