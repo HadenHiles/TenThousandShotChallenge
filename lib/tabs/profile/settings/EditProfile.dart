@@ -29,6 +29,7 @@ class _EditProfileState extends State<EditProfile> {
   final List<String> _mascotAvatars = [];
   final List<String> _characterAvatars = [];
   final List<String> _playerAvatars = [];
+  final List<String> _teamAvatars = [];
   String _avatar = '';
 
   @override
@@ -52,6 +53,7 @@ class _EditProfileState extends State<EditProfile> {
     final mascots = all.where((k) => k.startsWith('assets/images/avatars/mascots/')).toList()..sort();
     final characters = all.where((k) => k.startsWith('assets/images/avatars/characters/')).toList()..sort();
     final players = all.where((k) => k.startsWith('assets/images/avatars/players/')).toList()..sort();
+    final teams = all.where((k) => k.startsWith('assets/images/avatars/teams/')).toList()..sort();
     if (!mounted) return;
     setState(() {
       _mascotAvatars
@@ -63,6 +65,9 @@ class _EditProfileState extends State<EditProfile> {
       _playerAvatars
         ..clear()
         ..addAll(players);
+      _teamAvatars
+        ..clear()
+        ..addAll(teams);
     });
   }
 
@@ -296,6 +301,14 @@ class _EditProfileState extends State<EditProfile> {
             context,
             label: 'Players',
             items: _playerAvatars,
+          ),
+
+        // NHL Teams
+        if (_teamAvatars.isNotEmpty)
+          ..._avatarSection(
+            context,
+            label: 'NHL Teams',
+            items: _teamAvatars,
           ),
       ],
     );
