@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -211,6 +212,21 @@ class LocalNotificationService {
 
   static Future<void> cancelDailyReminder() async {
     await _plugin.cancel(_dailyReminderId);
+  }
+
+  /// On iOS, request notification permissions via both the local-notifications
+  /// plugin (needed for scheduled local notifications to be delivered) and
+  /// FirebaseMessaging (needed to obtain an APNs / FCM token).
+  /// No-op on Android.
+  static Future<void> requestIOSPermissions() async {
+    if (!Platform.isIOS) return;
+    final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    await ios?.requestPermissions(alert: true, badge: true, sound: true);
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   /// On Android 12+, open the system "Alarms & reminders" settings so the
