@@ -31,20 +31,59 @@ class _EditProfileState extends State<EditProfile> {
   final List<String> _playerAvatars = [];
   final List<String> _teamAvatars = [];
   String _avatar = '';
+  String _googlePhotoUrl = '';
 
   @override
   void initState() {
     super.initState();
-    Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).get().then((uDoc) {
-      if (!mounted) return;
-      final userProfile = UserProfile.fromSnapshot(uDoc);
-      setState(() {
-        _avatar = userProfile.photoUrl ?? user!.photoURL ?? '';
-        _displayNameController.text = userProfile.displayName ?? user!.displayName ?? '';
-        _nicknameController.text = userProfile.nickname ?? '';
-      });
-    });
+    // Populate Google photo synchronously on first frame from cached data so
+    // the section renders immediately without waiting for the async reload.
+    final cachedUser = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+    _googlePhotoUrl = _extractGooglePhotoUrl(cachedUser);
+    _loadProfileData();
     _loadAvatars();
+  }
+
+  /// Returns the Google account photo URL for [user], checking both the
+  /// top-level [User.photoURL] and the provider-specific [User.providerData]
+  /// entry for `google.com`.
+  String _extractGooglePhotoUrl(User? user) {
+    if (user == null) return '';
+    if ((user.photoURL ?? '').isNotEmpty) return user.photoURL!;
+    try {
+      final google = user.providerData.firstWhere((p) => p.providerId == 'google.com');
+      return google.photoURL ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _loadProfileData() async {
+    final firebaseAuth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+
+    // Reload to ensure we have the latest profile from the server.
+    try {
+      await firebaseAuth.currentUser?.reload();
+    } catch (_) {}
+
+    final currentUser = firebaseAuth.currentUser;
+    final String authPhoto = _extractGooglePhotoUrl(currentUser);
+
+    final uDoc = await firestore.collection('users').doc(currentUser!.uid).get();
+    if (!mounted) return;
+
+    final userProfile = UserProfile.fromSnapshot(uDoc);
+    final String storedPhoto = userProfile.photoUrl ?? '';
+    // If stored photo is a network URL it may itself be the Google photo.
+    final String resolvedGoogle = authPhoto.isNotEmpty ? authPhoto : (storedPhoto.contains('http') ? storedPhoto : '');
+
+    setState(() {
+      _googlePhotoUrl = resolvedGoogle;
+      _avatar = storedPhoto.isNotEmpty ? storedPhoto : resolvedGoogle;
+      _displayNameController.text = userProfile.displayName ?? currentUser.displayName ?? '';
+      _nicknameController.text = userProfile.nickname ?? '';
+    });
   }
 
   Future<void> _loadAvatars() async {
@@ -249,7 +288,7 @@ class _EditProfileState extends State<EditProfile> {
                     _card(children: [
                       _sectionLabel('Profile Avatar'),
                       Text(
-                        'Choose your Google account photo or pick an avatar below.',
+                        _googlePhotoUrl.isNotEmpty ? 'Choose your Google account photo or pick an avatar below.' : 'Pick an avatar below.',
                         style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
                       ),
                       const SizedBox(height: 14),
@@ -266,7 +305,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Widget _buildAvatarSections() {
-    final String googlePhoto = user!.photoURL ?? '';
+    final String googlePhoto = _googlePhotoUrl;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

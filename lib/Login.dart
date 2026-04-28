@@ -827,9 +827,18 @@ class _LoginState extends State<Login> {
         DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
         await uDoc.get().then((u) {
           if (u.exists) {
-            u.reference.update({
+            // Update FCM token. Only sync the Google photo_url if the user
+            // hasn't already chosen a custom avatar (i.e. their stored photo
+            // is blank or is still the Google URL rather than an asset path).
+            final Map<String, dynamic> updates = {
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => () {});
+            };
+            final String existingPhoto = (u.data() as Map<String, dynamic>?)?['photo_url'] as String? ?? '';
+            final bool hasCustomAvatar = existingPhoto.isNotEmpty && !existingPhoto.contains('http');
+            if (!hasCustomAvatar && (auth.currentUser?.photoURL ?? '').isNotEmpty) {
+              updates['photo_url'] = auth.currentUser!.photoURL;
+            }
+            u.reference.update(updates).then((value) => () {});
           } else {
             uDoc.set({
               'display_name_lowercase': auth.currentUser?.displayName?.toLowerCase(),
