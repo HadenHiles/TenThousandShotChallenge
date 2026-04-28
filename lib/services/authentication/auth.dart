@@ -25,7 +25,13 @@ Future<UserCredential> signInWithGoogle() async {
     accessToken: authorization.accessToken,
     idToken: googleAuth.idToken,
   );
-  return await auth.signInWithCredential(credential);
+  final result = await auth.signInWithCredential(credential);
+  // The v7 google_sign_in API doesn't always pass the photo URL through the
+  // credential into Firebase Auth. Set it explicitly from the account data.
+  if ((auth.currentUser?.photoURL ?? '').isEmpty && (googleUser.photoUrl ?? '').isNotEmpty) {
+    await auth.currentUser?.updatePhotoURL(googleUser.photoUrl);
+  }
+  return result;
 }
 
 Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
