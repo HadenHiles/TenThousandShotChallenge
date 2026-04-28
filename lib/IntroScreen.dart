@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
@@ -29,7 +28,7 @@ class _IntroScreenState extends State<IntroScreen> {
   final TextEditingController _puckCountTextFieldController = TextEditingController(text: preferences?.puckCount.toString());
   final TextEditingController _targetDateTextFieldController = TextEditingController(text: DateFormat('MMMM d, y').format(preferences!.targetDate!));
 
-  bool? _darkMode = preferences?.darkMode;
+  final bool? _darkMode = preferences?.darkMode;
   bool _permissionsGranted = false;
 
   DateTime? _targetDate;
@@ -117,124 +116,97 @@ class _IntroScreenState extends State<IntroScreen> {
       key: introKey,
       globalBackgroundColor: const Color(0xffcc3333),
       pages: [
+        // Page 1: Welcome + Set Goal combined
         PageViewModel(
           title: "Take the 10,000 shot challenge".toUpperCase(),
-          body: "See how much you can improve",
-          image: _buildImage('logo-small.png', MediaQuery.of(context).size.width * 0.7),
-          decoration: welcomePageDecoration,
-        ),
-        PageViewModel(
-          title: "Know your accuracy".toUpperCase(),
-          body: "Log shots by type and track your accuracy over time. See exactly which shots need the most work and watch your game improve.",
-          image: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(
-                Icons.analytics_rounded,
-                size: MediaQuery.of(context).size.width * 0.35,
-                color: Colors.white,
-              ),
-            ],
-          ),
-          decoration: pageDecoration,
-        ),
-        PageViewModel(
-          title: "More ways to improve".toUpperCase(),
           bodyWidget: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _FeatureCallout(
-                icon: Icons.route_rounded,
-                title: 'Challenger Road',
-                description: 'Rise through ranked shooting drills and climb the leaderboard.',
+              const Text(
+                "See how much you can improve",
+                style: bodyStyle,
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              _FeatureCallout(
-                icon: Icons.emoji_events_rounded,
-                title: 'Weekly Achievements',
-                description: 'Fresh goals every week tailored to your training gaps.',
+              const SizedBox(height: 20),
+              Text(
+                "Set your goal".toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 24,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              _FeatureCallout(
-                icon: Icons.bar_chart_rounded,
-                title: 'Stats Comparisons',
-                description: 'See how your shot stats stack up against your teammates.',
-              ),
-            ],
-          ),
-          image: Icon(
-            Icons.military_tech_rounded,
-            size: MediaQuery.of(context).size.width * 0.3,
-            color: Colors.white,
-          ),
-          decoration: pageDecoration,
-        ),
-        PageViewModel(
-          title: "Light or Dark theme?".toUpperCase(),
-          bodyWidget: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            children: [
+              const SizedBox(height: 8),
               SizedBox(
-                width: 200,
+                width: 220,
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Transform.scale(
-                          scale: _darkMode! ? 1 : 1.2,
-                          child: TextButton(
-                            onPressed: () async {
+                    TextFormField(
+                      controller: _targetDateTextFieldController,
+                      style: const TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 24,
+                        color: Colors.white,
+                      ),
+                      readOnly: true,
+                      textAlign: TextAlign.center,
+                      onTap: () {
+                        DatePicker.showDatePicker(
+                          context,
+                          showTitleActions: true,
+                          minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
+                          maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                          onChanged: (date) {
+                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
+                            int daysRemaining = date.difference(DateTime.now()).inDays;
+                            if (daysRemaining <= 1) {
                               setState(() {
-                                _darkMode = false;
+                                _shotsPerDay = 10000;
                               });
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(Colors.white),
-                            ),
-                            child: Text(
-                              "Light".toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 24,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Transform.scale(
-                          scale: _darkMode! ? 1.2 : 1,
-                          child: TextButton(
-                            onPressed: () async {
+                            } else {
                               setState(() {
-                                _darkMode = true;
+                                _shotsPerDay = (10000 / daysRemaining).round();
                               });
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(const Color(0xff1A1A1A)),
-                            ),
-                            child: Text(
-                              "Dark".toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 24,
-                                color: Color.fromRGBO(255, 255, 255, 0.75),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                            }
+                          },
+                          onConfirm: (date) async {
+                            setState(() {
+                              _targetDate = date;
+                            });
+                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
+                            int daysRemaining = date.difference(DateTime.now()).inDays;
+                            if (daysRemaining <= 1) {
+                              setState(() {
+                                _shotsPerDay = 10000;
+                              });
+                            } else {
+                              setState(() {
+                                _shotsPerDay = (10000 / daysRemaining).round();
+                              });
+                            }
+                          },
+                          currentTime: _targetDate,
+                          locale: LocaleType.en,
+                        );
+                      },
                     ),
-                    const SizedBox(
-                      height: 10,
+                    const SizedBox(height: 4),
+                    Text(
+                      '$_shotsPerDay shots per day',
+                      style: const TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 4),
                     const Text(
                       'You can change this later',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
-                        fontSize: 18,
+                        fontSize: 16,
                         color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
@@ -244,13 +216,31 @@ class _IntroScreenState extends State<IntroScreen> {
               ),
             ],
           ),
-          image: Icon(
-            Icons.brightness_4,
-            size: MediaQuery.of(context).size.width * 0.35,
-            color: _darkMode! ? Colors.black : Colors.white,
+          image: _buildImage('logo-small.png', MediaQuery.of(context).size.width * 0.55),
+          decoration: welcomePageDecoration,
+        ),
+        // Page 2: Track your progress (with accuracy as pro sub-point)
+        PageViewModel(
+          title: "Track your progress".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "It's important to work on all different types of shots!",
+                style: bodyStyle,
+              ),
+              const SizedBox(height: 16),
+              _FeatureCallout(
+                icon: Icons.analytics_rounded,
+                title: 'Accuracy Tracking',
+                description: 'Track accuracy to see exactly which shots need the most work. (Pro)',
+              ),
+            ],
           ),
+          image: _buildImage('progress.png', MediaQuery.of(context).size.width * 0.9),
           decoration: pageDecoration,
         ),
+        // Page 3: How many pucks
         PageViewModel(
           title: "How many pucks do you have?".toUpperCase(),
           bodyWidget: Column(
@@ -345,115 +335,39 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
           decoration: pageDecoration,
         ),
+        // Page 4: More ways to improve
         PageViewModel(
-          title: "I will take $_shotsPerDay shots per day to complete 10,000 shots by".toUpperCase(),
+          title: "More ways to improve".toUpperCase(),
           bodyWidget: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 200,
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    TextFormField(
-                      controller: _targetDateTextFieldController,
-                      style: const TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 28,
-                        color: Colors.white,
-                      ),
-                      readOnly: true,
-                      textAlign: TextAlign.center,
-                      onTap: () {
-                        DatePicker.showDatePicker(
-                          context,
-                          showTitleActions: true,
-                          minTime: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1),
-                          maxTime: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-                          onChanged: (date) {
-                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
-
-                            int daysRemaining = date.difference(DateTime.now()).inDays;
-
-                            if (daysRemaining <= 1) {
-                              setState(() {
-                                _shotsPerDay = 10000;
-                              });
-                            } else {
-                              setState(() {
-                                _shotsPerDay = (10000 / daysRemaining).round();
-                              });
-                            }
-                          },
-                          onConfirm: (date) async {
-                            setState(() {
-                              _targetDate = date;
-                            });
-                            _targetDateTextFieldController.text = DateFormat('MMMM d, y').format(date);
-                            int daysRemaining = date.difference(DateTime.now()).inDays;
-                            if (daysRemaining <= 1) {
-                              setState(() {
-                                _shotsPerDay = 10000;
-                              });
-                            } else {
-                              setState(() {
-                                _shotsPerDay = (10000 / daysRemaining).round();
-                              });
-                            }
-                          },
-                          currentTime: _targetDate,
-                          locale: LocaleType.en,
-                        );
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    const Text(
-                      'You can change this later',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 18,
-                        color: Colors.white70,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                  ],
-                ),
+              _FeatureCallout(
+                icon: Icons.route_rounded,
+                title: 'Challenger Road',
+                description: 'Work through levels of shooting challenges on your road to 10,000.',
+              ),
+              const SizedBox(height: 16),
+              _FeatureCallout(
+                icon: Icons.emoji_events_rounded,
+                title: 'Weekly Achievements',
+                description: 'Fresh goals every week tailored to your training gaps.',
+              ),
+              const SizedBox(height: 16),
+              _FeatureCallout(
+                icon: Icons.bar_chart_rounded,
+                title: 'Stats Comparisons',
+                description: 'See how your shot stats stack up against your teammates.',
               ),
             ],
           ),
-          image: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              AutoSizeText(
-                "Set your goal".toUpperCase(),
-                maxFontSize: 44,
-                maxLines: 3,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 44,
-                  fontFamily: "NovecentoSans",
-                ),
-              ),
-              const SizedBox(
-                height: 40,
-              ),
-              Icon(
-                FontAwesomeIcons.calendarCheck,
-                size: MediaQuery.of(context).size.width * 0.35,
-                color: Colors.white,
-              ),
-            ],
+          image: Icon(
+            Icons.military_tech_rounded,
+            size: MediaQuery.of(context).size.width * 0.3,
+            color: Colors.white,
           ),
           decoration: pageDecoration,
         ),
+        // Page 5: Permissions
         PageViewModel(
           title: "Allow permissions".toUpperCase(),
           bodyWidget: Column(
@@ -499,8 +413,10 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                   onPressed: () async {
                     await Permission.camera.request();
-                    await Permission.notification.request();
-                    if (Platform.isAndroid) {
+                    if (Platform.isIOS) {
+                      await LocalNotificationService.requestIOSPermissions();
+                    } else {
+                      await Permission.notification.request();
                       await LocalNotificationService.requestExactAlarmPermission();
                       await LocalNotificationService.requestBatteryOptimizationExemption();
                     }
@@ -661,8 +577,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   Future<void> _requestPermissions() async {
     await Permission.camera.request();
-    await Permission.notification.request();
-    if (Platform.isAndroid) {
+    if (Platform.isIOS) {
+      await LocalNotificationService.requestIOSPermissions();
+    } else {
+      await Permission.notification.request();
       await LocalNotificationService.requestExactAlarmPermission();
       await LocalNotificationService.requestBatteryOptimizationExemption();
     }
