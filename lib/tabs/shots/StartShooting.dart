@@ -1595,18 +1595,32 @@ class _StartShootingState extends State<StartShooting> {
                           auth,
                           firestore,
                         ).then((success) async {
-                          // Always reset the session immediately - do NOT await
-                          // health sync first, as the health API can hang on
-                          // some Android devices (Google API Manager errors).
-                          await widget.sessionPanelController.close();
-                          await LocalNotificationService.cancelActiveSession();
-                          sessionService.reset();
-                          if (mounted) {
-                            setState(() {
-                              _shots = [];
-                              _currentShotCount = preferences!.puckCount!;
-                              _chartCollapsed = true;
-                            });
+                          // Always reset the session and cancel the notification
+                          // first, then close the panel. Resetting first ensures
+                          // sessionService.isRunning = false so Navigation rebuilds
+                          // with minHeight = 0 before the close animation runs.
+                          // Using try-finally guarantees reset() is called even if
+                          // close() throws (e.g., controller not yet attached after
+                          // app re-open), which was the root cause of the panel
+                          // staying visible after re-opening the app.
+                          try {
+                            await LocalNotificationService.cancelActiveSession();
+                            sessionService.reset();
+                            if (mounted) {
+                              setState(() {
+                                _shots = [];
+                                _currentShotCount = preferences!.puckCount!;
+                                _chartCollapsed = true;
+                              });
+                            }
+                          } finally {
+                            // Close the panel after the reset so Navigation has
+                            // rebuilt with minHeight = 0, guaranteeing the panel
+                            // animates all the way to 0 instead of stopping at
+                            // the previous minHeight (65).
+                            if (widget.sessionPanelController.isAttached) {
+                              await widget.sessionPanelController.close();
+                            }
                           }
 
                           // Write workout to Apple Health / Google Fit if user opted in.
