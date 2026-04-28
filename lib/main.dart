@@ -97,6 +97,11 @@ Future<void> main() async {
     if (token != null && preferences!.fcmToken != token) {
       prefs.setString('fcm_token', token);
     }
+  }).catchError((e) {
+    // On iOS the APNS token may not be available immediately at cold start
+    // (e.g. first launch, device just booted). The token will be obtained
+    // later via onTokenRefresh, so this is safe to ignore.
+    debugPrint('FCM getToken skipped: $e');
   });
 
   // Refresh token whenever FCM rotates it so Firestore stays up to date.

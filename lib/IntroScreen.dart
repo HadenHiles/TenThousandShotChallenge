@@ -124,17 +124,47 @@ class _IntroScreenState extends State<IntroScreen> {
           decoration: welcomePageDecoration,
         ),
         PageViewModel(
-          title: "Track your progress".toUpperCase(),
-          body: "It's important to work on all different types of shots!",
-          image: _buildImage('progress.png', MediaQuery.of(context).size.width * 0.9),
+          title: "Know your accuracy".toUpperCase(),
+          body: "Log shots by type and track your accuracy over time. See exactly which shots need the most work and watch your game improve.",
+          image: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Icon(
+                Icons.analytics_rounded,
+                size: MediaQuery.of(context).size.width * 0.35,
+                color: Colors.white,
+              ),
+            ],
+          ),
           decoration: pageDecoration,
         ),
         PageViewModel(
-          title: "Challenge your teammates".toUpperCase(),
-          body: "View eachother's shooting sessions, and see who can reach 10,000 first!",
+          title: "More ways to improve".toUpperCase(),
+          bodyWidget: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _FeatureCallout(
+                icon: Icons.route_rounded,
+                title: 'Challenger Road',
+                description: 'Rise through ranked shooting drills and climb the leaderboard.',
+              ),
+              const SizedBox(height: 16),
+              _FeatureCallout(
+                icon: Icons.emoji_events_rounded,
+                title: 'Weekly Achievements',
+                description: 'Fresh goals every week tailored to your training gaps.',
+              ),
+              const SizedBox(height: 16),
+              _FeatureCallout(
+                icon: Icons.bar_chart_rounded,
+                title: 'Stats Comparisons',
+                description: 'See how your shot stats stack up against your teammates.',
+              ),
+            ],
+          ),
           image: Icon(
-            Icons.people_rounded,
-            size: MediaQuery.of(context).size.width * 0.35,
+            Icons.military_tech_rounded,
+            size: MediaQuery.of(context).size.width * 0.3,
             color: Colors.white,
           ),
           decoration: pageDecoration,
@@ -543,6 +573,49 @@ class _IntroScreenState extends State<IntroScreen> {
           borderRadius: BorderRadius.all(Radius.circular(8.0)),
         ),
       ),
+    );
+  }
+}
+
+class _FeatureCallout extends StatelessWidget {
+  const _FeatureCallout({required this.icon, required this.title, required this.description});
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.white, size: 28),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 16,
+                  color: Color.fromRGBO(255, 255, 255, 0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
