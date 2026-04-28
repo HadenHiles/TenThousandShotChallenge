@@ -365,7 +365,7 @@ class _IntroScreenState extends State<IntroScreen> {
             size: MediaQuery.of(context).size.width * 0.3,
             color: Colors.white,
           ),
-          decoration: pageDecoration,
+          decoration: permissionsPageDecoration,
         ),
         // Page 5: Permissions
         PageViewModel(
