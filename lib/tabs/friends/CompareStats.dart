@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
@@ -417,17 +418,15 @@ class _CompareStatsState extends State<CompareStats> {
                         onPressed: () => context.pop(),
                       ),
                     ),
-                    flexibleSpace: FlexibleSpaceBar(
-                      titlePadding: const EdgeInsets.only(left: 56, bottom: 14),
-                      title: Text(
-                        'Compare Stats'.toUpperCase(),
-                        style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
+                    flexibleSpace: DecoratedBox(
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+                      child: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.parallax,
+                        titlePadding: null,
+                        centerTitle: false,
+                        title: const BasicTitle(title: 'Compare Stats'),
+                        background: Container(color: Theme.of(context).scaffoldBackgroundColor),
                       ),
-                      collapseMode: CollapseMode.parallax,
                     ),
                   ),
                 ];
