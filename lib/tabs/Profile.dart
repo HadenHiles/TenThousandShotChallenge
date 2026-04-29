@@ -229,6 +229,13 @@ class _ProfileState extends State<Profile> {
                       menuColor: Theme.of(context).colorScheme.primary,
                       showAccomplishment: _subscriptionLevel == 'pro',
                       showProFallback: _subscriptionLevel == 'pro',
+                      onViewProfile: _subscriptionLevel == 'pro'
+                          ? () {
+                              Feedback.forTap(context);
+                              context.push(AppRoutePaths.profileChallengerRoad);
+                            }
+                          : null,
+                      viewProfileActionLabel: 'View Progress',
                       onEditAvatar: () {
                         Feedback.forTap(context);
                         context.push(AppRoutePaths.editProfile);
@@ -267,7 +274,6 @@ class _ProfileState extends State<Profile> {
                     child: CrAvatarBadgeStream(
                       userId: currentUser.uid,
                       size: 22,
-                      enabled: _subscriptionLevel == 'pro',
                       showProFallback: _subscriptionLevel == 'pro',
                     ),
                   ),

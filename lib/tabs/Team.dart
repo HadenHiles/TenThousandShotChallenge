@@ -1121,6 +1121,16 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       Feedback.forTap(context);
                       context.push(AppRoutePaths.playerPathFor(plyr.profile?.reference?.id ?? ''));
                     },
+              onViewCrProgress: isDeletedUser || (plyr.profile?.reference?.id ?? '').isEmpty
+                  ? null
+                  : () {
+                      Feedback.forTap(context);
+                      context.push(AppRoutePaths.playerChallengerRoadPathFor(plyr.profile!.reference!.id));
+                    },
+              onUnlockChallengerRoad: () {
+                Feedback.forTap(context);
+                context.push(AppRoutePaths.challengerRoad);
+              },
               child: SizedBox(
                 width: avatarRadius * 2,
                 height: avatarRadius * 2,
@@ -1153,7 +1163,6 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                 child: CrAvatarBadgeStream(
                   userId: plyr.profile!.reference!.id,
                   size: 18,
-                  enabled: isProForDisplay,
                   showProFallback: isProForDisplay,
                 ),
               ),

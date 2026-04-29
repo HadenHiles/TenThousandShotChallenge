@@ -15,6 +15,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
     required this.userId,
     required this.isPro,
     this.isEditable = false,
+    this.showOnlyEarned = false,
     this.highlightBadgeId,
     this.onGoProTap,
   });
@@ -25,6 +26,10 @@ class ChallengerRoadProfileSection extends StatelessWidget {
   /// When true, shows a "PLAYER CARD" featured-badge showcase with an edit
   /// button - only meaningful when this is the signed-in user's own profile.
   final bool isEditable;
+
+  /// When true, only earned badges are shown and the Go-Pro nudge is hidden.
+  /// Used when viewing another player's Challenger Road progress.
+  final bool showOnlyEarned;
 
   /// When set, the badge grid scrolls to this badge ID and pulses it.
   final String? highlightBadgeId;
@@ -49,8 +54,8 @@ class ChallengerRoadProfileSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Free-user Go-Pro nudge banner
-          if (!isPro) ...[
+          // Free-user Go-Pro nudge banner (only on own profile)
+          if (!isPro && !showOnlyEarned) ...[
             const SizedBox(height: 8),
             _GoProNudge(onGoProTap: onGoProTap),
           ],
@@ -104,6 +109,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
                     summary: summary,
                     badgeDefs: badgeDefs,
                     highlightBadgeId: highlightBadgeId,
+                    showOnlyEarned: showOnlyEarned,
                   ),
                 ],
               );
@@ -360,12 +366,14 @@ class _BadgeWrapGrid extends StatelessWidget {
     required this.summary,
     required this.badgeDefs,
     this.highlightBadgeId,
+    this.showOnlyEarned = false,
   });
 
   final List<String> earnedBadges;
   final ChallengerRoadUserSummary summary;
   final List<ChallengerRoadBadgeDefinition> badgeDefs;
   final String? highlightBadgeId;
+  final bool showOnlyEarned;
 
   List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
     return ChallengerRoadService.buildDisplayBadgeDefs(
@@ -376,7 +384,8 @@ class _BadgeWrapGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayDefs = _buildDisplayDefs();
+    final allDisplayDefs = _buildDisplayDefs();
+    final displayDefs = showOnlyEarned ? allDisplayDefs.where((d) => earnedBadges.contains(d.id)).toList() : allDisplayDefs;
     final groups = ChallengerRoadService.groupDisplayBadgesByTier(
       badges: displayDefs,
       earnedBadgeIds: earnedBadges,
@@ -387,7 +396,7 @@ class _BadgeWrapGrid extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Text(
-          'No badge definitions available yet.',
+          showOnlyEarned ? 'No badges earned yet.' : 'No badge definitions available yet.',
           style: TextStyle(
             fontFamily: 'NovecentoSans',
             fontSize: 14,
