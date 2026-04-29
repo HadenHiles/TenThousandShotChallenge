@@ -611,6 +611,16 @@ class _FriendsState extends State<Friends> {
                                   Feedback.forTap(context);
                                   context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
                                 },
+                          onViewCrProgress: friend.reference == null
+                              ? null
+                              : () {
+                                  Feedback.forTap(context);
+                                  context.push(AppRoutePaths.playerChallengerRoadPathFor(friend.reference!.id));
+                                },
+                          onUnlockChallengerRoad: () {
+                            Feedback.forTap(context);
+                            context.push(AppRoutePaths.challengerRoad);
+                          },
                           child: UserAvatar(
                             user: friend,
                             radius: 30,
@@ -626,7 +636,6 @@ class _FriendsState extends State<Friends> {
                         child: CrAvatarBadgeStream(
                           userId: friend.reference!.id,
                           size: 20,
-                          enabled: isProForDisplay,
                           showProFallback: isProForDisplay,
                         ),
                       ),
@@ -983,6 +992,16 @@ class _FriendsState extends State<Friends> {
                                             Feedback.forTap(context);
                                             context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
                                           },
+                                    onViewCrProgress: friend.reference == null
+                                        ? null
+                                        : () {
+                                            Feedback.forTap(context);
+                                            context.push(AppRoutePaths.playerChallengerRoadPathFor(friend.reference!.id));
+                                          },
+                                    onUnlockChallengerRoad: () {
+                                      Feedback.forTap(context);
+                                      context.push(AppRoutePaths.challengerRoad);
+                                    },
                                     child: UserAvatar(
                                       user: friend,
                                       radius: 30,
@@ -998,7 +1017,6 @@ class _FriendsState extends State<Friends> {
                                   child: CrAvatarBadgeStream(
                                     userId: friend.reference!.id,
                                     size: 20,
-                                    enabled: isProForDisplay,
                                     showProFallback: isProForDisplay,
                                   ),
                                 ),

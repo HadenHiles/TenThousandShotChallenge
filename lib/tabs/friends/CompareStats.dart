@@ -896,6 +896,8 @@ class _PlayerHeader extends StatelessWidget {
           showProFallback: isProForDisplay,
           onViewProfile: (profile?.reference?.id ?? '').isNotEmpty ? () => context.push(AppRoutePaths.playerPathFor(profile!.reference!.id)) : null,
           viewProfileActionLabel: 'View Profile',
+          onViewCrProgress: (profile?.reference?.id ?? '').isNotEmpty ? () => context.push(AppRoutePaths.playerChallengerRoadPathFor(profile!.reference!.id)) : null,
+          onUnlockChallengerRoad: () => context.push(AppRoutePaths.challengerRoad),
           child: CircleAvatar(
             radius: 28,
             backgroundColor: Theme.of(context).colorScheme.surface,

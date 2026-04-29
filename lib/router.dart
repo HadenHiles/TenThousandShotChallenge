@@ -245,6 +245,13 @@ List<RouteBase> _buildCommunityRoutes() {
       },
     ),
     GoRoute(
+      path: '/player/:id/challenger-road',
+      builder: (context, state) {
+        final playerId = state.pathParameters['id']!;
+        return ChallengerRoadProfileScreen(userId: playerId);
+      },
+    ),
+    GoRoute(
       path: '/compare-stats/:friendId',
       name: AppRouteNames.compareStats,
       builder: (context, state) {

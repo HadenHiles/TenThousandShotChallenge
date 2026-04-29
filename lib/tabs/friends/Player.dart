@@ -723,6 +723,7 @@ class _PlayerState extends State<Player> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _buildPlayerHeader(context),
+                        _buildFeaturedBadges(context),
                         const SizedBox(height: 8),
                         _buildProgressCard(context),
                         const SizedBox(height: 12),
@@ -747,6 +748,141 @@ class _PlayerState extends State<Player> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Widget _buildFeaturedBadges(BuildContext context) {
+    if (widget.uid == null) return const SizedBox.shrink();
+    return StreamBuilder<ChallengerRoadUserSummary>(
+      stream: ChallengerRoadService().watchUserSummary(widget.uid!),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final featured = snap.data!.featuredBadges;
+        if (featured.isEmpty) return const SizedBox.shrink();
+        final theme = Theme.of(context);
+        return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+          future: ChallengerRoadService().getBadgeCatalogForUser(widget.uid!),
+          builder: (context, catalogSnap) {
+            if (!catalogSnap.hasData) return const SizedBox.shrink();
+            final byId = {for (final d in catalogSnap.data!) d.id: d};
+            final defs = featured.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList();
+            if (defs.isEmpty) return const SizedBox.shrink();
+            return GestureDetector(
+              onLongPress: () => context.push(
+                AppRoutePaths.playerChallengerRoadPathFor(widget.uid!),
+              ),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      'PLAYER CARD',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ...defs.map((def) {
+                      final color = _playerBadgeColor(def);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            final scheme = Theme.of(context).colorScheme;
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: scheme.surface,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                              ),
+                              builder: (_) => SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 44,
+                                            height: 44,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: color.withValues(alpha: 0.15),
+                                              border: Border.all(color: color, width: 2),
+                                              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 6)],
+                                            ),
+                                            child: ChallengerRoadService.badgeIconWidget(def, size: 22, color: color),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              def.effectiveName,
+                                              style: TextStyle(
+                                                fontFamily: 'NovecentoSans',
+                                                fontSize: 22,
+                                                color: scheme.onSurface,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        def.effectiveDescription,
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 15,
+                                          color: scheme.onSurface.withValues(alpha: 0.85),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: color.withValues(alpha: 0.15),
+                              border: Border.all(color: color, width: 1.8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.withValues(alpha: 0.25),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                            child: ChallengerRoadService.badgeIconWidget(
+                              def,
+                              size: 18,
+                              color: color,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    const Spacer(),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildCrHeaderSummary(BuildContext context) {
@@ -896,7 +1032,15 @@ class _PlayerState extends State<Player> {
             ),
           ],
         ),
-        _buildCrHeaderSummary(context),
+        GestureDetector(
+          onTap: widget.uid != null
+              ? () {
+                  Feedback.forTap(context);
+                  context.push(AppRoutePaths.playerChallengerRoadPathFor(widget.uid!));
+                }
+              : null,
+          child: _buildCrHeaderSummary(context),
+        ),
       ],
     );
   }
@@ -1244,4 +1388,43 @@ String _fmtShots(int n) {
     buf.write(s[i]);
   }
   return buf.toString();
+}
+
+Color _playerBadgeColor(ChallengerRoadBadgeDefinition def) {
+  switch (def.tier) {
+    case ChallengerRoadBadgeTier.legendary:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeTier.epic:
+      return const Color(0xFFAB47BC);
+    case ChallengerRoadBadgeTier.hidden:
+      return const Color(0xFF78909C);
+    default:
+      break;
+  }
+  switch (def.category) {
+    case ChallengerRoadBadgeCategory.firstSteps:
+      return const Color(0xFF42A5F5);
+    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      return const Color(0xFF26C6DA);
+    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      return const Color(0xFF66BB6A);
+    case ChallengerRoadBadgeCategory.grindAndResilience:
+      return const Color(0xFF8D6E63);
+    case ChallengerRoadBadgeCategory.levelAdvancement:
+      return const Color(0xFF26A69A);
+    case ChallengerRoadBadgeCategory.crShotMilestones:
+      return const Color(0xFFFF7043);
+    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.hotStreaks:
+      return const Color(0xFFEF5350);
+    case ChallengerRoadBadgeCategory.challengeMastery:
+      return const Color(0xFF5C6BC0);
+    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      return const Color(0xFF29B6F6);
+    case ChallengerRoadBadgeCategory.eliteEndgame:
+      return const Color(0xFFFFD700);
+    case ChallengerRoadBadgeCategory.chirpy:
+      return const Color(0xFF78909C);
+  }
 }
