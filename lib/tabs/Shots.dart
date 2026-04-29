@@ -25,6 +25,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import '../main.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, ChallengeSessionConfig;
 
 class Shots extends StatefulWidget {
   const Shots({
@@ -843,9 +844,20 @@ class _ShotsState extends State<Shots> {
           return _buildChallengerRoadOfflinePlaceholder(context);
         }
         if (_subscriptionLevel == 'pro') {
-          return ChallengerRoadMapView(
-            userId: user.uid,
-            onCloseTap: _closeChallengerRoad,
+          return ValueListenableBuilder<ChallengeSessionConfig?>(
+            valueListenable: activeChallengeSession,
+            builder: (context, activeSession, _) {
+              // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom
+              final bottomNavHeight = kBottomNavigationBarHeight;
+              final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
+              final safeBottom = MediaQuery.of(context).padding.bottom;
+              final inset = bottomNavHeight + sessionPanelHeight + safeBottom;
+              return ChallengerRoadMapView(
+                userId: user.uid,
+                onCloseTap: _closeChallengerRoad,
+                mapBottomInset: inset,
+              );
+            },
           );
         }
         return ChallengerRoadTeaserView(
