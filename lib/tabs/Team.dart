@@ -676,9 +676,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildNoTeamUI() {
-    return Center(
+    return Align(
+      alignment: const Alignment(0.0, -0.25),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 32.0, right: 32.0, top: 32.0, bottom: 48.0),
+        padding: const EdgeInsets.only(left: 32.0, right: 32.0, top: 24.0, bottom: 48.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -701,7 +702,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             ),
             const SizedBox(height: 8),
             Text(
-              "Create or join a team to track shots together and compete.",
+              "Join a team to compete and track shots together.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
