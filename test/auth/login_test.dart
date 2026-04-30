@@ -54,7 +54,7 @@ void main() {
   });
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({'intro_shown': true});
+    SharedPreferences.setMockInitialValues({'intro_shown_version': '9999.0.0'});
     if (isIntegrationTest()) {
       await Firebase.initializeApp();
       FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);

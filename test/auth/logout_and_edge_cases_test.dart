@@ -47,7 +47,7 @@ void main() {
       fakeFirestore = FakeFirebaseFirestore();
       mockUser = TestAuthFactory.defaultUser;
       mockAuth = TestAuthFactory.signedOutAuth;
-      SharedPreferences.setMockInitialValues({'intro_shown': true});
+      SharedPreferences.setMockInitialValues({'intro_shown_version': '9999.0.0'});
       analytics = FirebaseAnalytics.instance;
       testAuthNotifier = AuthChangeNotifier(mockAuth);
       testIntroShownNotifier = IntroShownNotifier.withValue(true);

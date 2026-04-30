@@ -7,6 +7,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/IntroScreen.dart';
 import 'package:tenthousandshotchallenge/Login.dart';
@@ -116,13 +117,20 @@ class IntroShownNotifier extends ChangeNotifier {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _introShown = prefs.getBool('intro_shown') ?? false;
+    final packageInfo = await PackageInfo.fromPlatform();
+    final shownVersion = prefs.getString('intro_shown_version');
+    _introShown = shownVersion == packageInfo.version;
     notifyListeners();
   }
 
   void setIntroShown(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('intro_shown', value);
+    if (value) {
+      final packageInfo = await PackageInfo.fromPlatform();
+      await prefs.setString('intro_shown_version', packageInfo.version);
+    } else {
+      await prefs.remove('intro_shown_version');
+    }
     _introShown = value;
     notifyListeners();
   }
