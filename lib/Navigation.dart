@@ -247,7 +247,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     if (_communitySectionNotifier.value == CommunitySection.friends) {
       return NavigationTitle(title: 'Friends');
     }
-    // Team title is shown inside the Team page content — return empty so it
+    // Team title is shown inside the Team page content - return empty so it
     // doesn't overlap the action icons in the AppBar.
     return const SizedBox.shrink();
   }

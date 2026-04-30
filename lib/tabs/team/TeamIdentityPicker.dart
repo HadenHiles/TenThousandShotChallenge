@@ -73,7 +73,7 @@ const List<TeamLogo> kMascotLogos = [
   TeamLogo('wolverine', 'Wolverines', 'Wolverine', folder: 'mascots'),
 ];
 
-// ─── NHL-style team logos (legacy — kept for teams that already selected one)
+// ─── NHL-style team logos (legacy - kept for teams that already selected one)
 const List<TeamLogo> kTeamLogos = [
   TeamLogo('blackhawks', 'Blackhawks', 'Hawk'),
   TeamLogo('ducks', 'Ducks', 'Duck'),
@@ -111,7 +111,7 @@ const List<TeamLogo> kTeamLogos = [
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
 
-/// Primary team colors — reds, blues, greens, golds, purples, black
+/// Primary team colors - reds, blues, greens, golds, purples, black
 const List<String> kPrimaryColors = [
   '#CC3333', '#C8102E', '#B22222', '#E63946', // Reds
   '#F47920', '#FF6B2C', '#D46B08', // Oranges
@@ -123,7 +123,7 @@ const List<String> kPrimaryColors = [
   '#111111', // Black
 ];
 
-/// Dark accent colors — dark neutrals and tinted darks
+/// Dark accent colors - dark neutrals and tinted darks
 const List<String> kDarkAccentColors = [
   '#111111',
   '#1A1A1A',
@@ -137,7 +137,7 @@ const List<String> kDarkAccentColors = [
   '#0D1B2A',
 ];
 
-/// Light accent colors — whites, greys, creams, light tints
+/// Light accent colors - whites, greys, creams, light tints
 const List<String> kLightAccentColors = [
   '#FFFFFF',
   '#F5F5F5',
@@ -412,7 +412,7 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
             // Dark accent
             _sectionLabel(context, 'Dark Accent'),
             Text(
-              'A dark shade for contrast — jersey numbers, borders.',
+              'A dark shade for contrast - jersey numbers, borders.',
               style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 10),
@@ -499,7 +499,7 @@ Widget buildTeamLogoWidget({
         : Center(child: Icon(Icons.group_rounded, color: teamColor, size: iconSize)),
   );
 
-  // Middle ring: lightAccent — half thickness of the dark ring
+  // Middle ring: lightAccent - half thickness of the dark ring
   final Widget lightRing = Container(
     width: size - ringWidth * 2,
     height: size - ringWidth * 2,

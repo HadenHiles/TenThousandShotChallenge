@@ -994,6 +994,22 @@ class ChallengerRoadService {
     return total;
   }
 
+  /// Returns the count of active challenges in levels strictly below [level].
+  /// Used to credit players who started at a higher level with those skipped
+  /// challenges, so the progress percentage correctly reaches 100 % for them.
+  Future<int> getActiveChallengesCountBelowLevel(int level) async {
+    if (level <= 1) return 0;
+    final levelsSnap = await _levelsRef.where('active', isEqualTo: true).get();
+    int count = 0;
+    for (final levelDoc in levelsSnap.docs) {
+      final docLevel = ((levelDoc.data() as Map<String, dynamic>?)?['level'] as num?)?.toInt();
+      if (docLevel == null || docLevel >= level) continue;
+      final challengesSnap = await _challengesRef(levelDoc.id).where('active', isEqualTo: true).get();
+      count += challengesSnap.docs.length;
+    }
+    return count;
+  }
+
   /// Returns the number of challenges that have been passed at least once in
   /// the given attempt (i.e. [ChallengeProgressEntry.totalPassed] > 0).
   Future<int> getCompletedChallengesCount(String userId, String attemptId) async {

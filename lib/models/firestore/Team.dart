@@ -15,7 +15,7 @@ class Team {
   bool? ownerParticipating;
   bool? public;
   List<String>? players;
-  // Team identity — optional, null = use app defaults
+  // Team identity - optional, null = use app defaults
   String? primaryColor; // hex e.g. '#CC3333'
   String? darkAccentColor; // hex e.g. '#111111'
   String? lightAccentColor; // hex e.g. '#FFFFFF'

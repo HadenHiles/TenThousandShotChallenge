@@ -402,10 +402,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     // Lock in completed levels: only show challenges that the user actually
     // completed (have a progress entry). This prevents newly-added challenges
     // from appearing as completed for levels the user has already passed.
+    // Levels below startingLevel were inherited/skipped - keep all their
+    // challenges so they render as completed nodes instead of being hidden.
     if (attempt != null) {
       final effectiveCurrentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
       for (final lvl in challengesByLevel.keys.toList()) {
-        if (lvl < effectiveCurrentLevel) {
+        if (lvl < effectiveCurrentLevel && lvl >= attempt.startingLevel) {
           challengesByLevel[lvl] = challengesByLevel[lvl]!.where((c) => c.id != null && progress.containsKey(c.id)).toList();
         }
       }

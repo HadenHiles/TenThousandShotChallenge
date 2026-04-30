@@ -87,7 +87,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
 // ── Badge catalog section (StatefulWidget to cache future across rebuilds) ──
 
 /// Wraps the [FutureBuilder] for badge catalog data in a [StatefulWidget] so
-/// the future is only created once — not every time the parent [StreamBuilder]
+/// the future is only created once - not every time the parent [StreamBuilder]
 /// emits. This prevents the badge grid from tearing down and restarting the
 /// highlight animation on every Firestore update.
 class _BadgeCatalogSection extends StatefulWidget {

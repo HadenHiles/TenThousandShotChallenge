@@ -25,7 +25,7 @@ void showQRCode(BuildContext context, User? user) {
       final darkSurface = Theme.of(context).colorScheme.primary;
       final lightSurface = Theme.of(context).colorScheme.surface;
 
-      // Ring geometry — same formula as buildTeamLogoWidget, size = 52
+      // Ring geometry - same formula as buildTeamLogoWidget, size = 52
       const double avatarSize = 52;
       final double ringWidth = (avatarSize * 0.07).clamp(2.5, 5.0);
       final double lightRingWidth = ringWidth * 0.5;
