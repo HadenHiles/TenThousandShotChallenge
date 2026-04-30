@@ -82,6 +82,10 @@ class _CreateTeamState extends State<CreateTeam> {
   }
 
   Future<void> _saveTeam() async {
+    if (_nameController.text.trim().isEmpty) {
+      _formKey.currentState?.validate();
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     _team!
@@ -258,10 +262,12 @@ class _CreateTeamState extends State<CreateTeam> {
                           controller: _nameController,
                           keyboardType: TextInputType.text,
                           textCapitalization: TextCapitalization.words,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                          cursorColor: Theme.of(context).colorScheme.onPrimary,
                           inputFormatters: [LengthLimitingTextInputFormatter(52)],
                           decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
-                          validator: (v) => (v == null || v.isEmpty) ? 'Please enter a team name' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
                         ),
                       ]),
 
@@ -280,6 +286,7 @@ class _CreateTeamState extends State<CreateTeam> {
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                          cursorColor: Theme.of(context).colorScheme.onPrimary,
                           decoration: _fieldDecoration(hint: '100000'),
                           onChanged: (v) {
                             final parsed = int.tryParse(v);

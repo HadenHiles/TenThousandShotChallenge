@@ -314,6 +314,7 @@ class _TeamIdentityPickerState extends State<TeamIdentityPicker> {
   Widget _buildLogoGrid(BuildContext context, List<TeamLogo> logos, Color teamPrimary) {
     return GridView.builder(
       shrinkWrap: true,
+      padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 1),
       itemCount: logos.length,
