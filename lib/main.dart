@@ -25,6 +25,7 @@ import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:global_configuration/global_configuration.dart';
 import 'router.dart';
@@ -70,8 +71,11 @@ Future<void> main() async {
     prefs.getString('fcm_token'),
   );
 
-  // Load intro_shown synchronously before building the app
-  final introShown = prefs.getBool('intro_shown') ?? false;
+  // Load intro_shown synchronously before building the app; compare stored version
+  // against the current app version so updates prompt the welcome screen again.
+  final packageInfo = await PackageInfo.fromPlatform();
+  final introShownVersion = prefs.getString('intro_shown_version');
+  final introShown = introShownVersion == packageInfo.version;
   final introShownNotifier = IntroShownNotifier.withValue(introShown);
 
   // Initialize local notifications (channels + timezone setup).

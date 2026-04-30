@@ -35,9 +35,8 @@ class _IntroScreenState extends State<IntroScreen> {
   int? _shotsPerDay;
 
   Future<void> _onIntroEnd(BuildContext context) async {
+    Provider.of<IntroShownNotifier>(context, listen: false).setIntroShown(true); // Persists current version and notifies listeners
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('intro_shown', true);
-    Provider.of<IntroShownNotifier>(context, listen: false).setIntroShown(true); // Notify listeners immediately
     // Save all intro preferences at once
     prefs.setBool('dark_mode', _darkMode ?? false);
     prefs.setInt('puck_count', int.tryParse(_puckCountTextFieldController.text) ?? 25);

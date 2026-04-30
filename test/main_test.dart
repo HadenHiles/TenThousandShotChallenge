@@ -84,7 +84,7 @@ void main() {
       'puck_count': 25,
       'friend_notifications': true,
       'target_date': DateTime.now().add(Duration(days: 100)).toIso8601String(),
-      'intro_shown': false, // Set to false for IntroScreen test
+      'intro_shown_version': '', // Empty string means not shown for current version
       'fcm_token': 'mock_token',
     });
     final mockAuth = MockFirebaseAuth(signedIn: true);
@@ -140,7 +140,7 @@ void main() {
       'puck_count': 25,
       'friend_notifications': true,
       'target_date': DateTime.now().add(Duration(days: 100)).toIso8601String(),
-      'intro_shown': true, // Set to true for Login test (user not logged in)
+      'intro_shown_version': '9999.0.0', // Non-matching version for Login test (user not logged in)
       'fcm_token': 'mock_token',
     });
     final mockAuth = MockFirebaseAuth(signedIn: false);
@@ -196,7 +196,7 @@ void main() {
       'puck_count': 25,
       'friend_notifications': true,
       'target_date': DateTime.now().add(Duration(days: 100)).toIso8601String(),
-      'intro_shown': true, // Set to true for Navigation test
+      'intro_shown_version': '9999.0.0', // Non-matching version for Navigation test
       'fcm_token': 'mock_token',
     });
     final mockUser = MockUser(
