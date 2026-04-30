@@ -70,54 +70,98 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           _StatsRow(summary: summary),
           const SizedBox(height: 20),
           // Badge catalog powers both the featured showcase and the full grid.
-          FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            future: ChallengerRoadService().getBadgeCatalogForUser(userId),
-            builder: (context, badgeSnap) {
-              final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
-              if (badgeDefs.isEmpty && summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Player card showcase (own profile with isEditable)
-                  if (isEditable && summary.badges.isNotEmpty) ...[
-                    _FeaturedShowcase(
-                      userId: userId,
-                      summary: summary,
-                      badgeDefs: badgeDefs,
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                  // Badge bar
-                  Text(
-                    'BADGES',
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _BadgeWrapGrid(
-                    earnedBadges: summary.badges,
-                    summary: summary,
-                    badgeDefs: badgeDefs,
-                    highlightBadgeId: highlightBadgeId,
-                    showOnlyEarned: showOnlyEarned,
-                  ),
-                ],
-              );
-            },
+          _BadgeCatalogSection(
+            userId: userId,
+            summary: summary,
+            isEditable: isEditable,
+            showOnlyEarned: showOnlyEarned,
+            highlightBadgeId: highlightBadgeId,
           ),
           const SizedBox(height: 12),
         ],
       ),
+    );
+  }
+}
+
+// ── Badge catalog section (StatefulWidget to cache future across rebuilds) ──
+
+/// Wraps the [FutureBuilder] for badge catalog data in a [StatefulWidget] so
+/// the future is only created once — not every time the parent [StreamBuilder]
+/// emits. This prevents the badge grid from tearing down and restarting the
+/// highlight animation on every Firestore update.
+class _BadgeCatalogSection extends StatefulWidget {
+  const _BadgeCatalogSection({
+    required this.userId,
+    required this.summary,
+    required this.isEditable,
+    required this.showOnlyEarned,
+    this.highlightBadgeId,
+  });
+
+  final String userId;
+  final ChallengerRoadUserSummary summary;
+  final bool isEditable;
+  final bool showOnlyEarned;
+  final String? highlightBadgeId;
+
+  @override
+  State<_BadgeCatalogSection> createState() => _BadgeCatalogSectionState();
+}
+
+class _BadgeCatalogSectionState extends State<_BadgeCatalogSection> {
+  late Future<List<ChallengerRoadBadgeDefinition>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ChallengerRoadService().getBadgeCatalogForUser(widget.userId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+      future: _future,
+      builder: (context, badgeSnap) {
+        final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
+        if (badgeDefs.isEmpty && widget.summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.isEditable && widget.summary.badges.isNotEmpty) ...[
+              _FeaturedShowcase(
+                userId: widget.userId,
+                summary: widget.summary,
+                badgeDefs: badgeDefs,
+              ),
+              const SizedBox(height: 20),
+            ],
+            Text(
+              'BADGES',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _BadgeWrapGrid(
+              earnedBadges: widget.summary.badges,
+              summary: widget.summary,
+              badgeDefs: badgeDefs,
+              highlightBadgeId: widget.highlightBadgeId,
+              showOnlyEarned: widget.showOnlyEarned,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -436,6 +480,7 @@ class _BadgeWrapGrid extends StatelessWidget {
               return Align(
                 alignment: Alignment.topCenter,
                 child: _BadgeChip(
+                  key: ValueKey(def.id),
                   def: def,
                   earned: earned,
                   summary: summary,
@@ -453,6 +498,7 @@ class _BadgeWrapGrid extends StatelessWidget {
 
 class _BadgeChip extends StatefulWidget {
   const _BadgeChip({
+    super.key,
     required this.def,
     required this.earned,
     required this.summary,
@@ -470,6 +516,7 @@ class _BadgeChip extends StatefulWidget {
 class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnim;
+  late final Animation<double> _scaleAnim;
 
   ChallengerRoadBadgeDefinition get def => widget.def;
   bool get earned => widget.earned;
@@ -485,8 +532,13 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
     _pulseAnim = Tween<double>(begin: 0.2, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     if (widget.highlight) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Delay slightly so the page fully settles before the animation starts.
+      // This is especially important for badges already visible on screen.
+      Future.delayed(const Duration(milliseconds: 400), () {
         if (!mounted) return;
         final renderObj = context.findRenderObject();
         if (renderObj != null) {
@@ -496,7 +548,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
           );
         }
         _pulseController.repeat(reverse: true);
-        Future.delayed(const Duration(seconds: 3), () {
+        Future.delayed(const Duration(seconds: 4), () {
           if (mounted) {
             _pulseController.stop();
             _pulseController.animateTo(0);
@@ -659,19 +711,21 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                   animation: _pulseAnim,
                   builder: (context, child) {
                     if (!highlight) return child!;
-                    final primary = Theme.of(context).colorScheme.primary;
                     return Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: primary.withValues(alpha: 0.5 * _pulseAnim.value),
-                            blurRadius: 20,
-                            spreadRadius: 3,
+                            color: badgeColor.withValues(alpha: 0.7 * _pulseAnim.value),
+                            blurRadius: 28,
+                            spreadRadius: 4,
                           ),
                         ],
                       ),
-                      child: child,
+                      child: Transform.scale(
+                        scale: _scaleAnim.value,
+                        child: child,
+                      ),
                     );
                   },
                   child: Container(
@@ -682,7 +736,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                       color: earned ? badgeColor.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
                       border: Border.all(
                         color: highlight
-                            ? Theme.of(context).colorScheme.primary
+                            ? badgeColor
                             : earned
                                 ? badgeColor
                                 : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),

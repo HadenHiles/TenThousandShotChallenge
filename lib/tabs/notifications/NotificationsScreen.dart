@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/models/firestore/AppNotification.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal;
 
 /// Full-page notification centre showing the current user's friend activity.
 ///
@@ -248,7 +249,9 @@ class _NotificationTile extends StatelessWidget {
           context.push(AppRoutePaths.profileChallengerRoad);
         }
       } else if (n.isLevelCompleted) {
-        context.push(AppRoutePaths.challengerRoad);
+        // Navigate back to the shell first, then signal Train tab to open the road.
+        context.go(AppRoutePaths.app);
+        openChallengerRoadSignal.value++;
       } else if (n.isWeeklyAvailable || n.isAchievementCompleted) {
         context.push(AppRoutePaths.profileAchievements);
       } else {

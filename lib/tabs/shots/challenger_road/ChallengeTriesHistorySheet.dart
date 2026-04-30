@@ -6,18 +6,16 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.da
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
 /// Read-only bottom sheet that shows all tries for a specific challenge at a
-/// specific level within the user's current attempt.
+/// specific level across ALL of the user's Challenger Road attempts.
 class ChallengeTriesHistorySheet extends StatefulWidget {
   final ChallengerRoadChallenge challenge;
   final ChallengerRoadLevel levelDoc;
   final String userId;
-  final String attemptId;
 
   const ChallengeTriesHistorySheet._({
     required this.challenge,
     required this.levelDoc,
     required this.userId,
-    required this.attemptId,
   });
 
   static Future<void> show(
@@ -25,7 +23,6 @@ class ChallengeTriesHistorySheet extends StatefulWidget {
     required ChallengerRoadChallenge challenge,
     required ChallengerRoadLevel levelDoc,
     required String userId,
-    required String attemptId,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -35,7 +32,6 @@ class ChallengeTriesHistorySheet extends StatefulWidget {
         challenge: challenge,
         levelDoc: levelDoc,
         userId: userId,
-        attemptId: attemptId,
       ),
     );
   }
@@ -46,14 +42,13 @@ class ChallengeTriesHistorySheet extends StatefulWidget {
 
 class _ChallengeTriesHistorySheetState extends State<ChallengeTriesHistorySheet> {
   final _service = ChallengerRoadService();
-  late Future<List<ChallengeSession>> _future;
+  late Future<List<({ChallengeSession session, int attemptNumber})>> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = _service.getTriesForChallenge(
+    _future = _service.getAllTriesForChallenge(
       widget.userId,
-      widget.attemptId,
       widget.challenge.id!,
       widget.levelDoc.level,
     );
@@ -140,7 +135,7 @@ class _ChallengeTriesHistorySheetState extends State<ChallengeTriesHistorySheet>
 
               // ── List ───────────────────────────────────────────────────
               Expanded(
-                child: FutureBuilder<List<ChallengeSession>>(
+                child: FutureBuilder<List<({ChallengeSession session, int attemptNumber})>>(
                   future: _future,
                   builder: (context, snap) {
                     if (snap.connectionState == ConnectionState.waiting) {
@@ -204,12 +199,13 @@ class _ChallengeTriesHistorySheetState extends State<ChallengeTriesHistorySheet>
                       itemCount: tries.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),
                       itemBuilder: (context, i) {
-                        final try_ = tries[i];
+                        final entry = tries[i];
                         // Number from oldest → newest (index from end).
                         final tryNumber = tries.length - i;
                         return _TryRow(
-                          try_: try_,
+                          try_: entry.session,
                           tryNumber: tryNumber,
+                          attemptNumber: entry.attemptNumber,
                           shotsRequired: widget.levelDoc.shotsRequired,
                           shotsToPass: widget.levelDoc.shotsToPass,
                         );
@@ -231,12 +227,14 @@ class _ChallengeTriesHistorySheetState extends State<ChallengeTriesHistorySheet>
 class _TryRow extends StatelessWidget {
   final ChallengeSession try_;
   final int tryNumber;
+  final int attemptNumber;
   final int shotsRequired;
   final int shotsToPass;
 
   const _TryRow({
     required this.try_,
     required this.tryNumber,
+    required this.attemptNumber,
     required this.shotsRequired,
     required this.shotsToPass,
   });
@@ -341,6 +339,16 @@ class _TryRow extends StatelessWidget {
                     fontFamily: 'NovecentoSans',
                     fontSize: 11,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'ATTEMPT #$attemptNumber',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 10,
+                    letterSpacing: 0.8,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
                   ),
                 ),
               ],

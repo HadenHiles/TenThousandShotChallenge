@@ -263,7 +263,8 @@ class _HistoryState extends State<History> {
                                 String endDate = DateFormat('MMMM d, y').format(i.endDate!);
                                 String iterationDescription;
                                 String goalDescription = "";
-                                String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+                                final int displayTotal = (i.total ?? 0).clamp(0, 10000);
+                                String fTotal = displayTotal > 999 ? numberFormat.format(displayTotal) : displayTotal.toString();
 
                                 if (daysTaken <= 1) {
                                   iterationDescription = "$fTotal shots in $daysTaken day";
@@ -298,9 +299,10 @@ class _HistoryState extends State<History> {
                                 if (daysSoFar < 1 && (i.total ?? 0) > 0) daysSoFar = 1; // clamp for display
                                 String? iterationDescription;
                                 String goalDescription = "";
-                                int remainingShots = 10000 - i.total!;
+                                final int displayTotal = (i.total ?? 0).clamp(0, 10000);
+                                int remainingShots = 10000 - displayTotal;
                                 String fRemainingShots = remainingShots > 999 ? numberFormat.format(remainingShots) : remainingShots.toString();
-                                String fTotal = i.total! > 999 ? numberFormat.format(i.total) : i.total.toString();
+                                String fTotal = displayTotal > 999 ? numberFormat.format(displayTotal) : displayTotal.toString();
 
                                 if (daysSoFar <= 1 && daysSoFar != 0) {
                                   iterationDescription = "$fTotal shots in $daysSoFar day";
