@@ -983,6 +983,24 @@ class ChallengerRoadService {
     return levels;
   }
 
+  /// Returns the total count of active challenges across all active levels.
+  Future<int> getTotalActiveChallengesCount() async {
+    final levelsSnap = await _levelsRef.where('active', isEqualTo: true).get();
+    int total = 0;
+    for (final levelDoc in levelsSnap.docs) {
+      final challengesSnap = await _challengesRef(levelDoc.id).where('active', isEqualTo: true).get();
+      total += challengesSnap.docs.length;
+    }
+    return total;
+  }
+
+  /// Returns the number of challenges that have been passed at least once in
+  /// the given attempt (i.e. [ChallengeProgressEntry.totalPassed] > 0).
+  Future<int> getCompletedChallengesCount(String userId, String attemptId) async {
+    final snap = await _progressRef(userId, attemptId).where('totalPassed', isGreaterThan: 0).get();
+    return snap.docs.length;
+  }
+
   // ---------------------------------------------------------------------------
   // 3. User attempt management
   // ---------------------------------------------------------------------------
@@ -1261,6 +1279,31 @@ class ChallengerRoadService {
   ) async {
     final snap = await _sessionsRef(userId, attemptId).where('challenge_id', isEqualTo: challengeId).where('level', isEqualTo: level).orderBy('date', descending: true).get();
     return snap.docs.map(ChallengeSession.fromSnapshot).toList();
+  }
+
+  /// Returns all [ChallengeSession] tries for [challengeId] at [level] across
+  /// ALL of the user's attempts, sorted by date descending.
+  /// Each entry is paired with the attempt number it belongs to.
+  Future<List<({ChallengeSession session, int attemptNumber})>> getAllTriesForChallenge(
+    String userId,
+    String challengeId,
+    int level,
+  ) async {
+    final attemptsSnap = await _attemptsRef(userId).orderBy('attempt_number').get();
+    final result = <({ChallengeSession session, int attemptNumber})>[];
+    for (final attemptDoc in attemptsSnap.docs) {
+      final data = attemptDoc.data() as Map<String, dynamic>;
+      final attemptNumber = (data['attempt_number'] as num?)?.toInt() ?? 1;
+      final sessionsSnap = await _sessionsRef(userId, attemptDoc.id).where('challenge_id', isEqualTo: challengeId).where('level', isEqualTo: level).orderBy('date', descending: true).get();
+      for (final sessionDoc in sessionsSnap.docs) {
+        result.add((
+          session: ChallengeSession.fromSnapshot(sessionDoc),
+          attemptNumber: attemptNumber,
+        ));
+      }
+    }
+    result.sort((a, b) => b.session.date.compareTo(a.session.date));
+    return result;
   }
 
   /// Returns true if a passing session exists for [challengeId] at [level]

@@ -303,7 +303,6 @@ class ChallengeDetailSheet extends StatelessWidget {
           challenge: challenge,
           levelDoc: levelDoc,
           userId: userId,
-          attemptId: attempt.id!,
         );
       },
       child: Container(

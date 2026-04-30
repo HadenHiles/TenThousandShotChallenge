@@ -67,6 +67,11 @@ class ChallengeSessionConfig {
 /// Active challenge session; non-null activates challenge mode in the panel.
 final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotifier(null);
 
+/// Incrementing this signal tells the app to switch to the Train tab and open
+/// the Challenger Road map view (without resetting it). Notifications that
+/// link to the road should increment this instead of pushing a standalone route.
+final ValueNotifier<int> openChallengerRoadSignal = ValueNotifier<int>(0);
+
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
   const Navigation({super.key, this.selectedIndex, this.tabId, this.communitySection, this.actions});
@@ -206,6 +211,24 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     });
   }
 
+  /// Responds to [openChallengerRoadSignal]: switches to the Train tab without
+  /// resetting the Challenger Road state, then lets [_ShotsState] open the map.
+  void _onOpenChallengerRoadSignal() {
+    if (!mounted) return;
+    final trainIndex = _tabs.indexWhere((t) => t.id == 'train');
+    if (trainIndex == -1) return;
+    // Switch tab without incrementing _trainResetSignal (which would close CR).
+    setState(() {
+      _selectedIndex = trainIndex;
+      _leading = _tabs[trainIndex].leading;
+      _actions = widget.actions ?? _tabs[trainIndex].actions;
+    });
+    if (sessionPanelController.isAttached && !sessionPanelController.isPanelClosed) {
+      sessionPanelController.close();
+      setState(() => _sessionPanelState = PanelState.CLOSED);
+    }
+  }
+
   CommunitySection _normalizeCommunitySection(String? rawSection) {
     return rawSection == CommunitySection.friends.name ? CommunitySection.friends : CommunitySection.team;
   }
@@ -254,6 +277,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     sessionService.addListener(_onSessionChanged);
     activeChallengeSession.addListener(_onChallengeSessionChanged);
+    openChallengerRoadSignal.addListener(_onOpenChallengerRoadSignal);
     _communitySectionNotifier.value = _normalizeCommunitySection(widget.communitySection);
     try {
       versionCheck(context);
@@ -387,6 +411,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   void dispose() {
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
+    openChallengerRoadSignal.removeListener(_onOpenChallengerRoadSignal);
     _cancelCRSessionTimer();
     WidgetsBinding.instance.removeObserver(this);
     _communitySectionNotifier.dispose();

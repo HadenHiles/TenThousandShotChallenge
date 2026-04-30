@@ -522,7 +522,6 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
                 // ── Shot list ──────────────────────────────────────────
                 if (_shots.isNotEmpty) ...[
-                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Text(
@@ -560,6 +559,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
         // Finish button - sticky at the bottom of the panel.
         SafeArea(
+          top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: SizedBox(

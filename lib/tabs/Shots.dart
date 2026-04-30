@@ -24,8 +24,10 @@ import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import '../main.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, ChallengeSessionConfig;
+import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, openChallengerRoadSignal, ChallengeSessionConfig;
 
 class Shots extends StatefulWidget {
   const Shots({
@@ -52,6 +54,9 @@ class _ShotsState extends State<Shots> {
   CustomerInfoNotifier? _customerInfoNotifier;
   bool _showChallengerRoad = false;
 
+  final ChallengerRoadService _crService = ChallengerRoadService();
+  Future<(ChallengerRoadAttempt?, int, int, int)>? _activeAttemptFuture;
+
   // Real-time stream of the active (incomplete) iteration for live updates
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _activeIterationStream;
 
@@ -75,6 +80,16 @@ class _ShotsState extends State<Shots> {
       _customerInfoNotifier?.addListener(_onSubscriptionChanged);
       _loadSubscriptionLevel();
     });
+    openChallengerRoadSignal.addListener(_onOpenChallengerRoadSignal);
+  }
+
+  void _onOpenChallengerRoadSignal() {
+    // Defer so any in-progress navigation (e.g. context.go from the notification
+    // screen) finishes before we mutate state.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openChallengerRoad();
+    });
   }
 
   void _onSubscriptionChanged() {
@@ -93,6 +108,7 @@ class _ShotsState extends State<Shots> {
 
   @override
   void dispose() {
+    openChallengerRoadSignal.removeListener(_onOpenChallengerRoadSignal);
     _customerInfoNotifier?.removeListener(_onSubscriptionChanged);
     _targetDateController.dispose();
     super.dispose();
@@ -177,7 +193,10 @@ class _ShotsState extends State<Shots> {
 
   void _closeChallengerRoad() {
     if (!_showChallengerRoad) return;
-    setState(() => _showChallengerRoad = false);
+    setState(() {
+      _showChallengerRoad = false;
+      _activeAttemptFuture = null; // will be refreshed on next card render
+    });
     widget.onChallengerRoadAvailabilityChanged?.call(false);
   }
 
@@ -442,94 +461,217 @@ class _ShotsState extends State<Shots> {
     final theme = Theme.of(context);
     final isPro = _subscriptionLevel == 'pro';
     final accent = theme.primaryColor;
+    final cardBase = theme.cardTheme.color ?? theme.colorScheme.surface;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: user == null ? null : _openChallengerRoad,
-      child: Ink(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(
-            colors: [
-              accent.withValues(alpha: 0.24),
-              theme.cardTheme.color?.withValues(alpha: 0.98) ?? theme.colorScheme.primaryContainer,
+    if (user != null) {
+      _activeAttemptFuture ??= Future.wait([
+        _crService.getActiveAttempt(user.uid),
+        _crService.getAllActiveLevels(),
+        _crService.getTotalActiveChallengesCount(),
+      ]).then((results) async {
+        final attempt = results[0] as ChallengerRoadAttempt?;
+        final totalLevels = (results[1] as List<int>).length;
+        final totalChallenges = results[2] as int;
+        final completedChallenges = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
+        return (attempt, totalLevels, completedChallenges, totalChallenges);
+      });
+    }
+
+    return FutureBuilder<(ChallengerRoadAttempt?, int, int, int)>(
+      future: _activeAttemptFuture,
+      builder: (context, attemptSnap) {
+        final attempt = attemptSnap.data?.$1;
+        final completedChallenges = attemptSnap.data?.$3 ?? 0;
+        final totalChallenges = attemptSnap.data?.$4 ?? 0;
+        final hasStarted = attempt != null;
+        final shotCount = attempt?.challengerRoadShotCount ?? 0;
+        final level = attempt?.currentLevel ?? 1;
+        // Progress = challenges fully completed ÷ total active challenges
+        final crProgress = (hasStarted && totalChallenges > 0) ? (completedChallenges / totalChallenges).clamp(0.0, 1.0) : 0.0;
+        final crNumberFormat = NumberFormat('#,###');
+
+        final showFill = hasStarted && crProgress > 0;
+        // Flexible flex must be > 0
+        final fillFlex = showFill ? (crProgress * 10000).round().clamp(1, 9999) : 0;
+        final emptyFlex = showFill ? (10000 - fillFlex).clamp(1, 9999) : 10000;
+
+        // Shadow lives outside the clip so it isn't cropped.
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.18),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
-          border: Border.all(color: accent.withValues(alpha: 0.7), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: accent.withValues(alpha: 0.18),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+          child: Material(
+            color: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: 0.14),
-                  border: Border.all(color: accent.withValues(alpha: 0.75), width: 1.5),
-                ),
-                child: Icon(
-                  Icons.route_rounded,
-                  color: accent,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Challenger Road',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 24,
-                        color: theme.colorScheme.onPrimary,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: user == null ? null : _openChallengerRoad,
+              child: Stack(
+                children: [
+                  // ── Layer 1: base card colour (renders immediately, no async) ──
+                  Container(color: cardBase),
+
+                  // ── Layer 2: progress fill IS the background highlight ─────────
+                  if (showFill)
+                    Positioned.fill(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            flex: fillFlex,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    accent.withValues(alpha: 0.52),
+                                    accent.withValues(alpha: 0.15),
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            flex: emptyFlex,
+                            child: const SizedBox.expand(),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isPro ? 'Can you make it to the end of the road?' : 'Think you can complete every challenge?',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 13,
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.68),
-                      ),
+
+                  // ── Layer 3: border + content ─────────────────────────────────
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: accent.withValues(alpha: 0.7), width: 1.2),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: accent,
-                ),
-                child: Text(
-                  isPro ? 'CONTINUE' : 'START',
-                  style: const TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 14,
-                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: accent.withValues(alpha: 0.14),
+                                border: Border.all(color: accent.withValues(alpha: 0.75), width: 1.5),
+                              ),
+                              child: Icon(
+                                Icons.route_rounded,
+                                color: accent,
+                                size: 25,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Challenger Road',
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 24,
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    hasStarted
+                                        ? '${crNumberFormat.format(shotCount)} / 10,000 shots'
+                                        : isPro
+                                            ? 'Can you make it to the end of the road?'
+                                            : 'Think you can complete every challenge?',
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 13,
+                                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.68),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (hasStarted) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    margin: const EdgeInsets.only(bottom: 6),
+                                    decoration: BoxDecoration(
+                                      color: accent.withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: accent.withValues(alpha: 0.6), width: 1),
+                                    ),
+                                    child: Text(
+                                      'LVL $level',
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 13,
+                                        letterSpacing: 0.8,
+                                        color: accent,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(14),
+                                    color: accent,
+                                  ),
+                                  child: Text(
+                                    hasStarted ? 'CONTINUE' : 'START',
+                                    style: const TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      fontSize: 14,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (hasStarted) ...[
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              totalChallenges > 0 ? '$completedChallenges / $totalChallenges challenges  ·  ${(crProgress * 100).round()}%' : '${(crProgress * 100).round()}% complete',
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 11,
+                                letterSpacing: 0.5,
+                                color: theme.colorScheme.onPrimary.withValues(alpha: 0.42),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
