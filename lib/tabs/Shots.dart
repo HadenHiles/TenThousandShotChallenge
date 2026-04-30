@@ -472,7 +472,11 @@ class _ShotsState extends State<Shots> {
         final attempt = results[0] as ChallengerRoadAttempt?;
         final totalLevels = (results[1] as List<int>).length;
         final totalChallenges = results[2] as int;
-        final completedChallenges = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
+        final actualCompleted = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
+        // Credit challenges in levels the user skipped so the percentage
+        // correctly reaches 100 % when they finish their portion of the road.
+        final skipped = attempt != null && attempt.startingLevel > 1 ? await _crService.getActiveChallengesCountBelowLevel(attempt.startingLevel) : 0;
+        final completedChallenges = actualCompleted + skipped;
         return (attempt, totalLevels, completedChallenges, totalChallenges);
       });
     }
