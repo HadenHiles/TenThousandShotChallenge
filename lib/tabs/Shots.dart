@@ -26,8 +26,37 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import '../main.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, openChallengerRoadSignal, ChallengeSessionConfig;
+
+// ── Challenger Road card data ────────────────────────────────────────────────
+
+class _CRCardData {
+  final ChallengerRoadAttempt? attempt;
+  final int totalChallenges;
+
+  /// Credited total - includes challenges in skipped levels.
+  final int completedChallenges;
+
+  /// Number of active challenges through allTimeBestLevel (for ghost line).
+  final int bestChallengesCompleted;
+
+  /// totalShotsThisAttempt when allTimeBestLevel was reached (for ghost line).
+  final int? bestLevelShots;
+
+  const _CRCardData({
+    required this.attempt,
+    required this.totalChallenges,
+    required this.completedChallenges,
+    required this.bestChallengesCompleted,
+    required this.bestLevelShots,
+  });
+}
+
+enum _CRPaceStatus { none, ahead, onPace, behind }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class Shots extends StatefulWidget {
   const Shots({
@@ -55,7 +84,7 @@ class _ShotsState extends State<Shots> {
   bool _showChallengerRoad = false;
 
   final ChallengerRoadService _crService = ChallengerRoadService();
-  Future<(ChallengerRoadAttempt?, int, int, int)>? _activeAttemptFuture;
+  Future<_CRCardData>? _activeAttemptFuture;
 
   // Real-time stream of the active (incomplete) iteration for live updates
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _activeIterationStream;
@@ -466,33 +495,143 @@ class _ShotsState extends State<Shots> {
     if (user != null) {
       _activeAttemptFuture ??= Future.wait([
         _crService.getActiveAttempt(user.uid),
-        _crService.getAllActiveLevels(),
         _crService.getTotalActiveChallengesCount(),
+        _crService.getUserSummary(user.uid),
       ]).then((results) async {
         final attempt = results[0] as ChallengerRoadAttempt?;
-        final totalLevels = (results[1] as List<int>).length;
-        final totalChallenges = results[2] as int;
+        final totalChallenges = results[1] as int;
+        final summary = results[2] as ChallengerRoadUserSummary;
+
         final actualCompleted = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
         // Credit challenges in levels the user skipped so the percentage
         // correctly reaches 100 % when they finish their portion of the road.
         final skipped = attempt != null && attempt.startingLevel > 1 ? await _crService.getActiveChallengesCountBelowLevel(attempt.startingLevel) : 0;
         final completedChallenges = actualCompleted + skipped;
-        return (attempt, totalLevels, completedChallenges, totalChallenges);
+
+        // Ghost / pace data - challenges completed through the all-time best level.
+        int bestChallengesCompleted = 0;
+        if (summary.allTimeBestLevel > 0) {
+          bestChallengesCompleted = await _crService.getActiveChallengesCountBelowLevel(summary.allTimeBestLevel + 1);
+        }
+
+        return _CRCardData(
+          attempt: attempt,
+          totalChallenges: totalChallenges,
+          completedChallenges: completedChallenges,
+          bestChallengesCompleted: bestChallengesCompleted,
+          bestLevelShots: summary.allTimeBestLevelShots,
+        );
       });
     }
 
-    return FutureBuilder<(ChallengerRoadAttempt?, int, int, int)>(
+    return FutureBuilder<_CRCardData>(
       future: _activeAttemptFuture,
       builder: (context, attemptSnap) {
-        final attempt = attemptSnap.data?.$1;
-        final completedChallenges = attemptSnap.data?.$3 ?? 0;
-        final totalChallenges = attemptSnap.data?.$4 ?? 0;
+        final data = attemptSnap.data;
+        final attempt = data?.attempt;
+        final completedChallenges = data?.completedChallenges ?? 0;
+        final totalChallenges = data?.totalChallenges ?? 0;
         final hasStarted = attempt != null;
         final shotCount = attempt?.challengerRoadShotCount ?? 0;
         final level = attempt?.currentLevel ?? 1;
         // Progress = challenges fully completed ÷ total active challenges
         final crProgress = (hasStarted && totalChallenges > 0) ? (completedChallenges / totalChallenges).clamp(0.0, 1.0) : 0.0;
+        final shotProgress = (shotCount / 10000).clamp(0.0, 1.0);
         final crNumberFormat = NumberFormat('#,###');
+
+        // ── Ghost / pace calculations ──────────────────────────────────────
+        // Ghost line shows where the player was on the challenges bar at the
+        // same total-shot-count in their best-level attempt. Only available
+        // when starting from Level 1 (skip-start comparisons are too noisy).
+        double? ghostFraction;
+        _CRPaceStatus paceStatus = _CRPaceStatus.none;
+        if (hasStarted && attempt.startingLevel == 1 && data!.bestLevelShots != null && data.bestLevelShots! > 0 && data.bestChallengesCompleted > 0 && totalChallenges > 0 && attempt.totalShotsThisAttempt > 0) {
+          // At this many shots into the best attempt, they had completed this
+          // fraction of the road challenges.
+          ghostFraction = (attempt.totalShotsThisAttempt / data.bestLevelShots!).clamp(0.0, 1.0) * (data.bestChallengesCompleted / totalChallenges);
+          final diff = crProgress - ghostFraction;
+          paceStatus = diff > 0.03
+              ? _CRPaceStatus.ahead
+              : diff < -0.03
+                  ? _CRPaceStatus.behind
+                  : _CRPaceStatus.onPace;
+        }
+
+        // Shots-bar color and pace label driven by pace status.
+        final Color paceBarColor;
+        final String paceText;
+        final Color paceTextColor;
+        switch (paceStatus) {
+          case _CRPaceStatus.ahead:
+            paceBarColor = Colors.green.shade400;
+            paceText = '↑ AHEAD OF BEST';
+            paceTextColor = Colors.green.shade400;
+          case _CRPaceStatus.onPace:
+            paceBarColor = Colors.amber.shade300;
+            paceText = '= ON BEST PACE';
+            paceTextColor = Colors.amber.shade300;
+          case _CRPaceStatus.behind:
+            paceBarColor = Colors.deepOrange.shade400;
+            paceText = '↓ BEHIND BEST';
+            paceTextColor = Colors.deepOrange.shade400;
+          case _CRPaceStatus.none:
+            paceBarColor = accent.withValues(alpha: 0.75);
+            paceText = '';
+            paceTextColor = accent;
+        }
+
+        // ── Local bar builder ──────────────────────────────────────────────
+        // A slim horizontal progress bar with an optional ghost marker line.
+        Widget crBar(double value, Color fillColor, {double? ghostFrac}) {
+          return LayoutBuilder(
+            builder: (_, bc) {
+              final w = bc.maxWidth;
+              final ghostX = ghostFrac != null ? (ghostFrac.clamp(0.0, 1.0) * w) : null;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Track
+                  Container(
+                    height: 5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  // Fill
+                  FractionallySizedBox(
+                    widthFactor: value.clamp(0.0, 1.0),
+                    child: Container(
+                      height: 5,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: fillColor,
+                      ),
+                    ),
+                  ),
+                  // Ghost marker - thin white vertical line showing best-pace position
+                  if (ghostX != null)
+                    Positioned(
+                      left: (ghostX - 1.0).clamp(0.0, w - 2.0),
+                      top: -2.5,
+                      child: Container(
+                        width: 2,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.88),
+                          borderRadius: BorderRadius.circular(1),
+                          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 2)],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          );
+        }
+
+        final barLabelColor = theme.colorScheme.onPrimary.withValues(alpha: 0.48);
+        const barTextStyle = TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, letterSpacing: 0.7);
 
         final showFill = hasStarted && crProgress > 0;
         // Flexible flex must be > 0
@@ -653,19 +792,50 @@ class _ShotsState extends State<Shots> {
                           ],
                         ),
                         if (hasStarted) ...[
+                          const SizedBox(height: 10),
+                          Divider(height: 1, thickness: 1, color: accent.withValues(alpha: 0.2)),
+                          const SizedBox(height: 10),
+                          // ── Challenges bar ────────────────────────────────
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 82,
+                                child: Text('CHALLENGES', style: barTextStyle.copyWith(color: barLabelColor)),
+                              ),
+                              Expanded(child: crBar(crProgress, accent, ghostFrac: ghostFraction)),
+                              const SizedBox(width: 6),
+                              Text(
+                                totalChallenges > 0 ? '$completedChallenges / $totalChallenges' : '${(crProgress * 100).round()}%',
+                                style: barTextStyle.copyWith(color: barLabelColor),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 6),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              totalChallenges > 0 ? '$completedChallenges / $totalChallenges challenges  ·  ${(crProgress * 100).round()}%' : '${(crProgress * 100).round()}% complete',
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 11,
-                                letterSpacing: 0.5,
-                                color: theme.colorScheme.onPrimary.withValues(alpha: 0.42),
+                          // ── Shots (10k cycle) bar ─────────────────────────
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 82,
+                                child: Text('SHOTS', style: barTextStyle.copyWith(color: barLabelColor)),
+                              ),
+                              Expanded(child: crBar(shotProgress, paceBarColor)),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${crNumberFormat.format(shotCount)} / 10K',
+                                style: barTextStyle.copyWith(color: barLabelColor),
+                              ),
+                            ],
+                          ),
+                          if (paceText.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                paceText,
+                                style: barTextStyle.copyWith(color: paceTextColor, letterSpacing: 0.5),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ],
                     ),
