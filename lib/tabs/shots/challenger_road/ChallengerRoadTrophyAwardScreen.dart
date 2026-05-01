@@ -13,23 +13,23 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 /// await Navigator.of(context).push<void>(
 ///   MaterialPageRoute(
 ///     fullscreenDialog: true,
-///     builder: (_) => ChallengerRoadBadgeAwardScreen(badges: newBadges),
+///     builder: (_) => ChallengerRoadTrophyAwardScreen(trophies: newBadges),
 ///   ),
 /// );
 /// ```
-class ChallengerRoadBadgeAwardScreen extends StatefulWidget {
-  const ChallengerRoadBadgeAwardScreen({
+class ChallengerRoadTrophyAwardScreen extends StatefulWidget {
+  const ChallengerRoadTrophyAwardScreen({
     super.key,
-    required this.badges,
+    required this.trophies,
   });
 
-  final List<ChallengerRoadBadgeDefinition> badges;
+  final List<ChallengerRoadTrophyDefinition> trophies;
 
   @override
-  State<ChallengerRoadBadgeAwardScreen> createState() => _ChallengerRoadBadgeAwardScreenState();
+  State<ChallengerRoadTrophyAwardScreen> createState() => _ChallengerRoadTrophyAwardScreenState();
 }
 
-class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwardScreen> with TickerProviderStateMixin {
+class _ChallengerRoadTrophyAwardScreenState extends State<ChallengerRoadTrophyAwardScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
 
   // ── Per-badge entrance: scale-in icon ─────────────────────────────────────
@@ -95,7 +95,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
   }
 
   void _advance() {
-    if (_currentIndex < widget.badges.length - 1) {
+    if (_currentIndex < widget.trophies.length - 1) {
       setState(() => _currentIndex++);
       _playEntrance();
     } else {
@@ -115,40 +115,40 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Color _badgeColor(ChallengerRoadBadgeDefinition def) {
+  Color _badgeColor(ChallengerRoadTrophyDefinition def) {
     switch (def.tier) {
-      case ChallengerRoadBadgeTier.legendary:
+      case ChallengerRoadTrophyTier.legendary:
         return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeTier.epic:
+      case ChallengerRoadTrophyTier.epic:
         return const Color(0xFFAB47BC);
-      case ChallengerRoadBadgeTier.rare:
+      case ChallengerRoadTrophyTier.rare:
         return const Color(0xFF42A5F5);
-      case ChallengerRoadBadgeTier.uncommon:
+      case ChallengerRoadTrophyTier.uncommon:
         return const Color(0xFF66BB6A);
-      case ChallengerRoadBadgeTier.hidden:
+      case ChallengerRoadTrophyTier.hidden:
         return const Color(0xFF78909C);
-      case ChallengerRoadBadgeTier.common:
+      case ChallengerRoadTrophyTier.common:
         return const Color(0xFF90A4AE);
     }
   }
 
-  IconData _badgeIcon(ChallengerRoadBadgeDefinition def) {
-    return ChallengerRoadService.iconForBadge(def);
+  IconData _badgeIcon(ChallengerRoadTrophyDefinition def) {
+    return ChallengerRoadService.iconForTrophy(def);
   }
 
-  String _tierLabel(ChallengerRoadBadgeTier tier) {
+  String _tierLabel(ChallengerRoadTrophyTier tier) {
     switch (tier) {
-      case ChallengerRoadBadgeTier.legendary:
+      case ChallengerRoadTrophyTier.legendary:
         return 'LEGENDARY';
-      case ChallengerRoadBadgeTier.epic:
+      case ChallengerRoadTrophyTier.epic:
         return 'EPIC';
-      case ChallengerRoadBadgeTier.rare:
+      case ChallengerRoadTrophyTier.rare:
         return 'RARE';
-      case ChallengerRoadBadgeTier.uncommon:
+      case ChallengerRoadTrophyTier.uncommon:
         return 'UNCOMMON';
-      case ChallengerRoadBadgeTier.hidden:
+      case ChallengerRoadTrophyTier.hidden:
         return 'SECRET';
-      case ChallengerRoadBadgeTier.common:
+      case ChallengerRoadTrophyTier.common:
         return 'COMMON';
     }
   }
@@ -157,10 +157,10 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
 
   @override
   Widget build(BuildContext context) {
-    final def = widget.badges[_currentIndex];
+    final def = widget.trophies[_currentIndex];
     final color = _badgeColor(def);
-    final isLast = _currentIndex == widget.badges.length - 1;
-    final total = widget.badges.length;
+    final isLast = _currentIndex == widget.trophies.length - 1;
+    final total = widget.trophies.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1628),
@@ -274,7 +274,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
                               border: Border.all(color: color.withValues(alpha: 0.7), width: 1.4),
                             ),
                             child: Text(
-                              'BADGE UNLOCKED',
+                              'TROPHY UNLOCKED',
                               style: TextStyle(
                                 fontFamily: 'NovecentoSans',
                                 fontSize: 13,
@@ -350,7 +350,7 @@ class _ChallengerRoadBadgeAwardScreenState extends State<ChallengerRoadBadgeAwar
                           shadowColor: color.withValues(alpha: 0.6),
                         ),
                         child: Text(
-                          isLast ? "LET'S KEEP GOING" : 'NEXT BADGE',
+                          isLast ? "LET'S KEEP GOING" : 'NEXT TROPHY',
                           style: const TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 20,

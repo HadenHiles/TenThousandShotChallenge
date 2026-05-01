@@ -37,8 +37,8 @@ abstract final class AppRoutePaths {
   /// Parameterised compare-stats path: `/compare-stats/<friendUid>`.
   static String compareStatsPathFor(String friendUid) => '/compare-stats/$friendUid';
 
-  /// Challenger Road profile screen deep-linked to a specific badge.
-  static String profileChallengerRoadFor(String badgeId) => '/profile/challenger-road?badgeId=$badgeId';
+  /// Challenger Road profile screen deep-linked to a specific trophy.
+  static String profileChallengerRoadFor(String trophyId) => '/profile/challenger-road?trophyId=$trophyId';
 
   /// In-app notification centre.
   static const notifications = '/notifications';

@@ -376,7 +376,7 @@ class LocalNotificationService {
   }) {
     return (
       title: 'Achievement Unlocked! 🏆',
-      body: isPro ? 'You earned: $achievementName. Check your profile to see all badges.' : 'You earned: $achievementName!',
+      body: isPro ? 'You earned: $achievementName. Check your profile to see all trophies.' : 'You earned: $achievementName!',
     );
   }
 

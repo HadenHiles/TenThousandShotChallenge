@@ -19,11 +19,11 @@ class ChallengerRoadUserSummary {
   /// Used for "× 10,000" badge calculations.
   final int allTimeTotalChallengerRoadShots;
 
-  /// Badge IDs earned by this user (e.g. 'cr_10k_x1', 'cr_level_5').
-  final List<String> badges;
+  /// Trophy IDs earned by this user (e.g. 'cr_10k_x1', 'cr_level_5').
+  final List<String> trophies;
 
-  /// Up to 3 badge IDs the user has chosen to feature on their player card.
-  final List<String> featuredBadges;
+  /// Up to 3 trophy IDs the user has chosen to feature on their trophy case.
+  final List<String> featuredTrophies;
 
   DocumentReference? reference;
 
@@ -33,8 +33,8 @@ class ChallengerRoadUserSummary {
     required this.allTimeBestLevel,
     this.allTimeBestLevelShots,
     required this.allTimeTotalChallengerRoadShots,
-    required this.badges,
-    this.featuredBadges = const [],
+    required this.trophies,
+    this.featuredTrophies = const [],
     this.reference,
   });
 
@@ -44,8 +44,8 @@ class ChallengerRoadUserSummary {
         allTimeBestLevel = 0,
         allTimeBestLevelShots = null,
         allTimeTotalChallengerRoadShots = 0,
-        badges = [],
-        featuredBadges = [];
+        trophies = [],
+        featuredTrophies = [];
 
   ChallengerRoadUserSummary.fromMap(Map<String, dynamic> map, {this.reference})
       : currentAttemptId = map['current_attempt_id'],
@@ -53,8 +53,8 @@ class ChallengerRoadUserSummary {
         allTimeBestLevel = map['all_time_best_level'] ?? 0,
         allTimeBestLevelShots = (map['all_time_best_level_shots'] as num?)?.toInt(),
         allTimeTotalChallengerRoadShots = map['all_time_total_challenger_road_shots'] ?? 0,
-        badges = List<String>.from(map['badges'] ?? []),
-        featuredBadges = List<String>.from(map['featured_badges'] ?? []);
+        trophies = List<String>.from(map['badges'] ?? []),
+        featuredTrophies = List<String>.from(map['featured_badges'] ?? []);
 
   Map<String, dynamic> toMap() {
     return {
@@ -63,8 +63,8 @@ class ChallengerRoadUserSummary {
       'all_time_best_level': allTimeBestLevel,
       'all_time_best_level_shots': allTimeBestLevelShots,
       'all_time_total_challenger_road_shots': allTimeTotalChallengerRoadShots,
-      'badges': badges,
-      'featured_badges': featuredBadges,
+      'badges': trophies,
+      'featured_badges': featuredTrophies,
     };
   }
 
@@ -80,8 +80,8 @@ class ChallengerRoadUserSummary {
     int? allTimeBestLevel,
     int? allTimeBestLevelShots,
     int? allTimeTotalChallengerRoadShots,
-    List<String>? badges,
-    List<String>? featuredBadges,
+    List<String>? trophies,
+    List<String>? featuredTrophies,
   }) {
     return ChallengerRoadUserSummary(
       currentAttemptId: currentAttemptId ?? this.currentAttemptId,
@@ -89,8 +89,8 @@ class ChallengerRoadUserSummary {
       allTimeBestLevel: allTimeBestLevel ?? this.allTimeBestLevel,
       allTimeBestLevelShots: allTimeBestLevelShots ?? this.allTimeBestLevelShots,
       allTimeTotalChallengerRoadShots: allTimeTotalChallengerRoadShots ?? this.allTimeTotalChallengerRoadShots,
-      badges: badges ?? this.badges,
-      featuredBadges: featuredBadges ?? this.featuredBadges,
+      trophies: trophies ?? this.trophies,
+      featuredTrophies: featuredTrophies ?? this.featuredTrophies,
       reference: reference,
     );
   }

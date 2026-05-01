@@ -5,7 +5,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 // ── Badge resolution ─────────────────────────────────────────────────────────
 
 /// Internal descriptor for the overlay badge to render.
-class _CrBadgeAttrs {
+class _CrTrophyAttrs {
   final Color color;
   final IconData? icon;
 
@@ -13,7 +13,7 @@ class _CrBadgeAttrs {
   final String? label;
   final String tooltip;
 
-  const _CrBadgeAttrs({
+  const _CrTrophyAttrs({
     required this.color,
     this.icon,
     this.label,
@@ -86,13 +86,13 @@ CrProfileAccomplishment? resolveCrProfileAccomplishment(
 /// Priority:
 ///   1. Highest completed level (or level 1 if attempt started) → colored label
 ///   2. showProFallback = true, no CR attempt yet               → steel PRO label
-_CrBadgeAttrs? _resolveCrBadge(
+_CrTrophyAttrs? _resolveCrTrophy(
   ChallengerRoadUserSummary summary, {
   bool showProFallback = false,
 }) {
   final lvl = _profileDisplayLevel(summary);
   if (lvl > 0) {
-    return _CrBadgeAttrs(
+    return _CrTrophyAttrs(
       color: _levelColor(lvl),
       label: '$lvl',
       tooltip: summary.allTimeBestLevel > 0 ? 'Highest completed Challenger Road level: $lvl' : 'Currently on Challenger Road level $lvl',
@@ -101,7 +101,7 @@ _CrBadgeAttrs? _resolveCrBadge(
 
   // Pro fallback
   if (showProFallback) {
-    return const _CrBadgeAttrs(
+    return const _CrTrophyAttrs(
       color: Color(0xFF78909C),
       label: 'PRO',
       tooltip: 'Pro user',
@@ -116,11 +116,11 @@ _CrBadgeAttrs? _resolveCrBadge(
 /// Small circular badge overlaid on an avatar (bottom-right corner) that
 /// reflects the user's greatest Challenger Road accomplishment.
 ///
-/// Call [_resolveCrBadge] to determine whether a badge is warranted before
+/// Call [_resolveCrTrophy] to determine whether a badge is warranted before
 /// rendering; this widget renders [SizedBox.shrink] when [summary] yields no
 /// displayable badge.
-class CrAvatarBadge extends StatelessWidget {
-  const CrAvatarBadge({
+class CrAvatarTrophy extends StatelessWidget {
+  const CrAvatarTrophy({
     super.key,
     required this.summary,
     this.size = 22,
@@ -143,7 +143,7 @@ class CrAvatarBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!enabled) return const SizedBox.shrink();
-    final attrs = _resolveCrBadge(summary, showProFallback: showProFallback);
+    final attrs = _resolveCrTrophy(summary, showProFallback: showProFallback);
     if (attrs == null) return const SizedBox.shrink();
 
     final innerSize = size - 4.0; // subtract 2px border on each side
@@ -191,10 +191,10 @@ class CrAvatarBadge extends StatelessWidget {
 // ── Stream-fed convenience wrapper ───────────────────────────────────────────
 
 /// Listens to [ChallengerRoadService.watchUserSummary] and renders a
-/// [CrAvatarBadge] for [userId]. Safe to use in trees that do not already
+/// [CrAvatarTrophy] for [userId]. Safe to use in trees that do not already
 /// have a summary stream - it creates its own Firestore listener.
-class CrAvatarBadgeStream extends StatelessWidget {
-  const CrAvatarBadgeStream({
+class CrAvatarTrophyStream extends StatelessWidget {
+  const CrAvatarTrophyStream({
     super.key,
     required this.userId,
     this.size = 22,
@@ -214,7 +214,7 @@ class CrAvatarBadgeStream extends StatelessWidget {
       stream: ChallengerRoadService().watchUserSummary(userId),
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
-        return CrAvatarBadge(
+        return CrAvatarTrophy(
           summary: snap.data!,
           size: size,
           enabled: enabled,

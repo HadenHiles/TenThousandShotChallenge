@@ -418,8 +418,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     // Silently catch up any badges the user earned before they were defined.
     // Runs in the background - does not block map rendering.
     if (!widget.isPreviewMode) {
-      _service!.awardMissingBadges(widget.userId).catchError((Object e, StackTrace st) {
-        debugPrint('[ChallengerRoad] awardMissingBadges failed: $e\n$st');
+      _service!.awardMissingTrophies(widget.userId).catchError((Object e, StackTrace st) {
+        debugPrint('[ChallengerRoad] awardMissingTrophies failed: $e\n$st');
         return <String>[];
       });
     }
@@ -1984,7 +1984,7 @@ class _BadgesFloatingButton extends StatelessWidget {
   void _openSheet(
     BuildContext context,
     List<String> earnedIds,
-    List<ChallengerRoadBadgeDefinition> catalog,
+    List<ChallengerRoadTrophyDefinition> catalog,
   ) {
     showModalBottomSheet<void>(
       context: context,
@@ -2002,19 +2002,19 @@ class _BadgesFloatingButton extends StatelessWidget {
     return StreamBuilder<ChallengerRoadUserSummary>(
       stream: service.watchUserSummary(userId),
       builder: (context, snap) {
-        final earned = snap.data?.badges ?? const <String>[];
+        final earned = snap.data?.trophies ?? const <String>[];
         final primary = Theme.of(context).primaryColor;
 
-        return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-          future: service.getBadgeCatalogForUser(userId),
+        return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+          future: service.getTrophyCatalogForUser(userId),
           builder: (context, catSnap) {
-            final catalog = catSnap.data ?? ChallengerRoadService.badgeCatalog;
-            final displayDefs = ChallengerRoadService.buildDisplayBadgeDefs(
-              earnedBadgeIds: earned,
+            final catalog = catSnap.data ?? ChallengerRoadService.trophyCatalog;
+            final displayDefs = ChallengerRoadService.buildDisplayTrophyDefs(
+              earnedTrophyIds: earned,
               catalog: catalog,
             );
-            final visibleDefs = ChallengerRoadService.visibleDisplayBadgeDefs(
-              badges: displayDefs,
+            final visibleDefs = ChallengerRoadService.visibleDisplayTrophyDefs(
+              trophies: displayDefs,
               includeHidden: false,
             );
             final totalBadges = visibleDefs.length;
@@ -2055,7 +2055,7 @@ class _BadgesFloatingButton extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'BADGES',
+                      'TROPHIES',
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 12,
@@ -2089,33 +2089,33 @@ class _CRBadgeSheet extends StatelessWidget {
   });
 
   final List<String> earnedIds;
-  final List<ChallengerRoadBadgeDefinition> catalog;
+  final List<ChallengerRoadTrophyDefinition> catalog;
 
-  List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
-    return ChallengerRoadService.buildDisplayBadgeDefs(
-      earnedBadgeIds: earnedIds,
+  List<ChallengerRoadTrophyDefinition> _buildDisplayDefs() {
+    return ChallengerRoadService.buildDisplayTrophyDefs(
+      earnedTrophyIds: earnedIds,
       catalog: catalog,
     );
   }
 
-  Color _colorFor(ChallengerRoadBadgeDefinition def) {
+  Color _colorFor(ChallengerRoadTrophyDefinition def) {
     switch (def.tier) {
-      case ChallengerRoadBadgeTier.legendary:
+      case ChallengerRoadTrophyTier.legendary:
         return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeTier.epic:
+      case ChallengerRoadTrophyTier.epic:
         return const Color(0xFFAB47BC);
-      case ChallengerRoadBadgeTier.rare:
+      case ChallengerRoadTrophyTier.rare:
         return const Color(0xFF42A5F5);
-      case ChallengerRoadBadgeTier.uncommon:
+      case ChallengerRoadTrophyTier.uncommon:
         return const Color(0xFF66BB6A);
-      case ChallengerRoadBadgeTier.hidden:
+      case ChallengerRoadTrophyTier.hidden:
         return const Color(0xFF78909C);
-      case ChallengerRoadBadgeTier.common:
+      case ChallengerRoadTrophyTier.common:
         return const Color(0xFF90A4AE);
     }
   }
 
-  void _showDetail(BuildContext context, ChallengerRoadBadgeDefinition def, bool earned) {
+  void _showDetail(BuildContext context, ChallengerRoadTrophyDefinition def, bool earned) {
     final scheme = Theme.of(context).colorScheme;
     final color = _colorFor(def);
     showModalBottomSheet<void>(
@@ -2144,7 +2144,7 @@ class _CRBadgeSheet extends StatelessWidget {
                         width: 1.5,
                       ),
                     ),
-                    child: ChallengerRoadService.badgeIconWidget(
+                    child: ChallengerRoadService.trophyIconWidget(
                       def,
                       size: 22,
                       color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
@@ -2199,15 +2199,15 @@ class _CRBadgeSheet extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final primary = Theme.of(context).primaryColor;
     final displayDefs = _buildDisplayDefs();
-    final visibleDefs = ChallengerRoadService.visibleDisplayBadgeDefs(
-      badges: displayDefs,
+    final visibleDefs = ChallengerRoadService.visibleDisplayTrophyDefs(
+      trophies: displayDefs,
       includeHidden: false,
     );
     final total = visibleDefs.length;
     final earnedCount = visibleDefs.where((b) => earnedIds.contains(b.id)).length;
-    final tierGroups = ChallengerRoadService.groupDisplayBadgesByTier(
-      badges: displayDefs,
-      earnedBadgeIds: earnedIds,
+    final tierGroups = ChallengerRoadService.groupDisplayTrophiesByTier(
+      trophies: displayDefs,
+      earnedTrophyIds: earnedIds,
       includeHidden: false,
     );
 
@@ -2244,7 +2244,7 @@ class _CRBadgeSheet extends StatelessWidget {
                   Icon(Icons.military_tech_rounded, color: primary, size: 22),
                   const SizedBox(width: 8),
                   Text(
-                    'BADGES',
+                    'TROPHIES',
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
                       fontSize: 22,
@@ -2301,7 +2301,7 @@ class _CRBadgeSheet extends StatelessWidget {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: group.badges.length,
+                      itemCount: group.trophies.length,
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 10,
@@ -2309,7 +2309,7 @@ class _CRBadgeSheet extends StatelessWidget {
                         childAspectRatio: 0.88,
                       ),
                       itemBuilder: (_, index) {
-                        final def = group.badges[index];
+                        final def = group.trophies[index];
                         final earned = earnedIds.contains(def.id);
                         final color = _colorFor(def);
 
@@ -2339,7 +2339,7 @@ class _CRBadgeSheet extends StatelessWidget {
                                           ]
                                         : null,
                                   ),
-                                  child: ChallengerRoadService.badgeIconWidget(
+                                  child: ChallengerRoadService.trophyIconWidget(
                                     def,
                                     size: 26,
                                     color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),

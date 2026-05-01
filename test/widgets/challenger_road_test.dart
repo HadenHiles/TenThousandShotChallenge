@@ -13,7 +13,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.da
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadAllClearScreen.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadBadgeAwardScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
@@ -22,12 +22,12 @@ import '../mock_firebase.dart';
 
 // ── Shared test fixtures ───────────────────────────────────────────────────
 
-const _testBadge = ChallengerRoadBadgeDefinition(
+const _testBadge = ChallengerRoadTrophyDefinition(
   id: 'cr_first_steps',
   name: 'First Steps',
   description: 'You took your first step on the Challenger Road.',
-  category: ChallengerRoadBadgeCategory.firstSteps,
-  tier: ChallengerRoadBadgeTier.common,
+  category: ChallengerRoadTrophyCategory.firstSteps,
+  tier: ChallengerRoadTrophyTier.common,
 );
 
 final _testAttempt = ChallengerRoadAttempt(
@@ -176,21 +176,21 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Group 2 – ChallengerRoadBadgeAwardScreen
+  // Group 2 – ChallengerRoadTrophyAwardScreen
   // Has Future.delayed timers for animation sequencing; pump 2 seconds so all
   // animations (scale, text fade-in, button) finish before asserting.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  group('ChallengerRoadBadgeAwardScreen', () {
-    Widget buildScreen({List<ChallengerRoadBadgeDefinition>? badges}) => MaterialApp(
-          home: ChallengerRoadBadgeAwardScreen(badges: badges ?? [_testBadge]),
+  group('ChallengerRoadTrophyAwardScreen', () {
+    Widget buildScreen({List<ChallengerRoadTrophyDefinition>? badges}) => MaterialApp(
+          home: ChallengerRoadTrophyAwardScreen(trophies: badges ?? [_testBadge]),
         );
 
     testWidgets('renders without crashing', (tester) async {
       await tester.pumpWidget(buildScreen());
       // pump 2s so all Future.delayed animation timers fire and complete
       await tester.pump(const Duration(seconds: 2));
-      expect(find.byType(ChallengerRoadBadgeAwardScreen), findsOneWidget);
+      expect(find.byType(ChallengerRoadTrophyAwardScreen), findsOneWidget);
     });
 
     testWidgets('shows BADGE UNLOCKED label after animation', (tester) async {

@@ -22,7 +22,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
-import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
 class Profile extends StatefulWidget {
@@ -192,6 +192,8 @@ class _ProfileState extends State<Profile> {
             const SizedBox(height: 12),
             _buildStatsChips(context, currentUser),
             const SizedBox(height: 12),
+            _buildProfileTrophyCase(context, currentUser),
+            const SizedBox(height: 12),
             _buildAchievementsCard(context, currentUser),
             const SizedBox(height: 12),
             _buildAccuracyCard(context, currentUser),
@@ -271,7 +273,7 @@ class _ProfileState extends State<Profile> {
                   Positioned(
                     right: 0,
                     bottom: 0,
-                    child: CrAvatarBadgeStream(
+                    child: CrAvatarTrophyStream(
                       userId: currentUser.uid,
                       size: 22,
                       showProFallback: _subscriptionLevel == 'pro',
@@ -798,103 +800,150 @@ class _ProfileState extends State<Profile> {
         stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
         builder: (context, snap) {
           final summary = snap.data ?? ChallengerRoadUserSummary.empty();
-          final featured = summary.featuredBadges;
-
-          return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
-            future: ChallengerRoadService().getBadgeCatalogForUser(currentUser.uid),
-            builder: (context, catSnap) {
-              final catalog = catSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
-              final byId = {for (final d in catalog) d.id: d};
-
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary, size: 24),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Challenger Road'.toUpperCase(), style: theme.textTheme.headlineSmall),
-                              const SizedBox(height: 4),
-                              if (isPro) ...[
-                                if (summary.allTimeBestLevel > 0)
-                                  Text(
-                                    'Best: Level ${summary.allTimeBestLevel}${summary.allTimeBestLevelShots != null ? ' in ${summary.allTimeBestLevelShots} shots' : ''}  ·  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
-                                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
-                                  )
-                                else
-                                  Text(
-                                    'No level completed yet',
-                                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
-                                  ),
-                              ] else
-                                Text(
-                                  'Pro feature. Unlock to attempt the challenge!',
-                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
-                      ],
-                    ),
-                    // Featured badges row
-                    if (featured.isNotEmpty && catalog.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          for (final id in featured.take(3))
-                            _crDashboardBadge(
-                              context,
-                              byId[id],
-                              userId: currentUser.uid,
-                              slotId: id,
-                              summary: summary,
-                              catalog: catalog,
-                            ),
-                        ],
-                      ),
-                    ],
-                  ],
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.route_rounded, color: theme.colorScheme.onPrimary, size: 24),
                 ),
-              );
-            },
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Challenger Road'.toUpperCase(), style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: 4),
+                      if (isPro) ...[
+                        if (summary.allTimeBestLevel > 0)
+                          Text(
+                            'Best: Level ${summary.allTimeBestLevel}${summary.allTimeBestLevelShots != null ? ' in ${summary.allTimeBestLevelShots} shots' : ''}  ·  ${summary.totalAttempts} attempt${summary.totalAttempts == 1 ? '' : 's'}',
+                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.7)),
+                          )
+                        else
+                          Text(
+                            'No level completed yet',
+                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
+                          ),
+                      ] else
+                        Text(
+                          'Pro feature. Unlock to attempt the challenge!',
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onPrimary.withValues(alpha: 0.4)),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _crDashboardBadge(
+  // ── Profile trophy case (compact card, top of profile) ────────────────────
+
+  Widget _buildProfileTrophyCase(BuildContext context, User currentUser) {
+    final theme = Theme.of(context);
+    return StreamBuilder<ChallengerRoadUserSummary>(
+      stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final summary = snap.data!;
+        final featured = summary.featuredTrophies;
+        return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+          future: ChallengerRoadService().getTrophyCatalogForUser(currentUser.uid),
+          builder: (context, catSnap) {
+            if (!catSnap.hasData) return const SizedBox.shrink();
+            final catalog = catSnap.data!;
+            final byId = {for (final d in catalog) d.id: d};
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'TROPHY CASE',
+                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      for (int i = 0; i < 5; i++) _profileTrophyCaseSlot(context, theme, i, featured, byId, currentUser.uid, summary, catalog),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _profileTrophyCaseSlot(
     BuildContext context,
-    ChallengerRoadBadgeDefinition? def, {
-    required String userId,
-    required String slotId,
-    required ChallengerRoadUserSummary summary,
-    required List<ChallengerRoadBadgeDefinition> catalog,
-  }) {
-    if (def == null) return const SizedBox.shrink();
-    final color = _crProfileBadgeColor(def);
-    final icon = _crProfileBadgeIcon(def);
+    ThemeData theme,
+    int i,
+    List<String> featured,
+    Map<String, ChallengerRoadTrophyDefinition> byId,
+    String userId,
+    ChallengerRoadUserSummary summary,
+    List<ChallengerRoadTrophyDefinition> catalog,
+  ) {
+    final id = i < featured.length ? featured[i] : '';
+    final def = id.isNotEmpty ? byId[id] : null;
+    if (def != null) {
+      final color = _crProfileTrophyColor(def);
+      final icon = _crProfileTrophyIcon(def);
+      return GestureDetector(
+        onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: id, currentDef: def, summary: summary, catalog: catalog),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.18),
+                border: Border.all(color: color, width: 1.5),
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 52,
+              height: 24,
+              child: Text(
+                def.effectiveName,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 10,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return GestureDetector(
-      onTap: () => _showProfileBadgeSwapSheet(
-        context,
-        userId: userId,
-        slotId: slotId,
-        currentDef: def,
-        summary: summary,
-        catalog: catalog,
-      ),
+      onTap: () => context.push(AppRoutePaths.profileChallengerRoad),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -903,40 +952,24 @@ class _ProfileState extends State<Profile> {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.18),
-              border: Border.all(color: color, width: 1.5),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+              border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.12), width: 1.2),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(Icons.add_rounded, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
           ),
           const SizedBox(height: 4),
-          SizedBox(
-            width: 64,
-            child: Text(
-              def.effectiveName,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-                height: 1.2,
-              ),
-            ),
-          ),
+          const SizedBox(width: 52, height: 24),
         ],
       ),
     );
   }
 
-  void _showProfileBadgeSwapSheet(
+  void _showProfileTrophySwapSheet(
     BuildContext context, {
     required String userId,
     required String slotId,
-    required ChallengerRoadBadgeDefinition currentDef,
+    required ChallengerRoadTrophyDefinition currentDef,
     required ChallengerRoadUserSummary summary,
-    required List<ChallengerRoadBadgeDefinition> catalog,
+    required List<ChallengerRoadTrophyDefinition> catalog,
   }) {
     showModalBottomSheet(
       context: context,
@@ -945,7 +978,7 @@ class _ProfileState extends State<Profile> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
-      builder: (_) => _ProfileBadgeSwapSheet(
+      builder: (_) => _ProfileTrophySwapSheet(
         userId: userId,
         slotId: slotId,
         currentDef: currentDef,
@@ -983,8 +1016,8 @@ class _DashboardCard extends StatelessWidget {
 
 // ── CR badge swap sheet (profile dashboard card) ────────────────────────────
 
-class _ProfileBadgeSwapSheet extends StatefulWidget {
-  const _ProfileBadgeSwapSheet({
+class _ProfileTrophySwapSheet extends StatefulWidget {
+  const _ProfileTrophySwapSheet({
     required this.userId,
     required this.slotId,
     required this.currentDef,
@@ -994,32 +1027,32 @@ class _ProfileBadgeSwapSheet extends StatefulWidget {
 
   final String userId;
   final String slotId;
-  final ChallengerRoadBadgeDefinition currentDef;
+  final ChallengerRoadTrophyDefinition currentDef;
   final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadBadgeDefinition> catalog;
+  final List<ChallengerRoadTrophyDefinition> catalog;
 
   @override
-  State<_ProfileBadgeSwapSheet> createState() => _ProfileBadgeSwapSheetState();
+  State<_ProfileTrophySwapSheet> createState() => _ProfileTrophySwapSheetState();
 }
 
-class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
+class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
   bool _saving = false;
 
-  Future<void> _swap(String newBadgeId) async {
-    if (newBadgeId == widget.slotId) {
+  Future<void> _swap(String newTrophyId) async {
+    if (newTrophyId == widget.slotId) {
       Navigator.of(context).pop();
       return;
     }
     setState(() => _saving = true);
-    final newFeatured = List<String>.from(widget.summary.featuredBadges);
-    newFeatured.remove(newBadgeId); // pull out if already in another slot
+    final newFeatured = List<String>.from(widget.summary.featuredTrophies);
+    newFeatured.remove(newTrophyId); // pull out if already in another slot
     final idx = newFeatured.indexOf(widget.slotId);
     if (idx >= 0) {
-      newFeatured[idx] = newBadgeId;
+      newFeatured[idx] = newTrophyId;
     } else {
-      newFeatured.add(newBadgeId);
+      newFeatured.add(newTrophyId);
     }
-    await ChallengerRoadService().updateFeaturedBadges(widget.userId, newFeatured.take(3).toList());
+    await ChallengerRoadService().updateFeaturedTrophies(widget.userId, newFeatured.take(5).toList());
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -1027,11 +1060,11 @@ class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final byId = {for (final d in widget.catalog) d.id: d};
-    final earnedIds = widget.summary.badges.toSet();
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
+    final earnedIds = widget.summary.trophies.toSet();
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
-    final currentColor = _crProfileBadgeColor(widget.currentDef);
-    final currentIcon = _crProfileBadgeIcon(widget.currentDef);
+    final currentColor = _crProfileTrophyColor(widget.currentDef);
+    final currentIcon = _crProfileTrophyIcon(widget.currentDef);
 
     return SafeArea(
       child: Column(
@@ -1110,9 +1143,9 @@ class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
                 ),
                 itemBuilder: (context, i) {
                   final def = earnedDefs[i];
-                  final color = _crProfileBadgeColor(def);
-                  final icon = _crProfileBadgeIcon(def);
-                  final isAlreadyFeatured = widget.summary.featuredBadges.contains(def.id);
+                  final color = _crProfileTrophyColor(def);
+                  final icon = _crProfileTrophyIcon(def);
+                  final isAlreadyFeatured = widget.summary.featuredTrophies.contains(def.id);
                   return InkWell(
                     onTap: () => _swap(def.id),
                     borderRadius: BorderRadius.circular(10),
@@ -1154,45 +1187,45 @@ class _ProfileBadgeSwapSheetState extends State<_ProfileBadgeSwapSheet> {
 
 // ── CR badge color/icon helpers (profile dashboard card) ────────────────────
 
-Color _crProfileBadgeColor(ChallengerRoadBadgeDefinition def) {
+Color _crProfileTrophyColor(ChallengerRoadTrophyDefinition def) {
   switch (def.tier) {
-    case ChallengerRoadBadgeTier.legendary:
+    case ChallengerRoadTrophyTier.legendary:
       return const Color(0xFFFFD700);
-    case ChallengerRoadBadgeTier.epic:
+    case ChallengerRoadTrophyTier.epic:
       return const Color(0xFFAB47BC);
-    case ChallengerRoadBadgeTier.hidden:
+    case ChallengerRoadTrophyTier.hidden:
       return const Color(0xFF78909C);
     default:
       break;
   }
   switch (def.category) {
-    case ChallengerRoadBadgeCategory.firstSteps:
+    case ChallengerRoadTrophyCategory.firstSteps:
       return const Color(0xFF42A5F5);
-    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+    case ChallengerRoadTrophyCategory.withinRunEfficiency:
       return const Color(0xFF26C6DA);
-    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+    case ChallengerRoadTrophyCategory.crossAttemptImprovement:
       return const Color(0xFF66BB6A);
-    case ChallengerRoadBadgeCategory.grindAndResilience:
+    case ChallengerRoadTrophyCategory.grindAndResilience:
       return const Color(0xFF8D6E63);
-    case ChallengerRoadBadgeCategory.levelAdvancement:
+    case ChallengerRoadTrophyCategory.levelAdvancement:
       return const Color(0xFF26A69A);
-    case ChallengerRoadBadgeCategory.crShotMilestones:
+    case ChallengerRoadTrophyCategory.crShotMilestones:
       return const Color(0xFFFF7043);
-    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+    case ChallengerRoadTrophyCategory.crSessionAccuracy:
       return const Color(0xFF5C6BC0);
-    case ChallengerRoadBadgeCategory.hotStreaks:
+    case ChallengerRoadTrophyCategory.hotStreaks:
       return const Color(0xFFEF5350);
-    case ChallengerRoadBadgeCategory.challengeMastery:
+    case ChallengerRoadTrophyCategory.challengeMastery:
       return const Color(0xFF5C6BC0);
-    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+    case ChallengerRoadTrophyCategory.multiAttemptCareer:
       return const Color(0xFF29B6F6);
-    case ChallengerRoadBadgeCategory.eliteEndgame:
+    case ChallengerRoadTrophyCategory.eliteEndgame:
       return const Color(0xFFFFD700);
-    case ChallengerRoadBadgeCategory.chirpy:
+    case ChallengerRoadTrophyCategory.chirpy:
       return const Color(0xFF78909C);
   }
 }
 
-IconData _crProfileBadgeIcon(ChallengerRoadBadgeDefinition def) {
-  return ChallengerRoadService.iconForBadge(def);
+IconData _crProfileTrophyIcon(ChallengerRoadTrophyDefinition def) {
+  return ChallengerRoadService.iconForTrophy(def);
 }

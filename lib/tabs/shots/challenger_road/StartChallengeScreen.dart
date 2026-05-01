@@ -13,7 +13,7 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeDetailSheet.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadBadgeAwardScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeQuotaIndicator.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
@@ -202,7 +202,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       // Snapshot badges before this save flow so we can compute all newly earned
       // badges after session save + milestone + level advancement.
       final beforeSummary = await service.getUserSummary(widget.userId);
-      final beforeBadgeIds = beforeSummary.badges.toSet();
+      final beforeTrophyIds = beforeSummary.trophies.toSet();
 
       // A session is passed when any single try met or exceeded the goal.
       final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
@@ -311,11 +311,11 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       // Badge celebration - aggregate everything earned in this flow (session,
       // milestone, and level advancement) and show once.
       final afterSummary = await service.getUserSummary(widget.userId);
-      final newlyUnlockedIds = afterSummary.badges.where((id) => !beforeBadgeIds.contains(id)).toSet();
+      final newlyUnlockedIds = afterSummary.trophies.where((id) => !beforeTrophyIds.contains(id)).toSet();
       if (newlyUnlockedIds.isNotEmpty && mounted) {
-        final catalog = await service.getBadgeCatalogForUser(widget.userId);
+        final catalog = await service.getTrophyCatalogForUser(widget.userId);
         final byId = {for (final def in catalog) def.id: def};
-        final newBadges = newlyUnlockedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList();
+        final newBadges = newlyUnlockedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().toList();
 
         if (newBadges.isNotEmpty) {
           // Write an in-app notification for each newly earned badge.
@@ -339,7 +339,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
           await Navigator.of(context).push<void>(
             MaterialPageRoute(
               fullscreenDialog: true,
-              builder: (_) => ChallengerRoadBadgeAwardScreen(badges: newBadges),
+              builder: (_) => ChallengerRoadTrophyAwardScreen(trophies: newBadges),
             ),
           );
           if (!mounted) return;

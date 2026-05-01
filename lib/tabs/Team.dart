@@ -22,7 +22,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamLeaderboardPdf.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
-import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:go_router/go_router.dart';
 
@@ -1160,7 +1160,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               Positioned(
                 bottom: -2,
                 right: -3,
-                child: CrAvatarBadgeStream(
+                child: CrAvatarTrophyStream(
                   userId: plyr.profile!.reference!.id,
                   size: 18,
                   showProFallback: isProForDisplay,

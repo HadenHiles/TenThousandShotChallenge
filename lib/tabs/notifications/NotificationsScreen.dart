@@ -241,10 +241,10 @@ class _NotificationTile extends StatelessWidget {
       LocalNotificationService.cancelForegroundMessages();
       if (n.isInviteReceived || n.isInviteAccepted) {
         context.push(AppRoutePaths.playerPathFor(n.fromUid));
-      } else if (n.isBadgeEarned) {
-        final badgeId = n.badgeId;
-        if (badgeId != null && badgeId.isNotEmpty) {
-          context.push(AppRoutePaths.profileChallengerRoadFor(badgeId));
+      } else if (n.isTrophyEarned) {
+        final trophyId = n.trophyId;
+        if (trophyId != null && trophyId.isNotEmpty) {
+          context.push(AppRoutePaths.profileChallengerRoadFor(trophyId));
         } else {
           context.push(AppRoutePaths.profileChallengerRoad);
         }
@@ -297,12 +297,12 @@ class _NotificationTile extends StatelessWidget {
       avatarIcon = Icons.check_circle_rounded;
       headline = 'Challenge complete!';
       subtitleLine = n.achievementTitle;
-    } else if (n.isBadgeEarned) {
+    } else if (n.isTrophyEarned) {
       avatarBg = Colors.amber.withValues(alpha: 0.18);
       avatarFg = Colors.amber[800]!;
       avatarIcon = Icons.military_tech_rounded;
       headline = 'New badge earned!';
-      subtitleLine = n.badgeName;
+      subtitleLine = n.trophyName;
     } else if (n.isLevelCompleted) {
       avatarBg = Theme.of(context).primaryColor.withValues(alpha: 0.15);
       avatarFg = Theme.of(context).primaryColor;

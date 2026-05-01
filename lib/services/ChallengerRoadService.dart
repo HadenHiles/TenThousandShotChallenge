@@ -39,12 +39,12 @@ class ChallengerRoadMilestoneResult {
 /// - [legendary] → gold     (#FFD700)
 /// - [hidden]    → slate    (#78909C)  displayed as "SECRET"; not shown in
 ///                the locked-badge gallery until earned
-enum ChallengerRoadBadgeTier { common, uncommon, rare, epic, legendary, hidden }
+enum ChallengerRoadTrophyTier { common, uncommon, rare, epic, legendary, hidden }
 
 /// Groups Challenger Road badges by the behaviour that unlocks them.
 ///
 /// Categories are used to:
-///   1. Assign icon characters in [_BadgeChip], [ChallengerRoadBadgeAwardScreen],
+///   1. Assign icon characters in [_TrophyChip], [ChallengerRoadTrophyAwardScreen],
 ///      and the map-view badge sheet.
 ///   2. Group badges in future catalogue screens.
 ///
@@ -62,7 +62,7 @@ enum ChallengerRoadBadgeTier { common, uncommon, rare, epic, legendary, hidden }
 /// | multiAttemptCareer       | Icons.repeat_rounded         |
 /// | eliteEndgame             | Icons.military_tech_rounded  |
 /// | chirpy                   | Icons.sports_hockey_rounded  |
-enum ChallengerRoadBadgeCategory {
+enum ChallengerRoadTrophyCategory {
   firstSteps,
   withinRunEfficiency,
   crossAttemptImprovement,
@@ -79,23 +79,23 @@ enum ChallengerRoadBadgeCategory {
 
 /// Immutable definition of a single Challenger Road badge.
 ///
-/// Instances live exclusively in [ChallengerRoadService.badgeCatalog] - they
+/// Instances live exclusively in [ChallengerRoadService.trophyCatalog] - they
 /// are `const` and never stored in Firestore.  Only the [id] is persisted
 /// (as a string) in the user's `badges` array inside the
 /// `users/{uid}/challenger_road/summary` document.
 ///
 /// **Adding a new badge**
-/// 1. Add a `ChallengerRoadBadgeDefinition` entry to [ChallengerRoadService.badgeCatalog].
-/// 2. Add the award logic to `_checkAndAwardBadges`, `_checkContextualSessionBadges`,
+/// 1. Add a `ChallengerRoadTrophyDefinition` entry to [ChallengerRoadService.trophyCatalog].
+/// 2. Add the award logic to `_checkAndAwardTrophies`, `_checkContextualSessionTrophies`,
 ///    `advanceLevel`, or `incrementChallengerRoadShots` as appropriate.
 /// 3. Add the [id] to the `VALID_BADGE_IDS` set in
 ///    `scripts/prune_legacy_badges.js`.
 ///
 /// **Removing a badge**
-/// Remove the entry from [badgeCatalog].  `_checkAndAwardBadges` automatically
+/// Remove the entry from [trophyCatalog].  `_checkAndAwardTrophies` automatically
 /// strips any ID not present in the catalog from a user's `badges` list the
 /// next time it runs for that user.
-class ChallengerRoadBadgeDefinition {
+class ChallengerRoadTrophyDefinition {
   /// Stable, snake_case identifier persisted in Firestore. Never rename.
   final String id;
 
@@ -106,10 +106,10 @@ class ChallengerRoadBadgeDefinition {
   final String description;
 
   /// Behavioural grouping used for icon selection and future catalogue screens.
-  final ChallengerRoadBadgeCategory category;
+  final ChallengerRoadTrophyCategory category;
 
   /// Rarity tier that drives badge colour.
-  final ChallengerRoadBadgeTier tier;
+  final ChallengerRoadTrophyTier tier;
 
   /// Admin-managed display name override stored in Firestore
   /// (`challenger_road_badges/{id}.display_name`). When non-null, the UI should
@@ -158,7 +158,7 @@ class ChallengerRoadBadgeDefinition {
   /// The default icon key shown to players when [effectiveIconUrl] is absent.
   String? get effectiveDefaultIconKey => defaultIconKey ?? displayIconKey;
 
-  const ChallengerRoadBadgeDefinition({
+  const ChallengerRoadTrophyDefinition({
     required this.id,
     required this.name,
     required this.description,
@@ -171,14 +171,14 @@ class ChallengerRoadBadgeDefinition {
     this.defaultIconKey,
   });
 
-  ChallengerRoadBadgeDefinition copyWith({
+  ChallengerRoadTrophyDefinition copyWith({
     String? displayName,
     String? displayDescription,
     String? displayIconKey,
     String? iconUrl,
     String? defaultIconKey,
   }) {
-    return ChallengerRoadBadgeDefinition(
+    return ChallengerRoadTrophyDefinition(
       id: id,
       name: name,
       description: description,
@@ -193,15 +193,15 @@ class ChallengerRoadBadgeDefinition {
   }
 }
 
-class ChallengerRoadBadgeTierGroup {
-  final ChallengerRoadBadgeTier tier;
+class ChallengerRoadTrophyTierGroup {
+  final ChallengerRoadTrophyTier tier;
   final String label;
-  final List<ChallengerRoadBadgeDefinition> badges;
+  final List<ChallengerRoadTrophyDefinition> trophies;
 
-  const ChallengerRoadBadgeTierGroup({
+  const ChallengerRoadTrophyTierGroup({
     required this.tier,
     required this.label,
-    required this.badges,
+    required this.trophies,
   });
 }
 
@@ -224,31 +224,31 @@ class ChallengerRoadService {
   /// Firestore path: challenger_road_badges/{badgeId}
   /// Fields: display_name, display_description, icon_url,
   /// default_icon, display_icon/icon_key (string?)
-  CollectionReference get _badgeOverridesRef => _firestore.collection('challenger_road_badges');
+  CollectionReference get _trophyOverridesRef => _firestore.collection('challenger_road_badges');
 
   /// Humanized title used for unknown earned legacy badge IDs.
-  static String titleFromBadgeId(String id) {
+  static String titleFromTrophyId(String id) {
     return id.replaceAll('cr_', '').split('_').where((p) => p.isNotEmpty).map((part) => '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
   }
 
   /// Returns catalog badges plus any unknown earned IDs as legacy placeholders.
-  static List<ChallengerRoadBadgeDefinition> buildDisplayBadgeDefs({
-    required List<String> earnedBadgeIds,
-    required List<ChallengerRoadBadgeDefinition> catalog,
+  static List<ChallengerRoadTrophyDefinition> buildDisplayTrophyDefs({
+    required List<String> earnedTrophyIds,
+    required List<ChallengerRoadTrophyDefinition> catalog,
   }) {
-    final knownById = <String, ChallengerRoadBadgeDefinition>{
+    final knownById = <String, ChallengerRoadTrophyDefinition>{
       for (final badge in catalog) badge.id: badge,
     };
 
-    final unknownEarned = earnedBadgeIds
+    final unknownEarned = earnedTrophyIds
         .where((id) => !knownById.containsKey(id))
         .map(
-          (id) => ChallengerRoadBadgeDefinition(
+          (id) => ChallengerRoadTrophyDefinition(
             id: id,
-            name: titleFromBadgeId(id),
-            description: 'Legacy Challenger Road badge.',
-            category: ChallengerRoadBadgeCategory.chirpy,
-            tier: ChallengerRoadBadgeTier.common,
+            name: titleFromTrophyId(id),
+            description: 'Legacy Challenger Road trophy.',
+            category: ChallengerRoadTrophyCategory.chirpy,
+            tier: ChallengerRoadTrophyTier.common,
           ),
         )
         .toList()
@@ -258,12 +258,12 @@ class ChallengerRoadService {
   }
 
   /// Sort badges for list/grid display: earned first, then by effective name.
-  static List<ChallengerRoadBadgeDefinition> sortDisplayBadges({
-    required List<ChallengerRoadBadgeDefinition> badges,
-    required List<String> earnedBadgeIds,
+  static List<ChallengerRoadTrophyDefinition> sortDisplayTrophies({
+    required List<ChallengerRoadTrophyDefinition> trophies,
+    required List<String> earnedTrophyIds,
   }) {
-    final earnedSet = earnedBadgeIds.toSet();
-    final sorted = [...badges]..sort((a, b) {
+    final earnedSet = earnedTrophyIds.toSet();
+    final sorted = [...trophies]..sort((a, b) {
         final aEarned = earnedSet.contains(a.id);
         final bEarned = earnedSet.contains(b.id);
         if (aEarned == bEarned) {
@@ -274,74 +274,74 @@ class ChallengerRoadService {
     return sorted;
   }
 
-  static const List<ChallengerRoadBadgeTier> visibleTierOrder = [
-    ChallengerRoadBadgeTier.common,
-    ChallengerRoadBadgeTier.uncommon,
-    ChallengerRoadBadgeTier.rare,
-    ChallengerRoadBadgeTier.epic,
-    ChallengerRoadBadgeTier.legendary,
+  static const List<ChallengerRoadTrophyTier> visibleTierOrder = [
+    ChallengerRoadTrophyTier.common,
+    ChallengerRoadTrophyTier.uncommon,
+    ChallengerRoadTrophyTier.rare,
+    ChallengerRoadTrophyTier.epic,
+    ChallengerRoadTrophyTier.legendary,
   ];
 
-  static String tierLabel(ChallengerRoadBadgeTier tier) {
+  static String tierLabel(ChallengerRoadTrophyTier tier) {
     switch (tier) {
-      case ChallengerRoadBadgeTier.legendary:
+      case ChallengerRoadTrophyTier.legendary:
         return 'Legendary';
-      case ChallengerRoadBadgeTier.epic:
+      case ChallengerRoadTrophyTier.epic:
         return 'Epic';
-      case ChallengerRoadBadgeTier.rare:
+      case ChallengerRoadTrophyTier.rare:
         return 'Rare';
-      case ChallengerRoadBadgeTier.uncommon:
+      case ChallengerRoadTrophyTier.uncommon:
         return 'Uncommon';
-      case ChallengerRoadBadgeTier.common:
+      case ChallengerRoadTrophyTier.common:
         return 'Common';
-      case ChallengerRoadBadgeTier.hidden:
+      case ChallengerRoadTrophyTier.hidden:
         return 'Hidden';
     }
   }
 
-  static List<ChallengerRoadBadgeDefinition> visibleDisplayBadgeDefs({
-    required List<ChallengerRoadBadgeDefinition> badges,
+  static List<ChallengerRoadTrophyDefinition> visibleDisplayTrophyDefs({
+    required List<ChallengerRoadTrophyDefinition> trophies,
     bool includeHidden = false,
   }) {
-    if (includeHidden) return [...badges];
-    return badges.where((b) => b.tier != ChallengerRoadBadgeTier.hidden).toList();
+    if (includeHidden) return [...trophies];
+    return trophies.where((b) => b.tier != ChallengerRoadTrophyTier.hidden).toList();
   }
 
-  static List<ChallengerRoadBadgeTierGroup> groupDisplayBadgesByTier({
-    required List<ChallengerRoadBadgeDefinition> badges,
-    required List<String> earnedBadgeIds,
+  static List<ChallengerRoadTrophyTierGroup> groupDisplayTrophiesByTier({
+    required List<ChallengerRoadTrophyDefinition> trophies,
+    required List<String> earnedTrophyIds,
     bool includeHidden = false,
   }) {
-    final visible = visibleDisplayBadgeDefs(
-      badges: badges,
+    final visible = visibleDisplayTrophyDefs(
+      trophies: trophies,
       includeHidden: includeHidden,
     );
-    final groups = <ChallengerRoadBadgeTierGroup>[];
+    final groups = <ChallengerRoadTrophyTierGroup>[];
     for (final tier in visibleTierOrder) {
       final tierBadges = visible.where((b) => b.tier == tier).toList();
       if (tierBadges.isEmpty) continue;
-      final sorted = sortDisplayBadges(
-        badges: tierBadges,
-        earnedBadgeIds: earnedBadgeIds,
+      final sorted = sortDisplayTrophies(
+        trophies: tierBadges,
+        earnedTrophyIds: earnedTrophyIds,
       );
       groups.add(
-        ChallengerRoadBadgeTierGroup(
+        ChallengerRoadTrophyTierGroup(
           tier: tier,
           label: tierLabel(tier),
-          badges: sorted,
+          trophies: sorted,
         ),
       );
     }
     if (includeHidden) {
-      final hiddenBadges = visible.where((b) => b.tier == ChallengerRoadBadgeTier.hidden).toList();
+      final hiddenBadges = visible.where((b) => b.tier == ChallengerRoadTrophyTier.hidden).toList();
       if (hiddenBadges.isNotEmpty) {
         groups.add(
-          ChallengerRoadBadgeTierGroup(
-            tier: ChallengerRoadBadgeTier.hidden,
-            label: tierLabel(ChallengerRoadBadgeTier.hidden),
-            badges: sortDisplayBadges(
-              badges: hiddenBadges,
-              earnedBadgeIds: earnedBadgeIds,
+          ChallengerRoadTrophyTierGroup(
+            tier: ChallengerRoadTrophyTier.hidden,
+            label: tierLabel(ChallengerRoadTrophyTier.hidden),
+            trophies: sortDisplayTrophies(
+              trophies: hiddenBadges,
+              earnedTrophyIds: earnedTrophyIds,
             ),
           ),
         );
@@ -351,7 +351,7 @@ class ChallengerRoadService {
   }
 
   /// Resolves the icon for a badge, preferring any admin-managed icon key.
-  static IconData iconForBadge(ChallengerRoadBadgeDefinition def) {
+  static IconData iconForTrophy(ChallengerRoadTrophyDefinition def) {
     final key = def.effectiveDefaultIconKey?.trim().toLowerCase();
     switch (key) {
       case 'route':
@@ -398,29 +398,29 @@ class ChallengerRoadService {
     }
 
     switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
+      case ChallengerRoadTrophyCategory.firstSteps:
         return Icons.route_rounded;
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      case ChallengerRoadTrophyCategory.withinRunEfficiency:
         return Icons.bolt_rounded;
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      case ChallengerRoadTrophyCategory.crossAttemptImprovement:
         return Icons.trending_up_rounded;
-      case ChallengerRoadBadgeCategory.grindAndResilience:
+      case ChallengerRoadTrophyCategory.grindAndResilience:
         return Icons.shield_rounded;
-      case ChallengerRoadBadgeCategory.levelAdvancement:
+      case ChallengerRoadTrophyCategory.levelAdvancement:
         return Icons.stairs_rounded;
-      case ChallengerRoadBadgeCategory.crShotMilestones:
+      case ChallengerRoadTrophyCategory.crShotMilestones:
         return Icons.workspace_premium_rounded;
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      case ChallengerRoadTrophyCategory.crSessionAccuracy:
         return Icons.gps_fixed_rounded;
-      case ChallengerRoadBadgeCategory.hotStreaks:
+      case ChallengerRoadTrophyCategory.hotStreaks:
         return Icons.local_fire_department_rounded;
-      case ChallengerRoadBadgeCategory.challengeMastery:
+      case ChallengerRoadTrophyCategory.challengeMastery:
         return Icons.emoji_events_rounded;
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      case ChallengerRoadTrophyCategory.multiAttemptCareer:
         return Icons.repeat_rounded;
-      case ChallengerRoadBadgeCategory.eliteEndgame:
+      case ChallengerRoadTrophyCategory.eliteEndgame:
         return Icons.military_tech_rounded;
-      case ChallengerRoadBadgeCategory.chirpy:
+      case ChallengerRoadTrophyCategory.chirpy:
         return Icons.sports_hockey_rounded;
     }
   }
@@ -428,8 +428,8 @@ class ChallengerRoadService {
   /// Builds a badge icon widget honoring this precedence:
   /// 1) icon_url (network image), 2) default_icon (mapped icon),
   /// 3) hardcoded category icon fallback.
-  static Widget badgeIconWidget(
-    ChallengerRoadBadgeDefinition def, {
+  static Widget trophyIconWidget(
+    ChallengerRoadTrophyDefinition def, {
     required double size,
     required Color color,
   }) {
@@ -442,11 +442,11 @@ class ChallengerRoadService {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Icon(iconForBadge(def), size: size, color: color),
+          errorBuilder: (_, __, ___) => Icon(iconForTrophy(def), size: size, color: color),
         ),
       );
     }
-    return Icon(iconForBadge(def), size: size, color: color);
+    return Icon(iconForTrophy(def), size: size, color: color);
   }
 
   /// Challenge docs owned by a specific level.
@@ -485,413 +485,413 @@ class ChallengerRoadService {
   /// Challenger Road challenge sessions, level completions, attempt data, and
   /// CR shot counters. Nothing bleeds into weekly achievements or normal
   /// shooting sessions.
-  static const List<ChallengerRoadBadgeDefinition> badgeCatalog = [
+  static const List<ChallengerRoadTrophyDefinition> trophyCatalog = [
     // ── FIRST STEPS ──────────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'fresh_laces',
       name: 'Fresh Laces',
       description: 'Started the Challenger Road.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.firstSteps,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'drop_the_biscuit',
       name: 'Drop the Biscuit',
       description: 'Completed your first challenge session.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.firstSteps,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'clean_read',
       name: 'Clean Read',
       description: 'Passed your first challenge.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.firstSteps,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'level_clear',
       name: 'Level Clear',
       description: 'Level 1 done.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.firstSteps,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'made_the_show',
       name: 'Made the Show',
       description: 'Level 3 cleared. Not a tryout anymore.',
-      category: ChallengerRoadBadgeCategory.firstSteps,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.firstSteps,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
 
     // ── WITHIN-RUN EFFICIENCY ─────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'no_warmup_needed',
       name: 'No Warmup Needed',
       description: 'Cleared a full level without a single failed session.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.withinRunEfficiency,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'breakaway',
       name: 'Breakaway',
       description: 'Cleared every challenge in a level in a single day.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.withinRunEfficiency,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'freight_train',
       name: 'Freight Train',
       description: 'Two levels in a row with zero failed sessions.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.withinRunEfficiency,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'clean_sweep',
       name: 'Clean Sweep',
       description: 'Every challenge in a level passed on the first try.',
-      category: ChallengerRoadBadgeCategory.withinRunEfficiency,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.withinRunEfficiency,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
 
     // ── CROSS-ATTEMPT IMPROVEMENT ─────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'scouting_report',
       name: 'Scouting Report',
       description: 'First-try pass on a challenge that took multiple tries last run.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_rematch',
       name: 'The Rematch',
       description: 'Passed a challenge you couldn\'t finish in your previous attempt.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'dialed_in',
       name: 'Dialed In',
       description: 'New personal best accuracy on your hardest challenge.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'comeback_season',
       name: 'Comeback Season',
       description: 'Reached a higher level than your previous best attempt.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'redemption_arc',
       name: 'Redemption Arc',
       description: 'First-try pass on a challenge you failed 5+ times in a previous run.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_comeback_kid',
       name: 'The Comeback Kid',
       description: 'Set a new personal best level in 3 separate attempts.',
-      category: ChallengerRoadBadgeCategory.crossAttemptImprovement,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crossAttemptImprovement,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
 
     // ── GRIND & RESILIENCE ────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'battle_tested',
       name: 'Battle Tested',
       description: 'Failed the same challenge 5 times in a row, then passed it.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.grindAndResilience,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'game_7',
       name: 'Game 7',
       description: 'Passed the challenge you\'ve failed more than any other.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.grindAndResilience,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'third_period_heart',
       name: 'Third Period Heart',
       description: 'Cleared a level despite 10+ failed sessions inside it.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.grindAndResilience,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'old_grudge',
       name: 'Old Grudge',
       description: 'Failed this challenge in two straight attempts - then finally passed it.',
-      category: ChallengerRoadBadgeCategory.grindAndResilience,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.grindAndResilience,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
 
     // ── LEVEL ADVANCEMENT ─────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'ice_time_earned',
       name: 'Ice Time Earned',
       description: 'Level 5 cleared.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.levelAdvancement,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'team_captain',
       name: 'Team Captain',
       description: 'Level 10 cleared.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.levelAdvancement,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_climb',
       name: 'The Climb',
       description: 'New personal best level reached.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.levelAdvancement,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_general',
       name: 'The General',
       description: 'Cleared every challenge at the current highest active level.',
-      category: ChallengerRoadBadgeCategory.levelAdvancement,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.levelAdvancement,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
 
     // ── CR SHOT MILESTONES ────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'first_bucket',
       name: 'First Bucket',
       description: '100 Challenger Road shots.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'building_a_barn',
       name: 'Building a Barn',
       description: '1,000 Challenger Road shots.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'ten_minute_major',
       name: 'Ten-Minute Major',
       description: '5,000 Challenger Road shots.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'buzzer_beater',
       name: 'Buzzer Beater',
       description: '10,000 Challenger Road shots.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'three_periods',
       name: 'Three Periods',
       description: '30,000 Challenger Road shots in one attempt.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'well_never_runs_dry',
       name: 'The Well Never Runs Dry',
       description: '25,000 cumulative Challenger Road shots all-time.',
-      category: ChallengerRoadBadgeCategory.crShotMilestones,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.crShotMilestones,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
 
     // ── CR SESSION ACCURACY ───────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'lights_out',
       name: 'Lights Out',
       description: 'New personal best accuracy on a levels 1\u20134 challenge.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'bar_down',
       name: 'Bar Down',
       description: '90%+ accuracy in a single session.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'top_cheese',
       name: 'Top Cheese',
       description: '95%+ accuracy in a single session.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'pure',
       name: 'Pure',
       description: '100% accuracy in a session. Nothing missed.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_sniper',
       name: 'The Sniper',
       description: '85%+ average accuracy across a full completed level.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'all_net',
       name: 'All Net',
       description: '5 perfect 100% accuracy sessions.',
-      category: ChallengerRoadBadgeCategory.crSessionAccuracy,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.crSessionAccuracy,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
 
     // ── HOT STREAKS ───────────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'sauce',
       name: 'Sauce',
       description: '5 passes in a row, no failures in between.',
-      category: ChallengerRoadBadgeCategory.hotStreaks,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.hotStreaks,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'unstoppable',
       name: 'Unstoppable',
       description: '10 passes in a row, no failures in between.',
-      category: ChallengerRoadBadgeCategory.hotStreaks,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.hotStreaks,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'full_send',
       name: 'Full Send',
       description: 'Best accuracy AND highest shot volume in the same session.',
-      category: ChallengerRoadBadgeCategory.hotStreaks,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.hotStreaks,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
 
     // ── CHALLENGE MASTERY ─────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'never_missed',
       name: 'Never Missed',
       description: '5+ challenges you\'ve never once failed.',
-      category: ChallengerRoadBadgeCategory.challengeMastery,
-      tier: ChallengerRoadBadgeTier.hidden,
+      category: ChallengerRoadTrophyCategory.challengeMastery,
+      tier: ChallengerRoadTrophyTier.hidden,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'untouchable',
       name: 'Untouchable',
       description: 'First-try pass on the same challenge in 5+ separate runs.',
-      category: ChallengerRoadBadgeCategory.challengeMastery,
-      tier: ChallengerRoadBadgeTier.hidden,
+      category: ChallengerRoadTrophyCategory.challengeMastery,
+      tier: ChallengerRoadTrophyTier.hidden,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'earned_a_salary',
       name: 'Earned a Salary',
       description: '25 all-time passes on a single challenge.',
-      category: ChallengerRoadBadgeCategory.challengeMastery,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.challengeMastery,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
 
     // ── MULTI-ATTEMPT / CAREER ────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'veteran_presence',
       name: 'Veteran Presence',
       description: 'Started a second Challenger Road attempt.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.uncommon,
+      category: ChallengerRoadTrophyCategory.multiAttemptCareer,
+      tier: ChallengerRoadTrophyTier.uncommon,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'lifer',
       name: 'Lifer',
       description: '5 Challenger Road attempts. It\'s just your thing now.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.multiAttemptCareer,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'career_year',
       name: 'Career Year',
       description: 'Hit 10,000 shots AND a new personal best level in the same attempt.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.multiAttemptCareer,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'road_dog',
       name: 'Road Dog',
       description: '250 total sessions on the Challenger Road.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.epic,
+      category: ChallengerRoadTrophyCategory.multiAttemptCareer,
+      tier: ChallengerRoadTrophyTier.epic,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'all_time_great',
       name: 'All-Time Great',
       description: '100 total challenge passes across all attempts.',
-      category: ChallengerRoadBadgeCategory.multiAttemptCareer,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.multiAttemptCareer,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
 
     // ── ELITE / ENDGAME ───────────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'hall_of_famer',
       name: 'Hall of Famer',
       description: 'Completed every active Challenger Road level in one attempt.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.eliteEndgame,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'the_machine',
       name: 'The Machine',
       description: 'Completed 3+ attempts with 80%+ average accuracy in each completed attempt.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.eliteEndgame,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'hockey_god',
       name: 'Hockey God',
       description: 'Completed every active level in one attempt with zero failed sessions.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.hidden,
+      category: ChallengerRoadTrophyCategory.eliteEndgame,
+      tier: ChallengerRoadTrophyTier.hidden,
     ),
 
     // ── CHIRPY / PERSONALITY ──────────────────────────────────────────────────
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'bender',
       name: 'Bender',
       description: 'Started a new attempt at a lower level than your previous best.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.chirpy,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'pigeon',
       name: 'Pigeon',
       description: 'First-try pass at 95%+ accuracy on a hard challenge.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.chirpy,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'sauce_boss',
       name: 'Sauce Boss',
       description: 'New personal best accuracy on a harder Challenger Road challenge.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.rare,
+      category: ChallengerRoadTrophyCategory.chirpy,
+      tier: ChallengerRoadTrophyTier.rare,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'skip_the_tryout',
       name: 'Skip the Tryout',
       description: 'Started a new attempt at a higher level using unlocks from a previous run.',
-      category: ChallengerRoadBadgeCategory.chirpy,
-      tier: ChallengerRoadBadgeTier.common,
+      category: ChallengerRoadTrophyCategory.chirpy,
+      tier: ChallengerRoadTrophyTier.common,
     ),
-    ChallengerRoadBadgeDefinition(
+    ChallengerRoadTrophyDefinition(
       id: 'all_stars',
       name: 'All Stars',
       description: 'Had unlocked skips available, started at Level 1, and completed every active level in one attempt.',
-      category: ChallengerRoadBadgeCategory.eliteEndgame,
-      tier: ChallengerRoadBadgeTier.legendary,
+      category: ChallengerRoadTrophyCategory.eliteEndgame,
+      tier: ChallengerRoadTrophyTier.legendary,
     ),
   ];
 
   /// Returns the full badge catalog with code-defined values only.
-  /// Use [getBadgeCatalogForUser] to include admin-managed display overrides.
-  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalog() async => badgeCatalog;
+  /// Use [getTrophyCatalogForUser] to include admin-managed display overrides.
+  Future<List<ChallengerRoadTrophyDefinition>> getBadgeCatalog() async => trophyCatalog;
 
   /// Returns the badge catalog with any admin-managed display overrides applied.
   ///
@@ -899,20 +899,20 @@ class ChallengerRoadService {
   /// exists for a badge it may supply `display_name` and/or
   /// `display_description`, `icon_url`, and/or `default_icon` fields; those
   /// override the code-defined copy in the
-  /// UI via [ChallengerRoadBadgeDefinition.effectiveName] and
-  /// [ChallengerRoadBadgeDefinition.effectiveDescription]. Icon precedence is
-  /// resolved by [badgeIconWidget].
+  /// UI via [ChallengerRoadTrophyDefinition.effectiveName] and
+  /// [ChallengerRoadTrophyDefinition.effectiveDescription]. Icon precedence is
+  /// resolved by [trophyIconWidget].
   ///
-  /// Award logic is never affected - it always uses [badgeCatalog] directly.
-  Future<List<ChallengerRoadBadgeDefinition>> getBadgeCatalogForUser(String userId) async {
-    final overridesSnap = await _badgeOverridesRef.get();
-    if (overridesSnap.docs.isEmpty) return badgeCatalog;
+  /// Award logic is never affected - it always uses [trophyCatalog] directly.
+  Future<List<ChallengerRoadTrophyDefinition>> getTrophyCatalogForUser(String userId) async {
+    final overridesSnap = await _trophyOverridesRef.get();
+    if (overridesSnap.docs.isEmpty) return trophyCatalog;
 
     final overridesByid = <String, Map<String, dynamic>>{
       for (final doc in overridesSnap.docs) doc.id: doc.data() as Map<String, dynamic>,
     };
 
-    return badgeCatalog.map((badge) {
+    return trophyCatalog.map((badge) {
       final overrides = overridesByid[badge.id];
       if (overrides == null) return badge;
       final displayName = overrides['display_name'] as String?;
@@ -1065,12 +1065,12 @@ class ChallengerRoadService {
       currentAttemptId: docRef.id,
       totalAttempts: attemptNumber,
     );
-    await _checkAndAwardBadges(userId: userId, summary: updatedSummary);
+    await _checkAndAwardTrophies(userId: userId, summary: updatedSummary);
 
     // cr_skip_the_tryout: player chose to start above Level 1 using inherited unlocks.
     if (inheritedUnlockedLevel > 0 && startingLevel > 1) {
       final freshSummary = await getUserSummary(userId);
-      final earned = List<String>.from(freshSummary.badges);
+      final earned = List<String>.from(freshSummary.trophies);
       if (!earned.contains('skip_the_tryout')) {
         earned.add('skip_the_tryout');
         await updateUserSummary(userId, {'badges': earned});
@@ -1095,9 +1095,9 @@ class ChallengerRoadService {
   /// [ChallengeAllTimeHistory] for the same challenge.
   ///
   /// All three writes succeed or none do (WriteBatch).
-  /// Returns the list of [ChallengerRoadBadgeDefinition] that were newly earned
+  /// Returns the list of [ChallengerRoadTrophyDefinition] that were newly earned
   /// by this session (empty list if none).
-  Future<List<ChallengerRoadBadgeDefinition>> saveChallengeSession(String userId, String attemptId, ChallengeSession session) async {
+  Future<List<ChallengerRoadTrophyDefinition>> saveChallengeSession(String userId, String attemptId, ChallengeSession session) async {
     final batch = _firestore.batch();
 
     // 1. New challenge_sessions document.
@@ -1115,12 +1115,12 @@ class ChallengerRoadService {
     // Compute badge stats once - shared by both stat-based and contextual checks
     // to avoid loading all Firestore session data twice per save.
     // getUserSummary is kicked off in parallel with the stats load.
-    final badgeStatsFuture = _loadRoadBadgeStats(userId);
+    final badgeStatsFuture = _loadRoadTrophyStats(userId);
     final summaryFuture = getUserSummary(userId);
     final badgeStats = await badgeStatsFuture;
     final summary = await summaryFuture;
 
-    final newStatsBadges = await _checkAndAwardBadges(
+    final newStatsBadges = await _checkAndAwardTrophies(
       userId: userId,
       summary: summary,
       precomputedStats: badgeStats,
@@ -1128,7 +1128,7 @@ class ChallengerRoadService {
 
     // Re-read summary so contextual check sees stats badges already persisted.
     final summaryAfterStats = await getUserSummary(userId);
-    final newContextualBadges = await _checkContextualSessionBadges(
+    final newContextualBadges = await _checkContextualSessionTrophies(
       userId: userId,
       attemptId: attemptId,
       session: session,
@@ -1137,7 +1137,7 @@ class ChallengerRoadService {
     );
 
     final allNewIds = {...newStatsBadges, ...newContextualBadges};
-    final catalog = badgeCatalog;
+    final catalog = trophyCatalog;
     return catalog.where((def) => allNewIds.contains(def.id)).toList();
   }
 
@@ -1145,14 +1145,14 @@ class ChallengerRoadService {
   /// object in scope - things like new personal-best accuracy, consecutive
   /// pass streaks checked live, and special per-challenge conditions.
   /// Returns the IDs of any badges newly awarded by this call.
-  Future<List<String>> _checkContextualSessionBadges({
+  Future<List<String>> _checkContextualSessionTrophies({
     required String userId,
     required String attemptId,
     required ChallengeSession session,
     required ChallengerRoadUserSummary summary,
-    _RoadBadgeStats? precomputedStats,
+    _RoadTrophyStats? precomputedStats,
   }) async {
-    final earned = List<String>.from(summary.badges);
+    final earned = List<String>.from(summary.trophies);
     final newIds = <String>[];
 
     void maybeAward(String id) {
@@ -1208,7 +1208,7 @@ class ChallengerRoadService {
 
     // cr_game_7: passed the all-time most-failed challenge (requires 7+ all-time failures).
     if (session.passed) {
-      final stats = precomputedStats ?? await _loadRoadBadgeStats(userId);
+      final stats = precomputedStats ?? await _loadRoadTrophyStats(userId);
       if (stats.mostFailedChallengeId == session.challengeId && stats.mostFailedChallengeCount >= 7) {
         maybeAward('game_7');
       }
@@ -1427,7 +1427,7 @@ class ChallengerRoadService {
     }
 
     final updatedSummary = await getUserSummary(userId);
-    await _checkAndAwardBadges(userId: userId, summary: updatedSummary);
+    await _checkAndAwardTrophies(userId: userId, summary: updatedSummary);
 
     // Extra badges that require attempt-level and level-completion context.
     final extraBadges = <String>[];
@@ -1518,11 +1518,11 @@ class ChallengerRoadService {
 
     if (extraBadges.isNotEmpty) {
       final freshSummary = await getUserSummary(userId);
-      final earned = List<String>.from(freshSummary.badges);
+      final earned = List<String>.from(freshSummary.trophies);
       bool changed = false;
-      for (final badgeId in extraBadges) {
-        if (!earned.contains(badgeId)) {
-          earned.add(badgeId);
+      for (final trophyId in extraBadges) {
+        if (!earned.contains(trophyId)) {
+          earned.add(trophyId);
           changed = true;
         }
       }
@@ -1586,11 +1586,11 @@ class ChallengerRoadService {
 
     if (didHit) {
       final updatedSummary = await getUserSummary(userId);
-      await _checkAndAwardBadges(userId: userId, summary: updatedSummary);
+      await _checkAndAwardTrophies(userId: userId, summary: updatedSummary);
 
       // Contextual milestone badges for reset counts.
       final freshSummary = await getUserSummary(userId);
-      final earned = List<String>.from(freshSummary.badges);
+      final earned = List<String>.from(freshSummary.trophies);
       bool changed = false;
       void maybeAward(String id) {
         if (!earned.contains(id)) {
@@ -1727,9 +1727,9 @@ class ChallengerRoadService {
   /// this runs (e.g. when opening the Challenger Road map).
   ///
   /// Returns the IDs of badges newly added by this call (empty if nothing changed).
-  Future<List<String>> awardMissingBadges(String userId) async {
+  Future<List<String>> awardMissingTrophies(String userId) async {
     final summary = await getUserSummary(userId);
-    return _checkAndAwardBadges(userId: userId, summary: summary);
+    return _checkAndAwardTrophies(userId: userId, summary: summary);
   }
 
   /// Applies a partial update to the user summary document. If the document
@@ -1738,10 +1738,10 @@ class ChallengerRoadService {
     await _userSummaryRef(userId).set(data, SetOptions(merge: true));
   }
 
-  /// Persists the user's chosen featured badges (max 3) to their summary doc.
-  Future<void> updateFeaturedBadges(String userId, List<String> badgeIds) async {
+  /// Persists the user's chosen featured trophies (max 5) to their summary doc.
+  Future<void> updateFeaturedTrophies(String userId, List<String> trophyIds) async {
     await _userSummaryRef(userId).set(
-      {'featured_badges': badgeIds.take(3).toList()},
+      {'featured_badges': trophyIds.take(5).toList()},
       SetOptions(merge: true),
     );
   }
@@ -1876,7 +1876,7 @@ class ChallengerRoadService {
   // ---------------------------------------------------------------------------
 
   /// Aggregates all Challenger Road data for [userId] into a single
-  /// [_RoadBadgeStats] snapshot used by [_checkAndAwardBadges].
+  /// [_RoadTrophyStats] snapshot used by [_checkAndAwardTrophies].
   ///
   /// Reading order (minimises Firestore round-trips):
   /// 1. Active level + challenge config from `challenger_road_levels`.
@@ -1885,9 +1885,9 @@ class ChallengerRoadService {
   /// 4. All-time history documents (one per challenge, O(1) reads).
   ///
   /// This is the most expensive read path in the service.  It is called once
-  /// per `_checkAndAwardBadges` invocation, which itself runs after every
+  /// per `_checkAndAwardTrophies` invocation, which itself runs after every
   /// session save, level advance, and 10 000-shot milestone.
-  Future<_RoadBadgeStats> _loadRoadBadgeStats(String userId) async {
+  Future<_RoadTrophyStats> _loadRoadTrophyStats(String userId) async {
     // ── 1. Active challenge config from Firestore ────────────────────────────
     final levelSnaps = await _levelsRef.where('active', isEqualTo: true).get();
     final activeChallengeIdsByLevel = <int, Set<String>>{};
@@ -2135,7 +2135,7 @@ class ChallengerRoadService {
       }
     }
 
-    return _RoadBadgeStats(
+    return _RoadTrophyStats(
       activeChallengeIdsByLevel: activeChallengeIdsByLevel,
       highestActiveLevel: highestActiveLevel,
       totalCrSessions: totalCrSessions,
@@ -2195,7 +2195,7 @@ class ChallengerRoadService {
   ///
   /// Idempotent - will not re-award a badge already in the `badges` list.
   /// Preserves unknown/legacy badge IDs already present in the user summary,
-  /// while using [badgeCatalog] as the source of truth for any matching IDs.
+  /// while using [trophyCatalog] as the source of truth for any matching IDs.
   /// This keeps grandfathered badges intact even if they are no longer in the
   /// global catalog.
   ///
@@ -2203,29 +2203,29 @@ class ChallengerRoadService {
   ///
   /// | Call site                         | Badges awarded there |
   /// |-----------------------------------|----------------------|
-  /// | `_checkAndAwardBadges` (here)     | All stat-derivable badges: shot milestones, level clears, session counts, streak lengths, cross-attempt improvement counters, etc. |
-  /// | `_checkContextualSessionBadges`   | Badges that need the live `ChallengeSession` object: `cr_lights_out`, `cr_battle_tested`, `cr_game_7`, `cr_old_grudge`, `cr_redemption_arc`, `cr_pigeon`, `cr_sauce_boss`, `cr_full_send`. |
+  /// | `_checkAndAwardTrophies` (here)     | All stat-derivable badges: shot milestones, level clears, session counts, streak lengths, cross-attempt improvement counters, etc. |
+  /// | `_checkContextualSessionTrophies`   | Badges that need the live `ChallengeSession` object: `cr_lights_out`, `cr_battle_tested`, `cr_game_7`, `cr_old_grudge`, `cr_redemption_arc`, `cr_pigeon`, `cr_sauce_boss`, `cr_full_send`. |
   /// | `advanceLevel`                    | Level-completion badges: `cr_the_climb`, `cr_third_period_heart`, `cr_no_warmup_needed`, `cr_breakaway`, `cr_clean_sweep`, `cr_freight_train`, `cr_the_sniper`, `cr_hall_of_famer`, `cr_hockey_god`, `cr_the_machine`, `cr_all_stars`. |
   /// | `incrementChallengerRoadShots`    | 10k-milestone badges: `cr_three_periods`, `cr_career_year`. |
   /// | `createAttempt`                   | Per-attempt badges: `cr_skip_the_tryout`. |
   ///
   /// Returns the IDs of badges newly awarded by this call.
-  Future<List<String>> _checkAndAwardBadges({
+  Future<List<String>> _checkAndAwardTrophies({
     required String userId,
     required ChallengerRoadUserSummary summary,
-    _RoadBadgeStats? precomputedStats,
+    _RoadTrophyStats? precomputedStats,
   }) async {
     // Keep all existing badge IDs, including legacy IDs not present in the
     // current catalog. New awards are still driven by current catalog IDs.
-    final earned = List<String>.from(summary.badges);
+    final earned = List<String>.from(summary.trophies);
 
     final newIds = <String>[];
-    final stats = precomputedStats ?? await _loadRoadBadgeStats(userId);
+    final stats = precomputedStats ?? await _loadRoadTrophyStats(userId);
 
-    void maybeAward(String badgeId) {
-      if (!earned.contains(badgeId)) {
-        earned.add(badgeId);
-        newIds.add(badgeId);
+    void maybeAward(String trophyId) {
+      if (!earned.contains(trophyId)) {
+        earned.add(trophyId);
+        newIds.add(trophyId);
       }
     }
 
@@ -2243,7 +2243,7 @@ class ChallengerRoadService {
     // ── WITHIN-RUN EFFICIENCY ─────────────────────────────────────────────────
     // cr_no_warmup_needed: any level completed with 0 failed sessions - computed
     // contextually in advanceLevel; mark here if already earned via stats proxy.
-    // (The flag is set by advanceLevel; _checkAndAwardBadges won't re-compute it.)
+    // (The flag is set by advanceLevel; _checkAndAwardTrophies won't re-compute it.)
 
     // cr_sharp removed (too close to cr_sauce at 5 passes).
 
@@ -2367,7 +2367,7 @@ class ChallengerRoadService {
   }
 }
 
-class _RoadBadgeStats {
+class _RoadTrophyStats {
   // ── Active challenge map (from Firestore config) ──────────────────────────
   /// All active challenge IDs grouped by level number.
   final Map<int, Set<String>> activeChallengeIdsByLevel;
@@ -2461,7 +2461,7 @@ class _RoadBadgeStats {
   /// in the most recent attempt.
   final bool dialedInAchieved;
 
-  const _RoadBadgeStats({
+  const _RoadTrophyStats({
     required this.activeChallengeIdsByLevel,
     required this.highestActiveLevel,
     required this.totalCrSessions,

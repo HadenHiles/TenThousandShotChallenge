@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
-import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
@@ -20,7 +20,7 @@ void main() {
         allTimeBestLevel: 12,
         allTimeBestLevelShots: 9876,
         allTimeTotalChallengerRoadShots: 22000,
-        badges: const ['cr_buzzer_beater', 'cr_the_general'],
+        trophies: const ['cr_buzzer_beater', 'cr_the_general'],
       );
 
       final accomplishment = resolveCrProfileAccomplishment(summary);
@@ -36,7 +36,7 @@ void main() {
         allTimeBestLevel: 7,
         allTimeBestLevelShots: 11000,
         allTimeTotalChallengerRoadShots: 14000,
-        badges: const ['cr_ice_time_earned', 'cr_team_captain', 'cr_bar_down'],
+        trophies: const ['cr_ice_time_earned', 'cr_team_captain', 'cr_bar_down'],
       );
 
       final accomplishment = resolveCrProfileAccomplishment(summary);
@@ -52,7 +52,7 @@ void main() {
         allTimeBestLevel: 6,
         allTimeBestLevelShots: 4500,
         allTimeTotalChallengerRoadShots: 4500,
-        badges: const [],
+        trophies: const [],
       );
 
       final accomplishment = resolveCrProfileAccomplishment(summary);
@@ -98,7 +98,7 @@ void main() {
           allTimeBestLevel: 10,
           allTimeBestLevelShots: 10000,
           allTimeTotalChallengerRoadShots: 15000,
-          badges: const ['cr_team_captain'],
+          trophies: const ['cr_team_captain'],
         ),
       );
       await tester.pump();
