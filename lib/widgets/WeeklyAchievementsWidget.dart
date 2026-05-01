@@ -924,6 +924,7 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                   scrollDirection: Axis.vertical,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 8),
                   itemCount: achievements.length,
                   separatorBuilder: (context, idx) => const SizedBox(height: 8),
                   itemBuilder: (context, idx) {
