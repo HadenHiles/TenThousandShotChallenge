@@ -814,7 +814,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   void _confirmRunItBack(BuildContext context) {
     final highestReached = _lastData?.activeAttempt?.highestLevelReachedThisAttempt ?? 1;
     final nextInherited = (highestReached - 1).clamp(0, 999);
-    final primary = Theme.of(context).primaryColor;
 
     showDialog<void>(
       context: context,
@@ -824,7 +823,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: _RunItBackDialogContent(
           nextInherited: nextInherited,
-          primaryColor: primary,
           onFullGrind: () async {
             Navigator.of(dialogContext).pop();
             setState(() => _runItBackLoading = true);
@@ -2383,22 +2381,23 @@ class _CRBadgeSheet extends StatelessWidget {
 class _RunItBackDialogContent extends StatelessWidget {
   const _RunItBackDialogContent({
     required this.nextInherited,
-    required this.primaryColor,
     required this.onFullGrind,
     required this.onJumpIn,
     required this.onCancel,
   });
 
   final int nextInherited;
-  final Color primaryColor;
   final VoidCallback onFullGrind;
   final VoidCallback onJumpIn;
   final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
-    const surfaceBg = Color(0xFF1C2230);
-    const cardBg = Color(0xFF252D3A);
+    final scheme = Theme.of(context).colorScheme;
+    final primaryColor = Theme.of(context).primaryColor;
+    final surfaceBg = scheme.surface;
+    // Slightly elevated card bg: blend surface toward onSurface
+    final cardBg = Color.lerp(scheme.surface, scheme.onSurface, scheme.brightness == Brightness.dark ? 0.07 : 0.04)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -2410,12 +2409,12 @@ class _RunItBackDialogContent extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.15),
+            color: primaryColor.withValues(alpha: 0.12),
             blurRadius: 30,
             spreadRadius: 4,
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: scheme.brightness == Brightness.dark ? 0.5 : 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -2433,7 +2432,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  primaryColor.withValues(alpha: 0.20),
+                  primaryColor.withValues(alpha: 0.18),
                   primaryColor.withValues(alpha: 0.0),
                 ],
               ),
@@ -2450,7 +2449,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                     border: Border.all(color: primaryColor.withValues(alpha: 0.55), width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.30),
+                        color: primaryColor.withValues(alpha: 0.28),
                         blurRadius: 18,
                         spreadRadius: 2,
                       ),
@@ -2459,12 +2458,12 @@ class _RunItBackDialogContent extends StatelessWidget {
                   child: Icon(Icons.emoji_events_rounded, color: primaryColor, size: 34),
                 ),
                 const SizedBox(height: 14),
-                const Text(
+                Text(
                   'RUN IT BACK?',
                   style: TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 28,
-                    color: Colors.white,
+                    color: scheme.onSurface,
                     letterSpacing: 1.8,
                   ),
                 ),
@@ -2475,7 +2474,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'NovecentoSans',
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: scheme.onSurface.withValues(alpha: 0.55),
                     height: 1.4,
                   ),
                 ),
@@ -2498,6 +2497,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                     sublabel: 'Start at Level ${nextInherited + 1}',
                     description: 'Your last run earned it. Skip ahead and keep the momentum going.',
                     cardBg: cardBg,
+                    onSurface: scheme.onSurface,
                     onTap: onJumpIn,
                   ),
                   const SizedBox(height: 10),
@@ -2511,6 +2511,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                   sublabel: 'Start at Level 1',
                   description: 'Back to the bottom. Earn every single level from scratch-the hard way.',
                   cardBg: cardBg,
+                  onSurface: scheme.onSurface,
                   onTap: onFullGrind,
                 ),
               ],
@@ -2528,7 +2529,7 @@ class _RunItBackDialogContent extends StatelessWidget {
                   fontFamily: 'NovecentoSans',
                   fontSize: 13,
                   letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: scheme.onSurface.withValues(alpha: 0.35),
                 ),
               ),
             ),
@@ -2551,6 +2552,7 @@ class _PathChoiceCard extends StatelessWidget {
     required this.sublabel,
     required this.description,
     required this.cardBg,
+    required this.onSurface,
     required this.onTap,
   });
 
@@ -2562,6 +2564,7 @@ class _PathChoiceCard extends StatelessWidget {
   final String sublabel;
   final String description;
   final Color cardBg;
+  final Color onSurface;
   final VoidCallback onTap;
 
   @override
@@ -2607,10 +2610,10 @@ class _PathChoiceCard extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'NovecentoSans',
                             fontSize: 18,
-                            color: Colors.white,
+                            color: onSurface,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -2649,7 +2652,7 @@ class _PathChoiceCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.50),
+                        color: onSurface.withValues(alpha: 0.50),
                         height: 1.35,
                       ),
                     ),
@@ -2661,7 +2664,7 @@ class _PathChoiceCard extends StatelessWidget {
               // ── Chevron ───────────────────────────────────────────────
               Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.30),
+                color: onSurface.withValues(alpha: 0.30),
                 size: 22,
               ),
             ],
