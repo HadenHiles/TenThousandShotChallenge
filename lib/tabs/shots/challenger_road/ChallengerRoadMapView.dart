@@ -814,58 +814,33 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   void _confirmRunItBack(BuildContext context) {
     final highestReached = _lastData?.activeAttempt?.highestLevelReachedThisAttempt ?? 1;
     final nextInherited = (highestReached - 1).clamp(0, 999);
+    final primary = Theme.of(context).primaryColor;
 
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('You conquered the full road. Nice work!'),
-            if (nextInherited >= 1) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Your last run unlocks levels 1–$nextInherited. Pick your path:',
-                style: const TextStyle(fontFamily: 'NovecentoSans'),
-              ),
-            ],
-          ],
+      barrierColor: Colors.black.withValues(alpha: 0.80),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: _RunItBackDialogContent(
+          nextInherited: nextInherited,
+          primaryColor: primary,
+          onFullGrind: () async {
+            Navigator.of(dialogContext).pop();
+            setState(() => _runItBackLoading = true);
+            await _service!.runItBack(widget.userId, chosenStartingLevel: 1);
+            if (mounted) setState(() => _runItBackLoading = false);
+            _refreshData(scrollToBottom: true);
+          },
+          onJumpIn: () async {
+            Navigator.of(dialogContext).pop();
+            setState(() => _runItBackLoading = true);
+            await _service!.runItBack(widget.userId, chosenStartingLevel: nextInherited + 1);
+            if (mounted) setState(() => _runItBackLoading = false);
+            _refreshData(scrollToBottom: true);
+          },
+          onCancel: () => Navigator.of(dialogContext).pop(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          if (nextInherited >= 1)
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                setState(() => _runItBackLoading = true);
-                await _service!.runItBack(widget.userId, chosenStartingLevel: nextInherited + 1);
-                if (mounted) setState(() => _runItBackLoading = false);
-                _refreshData(scrollToBottom: true);
-              },
-              child: Text(
-                'Jump to Level ${nextInherited + 1}',
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              ),
-            ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              setState(() => _runItBackLoading = true);
-              await _service!.runItBack(widget.userId, chosenStartingLevel: 1);
-              if (mounted) setState(() => _runItBackLoading = false);
-              _refreshData(scrollToBottom: true);
-            },
-            child: Text(
-              nextInherited >= 1 ? 'Full Grind - Start from Level 1' : 'Let\'s Go',
-              style: TextStyle(color: Theme.of(context).primaryColor),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -2397,6 +2372,300 @@ class _CRBadgeSheet extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Run It Back dialog content ─────────────────────────────────────────────
+
+class _RunItBackDialogContent extends StatelessWidget {
+  const _RunItBackDialogContent({
+    required this.nextInherited,
+    required this.primaryColor,
+    required this.onFullGrind,
+    required this.onJumpIn,
+    required this.onCancel,
+  });
+
+  final int nextInherited;
+  final Color primaryColor;
+  final VoidCallback onFullGrind;
+  final VoidCallback onJumpIn;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    const surfaceBg = Color(0xFF1C2230);
+    const cardBg = Color(0xFF252D3A);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: primaryColor.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withValues(alpha: 0.15),
+            blurRadius: 30,
+            spreadRadius: 4,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Header ──────────────────────────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  primaryColor.withValues(alpha: 0.20),
+                  primaryColor.withValues(alpha: 0.0),
+                ],
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: primaryColor.withValues(alpha: 0.15),
+                    border: Border.all(color: primaryColor.withValues(alpha: 0.55), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withValues(alpha: 0.30),
+                        blurRadius: 18,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.emoji_events_rounded, color: primaryColor, size: 34),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'RUN IT BACK?',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 28,
+                    color: Colors.white,
+                    letterSpacing: 1.8,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  nextInherited >= 1 ? 'You conquered the full road.\nChoose your path for the next run.' : 'You conquered the full road.\nReady to do it all over again?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Path choice cards ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                if (nextInherited >= 1) ...[
+                  _PathChoiceCard(
+                    icon: Icons.bolt_rounded,
+                    iconColor: primaryColor,
+                    borderColor: primaryColor,
+                    badge: 'HEAD START',
+                    label: 'JUMP IN',
+                    sublabel: 'Start at Level ${nextInherited + 1}',
+                    description: 'Your last run earned it. Skip ahead and keep the momentum going.',
+                    cardBg: cardBg,
+                    onTap: onJumpIn,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                _PathChoiceCard(
+                  icon: Icons.local_fire_department_rounded,
+                  iconColor: const Color(0xFFFF7A30),
+                  borderColor: const Color(0xFFFF7A30),
+                  badge: 'COMPLETIONIST',
+                  label: 'FULL GRIND',
+                  sublabel: 'Start at Level 1',
+                  description: 'Back to the bottom. Earn every single level from scratch-the hard way.',
+                  cardBg: cardBg,
+                  onTap: onFullGrind,
+                ),
+              ],
+            ),
+          ),
+
+          // ── Cancel ──────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: TextButton(
+              onPressed: onCancel,
+              child: Text(
+                'NOT YET',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 13,
+                  letterSpacing: 1.2,
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Reusable path-choice card ──────────────────────────────────────────────
+
+class _PathChoiceCard extends StatelessWidget {
+  const _PathChoiceCard({
+    required this.icon,
+    required this.iconColor,
+    required this.borderColor,
+    required this.badge,
+    required this.label,
+    required this.sublabel,
+    required this.description,
+    required this.cardBg,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color borderColor;
+  final String badge;
+  final String label;
+  final String sublabel;
+  final String description;
+  final Color cardBg;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        splashColor: borderColor.withValues(alpha: 0.15),
+        highlightColor: borderColor.withValues(alpha: 0.08),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor.withValues(alpha: 0.45), width: 1.5),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ── Icon circle ───────────────────────────────────────────
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconColor.withValues(alpha: 0.12),
+                  border: Border.all(color: iconColor.withValues(alpha: 0.40), width: 1),
+                ),
+                child: Icon(icon, color: iconColor, size: 28),
+              ),
+              const SizedBox(width: 14),
+
+              // ── Text block ────────────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 18,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: iconColor.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: iconColor.withValues(alpha: 0.50), width: 0.8),
+                          ),
+                          child: Text(
+                            badge,
+                            style: TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 9,
+                              color: iconColor,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      sublabel,
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 13,
+                        color: iconColor.withValues(alpha: 0.9),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.50),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // ── Chevron ───────────────────────────────────────────────
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withValues(alpha: 0.30),
+                size: 22,
+              ),
+            ],
+          ),
         ),
       ),
     );
