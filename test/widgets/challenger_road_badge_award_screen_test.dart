@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadBadgeAwardScreen.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTrophyAwardScreen.dart';
 
 void main() {
   testWidgets('pages through multiple unlocked badges and updates counter', (tester) async {
     const badges = [
-      ChallengerRoadBadgeDefinition(
+      ChallengerRoadTrophyDefinition(
         id: 'cr_fresh_laces',
         name: 'Fresh Laces',
         description: 'Started the Challenger Road.',
-        category: ChallengerRoadBadgeCategory.firstSteps,
-        tier: ChallengerRoadBadgeTier.common,
+        category: ChallengerRoadTrophyCategory.firstSteps,
+        tier: ChallengerRoadTrophyTier.common,
       ),
-      ChallengerRoadBadgeDefinition(
+      ChallengerRoadTrophyDefinition(
         id: 'cr_clean_read',
         name: 'Clean Read',
         description: 'Passed your first challenge.',
-        category: ChallengerRoadBadgeCategory.firstSteps,
-        tier: ChallengerRoadBadgeTier.common,
+        category: ChallengerRoadTrophyCategory.firstSteps,
+        tier: ChallengerRoadTrophyTier.common,
       ),
     ];
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: ChallengerRoadBadgeAwardScreen(badges: badges),
+        home: ChallengerRoadTrophyAwardScreen(trophies: badges),
       ),
     );
 
@@ -44,18 +44,18 @@ void main() {
 
   testWidgets('single badge flow does not show counter and shows final CTA', (tester) async {
     const badges = [
-      ChallengerRoadBadgeDefinition(
+      ChallengerRoadTrophyDefinition(
         id: 'cr_fresh_laces',
         name: 'Fresh Laces',
         description: 'Started the Challenger Road.',
-        category: ChallengerRoadBadgeCategory.firstSteps,
-        tier: ChallengerRoadBadgeTier.common,
+        category: ChallengerRoadTrophyCategory.firstSteps,
+        tier: ChallengerRoadTrophyTier.common,
       ),
     ];
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: ChallengerRoadBadgeAwardScreen(badges: badges),
+        home: ChallengerRoadTrophyAwardScreen(trophies: badges),
       ),
     );
 

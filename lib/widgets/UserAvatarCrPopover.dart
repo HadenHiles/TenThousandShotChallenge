@@ -66,7 +66,7 @@ class UserAvatarCrPopover extends StatelessWidget {
       builder: (context, snap) {
         final summary = snap.data ?? ChallengerRoadUserSummary.empty();
 
-        final bool hasCrActivity = summary.totalAttempts > 0 || summary.allTimeBestLevel > 0 || summary.badges.isNotEmpty;
+        final bool hasCrActivity = summary.totalAttempts > 0 || summary.allTimeBestLevel > 0 || summary.trophies.isNotEmpty;
         final bool viewerIsPro = Provider.of<CustomerInfoNotifier>(context, listen: false).isPro;
         // Show CR action whenever the target has activity (or is a pro placeholder),
         // regardless of whether the caller passed showAccomplishment.

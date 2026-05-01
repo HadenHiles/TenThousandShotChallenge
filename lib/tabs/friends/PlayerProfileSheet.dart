@@ -19,7 +19,7 @@ import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
-import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
@@ -460,10 +460,10 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final summary = snap.data!;
-        final bool hasActivity = summary.totalAttempts > 0 || summary.badges.isNotEmpty;
+        final bool hasActivity = summary.totalAttempts > 0 || summary.trophies.isNotEmpty;
         if (!hasActivity) return const SizedBox.shrink();
 
-        final badges = summary.badges.toSet();
+        final badges = summary.trophies.toSet();
         final bool roadComplete = badges.contains('the_general') || badges.contains('playoff_mode');
         final int? shots = summary.allTimeBestLevelShots;
         String headline;
@@ -479,7 +479,7 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
           final t = summary.totalAttempts;
           headline = 'level ${summary.allTimeBestLevel}\n$t attempt${t == 1 ? '' : 's'}';
         } else {
-          headline = '${summary.badges.length} badge${summary.badges.length == 1 ? '' : 's'} earned';
+          headline = '${summary.trophies.length} badge${summary.trophies.length == 1 ? '' : 's'} earned';
         }
 
         return Column(
@@ -545,7 +545,7 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                   Positioned(
                     right: -4,
                     bottom: -4,
-                    child: CrAvatarBadgeStream(userId: widget.uid, size: 22, enabled: isProForDisplay, showProFallback: isProForDisplay),
+                    child: CrAvatarTrophyStream(userId: widget.uid, size: 22, enabled: isProForDisplay, showProFallback: isProForDisplay),
                   ),
                 ],
               ),

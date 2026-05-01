@@ -331,7 +331,7 @@ List<RouteBase> _buildMeRoutes() {
       path: AppRoutePaths.profileChallengerRoad,
       name: AppRouteNames.profileChallengerRoad,
       builder: (context, state) => ChallengerRoadProfileScreen(
-        highlightBadgeId: state.uri.queryParameters['badgeId'],
+        highlightTrophyId: state.uri.queryParameters['trophyId'],
       ),
     ),
   ];

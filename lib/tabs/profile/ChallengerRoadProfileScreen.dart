@@ -14,10 +14,10 @@ import 'package:tenthousandshotchallenge/tabs/profile/ChallengerRoadProfileSecti
 /// When [userId] is provided the screen shows that player's CR progress
 /// (read-only). When omitted it defaults to the signed-in user's own profile.
 class ChallengerRoadProfileScreen extends StatefulWidget {
-  const ChallengerRoadProfileScreen({super.key, this.highlightBadgeId, this.userId});
+  const ChallengerRoadProfileScreen({super.key, this.highlightTrophyId, this.userId});
 
   /// When set, the badge grid scrolls to this badge and briefly highlights it.
-  final String? highlightBadgeId;
+  final String? highlightTrophyId;
 
   /// The user whose Challenger Road progress to display.
   /// Defaults to the currently signed-in user when null.
@@ -123,7 +123,7 @@ class _ChallengerRoadProfileScreenState extends State<ChallengerRoadProfileScree
                       isPro: _subscriptionLevel == 'pro',
                       isEditable: widget.userId == null,
                       showOnlyEarned: widget.userId != null,
-                      highlightBadgeId: widget.highlightBadgeId,
+                      highlightTrophyId: widget.highlightTrophyId,
                       onGoProTap: () async {
                         await presentPaywallIfNeeded(context);
                       },

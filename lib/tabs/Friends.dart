@@ -12,7 +12,7 @@ import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
-import 'package:tenthousandshotchallenge/widgets/CrAvatarBadge.dart';
+import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
 
@@ -633,7 +633,7 @@ class _FriendsState extends State<Friends> {
                       Positioned(
                         right: -2,
                         bottom: -2,
-                        child: CrAvatarBadgeStream(
+                        child: CrAvatarTrophyStream(
                           userId: friend.reference!.id,
                           size: 20,
                           showProFallback: isProForDisplay,
@@ -1014,7 +1014,7 @@ class _FriendsState extends State<Friends> {
                                 Positioned(
                                   right: -2,
                                   bottom: -2,
-                                  child: CrAvatarBadgeStream(
+                                  child: CrAvatarTrophyStream(
                                     userId: friend.reference!.id,
                                     size: 20,
                                     showProFallback: isProForDisplay,

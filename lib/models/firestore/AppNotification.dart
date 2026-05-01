@@ -12,7 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 ///   'invite_accepted'              - a teammate accepted your invite
 ///   'weekly_achievements_available'- new weekly challenges have been assigned
 ///   'achievement_completed'        - you completed a weekly achievement
-///   'cr_badge_earned'              - you earned a Challenger Road badge
+///   'cr_badge_earned'              - you earned a Challenger Road trophy
 ///   'cr_level_completed'           - you completed a Challenger Road level
 class AppNotification {
   final String id;
@@ -30,9 +30,9 @@ class AppNotification {
   // Achievement-specific fields.
   final String? achievementTitle;
   final String? achievementDescription;
-  // Badge-specific fields.
-  final String? badgeId;
-  final String? badgeName;
+  // Trophy-specific fields.
+  final String? trophyId;
+  final String? trophyName;
 
   final DateTime? createdAt;
   final bool read;
@@ -52,8 +52,8 @@ class AppNotification {
     this.shotsToPass,
     this.achievementTitle,
     this.achievementDescription,
-    this.badgeId,
-    this.badgeName,
+    this.trophyId,
+    this.trophyName,
     this.createdAt,
     required this.read,
     this.reference,
@@ -64,7 +64,7 @@ class AppNotification {
   bool get isInviteAccepted => type == 'invite_accepted';
   bool get isWeeklyAvailable => type == 'weekly_achievements_available';
   bool get isAchievementCompleted => type == 'achievement_completed';
-  bool get isBadgeEarned => type == 'cr_badge_earned';
+  bool get isTrophyEarned => type == 'cr_badge_earned';
   bool get isLevelCompleted => type == 'cr_level_completed';
 
   static AppNotification fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -87,8 +87,8 @@ class AppNotification {
       shotsToPass: d['shots_to_pass'] as int?,
       achievementTitle: d['achievement_title'] as String?,
       achievementDescription: d['achievement_description'] as String?,
-      badgeId: d['badge_id'] as String?,
-      badgeName: d['badge_name'] as String?,
+      trophyId: d['badge_id'] as String?,
+      trophyName: d['badge_name'] as String?,
       createdAt: createdAt,
       read: (d['read'] as bool?) ?? false,
       reference: doc.reference,

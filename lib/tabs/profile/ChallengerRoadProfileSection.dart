@@ -16,14 +16,14 @@ class ChallengerRoadProfileSection extends StatelessWidget {
     required this.isPro,
     this.isEditable = false,
     this.showOnlyEarned = false,
-    this.highlightBadgeId,
+    this.highlightTrophyId,
     this.onGoProTap,
   });
 
   final String userId;
   final bool isPro;
 
-  /// When true, shows a "PLAYER CARD" featured-badge showcase with an edit
+  /// When true, shows a "TROPHY CASE" featured-badge showcase with an edit
   /// button - only meaningful when this is the signed-in user's own profile.
   final bool isEditable;
 
@@ -32,7 +32,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
   final bool showOnlyEarned;
 
   /// When set, the badge grid scrolls to this badge ID and pulses it.
-  final String? highlightBadgeId;
+  final String? highlightTrophyId;
   final VoidCallback? onGoProTap;
 
   @override
@@ -61,7 +61,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           // Personal Best Badge
-          _PersonalBestBadge(
+          _PersonalBestTrophy(
             level: summary.allTimeBestLevel,
             shots: summary.allTimeBestLevelShots,
           ),
@@ -70,12 +70,12 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           _StatsRow(summary: summary),
           const SizedBox(height: 20),
           // Badge catalog powers both the featured showcase and the full grid.
-          _BadgeCatalogSection(
+          _TrophyCatalogSection(
             userId: userId,
             summary: summary,
             isEditable: isEditable,
             showOnlyEarned: showOnlyEarned,
-            highlightBadgeId: highlightBadgeId,
+            highlightTrophyId: highlightTrophyId,
           ),
           const SizedBox(height: 12),
         ],
@@ -90,41 +90,41 @@ class ChallengerRoadProfileSection extends StatelessWidget {
 /// the future is only created once - not every time the parent [StreamBuilder]
 /// emits. This prevents the badge grid from tearing down and restarting the
 /// highlight animation on every Firestore update.
-class _BadgeCatalogSection extends StatefulWidget {
-  const _BadgeCatalogSection({
+class _TrophyCatalogSection extends StatefulWidget {
+  const _TrophyCatalogSection({
     required this.userId,
     required this.summary,
     required this.isEditable,
     required this.showOnlyEarned,
-    this.highlightBadgeId,
+    this.highlightTrophyId,
   });
 
   final String userId;
   final ChallengerRoadUserSummary summary;
   final bool isEditable;
   final bool showOnlyEarned;
-  final String? highlightBadgeId;
+  final String? highlightTrophyId;
 
   @override
-  State<_BadgeCatalogSection> createState() => _BadgeCatalogSectionState();
+  State<_TrophyCatalogSection> createState() => _TrophyCatalogSectionState();
 }
 
-class _BadgeCatalogSectionState extends State<_BadgeCatalogSection> {
-  late Future<List<ChallengerRoadBadgeDefinition>> _future;
+class _TrophyCatalogSectionState extends State<_TrophyCatalogSection> {
+  late Future<List<ChallengerRoadTrophyDefinition>> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = ChallengerRoadService().getBadgeCatalogForUser(widget.userId);
+    _future = ChallengerRoadService().getTrophyCatalogForUser(widget.userId);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ChallengerRoadBadgeDefinition>>(
+    return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
       future: _future,
-      builder: (context, badgeSnap) {
-        final badgeDefs = badgeSnap.data ?? const <ChallengerRoadBadgeDefinition>[];
-        if (badgeDefs.isEmpty && widget.summary.badges.isEmpty && badgeSnap.connectionState == ConnectionState.waiting) {
+      builder: (context, trophySnap) {
+        final trophyDefs = trophySnap.data ?? const <ChallengerRoadTrophyDefinition>[];
+        if (trophyDefs.isEmpty && widget.summary.trophies.isEmpty && trophySnap.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(child: CircularProgressIndicator()),
@@ -134,16 +134,16 @@ class _BadgeCatalogSectionState extends State<_BadgeCatalogSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.isEditable && widget.summary.badges.isNotEmpty) ...[
+            if (widget.isEditable && widget.summary.trophies.isNotEmpty) ...[
               _FeaturedShowcase(
                 userId: widget.userId,
                 summary: widget.summary,
-                badgeDefs: badgeDefs,
+                trophyDefs: trophyDefs,
               ),
               const SizedBox(height: 20),
             ],
             Text(
-              'BADGES',
+              'TROPHIES',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 14,
@@ -152,11 +152,11 @@ class _BadgeCatalogSectionState extends State<_BadgeCatalogSection> {
               ),
             ),
             const SizedBox(height: 8),
-            _BadgeWrapGrid(
-              earnedBadges: widget.summary.badges,
+            _TrophyWrapGrid(
+              earnedTrophies: widget.summary.trophies,
               summary: widget.summary,
-              badgeDefs: badgeDefs,
-              highlightBadgeId: widget.highlightBadgeId,
+              trophyDefs: trophyDefs,
+              highlightTrophyId: widget.highlightTrophyId,
               showOnlyEarned: widget.showOnlyEarned,
             ),
           ],
@@ -189,7 +189,7 @@ class _GoProNudge extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'earn more badges & unlock the full challenger road.',
+              'earn more trophies & unlock the full challenger road.',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 13,
@@ -221,8 +221,8 @@ class _GoProNudge extends StatelessWidget {
 
 // ── Personal Best Badge widget ──────────────────────────────────────────────
 
-class _PersonalBestBadge extends StatelessWidget {
-  const _PersonalBestBadge({required this.level, required this.shots});
+class _PersonalBestTrophy extends StatelessWidget {
+  const _PersonalBestTrophy({required this.level, required this.shots});
   final int level;
   final int? shots;
 
@@ -351,8 +351,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 8),
         _statChip(
           context,
-          label: 'BADGES',
-          value: '${summary.badges.length}',
+          label: 'TROPHIES',
+          value: '${summary.trophies.length}',
           icon: Icons.military_tech_rounded,
         ),
       ],
@@ -404,35 +404,35 @@ class _StatsRow extends StatelessWidget {
 
 // ── Badge scroll row ────────────────────────────────────────────────────────
 
-class _BadgeWrapGrid extends StatelessWidget {
-  const _BadgeWrapGrid({
-    required this.earnedBadges,
+class _TrophyWrapGrid extends StatelessWidget {
+  const _TrophyWrapGrid({
+    required this.earnedTrophies,
     required this.summary,
-    required this.badgeDefs,
-    this.highlightBadgeId,
+    required this.trophyDefs,
+    this.highlightTrophyId,
     this.showOnlyEarned = false,
   });
 
-  final List<String> earnedBadges;
+  final List<String> earnedTrophies;
   final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadBadgeDefinition> badgeDefs;
-  final String? highlightBadgeId;
+  final List<ChallengerRoadTrophyDefinition> trophyDefs;
+  final String? highlightTrophyId;
   final bool showOnlyEarned;
 
-  List<ChallengerRoadBadgeDefinition> _buildDisplayDefs() {
-    return ChallengerRoadService.buildDisplayBadgeDefs(
-      earnedBadgeIds: earnedBadges,
-      catalog: badgeDefs,
+  List<ChallengerRoadTrophyDefinition> _buildDisplayDefs() {
+    return ChallengerRoadService.buildDisplayTrophyDefs(
+      earnedTrophyIds: earnedTrophies,
+      catalog: trophyDefs,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final allDisplayDefs = _buildDisplayDefs();
-    final displayDefs = showOnlyEarned ? allDisplayDefs.where((d) => earnedBadges.contains(d.id)).toList() : allDisplayDefs;
-    final groups = ChallengerRoadService.groupDisplayBadgesByTier(
-      badges: displayDefs,
-      earnedBadgeIds: earnedBadges,
+    final displayDefs = showOnlyEarned ? allDisplayDefs.where((d) => earnedTrophies.contains(d.id)).toList() : allDisplayDefs;
+    final groups = ChallengerRoadService.groupDisplayTrophiesByTier(
+      trophies: displayDefs,
+      earnedTrophyIds: earnedTrophies,
       includeHidden: false,
     );
 
@@ -440,7 +440,7 @@ class _BadgeWrapGrid extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Text(
-          showOnlyEarned ? 'No badges earned yet.' : 'No badge definitions available yet.',
+          showOnlyEarned ? 'No trophies earned yet.' : 'No trophy definitions available yet.',
           style: TextStyle(
             fontFamily: 'NovecentoSans',
             fontSize: 14,
@@ -453,9 +453,10 @@ class _BadgeWrapGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final group in groups) ...[
+        for (int i = 0; i < groups.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
           Text(
-            group.label.toUpperCase(),
+            groups[i].label.toUpperCase(),
             style: TextStyle(
               fontFamily: 'NovecentoSans',
               fontSize: 12,
@@ -463,62 +464,62 @@ class _BadgeWrapGrid extends StatelessWidget {
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: group.badges.length,
+            padding: EdgeInsets.zero,
+            itemCount: groups[i].trophies.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 8,
-              mainAxisSpacing: 12,
+              mainAxisSpacing: 8,
               childAspectRatio: 0.95,
             ),
             itemBuilder: (context, index) {
-              final def = group.badges[index];
-              final earned = earnedBadges.contains(def.id);
+              final def = groups[i].trophies[index];
+              final earned = earnedTrophies.contains(def.id);
               return Align(
                 alignment: Alignment.topCenter,
-                child: _BadgeChip(
+                child: _TrophyChip(
                   key: ValueKey(def.id),
                   def: def,
                   earned: earned,
                   summary: summary,
-                  highlight: highlightBadgeId != null && def.id == highlightBadgeId,
+                  highlight: highlightTrophyId != null && def.id == highlightTrophyId,
                 ),
               );
             },
           ),
-          const SizedBox(height: 14),
         ],
       ],
     );
   }
 }
 
-class _BadgeChip extends StatefulWidget {
-  const _BadgeChip({
+class _TrophyChip extends StatefulWidget {
+  const _TrophyChip({
     super.key,
     required this.def,
     required this.earned,
     required this.summary,
     this.highlight = false,
   });
-  final ChallengerRoadBadgeDefinition def;
+  final ChallengerRoadTrophyDefinition def;
   final bool earned;
   final ChallengerRoadUserSummary summary;
   final bool highlight;
 
   @override
-  State<_BadgeChip> createState() => _BadgeChipState();
+  State<_TrophyChip> createState() => _TrophyChipState();
 }
 
-class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMixin {
+class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnim;
   late final Animation<double> _scaleAnim;
 
-  ChallengerRoadBadgeDefinition get def => widget.def;
+  ChallengerRoadTrophyDefinition get def => widget.def;
   bool get earned => widget.earned;
   ChallengerRoadUserSummary get summary => widget.summary;
 
@@ -567,39 +568,39 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
   Color _colorForBadge() {
     // Tier takes visual precedence for epic/legendary/hidden.
     switch (def.tier) {
-      case ChallengerRoadBadgeTier.legendary:
+      case ChallengerRoadTrophyTier.legendary:
         return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeTier.epic:
+      case ChallengerRoadTrophyTier.epic:
         return const Color(0xFFAB47BC);
-      case ChallengerRoadBadgeTier.hidden:
+      case ChallengerRoadTrophyTier.hidden:
         return const Color(0xFF78909C);
       default:
         break;
     }
     switch (def.category) {
-      case ChallengerRoadBadgeCategory.firstSteps:
+      case ChallengerRoadTrophyCategory.firstSteps:
         return const Color(0xFF42A5F5);
-      case ChallengerRoadBadgeCategory.withinRunEfficiency:
+      case ChallengerRoadTrophyCategory.withinRunEfficiency:
         return const Color(0xFF26C6DA);
-      case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+      case ChallengerRoadTrophyCategory.crossAttemptImprovement:
         return const Color(0xFF66BB6A);
-      case ChallengerRoadBadgeCategory.grindAndResilience:
+      case ChallengerRoadTrophyCategory.grindAndResilience:
         return const Color(0xFF8D6E63);
-      case ChallengerRoadBadgeCategory.levelAdvancement:
+      case ChallengerRoadTrophyCategory.levelAdvancement:
         return const Color(0xFF26A69A);
-      case ChallengerRoadBadgeCategory.crShotMilestones:
+      case ChallengerRoadTrophyCategory.crShotMilestones:
         return const Color(0xFFFF7043);
-      case ChallengerRoadBadgeCategory.crSessionAccuracy:
+      case ChallengerRoadTrophyCategory.crSessionAccuracy:
         return const Color(0xFF5C6BC0);
-      case ChallengerRoadBadgeCategory.hotStreaks:
+      case ChallengerRoadTrophyCategory.hotStreaks:
         return const Color(0xFFEF5350);
-      case ChallengerRoadBadgeCategory.challengeMastery:
+      case ChallengerRoadTrophyCategory.challengeMastery:
         return const Color(0xFF5C6BC0);
-      case ChallengerRoadBadgeCategory.multiAttemptCareer:
+      case ChallengerRoadTrophyCategory.multiAttemptCareer:
         return const Color(0xFF29B6F6);
-      case ChallengerRoadBadgeCategory.eliteEndgame:
+      case ChallengerRoadTrophyCategory.eliteEndgame:
         return const Color(0xFFFFD700);
-      case ChallengerRoadBadgeCategory.chirpy:
+      case ChallengerRoadTrophyCategory.chirpy:
         return const Color(0xFF78909C);
     }
   }
@@ -609,10 +610,10 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
   }
 
   String? _progressText() {
-    if (def.category == ChallengerRoadBadgeCategory.multiAttemptCareer) {
+    if (def.category == ChallengerRoadTrophyCategory.multiAttemptCareer) {
       return 'Progress: ${summary.totalAttempts} attempts';
     }
-    if (def.category == ChallengerRoadBadgeCategory.crShotMilestones) {
+    if (def.category == ChallengerRoadTrophyCategory.crShotMilestones) {
       return 'Progress: ${summary.allTimeTotalChallengerRoadShots} CR shots';
     }
     return null;
@@ -636,7 +637,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
               children: [
                 Row(
                   children: [
-                    ChallengerRoadService.badgeIconWidget(
+                    ChallengerRoadService.trophyIconWidget(
                       def,
                       size: 22,
                       color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6),
@@ -755,7 +756,7 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
                             ]
                           : null,
                     ),
-                    child: ChallengerRoadService.badgeIconWidget(
+                    child: ChallengerRoadService.trophyIconWidget(
                       def,
                       size: 26,
                       color: earned ? badgeColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
@@ -789,17 +790,17 @@ class _BadgeChipState extends State<_BadgeChip> with SingleTickerProviderStateMi
 class _FeaturedSlotSwapSheet extends StatefulWidget {
   const _FeaturedSlotSwapSheet({
     required this.userId,
-    required this.slotId,
+    required this.slotIndex,
     required this.currentDef,
     required this.summary,
-    required this.badgeDefs,
+    required this.trophyDefs,
   });
 
   final String userId;
-  final String slotId;
-  final ChallengerRoadBadgeDefinition currentDef;
+  final int slotIndex;
+  final ChallengerRoadTrophyDefinition? currentDef;
   final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+  final List<ChallengerRoadTrophyDefinition> trophyDefs;
 
   @override
   State<_FeaturedSlotSwapSheet> createState() => _FeaturedSlotSwapSheetState();
@@ -808,33 +809,39 @@ class _FeaturedSlotSwapSheet extends StatefulWidget {
 class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
   bool _saving = false;
 
-  Future<void> _swap(String newBadgeId) async {
-    if (newBadgeId == widget.slotId) {
+  Future<void> _swap(String newTrophyId) async {
+    if (newTrophyId == widget.currentDef?.id) {
       Navigator.of(context).pop();
       return;
     }
     setState(() => _saving = true);
-    final newFeatured = List<String>.from(widget.summary.featuredBadges);
-    newFeatured.remove(newBadgeId); // pull out if already in another slot
-    final idx = newFeatured.indexOf(widget.slotId);
-    if (idx >= 0) {
-      newFeatured[idx] = newBadgeId;
-    } else {
-      newFeatured.add(newBadgeId);
+    final existing = widget.summary.featuredTrophies;
+    final slots = List<String>.generate(5, (i) => i < existing.length ? existing[i] : '');
+    // Clear the chosen trophy from any other slot it may occupy
+    for (int j = 0; j < 5; j++) {
+      if (slots[j] == newTrophyId && j != widget.slotIndex) slots[j] = '';
     }
-    await ChallengerRoadService().updateFeaturedBadges(widget.userId, newFeatured.take(3).toList());
+    slots[widget.slotIndex] = newTrophyId;
+    await ChallengerRoadService().updateFeaturedTrophies(widget.userId, slots);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _clear() async {
+    setState(() => _saving = true);
+    final existing = widget.summary.featuredTrophies;
+    final slots = List<String>.generate(5, (i) => i < existing.length ? existing[i] : '');
+    slots[widget.slotIndex] = '';
+    await ChallengerRoadService().updateFeaturedTrophies(widget.userId, slots);
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final byId = {for (final d in widget.badgeDefs) d.id: d};
-    final earnedIds = widget.summary.badges.toSet();
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
-
-    final currentColor = _crBadgeColor(widget.currentDef);
-    final currentIcon = _crBadgeIcon(widget.currentDef);
+    final byId = {for (final d in widget.trophyDefs) d.id: d};
+    final earnedIds = widget.summary.trophies.toSet();
+    final currentId = widget.currentDef?.id;
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != currentId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return SafeArea(
       child: Column(
@@ -849,49 +856,65 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: currentColor.withValues(alpha: 0.18),
-                    border: Border.all(color: currentColor, width: 2),
-                    boxShadow: [BoxShadow(color: currentColor.withValues(alpha: 0.3), blurRadius: 6)],
+          if (widget.currentDef != null) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _crBadgeColor(widget.currentDef!).withValues(alpha: 0.18),
+                      border: Border.all(color: _crBadgeColor(widget.currentDef!), width: 2),
+                      boxShadow: [BoxShadow(color: _crBadgeColor(widget.currentDef!).withValues(alpha: 0.3), blurRadius: 6)],
+                    ),
+                    child: Icon(_crBadgeIcon(widget.currentDef!), color: _crBadgeColor(widget.currentDef!), size: 22),
                   ),
-                  child: Icon(currentIcon, color: currentColor, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.currentDef.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: scheme.onSurface),
-                      ),
-                      Text(
-                        widget.currentDef.effectiveDescription,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.6)),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.currentDef!.effectiveName,
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: scheme.onSurface),
+                        ),
+                        Text(
+                          widget.currentDef!.effectiveDescription,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.6)),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  TextButton(
+                    onPressed: _saving ? null : _clear,
+                    child: Text('CLEAR', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.error)),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'SLOT ${widget.slotIndex + 1}  —  EMPTY',
+                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: scheme.onSurface.withValues(alpha: 0.45), letterSpacing: 1.1),
+                ),
+              ),
+            ),
           const Divider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'SWAP WITH',
+                widget.currentDef != null ? 'SWAP WITH' : 'CHOOSE TROPHY',
                 style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.55), letterSpacing: 1.2),
               ),
             ),
@@ -915,12 +938,12 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
                   final def = earnedDefs[i];
                   final color = _crBadgeColor(def);
                   final icon = _crBadgeIcon(def);
-                  final isAlreadyFeatured = widget.summary.featuredBadges.contains(def.id);
+                  final isAlreadyFeatured = widget.summary.featuredTrophies.contains(def.id);
                   return InkWell(
                     onTap: () => _swap(def.id),
                     borderRadius: BorderRadius.circular(10),
                     child: Opacity(
-                      opacity: isAlreadyFeatured ? 0.45 : 1.0,
+                      opacity: isAlreadyFeatured ? 0.5 : 1.0,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -957,47 +980,47 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
 
 // ── Badge color/icon helpers (used by showcase + picker) ────────────────────
 
-Color _crBadgeColor(ChallengerRoadBadgeDefinition def) {
+Color _crBadgeColor(ChallengerRoadTrophyDefinition def) {
   switch (def.tier) {
-    case ChallengerRoadBadgeTier.legendary:
+    case ChallengerRoadTrophyTier.legendary:
       return const Color(0xFFFFD700);
-    case ChallengerRoadBadgeTier.epic:
+    case ChallengerRoadTrophyTier.epic:
       return const Color(0xFFAB47BC);
-    case ChallengerRoadBadgeTier.hidden:
+    case ChallengerRoadTrophyTier.hidden:
       return const Color(0xFF78909C);
     default:
       break;
   }
   switch (def.category) {
-    case ChallengerRoadBadgeCategory.firstSteps:
+    case ChallengerRoadTrophyCategory.firstSteps:
       return const Color(0xFF42A5F5);
-    case ChallengerRoadBadgeCategory.withinRunEfficiency:
+    case ChallengerRoadTrophyCategory.withinRunEfficiency:
       return const Color(0xFF26C6DA);
-    case ChallengerRoadBadgeCategory.crossAttemptImprovement:
+    case ChallengerRoadTrophyCategory.crossAttemptImprovement:
       return const Color(0xFF66BB6A);
-    case ChallengerRoadBadgeCategory.grindAndResilience:
+    case ChallengerRoadTrophyCategory.grindAndResilience:
       return const Color(0xFF8D6E63);
-    case ChallengerRoadBadgeCategory.levelAdvancement:
+    case ChallengerRoadTrophyCategory.levelAdvancement:
       return const Color(0xFF26A69A);
-    case ChallengerRoadBadgeCategory.crShotMilestones:
+    case ChallengerRoadTrophyCategory.crShotMilestones:
       return const Color(0xFFFF7043);
-    case ChallengerRoadBadgeCategory.crSessionAccuracy:
+    case ChallengerRoadTrophyCategory.crSessionAccuracy:
       return const Color(0xFF5C6BC0);
-    case ChallengerRoadBadgeCategory.hotStreaks:
+    case ChallengerRoadTrophyCategory.hotStreaks:
       return const Color(0xFFEF5350);
-    case ChallengerRoadBadgeCategory.challengeMastery:
+    case ChallengerRoadTrophyCategory.challengeMastery:
       return const Color(0xFF5C6BC0);
-    case ChallengerRoadBadgeCategory.multiAttemptCareer:
+    case ChallengerRoadTrophyCategory.multiAttemptCareer:
       return const Color(0xFF29B6F6);
-    case ChallengerRoadBadgeCategory.eliteEndgame:
+    case ChallengerRoadTrophyCategory.eliteEndgame:
       return const Color(0xFFFFD700);
-    case ChallengerRoadBadgeCategory.chirpy:
+    case ChallengerRoadTrophyCategory.chirpy:
       return const Color(0xFF78909C);
   }
 }
 
-IconData _crBadgeIcon(ChallengerRoadBadgeDefinition def) {
-  return ChallengerRoadService.iconForBadge(def);
+IconData _crBadgeIcon(ChallengerRoadTrophyDefinition def) {
+  return ChallengerRoadService.iconForTrophy(def);
 }
 
 // ── Featured Badges Showcase ─────────────────────────────────────────────────
@@ -1006,17 +1029,17 @@ class _FeaturedShowcase extends StatelessWidget {
   const _FeaturedShowcase({
     required this.userId,
     required this.summary,
-    required this.badgeDefs,
+    required this.trophyDefs,
   });
 
   final String userId;
   final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+  final List<ChallengerRoadTrophyDefinition> trophyDefs;
 
   @override
   Widget build(BuildContext context) {
-    final byId = {for (final d in badgeDefs) d.id: d};
-    final featured = summary.featuredBadges;
+    final byId = {for (final d in trophyDefs) d.id: d};
+    final featured = summary.featuredTrophies;
     final primary = Theme.of(context).primaryColor;
     final scheme = Theme.of(context).colorScheme;
 
@@ -1026,7 +1049,7 @@ class _FeaturedShowcase extends StatelessWidget {
         Row(
           children: [
             Text(
-              'PLAYER CARD',
+              'TROPHY CASE',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 14,
@@ -1054,41 +1077,23 @@ class _FeaturedShowcase extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        if (featured.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              'Tap EDIT to choose up to 3 badges to feature on your player card.',
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 13,
-                color: scheme.onSurface.withValues(alpha: 0.55),
-              ),
-            ),
-          )
-        else
-          Row(
-            children: [
-              for (final id in featured.take(3)) ...[
-                _showcaseSlot(context, id, byId[id]),
-                const SizedBox(width: 12),
-              ],
-              for (int i = featured.length; i < 3; i++) ...[
-                _emptySlot(context),
-                const SizedBox(width: 12),
-              ],
-            ],
-          ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            for (int i = 0; i < 5; i++) (i < featured.length && featured[i].isNotEmpty) ? _showcaseSlot(context, i, byId[featured[i]]) : _emptySlot(context, i),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _showcaseSlot(BuildContext context, String slotId, ChallengerRoadBadgeDefinition? def) {
-    if (def == null) return _emptySlot(context);
+  Widget _showcaseSlot(BuildContext context, int slotIndex, ChallengerRoadTrophyDefinition? def) {
+    if (def == null) return _emptySlot(context, slotIndex);
     final color = _crBadgeColor(def);
     final icon = _crBadgeIcon(def);
     return InkWell(
-      onTap: () => _showSwapSlot(context, slotId, def),
+      onTap: () => _showSwapSlot(context, slotIndex, def),
       borderRadius: BorderRadius.circular(32),
       child: Column(
         children: [
@@ -1124,7 +1129,7 @@ class _FeaturedShowcase extends StatelessWidget {
     );
   }
 
-  void _showSwapSlot(BuildContext context, String slotId, ChallengerRoadBadgeDefinition currentDef) {
+  void _showSwapSlot(BuildContext context, int slotIndex, ChallengerRoadTrophyDefinition? currentDef) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1134,29 +1139,33 @@ class _FeaturedShowcase extends StatelessWidget {
       ),
       builder: (_) => _FeaturedSlotSwapSheet(
         userId: userId,
-        slotId: slotId,
+        slotIndex: slotIndex,
         currentDef: currentDef,
         summary: summary,
-        badgeDefs: badgeDefs,
+        trophyDefs: trophyDefs,
       ),
     );
   }
 
-  Widget _emptySlot(BuildContext context) {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.5,
+  Widget _emptySlot(BuildContext context, int slotIndex) {
+    return InkWell(
+      onTap: () => _showSwapSlot(context, slotIndex, null),
+      borderRadius: BorderRadius.circular(32),
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
         ),
-      ),
-      child: Icon(
-        Icons.add_rounded,
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
-        size: 22,
+        child: Icon(
+          Icons.add_rounded,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+          size: 22,
+        ),
       ),
     );
   }
@@ -1169,10 +1178,10 @@ class _FeaturedShowcase extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
-      builder: (_) => _FeaturedBadgesPickerSheet(
+      builder: (_) => _FeaturedTrophiesPickerSheet(
         userId: userId,
         summary: summary,
-        badgeDefs: badgeDefs,
+        trophyDefs: trophyDefs,
       ),
     );
   }
@@ -1180,34 +1189,48 @@ class _FeaturedShowcase extends StatelessWidget {
 
 // ── Featured Badges Picker Sheet ─────────────────────────────────────────────
 
-class _FeaturedBadgesPickerSheet extends StatefulWidget {
-  const _FeaturedBadgesPickerSheet({
+class _FeaturedTrophiesPickerSheet extends StatefulWidget {
+  const _FeaturedTrophiesPickerSheet({
     required this.userId,
     required this.summary,
-    required this.badgeDefs,
+    required this.trophyDefs,
   });
 
   final String userId;
   final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadBadgeDefinition> badgeDefs;
+  final List<ChallengerRoadTrophyDefinition> trophyDefs;
 
   @override
-  State<_FeaturedBadgesPickerSheet> createState() => _FeaturedBadgesPickerSheetState();
+  State<_FeaturedTrophiesPickerSheet> createState() => _FeaturedTrophiesPickerSheetState();
 }
 
-class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> {
+class _FeaturedTrophiesPickerSheetState extends State<_FeaturedTrophiesPickerSheet> {
   late Set<String> _selected;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _selected = Set<String>.from(widget.summary.featuredBadges);
+    _selected = widget.summary.featuredTrophies.where((id) => id.isNotEmpty).toSet();
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    await ChallengerRoadService().updateFeaturedBadges(widget.userId, _selected.toList());
+    // Preserve existing slot positions; place newly added trophies into empty slots.
+    final existing = widget.summary.featuredTrophies;
+    final slots = List<String>.generate(5, (i) => i < existing.length ? existing[i] : '');
+    // Clear deselected trophies from their slots
+    for (int i = 0; i < 5; i++) {
+      if (slots[i].isNotEmpty && !_selected.contains(slots[i])) slots[i] = '';
+    }
+    // Place newly selected trophies into the first empty slots
+    for (final id in _selected) {
+      if (!slots.contains(id)) {
+        final emptyIdx = slots.indexOf('');
+        if (emptyIdx >= 0) slots[emptyIdx] = id;
+      }
+    }
+    await ChallengerRoadService().updateFeaturedTrophies(widget.userId, slots);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -1215,7 +1238,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
     setState(() {
       if (_selected.contains(id)) {
         _selected.remove(id);
-      } else if (_selected.length < 3) {
+      } else if (_selected.length < 5) {
         _selected.add(id);
       }
     });
@@ -1225,9 +1248,9 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final scheme = Theme.of(context).colorScheme;
-    final earnedIds = widget.summary.badges.toSet();
-    final byId = {for (final d in widget.badgeDefs) d.id: d};
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadBadgeDefinition>().toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
+    final earnedIds = widget.summary.trophies.toSet();
+    final byId = {for (final d in widget.trophyDefs) d.id: d};
+    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return SafeArea(
       child: Padding(
@@ -1250,7 +1273,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'CHOOSE FEATURED BADGES',
+                    'CHOOSE FEATURED TROPHIES',
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
                       fontSize: 20,
@@ -1258,7 +1281,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
                     ),
                   ),
                   Text(
-                    'Select up to 3 to show on your player card.',
+                    'Select up to 5 to show on your trophy case.',
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
                       fontSize: 13,
@@ -1288,7 +1311,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
                   final color = _crBadgeColor(def);
                   final icon = _crBadgeIcon(def);
                   final isSelected = _selected.contains(def.id);
-                  final isDisabled = !isSelected && _selected.length >= 3;
+                  final isDisabled = !isSelected && _selected.length >= 5;
                   return InkWell(
                     onTap: isDisabled ? null : () => _toggle(def.id),
                     borderRadius: BorderRadius.circular(10),
@@ -1372,7 +1395,7 @@ class _FeaturedBadgesPickerSheetState extends State<_FeaturedBadgesPickerSheet> 
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          'SAVE  (${_selected.length}/3)',
+                          'SAVE  (${_selected.length}/5)',
                           style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 17),
                         ),
                 ),

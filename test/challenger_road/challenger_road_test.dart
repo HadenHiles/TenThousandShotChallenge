@@ -823,16 +823,16 @@ void main() {
   });
 
   group('ChallengerRoadService badge display helpers', () {
-    test('buildDisplayBadgeDefs keeps catalog badges and appends unknown earned as legacy', () {
-      final defs = ChallengerRoadService.buildDisplayBadgeDefs(
-        earnedBadgeIds: const ['cr_fresh_laces', 'legacy_custom_badge'],
+    test('buildDisplayTrophyDefs keeps catalog badges and appends unknown earned as legacy', () {
+      final defs = ChallengerRoadService.buildDisplayTrophyDefs(
+        earnedTrophyIds: const ['cr_fresh_laces', 'legacy_custom_badge'],
         catalog: const [
-          ChallengerRoadBadgeDefinition(
+          ChallengerRoadTrophyDefinition(
             id: 'cr_fresh_laces',
             name: 'Fresh Laces',
             description: 'Started the Challenger Road.',
-            category: ChallengerRoadBadgeCategory.firstSteps,
-            tier: ChallengerRoadBadgeTier.common,
+            category: ChallengerRoadTrophyCategory.firstSteps,
+            tier: ChallengerRoadTrophyTier.common,
           ),
         ],
       );
@@ -840,25 +840,25 @@ void main() {
       expect(defs.any((d) => d.id == 'cr_fresh_laces'), isTrue);
       final legacy = defs.where((d) => d.id == 'legacy_custom_badge').single;
       expect(legacy.description, 'Legacy Challenger Road badge.');
-      expect(legacy.category, ChallengerRoadBadgeCategory.chirpy);
+      expect(legacy.category, ChallengerRoadTrophyCategory.chirpy);
     });
 
-    test('visibleDisplayBadgeDefs hides hidden-tier badges by default', () {
-      final visible = ChallengerRoadService.visibleDisplayBadgeDefs(
-        badges: const [
-          ChallengerRoadBadgeDefinition(
+    test('visibleDisplayTrophyDefs hides hidden-tier badges by default', () {
+      final visible = ChallengerRoadService.visibleDisplayTrophyDefs(
+        trophies: const [
+          ChallengerRoadTrophyDefinition(
             id: 'common_badge',
             name: 'Common',
             description: 'Common badge',
-            category: ChallengerRoadBadgeCategory.firstSteps,
-            tier: ChallengerRoadBadgeTier.common,
+            category: ChallengerRoadTrophyCategory.firstSteps,
+            tier: ChallengerRoadTrophyTier.common,
           ),
-          ChallengerRoadBadgeDefinition(
+          ChallengerRoadTrophyDefinition(
             id: 'hidden_badge',
             name: 'Hidden',
             description: 'Hidden badge',
-            category: ChallengerRoadBadgeCategory.challengeMastery,
-            tier: ChallengerRoadBadgeTier.hidden,
+            category: ChallengerRoadTrophyCategory.challengeMastery,
+            tier: ChallengerRoadTrophyTier.hidden,
           ),
         ],
       );
@@ -867,52 +867,52 @@ void main() {
       expect(visible.map((b) => b.id), isNot(contains('hidden_badge')));
     });
 
-    test('groupDisplayBadgesByTier returns groups common -> legendary', () {
-      final groups = ChallengerRoadService.groupDisplayBadgesByTier(
-        badges: const [
-          ChallengerRoadBadgeDefinition(
+    test('groupDisplayTrophiesByTier returns groups common -> legendary', () {
+      final groups = ChallengerRoadService.groupDisplayTrophiesByTier(
+        trophies: const [
+          ChallengerRoadTrophyDefinition(
             id: 'legendary_badge',
             name: 'Legendary Badge',
             description: 'Legendary',
-            category: ChallengerRoadBadgeCategory.eliteEndgame,
-            tier: ChallengerRoadBadgeTier.legendary,
+            category: ChallengerRoadTrophyCategory.eliteEndgame,
+            tier: ChallengerRoadTrophyTier.legendary,
           ),
-          ChallengerRoadBadgeDefinition(
+          ChallengerRoadTrophyDefinition(
             id: 'common_badge',
             name: 'Common Badge',
             description: 'Common',
-            category: ChallengerRoadBadgeCategory.firstSteps,
-            tier: ChallengerRoadBadgeTier.common,
+            category: ChallengerRoadTrophyCategory.firstSteps,
+            tier: ChallengerRoadTrophyTier.common,
           ),
-          ChallengerRoadBadgeDefinition(
+          ChallengerRoadTrophyDefinition(
             id: 'epic_badge',
             name: 'Epic Badge',
             description: 'Epic',
-            category: ChallengerRoadBadgeCategory.hotStreaks,
-            tier: ChallengerRoadBadgeTier.epic,
+            category: ChallengerRoadTrophyCategory.hotStreaks,
+            tier: ChallengerRoadTrophyTier.epic,
           ),
         ],
-        earnedBadgeIds: const ['common_badge'],
+        earnedTrophyIds: const ['common_badge'],
       );
 
       expect(groups.map((g) => g.tier).toList(), const [
-        ChallengerRoadBadgeTier.common,
-        ChallengerRoadBadgeTier.epic,
-        ChallengerRoadBadgeTier.legendary,
+        ChallengerRoadTrophyTier.common,
+        ChallengerRoadTrophyTier.epic,
+        ChallengerRoadTrophyTier.legendary,
       ]);
     });
 
-    test('iconForBadge prefers defaultIconKey over category fallback', () {
-      const def = ChallengerRoadBadgeDefinition(
+    test('iconForTrophy prefers defaultIconKey over category fallback', () {
+      const def = ChallengerRoadTrophyDefinition(
         id: 'custom_icon_badge',
         name: 'Custom Icon',
         description: 'Uses override icon',
-        category: ChallengerRoadBadgeCategory.firstSteps,
-        tier: ChallengerRoadBadgeTier.common,
+        category: ChallengerRoadTrophyCategory.firstSteps,
+        tier: ChallengerRoadTrophyTier.common,
         defaultIconKey: 'military_tech_rounded',
       );
 
-      final icon = ChallengerRoadService.iconForBadge(def);
+      final icon = ChallengerRoadService.iconForTrophy(def);
       expect(icon, Icons.military_tech_rounded);
     });
   });
