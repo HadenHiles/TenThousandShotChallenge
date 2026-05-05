@@ -24,6 +24,7 @@ import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_s
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal;
 import 'package:go_router/go_router.dart';
 
 const TEAM_HEADER_HEIGHT = 65.0;
@@ -1129,7 +1130,8 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     },
               onUnlockChallengerRoad: () {
                 Feedback.forTap(context);
-                context.push(AppRoutePaths.challengerRoad);
+                context.go('/');
+                openChallengerRoadSignal.value++;
               },
               child: SizedBox(
                 width: avatarRadius * 2,
