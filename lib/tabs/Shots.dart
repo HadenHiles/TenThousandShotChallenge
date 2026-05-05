@@ -198,6 +198,12 @@ class _ShotsState extends State<Shots> {
 
   bool _achievementsCollapsed = true;
 
+  /// Dims and disables [child] with an overlay when [isOffline] is true.
+  Widget _offlineWrap(bool isOffline, Widget child) {
+    if (!isOffline) return child;
+    return Opacity(opacity: 0.38, child: IgnorePointer(child: child));
+  }
+
   Future<void> _openChallengerRoad() async {
     if (_showChallengerRoad) return;
     // Challenger Road requires an internet connection.
@@ -1134,18 +1140,20 @@ class _ShotsState extends State<Shots> {
           _syncTargetDate(iteration);
         }
 
+        final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildSeasonOverviewCard(context, iteration),
+              _offlineWrap(isOffline, _buildSeasonOverviewCard(context, iteration)),
               const SizedBox(height: 16),
-              _buildChallengerRoadEntryCard(context, user),
+              _offlineWrap(isOffline, _buildChallengerRoadEntryCard(context, user)),
               const SizedBox(height: 16),
-              _buildWeeklyAchievementsCard(context),
+              _offlineWrap(isOffline, _buildWeeklyAchievementsCard(context)),
               const SizedBox(height: 16),
-              _buildShotMixCard(context, iteration),
+              _offlineWrap(isOffline, _buildShotMixCard(context, iteration)),
             ],
           ),
         );
@@ -1257,9 +1265,12 @@ class _ShotsState extends State<Shots> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                         Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                        final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
                         return iteration.total! < 10000
                             ? Container()
-                            : SizedBox(
+                            : _offlineWrap(
+                                isOffline,
+                                SizedBox(
                                 width: MediaQuery.of(context).size.width - 30,
                                 child: TextButton(
                                   style: TextButton.styleFrom(
@@ -1330,7 +1341,7 @@ class _ShotsState extends State<Shots> {
                                     ),
                                   ),
                                 ),
-                              );
+                              ));
                       }
                       return Container();
                     },
