@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 
 /// Bell icon button that shows an unread-count badge driven by a Firestore stream.
 ///
@@ -17,6 +19,24 @@ class NotificationBell extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
+
+    // Disable the bell when offline — the Firestore stream won't update and the
+    // notifications page won't load without a connection.
+    final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
+    if (isOffline) {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        child: IconButton(
+          tooltip: 'Notifications',
+          icon: Icon(
+            Icons.notifications_none_rounded,
+            color: (color ?? Theme.of(context).colorScheme.onPrimary).withValues(alpha: 0.38),
+            size: 28,
+          ),
+          onPressed: null,
+        ),
+      );
+    }
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('read', isEqualTo: false).snapshots(),
