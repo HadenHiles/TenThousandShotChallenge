@@ -20,7 +20,7 @@ class NotificationBell extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const SizedBox.shrink();
 
-    // Disable the bell when offline — the Firestore stream won't update and the
+    // Disable the bell when offline - the Firestore stream won't update and the
     // notifications page won't load without a connection.
     final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
     if (isOffline) {
