@@ -19,7 +19,6 @@ import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
-import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -118,7 +117,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         }
         _practiceReminders = u.practiceReminders ?? false;
       });
-    });
+    }).catchError((_) {});
   }
 
   @override
@@ -136,44 +135,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         return NetworkStatusService().networkStatusController.stream;
       },
       initialData: NetworkStatus.Online,
-      child: NetworkAwareWidget(
-        offlineChild: Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
-            margin: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top,
-              right: 0,
-              bottom: 0,
-              left: 0,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Image(
-                  image: AssetImage('assets/images/logo.png'),
-                ),
-                Text(
-                  "Where's the wifi bud?".toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontFamily: "NovecentoSans",
-                    fontSize: 24,
-                  ),
-                ),
-                const SizedBox(
-                  height: 25,
-                ),
-                const CircularProgressIndicator(
-                  color: Colors.white70,
-                ),
-              ],
-            ),
-          ),
-        ),
-        onlineChild: Scaffold(
+      child: Consumer<NetworkStatus>(
+        builder: (context, networkStatus, _) {
+          final isOffline = networkStatus == NetworkStatus.Offline;
+          return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
@@ -235,6 +200,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         ),
                         tiles: [
                           SettingsTile(
+                            enabled: !isOffline,
                             title: Text(
                               'Subscription Level',
                               style: Theme.of(context).textTheme.bodyLarge,
@@ -507,7 +473,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               "Use this if your shot count is out of sync",
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                            enabled: true,
+                            enabled: !isOffline,
                             leading: _refreshingShots
                                 ? SizedBox(
                                     width: 20,
@@ -567,6 +533,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                         tiles: [
                           SettingsTile(
+                            enabled: !isOffline,
                             title: Text(
                               'Friend Session Notifications',
                               style: Theme.of(context).textTheme.bodyLarge,
@@ -667,6 +634,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile.switchTile(
+                            enabled: !isOffline,
                             title: Text(
                               'Practice Reminders',
                               style: Theme.of(context).textTheme.bodyLarge,
@@ -778,6 +746,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
                         tiles: [
                           SettingsTile.switchTile(
+                            enabled: !isOffline,
                             title: Text(
                               'Public',
                               style: Theme.of(context).textTheme.bodyLarge,
@@ -796,6 +765,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile(
+                            enabled: !isOffline,
                             title: Text(
                               'Edit Profile',
                               style: Theme.of(context).textTheme.bodyLarge,
@@ -810,6 +780,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             },
                           ),
                           SettingsTile(
+                            enabled: !isOffline,
                             title: Row(
                               children: [
                                 Text(
@@ -923,6 +894,32 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     ],
                   ),
                 ),
+                if (isOffline)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.orange.shade800,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 15),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Offline – some settings require an internet connection.',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontFamily: 'NovecentoSans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 Positioned(
                   bottom: 0,
                   child: Container(
@@ -1023,7 +1020,8 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               ],
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }
