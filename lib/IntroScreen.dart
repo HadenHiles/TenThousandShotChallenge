@@ -35,6 +35,18 @@ class _IntroScreenState extends State<IntroScreen> {
   int? _shotsPerDay;
 
   Future<void> _onIntroEnd(BuildContext context) async {
+    // If the user tapped Done without using the Grant Permissions button, request now.
+    if (!_permissionsGranted) {
+      await Permission.camera.request();
+      if (Platform.isIOS) {
+        await LocalNotificationService.requestIOSPermissions();
+      } else {
+        await Permission.notification.request();
+        await LocalNotificationService.requestExactAlarmPermission();
+        await LocalNotificationService.requestBatteryOptimizationExemption();
+      }
+      if (mounted) setState(() => _permissionsGranted = true);
+    }
     Provider.of<IntroShownNotifier>(context, listen: false).setIntroShown(true); // Persists current version and notifies listeners
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // Save all intro preferences at once
