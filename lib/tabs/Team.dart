@@ -1130,7 +1130,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                     },
               onUnlockChallengerRoad: () {
                 Feedback.forTap(context);
-                context.go('/');
+                context.go(AppRoutePaths.app);
                 openChallengerRoadSignal.value++;
               },
               child: SizedBox(
