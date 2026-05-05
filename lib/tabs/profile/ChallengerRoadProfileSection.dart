@@ -903,7 +903,7 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'SLOT ${widget.slotIndex + 1}  —  EMPTY',
+                  'SLOT ${widget.slotIndex + 1}  -  EMPTY',
                   style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: scheme.onSurface.withValues(alpha: 0.45), letterSpacing: 1.1),
                 ),
               ),

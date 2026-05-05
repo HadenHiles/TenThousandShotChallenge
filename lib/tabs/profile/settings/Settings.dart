@@ -199,170 +199,174 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           tiles: [
-                            SettingsTile(
-                              enabled: !isOffline,
-                              title: Text(
-                                'Subscription Level',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              description: Text(
-                                _subscriptionLevel.toUpperCase(),
-                                style: TextStyle(
-                                  color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              leading: Icon(
-                                Icons.workspace_premium,
-                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                              ),
-                              onPressed: (BuildContext context) {
-                                // Show a dialog or navigate to a subscription management screen
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Manage Subscription'),
-                                    content: SizedBox(
-                                      height: 220,
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            margin: const EdgeInsets.only(bottom: 12),
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surface,
-                                              border: Border.all(
-                                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                                width: 2,
-                                              ),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.workspace_premium,
-                                                  color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                                  size: 28,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      _subscriptionLevel == "pro" ? "PRO PLAN" : "FREE PLAN",
-                                                      style: TextStyle(
-                                                        color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    if (_subscriptionLevel == "pro")
-                                                      Row(
-                                                        children: [
-                                                          Text("Renews: "),
-                                                          Text(
-                                                            (() {
-                                                              final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-                                                              final dt = notifier?.latestExpirationDateTime;
-                                                              if (dt == null) return "N/A";
-                                                              final local = dt.toLocal();
-                                                              return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
-                                                            })(),
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).colorScheme.onPrimary,
-                                                              fontSize: 13,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    if (_subscriptionLevel != "pro")
-                                                      Text(
-                                                        "No renewal date",
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontSize: 13,
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Text(
+                                            'Subscription Level',
+                                            style: Theme.of(context).textTheme.bodyLarge,
                                           ),
-                                          Text(
-                                            _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
+                                          description: Text(
+                                            _subscriptionLevel.toUpperCase(),
                                             style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                              fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
-                                          const SizedBox(height: 13),
-                                          SelectableText(
-                                            "ID: ${user?.uid ?? 'N/A'}",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 11,
-                                            ),
-                                            textAlign: TextAlign.start,
-                                            cursorColor: Theme.of(context).primaryColor,
-                                            selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                          leading: Icon(
+                                            Icons.workspace_premium,
+                                            color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
                                           ),
-                                          SelectableText(
-                                            user?.email ?? 'N/A',
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 11,
-                                            ),
-                                            textAlign: TextAlign.start,
-                                            cursorColor: Theme.of(context).primaryColor,
-                                            selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(),
-                                        style: ButtonStyle(
-                                          foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
-                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
-                                        ),
-                                        child: const Text('Close'),
-                                      ),
-                                      if (_subscriptionLevel == "pro")
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            // Open the correct subscription management page
-                                            final platform = Theme.of(context).platform;
-                                            final url = platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
-                                            if (await canLaunchUrlString(url)) {
-                                              await launchUrlString(url);
-                                            }
+                                          onPressed: (BuildContext context) {
+                                            // Show a dialog or navigate to a subscription management screen
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Manage Subscription'),
+                                                content: SizedBox(
+                                                  height: 220,
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Container(
+                                                        margin: const EdgeInsets.only(bottom: 12),
+                                                        padding: const EdgeInsets.all(12),
+                                                        decoration: BoxDecoration(
+                                                          color: Theme.of(context).colorScheme.surface,
+                                                          border: Border.all(
+                                                            color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                            width: 2,
+                                                          ),
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.workspace_premium,
+                                                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                              size: 28,
+                                                            ),
+                                                            const SizedBox(width: 10),
+                                                            Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: [
+                                                                Text(
+                                                                  _subscriptionLevel == "pro" ? "PRO PLAN" : "FREE PLAN",
+                                                                  style: TextStyle(
+                                                                    color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    fontSize: 18,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(height: 4),
+                                                                if (_subscriptionLevel == "pro")
+                                                                  Row(
+                                                                    children: [
+                                                                      Text("Renews: "),
+                                                                      Text(
+                                                                        (() {
+                                                                          final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+                                                                          final dt = notifier?.latestExpirationDateTime;
+                                                                          if (dt == null) return "N/A";
+                                                                          final local = dt.toLocal();
+                                                                          return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
+                                                                        })(),
+                                                                        style: TextStyle(
+                                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                                          fontSize: 13,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                if (_subscriptionLevel != "pro")
+                                                                  Text(
+                                                                    "No renewal date",
+                                                                    style: TextStyle(
+                                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                                      fontSize: 13,
+                                                                    ),
+                                                                  ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 13),
+                                                      SelectableText(
+                                                        "ID: ${user?.uid ?? 'N/A'}",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 11,
+                                                        ),
+                                                        textAlign: TextAlign.start,
+                                                        cursorColor: Theme.of(context).primaryColor,
+                                                        selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                                      ),
+                                                      SelectableText(
+                                                        user?.email ?? 'N/A',
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 11,
+                                                        ),
+                                                        textAlign: TextAlign.start,
+                                                        cursorColor: Theme.of(context).primaryColor,
+                                                        selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                                      )
+                                                    ],
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(),
+                                                    style: ButtonStyle(
+                                                      foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
+                                                      backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
+                                                    ),
+                                                    child: const Text('Close'),
+                                                  ),
+                                                  if (_subscriptionLevel == "pro")
+                                                    ElevatedButton(
+                                                      onPressed: () async {
+                                                        // Open the correct subscription management page
+                                                        final platform = Theme.of(context).platform;
+                                                        final url = platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
+                                                        if (await canLaunchUrlString(url)) {
+                                                          await launchUrlString(url);
+                                                        }
+                                                      },
+                                                      style: ButtonStyle(
+                                                        backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                                      ),
+                                                      child: const Text('Cancel Subscription'),
+                                                    ),
+                                                  if (_subscriptionLevel != "pro")
+                                                    ElevatedButton(
+                                                      onPressed: () async {
+                                                        Navigator.of(context).pop();
+                                                        await presentPaywallIfNeeded(context);
+                                                      },
+                                                      style: ButtonStyle(
+                                                        backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                                      ),
+                                                      child: const Text('Upgrade'),
+                                                    ),
+                                                ],
+                                              ),
+                                            );
                                           },
-                                          style: ButtonStyle(
-                                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
-                                          ),
-                                          child: const Text('Cancel Subscription'),
-                                        ),
-                                      if (_subscriptionLevel != "pro")
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            Navigator.of(context).pop();
-                                            await presentPaywallIfNeeded(context);
-                                          },
-                                          style: ButtonStyle(
-                                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
-                                          ),
-                                          child: const Text('Upgrade'),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
+                                        )))),
                           ],
                         ),
                         SettingsSection(
@@ -464,195 +468,207 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 }
                               },
                             ),
-                            SettingsTile(
-                              title: Text(
-                                "Recalculate Shot Totals",
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              description: Text(
-                                "Use this if your shot count is out of sync",
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              enabled: !isOffline,
-                              leading: _refreshingShots
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.refresh_rounded,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                              onPressed: (context) async {
-                                if (_shotsRefreshedOnce) {
-                                  setState(() {
-                                    _refreshingShots = true;
-                                  });
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Text(
+                                            "Recalculate Shot Totals",
+                                            style: Theme.of(context).textTheme.bodyLarge,
+                                          ),
+                                          description: Text(
+                                            "Use this if your shot count is out of sync",
+                                            style: Theme.of(context).textTheme.bodyMedium,
+                                          ),
+                                          leading: _refreshingShots
+                                              ? SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    color: Theme.of(context).primaryColor,
+                                                  ),
+                                                )
+                                              : Icon(
+                                                  Icons.refresh_rounded,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
+                                                ),
+                                          onPressed: (context) async {
+                                            if (_shotsRefreshedOnce) {
+                                              setState(() {
+                                                _refreshingShots = true;
+                                              });
 
-                                  Future.delayed(const Duration(milliseconds: 800)).then(
-                                    (value) => setState(() {
-                                      _refreshingShots = false;
-                                    }),
-                                  );
-                                } else {
-                                  setState(() {
-                                    _refreshingShots = true;
-                                  });
-                                  await recalculateIterationTotals(
-                                    Provider.of<FirebaseAuth>(context, listen: false),
-                                    Provider.of<FirebaseFirestore>(context, listen: false),
-                                  ).then((_) {
-                                    Future.delayed(const Duration(milliseconds: 200)).then(
-                                      (value) {
-                                        setState(() {
-                                          _refreshingShots = false;
-                                          _shotsRefreshedOnce = true;
-                                        });
+                                              Future.delayed(const Duration(milliseconds: 800)).then(
+                                                (value) => setState(() {
+                                                  _refreshingShots = false;
+                                                }),
+                                              );
+                                            } else {
+                                              setState(() {
+                                                _refreshingShots = true;
+                                              });
+                                              await recalculateIterationTotals(
+                                                Provider.of<FirebaseAuth>(context, listen: false),
+                                                Provider.of<FirebaseFirestore>(context, listen: false),
+                                              ).then((_) {
+                                                Future.delayed(const Duration(milliseconds: 200)).then(
+                                                  (value) {
+                                                    setState(() {
+                                                      _refreshingShots = false;
+                                                      _shotsRefreshedOnce = true;
+                                                    });
 
-                                        Fluttertoast.showToast(
-                                          msg: 'Finished recalculating shot totals',
-                                          toastLength: Toast.LENGTH_SHORT,
-                                          gravity: ToastGravity.BOTTOM,
-                                          timeInSecForIosWeb: 1,
-                                          backgroundColor: Theme.of(context).cardTheme.color,
-                                          textColor: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 16.0,
-                                        );
-                                      },
-                                    );
-                                  });
-                                }
-                              },
-                            ),
+                                                    Fluttertoast.showToast(
+                                                      msg: 'Finished recalculating shot totals',
+                                                      toastLength: Toast.LENGTH_SHORT,
+                                                      gravity: ToastGravity.BOTTOM,
+                                                      timeInSecForIosWeb: 1,
+                                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                                      textColor: Theme.of(context).colorScheme.onPrimary,
+                                                      fontSize: 16.0,
+                                                    );
+                                                  },
+                                                );
+                                              });
+                                            }
+                                          },
+                                        )))),
                           ],
                         ),
                         SettingsSection(
                           title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                           tiles: [
-                            SettingsTile(
-                              enabled: !isOffline,
-                              title: Text(
-                                'Friend Session Notifications',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              description: Text(
-                                _friendNotificationMode == 'all'
-                                    ? 'Notify for all friends'
-                                    : _friendNotificationMode == 'selected'
-                                        ? 'Notify for selected friends'
-                                        : 'Off',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              leading: Icon(
-                                Icons.notifications_active_rounded,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              onPressed: (ctx) async {
-                                String? picked = await showDialog<String>(
-                                  context: ctx,
-                                  builder: (dialogCtx) {
-                                    String current = _friendNotificationMode;
-                                    return StatefulBuilder(
-                                      builder: (dialogCtx, setDialogState) {
-                                        return AlertDialog(
-                                          title: const Text('Friend Session Notifications'),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              RadioListTile<String>(
-                                                title: Text(
-                                                  'Notify for all friends',
-                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                                ),
-                                                value: 'all',
-                                                groupValue: current,
-                                                activeColor: Theme.of(dialogCtx).primaryColor,
-                                                onChanged: (v) => setDialogState(() => current = v!),
-                                              ),
-                                              RadioListTile<String>(
-                                                title: Text(
-                                                  'Notify for selected friends',
-                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                                ),
-                                                subtitle: Text(
-                                                  'Subscribe per-friend on their profile',
-                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
-                                                ),
-                                                value: 'selected',
-                                                groupValue: current,
-                                                activeColor: Theme.of(dialogCtx).primaryColor,
-                                                onChanged: (v) => setDialogState(() => current = v!),
-                                              ),
-                                              RadioListTile<String>(
-                                                title: Text(
-                                                  'Off',
-                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                                ),
-                                                value: 'off',
-                                                groupValue: current,
-                                                activeColor: Theme.of(dialogCtx).primaryColor,
-                                                onChanged: (v) => setDialogState(() => current = v!),
-                                              ),
-                                            ],
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Text(
+                                            'Friend Session Notifications',
+                                            style: Theme.of(context).textTheme.bodyLarge,
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(dialogCtx).pop(),
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
-                                              ),
-                                              child: const Text('Cancel'),
-                                            ),
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.of(dialogCtx).pop(current),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Theme.of(dialogCtx).primaryColor,
-                                                foregroundColor: Colors.white,
-                                              ),
-                                              child: const Text('Save'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                );
-                                if (picked != null && picked != _friendNotificationMode) {
-                                  await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
-                                    'friend_notification_mode': picked,
-                                    'friend_notifications': picked != 'off',
-                                  });
-                                  if (mounted) {
-                                    setState(() {
-                                      _friendNotificationMode = picked;
-                                    });
-                                  }
-                                }
-                              },
-                            ),
-                            SettingsTile.switchTile(
-                              enabled: !isOffline,
-                              title: Text(
-                                'Practice Reminders',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              description: Text(
-                                'Get a push notification when you haven\'t practised in 2 days',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              leading: Icon(
-                                Icons.alarm,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              initialValue: _practiceReminders,
-                              onToggle: (bool value) async {
-                                await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
-                                if (mounted) setState(() => _practiceReminders = value);
-                              },
-                            ),
+                                          description: Text(
+                                            _friendNotificationMode == 'all'
+                                                ? 'Notify for all friends'
+                                                : _friendNotificationMode == 'selected'
+                                                    ? 'Notify for selected friends'
+                                                    : 'Off',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                          leading: Icon(
+                                            Icons.notifications_active_rounded,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                          onPressed: (ctx) async {
+                                            String? picked = await showDialog<String>(
+                                              context: ctx,
+                                              builder: (dialogCtx) {
+                                                String current = _friendNotificationMode;
+                                                return StatefulBuilder(
+                                                  builder: (dialogCtx, setDialogState) {
+                                                    return AlertDialog(
+                                                      title: const Text('Friend Session Notifications'),
+                                                      content: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          RadioListTile<String>(
+                                                            title: Text(
+                                                              'Notify for all friends',
+                                                              style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                            ),
+                                                            value: 'all',
+                                                            groupValue: current,
+                                                            activeColor: Theme.of(dialogCtx).primaryColor,
+                                                            onChanged: (v) => setDialogState(() => current = v!),
+                                                          ),
+                                                          RadioListTile<String>(
+                                                            title: Text(
+                                                              'Notify for selected friends',
+                                                              style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                            ),
+                                                            subtitle: Text(
+                                                              'Subscribe per-friend on their profile',
+                                                              style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                                            ),
+                                                            value: 'selected',
+                                                            groupValue: current,
+                                                            activeColor: Theme.of(dialogCtx).primaryColor,
+                                                            onChanged: (v) => setDialogState(() => current = v!),
+                                                          ),
+                                                          RadioListTile<String>(
+                                                            title: Text(
+                                                              'Off',
+                                                              style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                            ),
+                                                            value: 'off',
+                                                            groupValue: current,
+                                                            activeColor: Theme.of(dialogCtx).primaryColor,
+                                                            onChanged: (v) => setDialogState(() => current = v!),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.of(dialogCtx).pop(),
+                                                          style: TextButton.styleFrom(
+                                                            foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
+                                                          ),
+                                                          child: const Text('Cancel'),
+                                                        ),
+                                                        ElevatedButton(
+                                                          onPressed: () => Navigator.of(dialogCtx).pop(current),
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: Theme.of(dialogCtx).primaryColor,
+                                                            foregroundColor: Colors.white,
+                                                          ),
+                                                          child: const Text('Save'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            );
+                                            if (picked != null && picked != _friendNotificationMode) {
+                                              await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
+                                                'friend_notification_mode': picked,
+                                                'friend_notifications': picked != 'off',
+                                              });
+                                              if (mounted) {
+                                                setState(() {
+                                                  _friendNotificationMode = picked;
+                                                });
+                                              }
+                                            }
+                                          },
+                                        )))),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile.switchTile(
+                                          title: Text(
+                                            'Practice Reminders',
+                                            style: Theme.of(context).textTheme.bodyLarge,
+                                          ),
+                                          description: Text(
+                                            'Get a push notification when you haven\'t practised in 2 days',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                          leading: Icon(
+                                            Icons.alarm,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                          initialValue: _practiceReminders,
+                                          onToggle: (bool value) async {
+                                            await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
+                                            if (mounted) setState(() => _practiceReminders = value);
+                                          },
+                                        )))),
                             SettingsTile.switchTile(
                               title: Text('Daily Practice Reminder', style: Theme.of(context).textTheme.bodyLarge),
                               description: Text(
@@ -745,132 +761,144 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         SettingsSection(
                           title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
                           tiles: [
-                            SettingsTile.switchTile(
-                              enabled: !isOffline,
-                              title: Text(
-                                'Public',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              leading: Icon(
-                                Icons.privacy_tip_rounded,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              initialValue: _publicProfile,
-                              onToggle: (bool value) async {
-                                Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
-                                  setState(() {
-                                    _publicProfile = !_publicProfile;
-                                  });
-                                });
-                              },
-                            ),
-                            SettingsTile(
-                              enabled: !isOffline,
-                              title: Text(
-                                'Edit Profile',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              leading: Icon(
-                                Icons.person,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                              onPressed: (BuildContext context) {
-                                // Use absolute path matching router.dart definition
-                                context.push(AppRoutePaths.editProfile);
-                              },
-                            ),
-                            SettingsTile(
-                              enabled: !isOffline,
-                              title: Row(
-                                children: [
-                                  Text(
-                                    'Delete Account',
-                                    style: Theme.of(context).textTheme.bodyLarge,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 5),
-                                    child: RotatedBox(
-                                      quarterTurns: 2,
-                                      child: Icon(
-                                        Icons.info_outlined,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              leading: const Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                              ),
-                              onPressed: (BuildContext context) {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) {
-                                    return AlertDialog(
-                                      title: const Text(
-                                        "Are you absolutely sure you want to delete your account?",
-                                        style: TextStyle(
-                                          fontFamily: 'NovecentoSans',
-                                          fontSize: 24,
-                                        ),
-                                      ),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile.switchTile(
+                                          title: Text(
+                                            'Public',
+                                            style: Theme.of(context).textTheme.bodyLarge,
                                           ),
-                                        ],
-                                      ),
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context).pop(false),
-                                          child: Text(
-                                            "Cancel".toUpperCase(),
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              color: Theme.of(context).colorScheme.onPrimary,
-                                            ),
+                                          leading: Icon(
+                                            Icons.privacy_tip_rounded,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            FirebaseAuth.instance.currentUser!.delete().then((_) {
-                                              context.pop();
-                                              context.push(AppRoutePaths.login);
-
-                                              SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                                            }).onError((FirebaseAuthException error, stackTrace) {
-                                              String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
-                                              Fluttertoast.showToast(
-                                                msg: msg,
-                                                toastLength: Toast.LENGTH_LONG,
-                                                gravity: ToastGravity.BOTTOM,
-                                                timeInSecForIosWeb: 1,
-                                                backgroundColor: Theme.of(context).cardTheme.color,
-                                                textColor: Theme.of(context).colorScheme.onPrimary,
-                                                fontSize: 16.0,
-                                              );
+                                          initialValue: _publicProfile,
+                                          onToggle: (bool value) async {
+                                            Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
+                                              setState(() {
+                                                _publicProfile = !_publicProfile;
+                                              });
                                             });
                                           },
-                                          child: Text(
-                                            "Delete Account".toUpperCase(),
-                                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                        )))),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Text(
+                                            'Edit Profile',
+                                            style: Theme.of(context).textTheme.bodyLarge,
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
+                                          leading: Icon(
+                                            Icons.person,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                          onPressed: (BuildContext context) {
+                                            // Use absolute path matching router.dart definition
+                                            context.push(AppRoutePaths.editProfile);
+                                          },
+                                        )))),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Row(
+                                            children: [
+                                              Text(
+                                                'Delete Account',
+                                                style: Theme.of(context).textTheme.bodyLarge,
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 5),
+                                                child: RotatedBox(
+                                                  quarterTurns: 2,
+                                                  child: Icon(
+                                                    Icons.info_outlined,
+                                                    color: Theme.of(context).colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          leading: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: (BuildContext context) {
+                                            showDialog(
+                                              context: context,
+                                              builder: (_) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                    "Are you absolutely sure you want to delete your account?",
+                                                    style: TextStyle(
+                                                      fontFamily: 'NovecentoSans',
+                                                      fontSize: 24,
+                                                    ),
+                                                  ),
+                                                  content: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(context).pop(false),
+                                                      child: Text(
+                                                        "Cancel".toUpperCase(),
+                                                        style: TextStyle(
+                                                          fontFamily: 'NovecentoSans',
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        FirebaseAuth.instance.currentUser!.delete().then((_) {
+                                                          context.pop();
+                                                          context.push(AppRoutePaths.login);
+
+                                                          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                                        }).onError((FirebaseAuthException error, stackTrace) {
+                                                          String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                                          Fluttertoast.showToast(
+                                                            msg: msg,
+                                                            toastLength: Toast.LENGTH_LONG,
+                                                            gravity: ToastGravity.BOTTOM,
+                                                            timeInSecForIosWeb: 1,
+                                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                                            fontSize: 16.0,
+                                                          );
+                                                        });
+                                                      },
+                                                      child: Text(
+                                                        "Delete Account".toUpperCase(),
+                                                        style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                        )))),
                             SettingsTile(
                               title: Text(
                                 'Logout',
