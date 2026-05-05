@@ -620,7 +620,7 @@ class _FriendsState extends State<Friends> {
                                 },
                           onUnlockChallengerRoad: () {
                             Feedback.forTap(context);
-                            context.go('/');
+                            context.go(AppRoutePaths.app);
                             openChallengerRoadSignal.value++;
                           },
                           child: UserAvatar(
@@ -1002,7 +1002,7 @@ class _FriendsState extends State<Friends> {
                                           },
                                     onUnlockChallengerRoad: () {
                                       Feedback.forTap(context);
-                                      context.go('/');
+                                      context.go(AppRoutePaths.app);
                                       openChallengerRoadSignal.value++;
                                     },
                                     child: UserAvatar(
