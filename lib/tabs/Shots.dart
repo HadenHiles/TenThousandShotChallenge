@@ -1271,77 +1271,77 @@ class _ShotsState extends State<Shots> {
                             : _offlineWrap(
                                 isOffline,
                                 SizedBox(
-                                width: MediaQuery.of(context).size.width - 30,
-                                child: TextButton(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.all(10),
-                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                  ),
-                                  onPressed: () {
-                                    dialog(
-                                      context,
-                                      ConfirmDialog(
-                                        'Start a new challenge?',
-                                        Text(
-                                          'Your current challenge data will remain in your profile.\n\nWould you like to continue?',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface,
+                                  width: MediaQuery.of(context).size.width - 30,
+                                  child: TextButton(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.all(10),
+                                      backgroundColor: Theme.of(context).cardTheme.color,
+                                    ),
+                                    onPressed: () {
+                                      dialog(
+                                        context,
+                                        ConfirmDialog(
+                                          'Start a new challenge?',
+                                          Text(
+                                            'Your current challenge data will remain in your profile.\n\nWould you like to continue?',
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
                                           ),
+                                          'Cancel',
+                                          () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          'Continue',
+                                          () {
+                                            startNewIteration(
+                                              Provider.of<FirebaseAuth>(context, listen: false),
+                                              Provider.of<FirebaseFirestore>(context, listen: false),
+                                            ).then((success) {
+                                              if (success!) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                                    duration: const Duration(milliseconds: 1200),
+                                                    content: Text(
+                                                      'Challenge restarted!',
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              } else {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                                    duration: const Duration(milliseconds: 1200),
+                                                    content: Text(
+                                                      'There was an error restarting the challenge :(',
+                                                      style: TextStyle(
+                                                        color: Theme.of(context).colorScheme.onPrimary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            });
+                                            context.pop();
+                                          },
                                         ),
-                                        'Cancel',
-                                        () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        'Continue',
-                                        () {
-                                          startNewIteration(
-                                            Provider.of<FirebaseAuth>(context, listen: false),
-                                            Provider.of<FirebaseFirestore>(context, listen: false),
-                                          ).then((success) {
-                                            if (success!) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                  duration: const Duration(milliseconds: 1200),
-                                                  content: Text(
-                                                    'Challenge restarted!',
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                  duration: const Duration(milliseconds: 1200),
-                                                  content: Text(
-                                                    'There was an error restarting the challenge :(',
-                                                    style: TextStyle(
-                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          });
-                                          context.pop();
-                                        },
+                                      );
+                                    },
+                                    child: Text(
+                                      'Start New Challenge'.toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 20,
                                       ),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Start New Challenge'.toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 20,
                                     ),
                                   ),
-                                ),
-                              ));
+                                ));
                       }
                       return Container();
                     },

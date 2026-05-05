@@ -139,861 +139,824 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         builder: (context, networkStatus, _) {
           final isOffline = networkStatus == NetworkStatus.Offline;
           return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          body: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              return [
-                SliverAppBar(
-                  collapsedHeight: 65,
-                  expandedHeight: 125,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  floating: true,
-                  pinned: true,
-                  leading: Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        size: 28,
-                      ),
-                      onPressed: () {
-                        goToAppSection(context, AppSection.me);
-                      },
-                    ),
-                  ),
-                  flexibleSpace: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
-                    child: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.parallax,
-                      titlePadding: null,
-                      centerTitle: false,
-                      title: const BasicTitle(title: "Settings"),
-                      background: Container(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                      ),
-                    ),
-                  ),
-                  actions: const [],
-                ),
-              ];
-            },
-            body: Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 70), // Add enough space for the footer
-                  child: SettingsList(
-                    lightTheme: SettingsThemeData(
-                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    darkTheme: SettingsThemeData(
-                      settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    sections: [
-                      // Subscription Section
-                      SettingsSection(
-                        title: Text(
-                          'Subscription',
-                          style: Theme.of(context).textTheme.titleLarge,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            body: NestedScrollView(
+              headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                return [
+                  SliverAppBar(
+                    collapsedHeight: 65,
+                    expandedHeight: 125,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    floating: true,
+                    pinned: true,
+                    leading: Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          size: 28,
                         ),
-                        tiles: [
-                          SettingsTile(
-                            enabled: !isOffline,
-                            title: Text(
-                              'Subscription Level',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            description: Text(
-                              _subscriptionLevel.toUpperCase(),
-                              style: TextStyle(
-                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                        onPressed: () {
+                          goToAppSection(context, AppSection.me);
+                        },
+                      ),
+                    ),
+                    flexibleSpace: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                      child: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.parallax,
+                        titlePadding: null,
+                        centerTitle: false,
+                        title: const BasicTitle(title: "Settings"),
+                        background: Container(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                        ),
+                      ),
+                    ),
+                    actions: const [],
+                  ),
+                ];
+              },
+              body: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 70), // Add enough space for the footer
+                    child: SettingsList(
+                      lightTheme: SettingsThemeData(
+                        settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      darkTheme: SettingsThemeData(
+                        settingsListBackground: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      sections: [
+                        // Subscription Section
+                        SettingsSection(
+                          title: Text(
+                            'Subscription',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          tiles: [
+                            SettingsTile(
+                              enabled: !isOffline,
+                              title: Text(
+                                'Subscription Level',
+                                style: Theme.of(context).textTheme.bodyLarge,
                               ),
-                            ),
-                            leading: Icon(
-                              Icons.workspace_premium,
-                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                            ),
-                            onPressed: (BuildContext context) {
-                              // Show a dialog or navigate to a subscription management screen
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Manage Subscription'),
-                                  content: SizedBox(
-                                    height: 220,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          margin: const EdgeInsets.only(bottom: 12),
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            border: Border.all(
-                                              color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                              width: 2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.workspace_premium,
+                              description: Text(
+                                _subscriptionLevel.toUpperCase(),
+                                style: TextStyle(
+                                  color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              leading: Icon(
+                                Icons.workspace_premium,
+                                color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                              ),
+                              onPressed: (BuildContext context) {
+                                // Show a dialog or navigate to a subscription management screen
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Manage Subscription'),
+                                    content: SizedBox(
+                                      height: 220,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            margin: const EdgeInsets.only(bottom: 12),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).colorScheme.surface,
+                                              border: Border.all(
                                                 color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                                size: 28,
+                                                width: 2,
                                               ),
-                                              const SizedBox(width: 10),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    _subscriptionLevel == "pro" ? "PRO PLAN" : "FREE PLAN",
-                                                    style: TextStyle(
-                                                      color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 18,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  if (_subscriptionLevel == "pro")
-                                                    Row(
-                                                      children: [
-                                                        Text("Renews: "),
-                                                        Text(
-                                                          (() {
-                                                            final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
-                                                            final dt = notifier?.latestExpirationDateTime;
-                                                            if (dt == null) return "N/A";
-                                                            final local = dt.toLocal();
-                                                            return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
-                                                          })(),
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                            fontSize: 13,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  if (_subscriptionLevel != "pro")
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.workspace_premium,
+                                                  color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                  size: 28,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
                                                     Text(
-                                                      "No renewal date",
+                                                      _subscriptionLevel == "pro" ? "PRO PLAN" : "FREE PLAN",
                                                       style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                        fontSize: 13,
+                                                        color: _subscriptionLevel == "pro" ? Theme.of(context).primaryColor : Colors.grey,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 18,
                                                       ),
                                                     ),
-                                                ],
+                                                    const SizedBox(height: 4),
+                                                    if (_subscriptionLevel == "pro")
+                                                      Row(
+                                                        children: [
+                                                          Text("Renews: "),
+                                                          Text(
+                                                            (() {
+                                                              final notifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
+                                                              final dt = notifier?.latestExpirationDateTime;
+                                                              if (dt == null) return "N/A";
+                                                              final local = dt.toLocal();
+                                                              return "${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}";
+                                                            })(),
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    if (_subscriptionLevel != "pro")
+                                                      Text(
+                                                        "No renewal date",
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).colorScheme.onPrimary,
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 13),
+                                          SelectableText(
+                                            "ID: ${user?.uid ?? 'N/A'}",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 11,
+                                            ),
+                                            textAlign: TextAlign.start,
+                                            cursorColor: Theme.of(context).primaryColor,
+                                            selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                          ),
+                                          SelectableText(
+                                            user?.email ?? 'N/A',
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 11,
+                                            ),
+                                            textAlign: TextAlign.start,
+                                            cursorColor: Theme.of(context).primaryColor,
+                                            selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        style: ButtonStyle(
+                                          foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
+                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
+                                        ),
+                                        child: const Text('Close'),
+                                      ),
+                                      if (_subscriptionLevel == "pro")
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            // Open the correct subscription management page
+                                            final platform = Theme.of(context).platform;
+                                            final url = platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
+                                            if (await canLaunchUrlString(url)) {
+                                              await launchUrlString(url);
+                                            }
+                                          },
+                                          style: ButtonStyle(
+                                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                          ),
+                                          child: const Text('Cancel Subscription'),
+                                        ),
+                                      if (_subscriptionLevel != "pro")
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+                                            await presentPaywallIfNeeded(context);
+                                          },
+                                          style: ButtonStyle(
+                                            backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
+                                          ),
+                                          child: const Text('Upgrade'),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text(
+                            'General',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          tiles: [
+                            SettingsTile(
+                              title: Text(
+                                'How many pucks do you have?',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              leading: Container(
+                                margin: const EdgeInsets.only(left: 10),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Icon(
+                                      FontAwesomeIcons.hockeyPuck,
+                                      size: 14,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                    // Top Left
+                                    Positioned(
+                                      left: -6,
+                                      top: -6,
+                                      child: Icon(
+                                        FontAwesomeIcons.hockeyPuck,
+                                        size: 8,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    // Bottom Left
+                                    Positioned(
+                                      left: -5,
+                                      bottom: -5,
+                                      child: Icon(
+                                        FontAwesomeIcons.hockeyPuck,
+                                        size: 6,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    // Top right
+                                    Positioned(
+                                      right: -4,
+                                      top: -6,
+                                      child: Icon(
+                                        FontAwesomeIcons.hockeyPuck,
+                                        size: 6,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    // Bottom right
+                                    Positioned(
+                                      right: -4,
+                                      bottom: -8,
+                                      child: Icon(
+                                        FontAwesomeIcons.hockeyPuck,
+                                        size: 8,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onPressed: (BuildContext context) {
+                                // Use push so that edit puck count screen is added on top of the stack and pop returns here.
+                                context.push(AppRoutePaths.editPuckCount);
+                              },
+                            ),
+                            SettingsTile.switchTile(
+                              title: Text(
+                                'Dark Mode',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              leading: Icon(
+                                Icons.brightness_2,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              initialValue: _darkMode,
+                              onToggle: (bool value) async {
+                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                setState(() {
+                                  _darkMode = !_darkMode;
+                                  prefs.setBool('dark_mode', _darkMode);
+                                });
+
+                                if (context.mounted) {
+                                  Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
+                                    Preferences(
+                                      value,
+                                      prefs.getInt('puck_count'),
+                                      prefs.getBool('friend_notifications'),
+                                      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+                                      prefs.getString('fcm_token'),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            SettingsTile(
+                              title: Text(
+                                "Recalculate Shot Totals",
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              description: Text(
+                                "Use this if your shot count is out of sync",
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              enabled: !isOffline,
+                              leading: _refreshingShots
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.refresh_rounded,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                              onPressed: (context) async {
+                                if (_shotsRefreshedOnce) {
+                                  setState(() {
+                                    _refreshingShots = true;
+                                  });
+
+                                  Future.delayed(const Duration(milliseconds: 800)).then(
+                                    (value) => setState(() {
+                                      _refreshingShots = false;
+                                    }),
+                                  );
+                                } else {
+                                  setState(() {
+                                    _refreshingShots = true;
+                                  });
+                                  await recalculateIterationTotals(
+                                    Provider.of<FirebaseAuth>(context, listen: false),
+                                    Provider.of<FirebaseFirestore>(context, listen: false),
+                                  ).then((_) {
+                                    Future.delayed(const Duration(milliseconds: 200)).then(
+                                      (value) {
+                                        setState(() {
+                                          _refreshingShots = false;
+                                          _shotsRefreshedOnce = true;
+                                        });
+
+                                        Fluttertoast.showToast(
+                                          msg: 'Finished recalculating shot totals',
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.BOTTOM,
+                                          timeInSecForIosWeb: 1,
+                                          backgroundColor: Theme.of(context).cardTheme.color,
+                                          textColor: Theme.of(context).colorScheme.onPrimary,
+                                          fontSize: 16.0,
+                                        );
+                                      },
+                                    );
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
+                          tiles: [
+                            SettingsTile(
+                              enabled: !isOffline,
+                              title: Text(
+                                'Friend Session Notifications',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              description: Text(
+                                _friendNotificationMode == 'all'
+                                    ? 'Notify for all friends'
+                                    : _friendNotificationMode == 'selected'
+                                        ? 'Notify for selected friends'
+                                        : 'Off',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(
+                                Icons.notifications_active_rounded,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              onPressed: (ctx) async {
+                                String? picked = await showDialog<String>(
+                                  context: ctx,
+                                  builder: (dialogCtx) {
+                                    String current = _friendNotificationMode;
+                                    return StatefulBuilder(
+                                      builder: (dialogCtx, setDialogState) {
+                                        return AlertDialog(
+                                          title: const Text('Friend Session Notifications'),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              RadioListTile<String>(
+                                                title: Text(
+                                                  'Notify for all friends',
+                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                ),
+                                                value: 'all',
+                                                groupValue: current,
+                                                activeColor: Theme.of(dialogCtx).primaryColor,
+                                                onChanged: (v) => setDialogState(() => current = v!),
+                                              ),
+                                              RadioListTile<String>(
+                                                title: Text(
+                                                  'Notify for selected friends',
+                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                ),
+                                                subtitle: Text(
+                                                  'Subscribe per-friend on their profile',
+                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                                ),
+                                                value: 'selected',
+                                                groupValue: current,
+                                                activeColor: Theme.of(dialogCtx).primaryColor,
+                                                onChanged: (v) => setDialogState(() => current = v!),
+                                              ),
+                                              RadioListTile<String>(
+                                                title: Text(
+                                                  'Off',
+                                                  style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                ),
+                                                value: 'off',
+                                                groupValue: current,
+                                                activeColor: Theme.of(dialogCtx).primaryColor,
+                                                onChanged: (v) => setDialogState(() => current = v!),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        Text(
-                                          _subscriptionLevel != "pro" ? "Upgrade to Pro to unlock shot accuracy tracking, mini-challenges, and more!" : "You are currently on the PRO plan.",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 13),
-                                        SelectableText(
-                                          "ID: ${user?.uid ?? 'N/A'}",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 11,
-                                          ),
-                                          textAlign: TextAlign.start,
-                                          cursorColor: Theme.of(context).primaryColor,
-                                          selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
-                                        ),
-                                        SelectableText(
-                                          user?.email ?? 'N/A',
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 11,
-                                          ),
-                                          textAlign: TextAlign.start,
-                                          cursorColor: Theme.of(context).primaryColor,
-                                          selectionColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      style: ButtonStyle(
-                                        foregroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.onPrimary),
-                                        backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.primary),
-                                      ),
-                                      child: const Text('Close'),
-                                    ),
-                                    if (_subscriptionLevel == "pro")
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          // Open the correct subscription management page
-                                          final platform = Theme.of(context).platform;
-                                          final url = platform == TargetPlatform.android ? 'https://support.google.com/googleplay/answer/7018481?hl=en&co=GENIE.Platform%3DAndroid' : 'https://support.apple.com/en-ca/118428';
-                                          if (await canLaunchUrlString(url)) {
-                                            await launchUrlString(url);
-                                          }
-                                        },
-                                        style: ButtonStyle(
-                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
-                                        ),
-                                        child: const Text('Cancel Subscription'),
-                                      ),
-                                    if (_subscriptionLevel != "pro")
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          Navigator.of(context).pop();
-                                          await presentPaywallIfNeeded(context);
-                                        },
-                                        style: ButtonStyle(
-                                          backgroundColor: WidgetStateProperty.all(Theme.of(context).primaryColor),
-                                        ),
-                                        child: const Text('Upgrade'),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      SettingsSection(
-                        title: Text(
-                          'General',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        tiles: [
-                          SettingsTile(
-                            title: Text(
-                              'How many pucks do you have?',
-                              style: Theme.of(context).textTheme.bodyLarge,
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(dialogCtx).pop(),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
+                                              ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.of(dialogCtx).pop(current),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Theme.of(dialogCtx).primaryColor,
+                                                foregroundColor: Colors.white,
+                                              ),
+                                              child: const Text('Save'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                                if (picked != null && picked != _friendNotificationMode) {
+                                  await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
+                                    'friend_notification_mode': picked,
+                                    'friend_notifications': picked != 'off',
+                                  });
+                                  if (mounted) {
+                                    setState(() {
+                                      _friendNotificationMode = picked;
+                                    });
+                                  }
+                                }
+                              },
                             ),
-                            leading: Container(
-                              margin: const EdgeInsets.only(left: 10),
-                              child: Stack(
-                                clipBehavior: Clip.none,
+                            SettingsTile.switchTile(
+                              enabled: !isOffline,
+                              title: Text(
+                                'Practice Reminders',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              description: Text(
+                                'Get a push notification when you haven\'t practised in 2 days',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(
+                                Icons.alarm,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              initialValue: _practiceReminders,
+                              onToggle: (bool value) async {
+                                await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
+                                if (mounted) setState(() => _practiceReminders = value);
+                              },
+                            ),
+                            SettingsTile.switchTile(
+                              title: Text('Daily Practice Reminder', style: Theme.of(context).textTheme.bodyLarge),
+                              description: Text(
+                                'Remind me to log shots every day at my chosen time',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(Icons.alarm_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                              initialValue: _localPracticeReminders,
+                              onToggle: (bool value) async {
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('local_practice_reminders', value);
+                                if (mounted) setState(() => _localPracticeReminders = value);
+                                if (value) {
+                                  await LocalNotificationService.scheduleDailyReminder(
+                                    hour: _reminderTime.hour,
+                                    minute: _reminderTime.minute,
+                                  );
+                                } else {
+                                  await LocalNotificationService.cancelDailyReminder();
+                                }
+                              },
+                            ),
+                            if (_localPracticeReminders)
+                              SettingsTile(
+                                title: Text('Reminder Time', style: Theme.of(context).textTheme.bodyLarge),
+                                description: Text(
+                                  _reminderTime.format(context),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                leading: Icon(Icons.schedule_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                                onPressed: (ctx) async {
+                                  final picked = await showTimePicker(
+                                    context: ctx,
+                                    initialTime: _reminderTime,
+                                    builder: (context, child) => Theme(
+                                      data: Theme.of(context).copyWith(
+                                        textButtonTheme: TextButtonThemeData(
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      child: child!,
+                                    ),
+                                  );
+                                  if (picked != null) {
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setInt('reminder_hour', picked.hour);
+                                    await prefs.setInt('reminder_minute', picked.minute);
+                                    if (mounted) setState(() => _reminderTime = picked);
+                                    await LocalNotificationService.scheduleDailyReminder(
+                                      hour: picked.hour,
+                                      minute: picked.minute,
+                                    );
+                                  }
+                                },
+                              ),
+                            SettingsTile.switchTile(
+                              title: Text('Streak Alerts', style: Theme.of(context).textTheme.bodyLarge),
+                              description: Text(
+                                'Alert at 6 PM if you haven\'t practiced and have a streak going',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+                              initialValue: _streakNotifications,
+                              onToggle: (bool value) async {
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('streak_notifications', value);
+                                if (mounted) setState(() => _streakNotifications = value);
+                                if (!value) await LocalNotificationService.cancelStreakAtRisk();
+                              },
+                            ),
+                            SettingsTile.switchTile(
+                              title: Text('Active Session Notification', style: Theme.of(context).textTheme.bodyLarge),
+                              description: Text(
+                                'Show a persistent notification with shot count and duration while a session is running',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(Icons.sports_hockey_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                              initialValue: _activeSessionNotification,
+                              onToggle: (bool value) async {
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('active_session_notification', value);
+                                if (mounted) setState(() => _activeSessionNotification = value);
+                                if (!value) await LocalNotificationService.cancelActiveSession();
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
+                          tiles: [
+                            SettingsTile.switchTile(
+                              enabled: !isOffline,
+                              title: Text(
+                                'Public',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              leading: Icon(
+                                Icons.privacy_tip_rounded,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              initialValue: _publicProfile,
+                              onToggle: (bool value) async {
+                                Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
+                                  setState(() {
+                                    _publicProfile = !_publicProfile;
+                                  });
+                                });
+                              },
+                            ),
+                            SettingsTile(
+                              enabled: !isOffline,
+                              title: Text(
+                                'Edit Profile',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              leading: Icon(
+                                Icons.person,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              onPressed: (BuildContext context) {
+                                // Use absolute path matching router.dart definition
+                                context.push(AppRoutePaths.editProfile);
+                              },
+                            ),
+                            SettingsTile(
+                              enabled: !isOffline,
+                              title: Row(
                                 children: [
-                                  Icon(
-                                    FontAwesomeIcons.hockeyPuck,
-                                    size: 14,
-                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  Text(
+                                    'Delete Account',
+                                    style: Theme.of(context).textTheme.bodyLarge,
                                   ),
-                                  // Top Left
-                                  Positioned(
-                                    left: -6,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Bottom Left
-                                  Positioned(
-                                    left: -5,
-                                    bottom: -5,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Top right
-                                  Positioned(
-                                    right: -4,
-                                    top: -6,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 6,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  // Bottom right
-                                  Positioned(
-                                    right: -4,
-                                    bottom: -8,
-                                    child: Icon(
-                                      FontAwesomeIcons.hockeyPuck,
-                                      size: 8,
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 5),
+                                    child: RotatedBox(
+                                      quarterTurns: 2,
+                                      child: Icon(
+                                        Icons.info_outlined,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            onPressed: (BuildContext context) {
-                              // Use push so that edit puck count screen is added on top of the stack and pop returns here.
-                              context.push(AppRoutePaths.editPuckCount);
-                            },
-                          ),
-                          SettingsTile.switchTile(
-                            title: Text(
-                              'Dark Mode',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.brightness_2,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            initialValue: _darkMode,
-                            onToggle: (bool value) async {
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              setState(() {
-                                _darkMode = !_darkMode;
-                                prefs.setBool('dark_mode', _darkMode);
-                              });
-
-                              if (context.mounted) {
-                                Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(
-                                  Preferences(
-                                    value,
-                                    prefs.getInt('puck_count'),
-                                    prefs.getBool('friend_notifications'),
-                                    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-                                    prefs.getString('fcm_token'),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                          SettingsTile(
-                            title: Text(
-                              "Recalculate Shot Totals",
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            description: Text(
-                              "Use this if your shot count is out of sync",
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            enabled: !isOffline,
-                            leading: _refreshingShots
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.refresh_rounded,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                            onPressed: (context) async {
-                              if (_shotsRefreshedOnce) {
-                                setState(() {
-                                  _refreshingShots = true;
-                                });
-
-                                Future.delayed(const Duration(milliseconds: 800)).then(
-                                  (value) => setState(() {
-                                    _refreshingShots = false;
-                                  }),
-                                );
-                              } else {
-                                setState(() {
-                                  _refreshingShots = true;
-                                });
-                                await recalculateIterationTotals(
-                                  Provider.of<FirebaseAuth>(context, listen: false),
-                                  Provider.of<FirebaseFirestore>(context, listen: false),
-                                ).then((_) {
-                                  Future.delayed(const Duration(milliseconds: 200)).then(
-                                    (value) {
-                                      setState(() {
-                                        _refreshingShots = false;
-                                        _shotsRefreshedOnce = true;
-                                      });
-
-                                      Fluttertoast.showToast(
-                                        msg: 'Finished recalculating shot totals',
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.BOTTOM,
-                                        timeInSecForIosWeb: 1,
-                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                        textColor: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 16.0,
-                                      );
-                                    },
-                                  );
-                                });
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      SettingsSection(
-                        title: Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
-                        tiles: [
-                          SettingsTile(
-                            enabled: !isOffline,
-                            title: Text(
-                              'Friend Session Notifications',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            description: Text(
-                              _friendNotificationMode == 'all'
-                                  ? 'Notify for all friends'
-                                  : _friendNotificationMode == 'selected'
-                                      ? 'Notify for selected friends'
-                                      : 'Off',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(
-                              Icons.notifications_active_rounded,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            onPressed: (ctx) async {
-                              String? picked = await showDialog<String>(
-                                context: ctx,
-                                builder: (dialogCtx) {
-                                  String current = _friendNotificationMode;
-                                  return StatefulBuilder(
-                                    builder: (dialogCtx, setDialogState) {
-                                      return AlertDialog(
-                                        title: const Text('Friend Session Notifications'),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            RadioListTile<String>(
-                                              title: Text(
-                                                'Notify for all friends',
-                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                              ),
-                                              value: 'all',
-                                              groupValue: current,
-                                              activeColor: Theme.of(dialogCtx).primaryColor,
-                                              onChanged: (v) => setDialogState(() => current = v!),
-                                            ),
-                                            RadioListTile<String>(
-                                              title: Text(
-                                                'Notify for selected friends',
-                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                              ),
-                                              subtitle: Text(
-                                                'Subscribe per-friend on their profile',
-                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
-                                              ),
-                                              value: 'selected',
-                                              groupValue: current,
-                                              activeColor: Theme.of(dialogCtx).primaryColor,
-                                              onChanged: (v) => setDialogState(() => current = v!),
-                                            ),
-                                            RadioListTile<String>(
-                                              title: Text(
-                                                'Off',
-                                                style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
-                                              ),
-                                              value: 'off',
-                                              groupValue: current,
-                                              activeColor: Theme.of(dialogCtx).primaryColor,
-                                              onChanged: (v) => setDialogState(() => current = v!),
-                                            ),
-                                          ],
+                              leading: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              onPressed: (BuildContext context) {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) {
+                                    return AlertDialog(
+                                      title: const Text(
+                                        "Are you absolutely sure you want to delete your account?",
+                                        style: TextStyle(
+                                          fontFamily: 'NovecentoSans',
+                                          fontSize: 24,
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(dialogCtx).pop(),
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
                                             ),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () => Navigator.of(dialogCtx).pop(current),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Theme.of(dialogCtx).primaryColor,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                            child: const Text('Save'),
                                           ),
                                         ],
-                                      );
-                                    },
-                                  );
-                                },
-                              );
-                              if (picked != null && picked != _friendNotificationMode) {
-                                await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
-                                  'friend_notification_mode': picked,
-                                  'friend_notifications': picked != 'off',
-                                });
-                                if (mounted) {
-                                  setState(() {
-                                    _friendNotificationMode = picked;
-                                  });
-                                }
-                              }
-                            },
-                          ),
-                          SettingsTile.switchTile(
-                            enabled: !isOffline,
-                            title: Text(
-                              'Practice Reminders',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            description: Text(
-                              'Get a push notification when you haven\'t practised in 2 days',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(
-                              Icons.alarm,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            initialValue: _practiceReminders,
-                            onToggle: (bool value) async {
-                              await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
-                              if (mounted) setState(() => _practiceReminders = value);
-                            },
-                          ),
-                          SettingsTile.switchTile(
-                            title: Text('Daily Practice Reminder', style: Theme.of(context).textTheme.bodyLarge),
-                            description: Text(
-                              'Remind me to log shots every day at my chosen time',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(Icons.alarm_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                            initialValue: _localPracticeReminders,
-                            onToggle: (bool value) async {
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.setBool('local_practice_reminders', value);
-                              if (mounted) setState(() => _localPracticeReminders = value);
-                              if (value) {
-                                await LocalNotificationService.scheduleDailyReminder(
-                                  hour: _reminderTime.hour,
-                                  minute: _reminderTime.minute,
-                                );
-                              } else {
-                                await LocalNotificationService.cancelDailyReminder();
-                              }
-                            },
-                          ),
-                          if (_localPracticeReminders)
-                            SettingsTile(
-                              title: Text('Reminder Time', style: Theme.of(context).textTheme.bodyLarge),
-                              description: Text(
-                                _reminderTime.format(context),
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              leading: Icon(Icons.schedule_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                              onPressed: (ctx) async {
-                                final picked = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: _reminderTime,
-                                  builder: (context, child) => Theme(
-                                    data: Theme.of(context).copyWith(
-                                      textButtonTheme: TextButtonThemeData(
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(false),
+                                          child: Text(
+                                            "Cancel".toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                    child: child!,
-                                  ),
-                                );
-                                if (picked != null) {
-                                  final prefs = await SharedPreferences.getInstance();
-                                  await prefs.setInt('reminder_hour', picked.hour);
-                                  await prefs.setInt('reminder_minute', picked.minute);
-                                  if (mounted) setState(() => _reminderTime = picked);
-                                  await LocalNotificationService.scheduleDailyReminder(
-                                    hour: picked.hour,
-                                    minute: picked.minute,
-                                  );
-                                }
-                              },
-                            ),
-                          SettingsTile.switchTile(
-                            title: Text('Streak Alerts', style: Theme.of(context).textTheme.bodyLarge),
-                            description: Text(
-                              'Alert at 6 PM if you haven\'t practiced and have a streak going',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(Icons.local_fire_department_rounded, color: Colors.orange),
-                            initialValue: _streakNotifications,
-                            onToggle: (bool value) async {
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.setBool('streak_notifications', value);
-                              if (mounted) setState(() => _streakNotifications = value);
-                              if (!value) await LocalNotificationService.cancelStreakAtRisk();
-                            },
-                          ),
-                          SettingsTile.switchTile(
-                            title: Text('Active Session Notification', style: Theme.of(context).textTheme.bodyLarge),
-                            description: Text(
-                              'Show a persistent notification with shot count and duration while a session is running',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            leading: Icon(Icons.sports_hockey_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                            initialValue: _activeSessionNotification,
-                            onToggle: (bool value) async {
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.setBool('active_session_notification', value);
-                              if (mounted) setState(() => _activeSessionNotification = value);
-                              if (!value) await LocalNotificationService.cancelActiveSession();
-                            },
-                          ),
-                        ],
-                      ),
-                      SettingsSection(
-                        title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
-                        tiles: [
-                          SettingsTile.switchTile(
-                            enabled: !isOffline,
-                            title: Text(
-                              'Public',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.privacy_tip_rounded,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            initialValue: _publicProfile,
-                            onToggle: (bool value) async {
-                              Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'public': !_publicProfile}).then((_) {
-                                setState(() {
-                                  _publicProfile = !_publicProfile;
-                                });
-                              });
-                            },
-                          ),
-                          SettingsTile(
-                            enabled: !isOffline,
-                            title: Text(
-                              'Edit Profile',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            leading: Icon(
-                              Icons.person,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            onPressed: (BuildContext context) {
-                              // Use absolute path matching router.dart definition
-                              context.push(AppRoutePaths.editProfile);
-                            },
-                          ),
-                          SettingsTile(
-                            enabled: !isOffline,
-                            title: Row(
-                              children: [
-                                Text(
-                                  'Delete Account',
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 5),
-                                  child: RotatedBox(
-                                    quarterTurns: 2,
-                                    child: Icon(
-                                      Icons.info_outlined,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            leading: const Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                            ),
-                            onPressed: (BuildContext context) {
-                              showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return AlertDialog(
-                                    title: const Text(
-                                      "Are you absolutely sure you want to delete your account?",
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        fontSize: 24,
-                                      ),
-                                    ),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "All of your data will be lost, and there is no undoing this action. The app will close upon continuing with deletion.",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                        TextButton(
+                                          onPressed: () {
+                                            FirebaseAuth.instance.currentUser!.delete().then((_) {
+                                              context.pop();
+                                              context.push(AppRoutePaths.login);
+
+                                              SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                                            }).onError((FirebaseAuthException error, stackTrace) {
+                                              String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
+                                              Fluttertoast.showToast(
+                                                msg: msg,
+                                                toastLength: Toast.LENGTH_LONG,
+                                                gravity: ToastGravity.BOTTOM,
+                                                timeInSecForIosWeb: 1,
+                                                backgroundColor: Theme.of(context).cardTheme.color,
+                                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                                fontSize: 16.0,
+                                              );
+                                            });
+                                          },
+                                          child: Text(
+                                            "Delete Account".toUpperCase(),
+                                            style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
                                           ),
                                         ),
                                       ],
-                                    ),
-                                    backgroundColor: Theme.of(context).colorScheme.primary,
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(false),
-                                        child: Text(
-                                          "Cancel".toUpperCase(),
-                                          style: TextStyle(
-                                            fontFamily: 'NovecentoSans',
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          FirebaseAuth.instance.currentUser!.delete().then((_) {
-                                            context.pop();
-                                            context.push(AppRoutePaths.login);
-
-                                            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                                          }).onError((FirebaseAuthException error, stackTrace) {
-                                            String msg = error.code == "requires-recent-login" ? "This action requires a recent login, please logout and try again." : "Error deleting account, please email admin@howtohockey.com";
-                                            Fluttertoast.showToast(
-                                              msg: msg,
-                                              toastLength: Toast.LENGTH_LONG,
-                                              gravity: ToastGravity.BOTTOM,
-                                              timeInSecForIosWeb: 1,
-                                              backgroundColor: Theme.of(context).cardTheme.color,
-                                              textColor: Theme.of(context).colorScheme.onPrimary,
-                                              fontSize: 16.0,
-                                            );
-                                          });
-                                        },
-                                        child: Text(
-                                          "Delete Account".toUpperCase(),
-                                          style: TextStyle(fontFamily: 'NovecentoSans', color: Theme.of(context).primaryColor),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          SettingsTile(
-                            title: Text(
-                              'Logout',
-                              style: TextStyle(
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            SettingsTile(
+                              title: Text(
+                                'Logout',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
+                                ),
+                              ),
+                              leading: const Icon(
+                                Icons.logout,
                                 color: Colors.red,
-                                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
                               ),
+                              onPressed: (BuildContext context) async {
+                                await signOut();
+                                // No manual navigation: GoRouter redirect will send unauthenticated user to /login
+                              },
                             ),
-                            leading: const Icon(
-                              Icons.logout,
-                              color: Colors.red,
-                            ),
-                            onPressed: (BuildContext context) async {
-                              await signOut();
-                              // No manual navigation: GoRouter redirect will send unauthenticated user to /login
-                            },
-                          ),
-                          SettingsTile(title: SizedBox.shrink()),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (isOffline)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      color: Colors.orange.shade800,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 15),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Offline – some settings require an internet connection.',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontFamily: 'NovecentoSans',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 0, bottom: 5),
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3), //color of shadow
-                          spreadRadius: 2, //spread radius
-                          blurRadius: 10, // blur radius
-                          offset: const Offset(0, 0), // changes position of shadow
-                          //first paramerter of offset is left-right
-                          //second parameter is top to down
+                            SettingsTile(title: SizedBox.shrink()),
+                          ],
                         ),
                       ],
-                      color: Theme.of(context).colorScheme.primaryContainer,
                     ),
-                    width: MediaQuery.of(context).size.width,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                  ),
+                  if (isOffline)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        color: Colors.orange.shade800,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        child: const Row(
                           children: [
-                            Icon(
-                              FontAwesomeIcons.github,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              size: 16,
-                            ),
-                            TextButton(
-                              style: ButtonStyle(
-                                padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
-                                backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                              ),
-                              onPressed: () async {
-                                String link = "https://github.com/HadenHiles";
-                                await canLaunchUrlString(link).then((can) {
-                                  launchUrlString(link).catchError((err) {
-                                    print(err);
-                                    return false;
-                                  });
-                                });
-                              },
+                            Icon(Icons.wifi_off_rounded, color: Colors.white, size: 15),
+                            SizedBox(width: 8),
+                            Expanded(
                               child: Text(
-                                "Developed by Haden Hiles".toLowerCase(),
+                                'Offline – some settings require an internet connection.',
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16,
-                                  fontFamily: "NovecentoSans",
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontFamily: 'NovecentoSans',
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          margin: const EdgeInsets.all(0),
-                          height: 35,
-                          child: Row(
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.only(top: 0, bottom: 5),
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3), //color of shadow
+                            spreadRadius: 2, //spread radius
+                            blurRadius: 10, // blur radius
+                            offset: const Offset(0, 0), // changes position of shadow
+                            //first paramerter of offset is left-right
+                            //second parameter is top to down
+                          ),
+                        ],
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      width: MediaQuery.of(context).size.width,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Icon(
-                                FontAwesomeIcons.copyright,
+                                FontAwesomeIcons.github,
                                 color: Theme.of(context).colorScheme.onPrimary,
-                                size: 10,
+                                size: 16,
                               ),
                               TextButton(
                                 style: ButtonStyle(
-                                  padding: WidgetStateProperty.all(const EdgeInsets.only(bottom: 2, left: 5)),
+                                  padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 0, horizontal: 10)),
                                   backgroundColor: WidgetStateProperty.all(Colors.transparent),
                                 ),
                                 onPressed: () async {
-                                  String link = "https://howtohockey.com";
+                                  String link = "https://github.com/HadenHiles";
                                   await canLaunchUrlString(link).then((can) {
                                     launchUrlString(link).catchError((err) {
                                       print(err);
@@ -1002,25 +965,62 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                   });
                                 },
                                 child: Text(
-                                  "How To Hockey Inc.".toLowerCase(),
+                                  "Developed by Haden Hiles".toLowerCase(),
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 14,
+                                    fontSize: 16,
                                     fontFamily: "NovecentoSans",
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          Container(
+                            margin: const EdgeInsets.all(0),
+                            height: 35,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  FontAwesomeIcons.copyright,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  size: 10,
+                                ),
+                                TextButton(
+                                  style: ButtonStyle(
+                                    padding: WidgetStateProperty.all(const EdgeInsets.only(bottom: 2, left: 5)),
+                                    backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                                  ),
+                                  onPressed: () async {
+                                    String link = "https://howtohockey.com";
+                                    await canLaunchUrlString(link).then((can) {
+                                      launchUrlString(link).catchError((err) {
+                                        print(err);
+                                        return false;
+                                      });
+                                    });
+                                  },
+                                  child: Text(
+                                    "How To Hockey Inc.".toLowerCase(),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 14,
+                                      fontFamily: "NovecentoSans",
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
+          );
         },
       ),
     );
