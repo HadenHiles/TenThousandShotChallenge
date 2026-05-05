@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal;
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -619,7 +620,8 @@ class _FriendsState extends State<Friends> {
                                 },
                           onUnlockChallengerRoad: () {
                             Feedback.forTap(context);
-                            context.push(AppRoutePaths.challengerRoad);
+                            context.go('/');
+                            openChallengerRoadSignal.value++;
                           },
                           child: UserAvatar(
                             user: friend,
@@ -1000,7 +1002,8 @@ class _FriendsState extends State<Friends> {
                                           },
                                     onUnlockChallengerRoad: () {
                                       Feedback.forTap(context);
-                                      context.push(AppRoutePaths.challengerRoad);
+                                      context.go('/');
+                                      openChallengerRoadSignal.value++;
                                     },
                                     child: UserAvatar(
                                       user: friend,
