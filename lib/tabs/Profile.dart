@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -84,11 +85,13 @@ class _ProfileState extends State<Profile> {
     final u = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (u == null) return;
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-    final snap = await firestore.collection('iterations').doc(u.uid).collection('iterations').orderBy('start_date', descending: false).get();
-    if (snap.docs.isNotEmpty && mounted) {
-      setState(() => _selectedIterationId = snap.docs.last.id);
-      _loadFirstLastSession(snap.docs.last.id);
-    }
+    try {
+      final snap = await firestore.collection('iterations').doc(u.uid).collection('iterations').orderBy('start_date', descending: false).get();
+      if (snap.docs.isNotEmpty && mounted) {
+        setState(() => _selectedIterationId = snap.docs.last.id);
+        _loadFirstLastSession(snap.docs.last.id);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadFirstLastSession(String? iterationId) async {
@@ -169,10 +172,19 @@ class _ProfileState extends State<Profile> {
 
   // ── Build ────────────────────────────────────────────────────────────────
 
+  /// Wraps [child] in a dimmed, non-interactive overlay when [isOffline] is true,
+  /// signalling that the section depends on a live Firestore connection.
+  Widget _offlineWrap(bool isOffline, Widget child) {
+    if (!isOffline) return child;
+    return Opacity(opacity: 0.38, child: IgnorePointer(child: child));
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = user;
     if (currentUser == null) return const Center(child: CircularProgressIndicator());
+
+    final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
 
     return Container(
       key: const Key('profile_tab_body'),
@@ -186,23 +198,23 @@ class _ProfileState extends State<Profile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context, currentUser),
+            _offlineWrap(isOffline, _buildHeader(context, currentUser)),
             const SizedBox(height: 8),
-            _buildProgressCard(context, currentUser),
+            _offlineWrap(isOffline, _buildProgressCard(context, currentUser)),
             const SizedBox(height: 12),
-            _buildStatsChips(context, currentUser),
+            _offlineWrap(isOffline, _buildStatsChips(context, currentUser)),
             const SizedBox(height: 12),
-            _buildProfileTrophyCase(context, currentUser),
+            _offlineWrap(isOffline, _buildProfileTrophyCase(context, currentUser)),
             const SizedBox(height: 12),
-            _buildAchievementsCard(context, currentUser),
+            _offlineWrap(isOffline, _buildAchievementsCard(context, currentUser)),
             const SizedBox(height: 12),
-            _buildAccuracyCard(context, currentUser),
+            _offlineWrap(isOffline, _buildAccuracyCard(context, currentUser)),
             const SizedBox(height: 12),
-            _buildChallengerRoadCard(context, currentUser),
+            _offlineWrap(isOffline, _buildChallengerRoadCard(context, currentUser)),
             const SizedBox(height: 12),
-            _buildActivityCalendarCard(context),
+            _offlineWrap(isOffline, _buildActivityCalendarCard(context)),
             const SizedBox(height: 12),
-            _buildSessionsCard(context, currentUser),
+            _offlineWrap(isOffline, _buildSessionsCard(context, currentUser)),
             const SizedBox(height: 80),
           ],
         ),

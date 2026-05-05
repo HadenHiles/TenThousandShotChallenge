@@ -1056,10 +1056,12 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
               builder: (context) {
                 final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
                 // Train tab (index 0) is offline-capable - sessions are queued locally.
-                if (!isOffline || _selectedIndex == 0) {
+                // Profile tab (index 3) is also accessible offline so users can reach Settings;
+                // Firestore-dependent sections within the Profile are disabled when offline.
+                if (!isOffline || _selectedIndex == 0 || _selectedIndex == 3) {
                   return _buildOnlineContent();
                 }
-                // All other tabs require an internet connection.
+                // Community and Learn tabs require an internet connection.
                 return _buildOfflinePlaceholder(context);
               },
             ),
