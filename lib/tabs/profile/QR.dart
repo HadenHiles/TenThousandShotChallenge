@@ -171,7 +171,7 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                             final Color qrColor = colorFromHex(t.primaryColor);
                             return Container(
                               decoration: BoxDecoration(
-                                color: colorFromHex(t.darkAccentColor).withValues(alpha: 0.9),
+                                color: colorFromHex(t.darkAccentColor, fallback: const Color(0xFF111111)).withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
                               ),

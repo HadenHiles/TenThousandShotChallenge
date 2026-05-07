@@ -76,7 +76,7 @@ class QRCodeDialog extends StatelessWidget {
           Container(
             decoration: team != null
                 ? BoxDecoration(
-                    color: colorFromHex(team!.darkAccentColor).withValues(alpha: 0.9),
+                    color: colorFromHex(team!.darkAccentColor, fallback: const Color(0xFF111111)).withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
                   )
@@ -468,7 +468,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                           margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: colorFromHex(team.darkAccentColor).withValues(alpha: 0.85),
+                            color: colorFromHex(team.darkAccentColor, fallback: const Color(0xFF111111)).withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: teamPrimaryColor.withValues(alpha: 0.55), width: 1.5),
                             boxShadow: [
@@ -502,7 +502,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   style: TextStyle(
                                     fontFamily: 'NovecentoSans',
                                     fontSize: 22,
-                                    color: colorFromHex(team.lightAccentColor),
+                                    color: colorFromHex(team.lightAccentColor, fallback: Colors.white),
                                     height: 1.1,
                                   ),
                                 ),
@@ -522,11 +522,11 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.dynamic_feed_rounded, color: colorFromHex(team.lightAccentColor), size: 16),
+                                      Icon(Icons.dynamic_feed_rounded, color: colorFromHex(team.lightAccentColor, fallback: Colors.white), size: 16),
                                       const SizedBox(width: 5),
                                       Text(
                                         'Activity'.toUpperCase(),
-                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: colorFromHex(team.lightAccentColor)),
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: colorFromHex(team.lightAccentColor, fallback: Colors.white)),
                                       ),
                                     ],
                                   ),
