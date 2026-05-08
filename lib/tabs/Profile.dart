@@ -916,7 +916,6 @@ class _ProfileState extends State<Profile> {
     final def = id.isNotEmpty ? byId[id] : null;
     if (def != null) {
       final color = _crProfileTrophyColor(def);
-      final icon = _crProfileTrophyIcon(def);
       return GestureDetector(
         onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: id, currentDef: def, summary: summary, catalog: catalog),
         child: Column(
@@ -926,12 +925,10 @@ class _ProfileState extends State<Profile> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.18),
-                border: Border.all(color: color, width: 1.5),
-                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 5)],
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: ChallengerRoadService.trophyIconWidget(def, size: 36, color: color),
             ),
             const SizedBox(height: 4),
             SizedBox(
@@ -1076,7 +1073,6 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
     final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     final currentColor = _crProfileTrophyColor(widget.currentDef);
-    final currentIcon = _crProfileTrophyIcon(widget.currentDef);
 
     return SafeArea(
       child: Column(
@@ -1099,12 +1095,10 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: currentColor.withValues(alpha: 0.18),
-                    border: Border.all(color: currentColor, width: 2),
-                    boxShadow: [BoxShadow(color: currentColor.withValues(alpha: 0.3), blurRadius: 6)],
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [BoxShadow(color: currentColor.withValues(alpha: 0.35), blurRadius: 8)],
                   ),
-                  child: Icon(currentIcon, color: currentColor, size: 22),
+                  child: ChallengerRoadService.trophyIconWidget(widget.currentDef, size: 46, color: currentColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1156,7 +1150,6 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                 itemBuilder: (context, i) {
                   final def = earnedDefs[i];
                   final color = _crProfileTrophyColor(def);
-                  final icon = _crProfileTrophyIcon(def);
                   final isAlreadyFeatured = widget.summary.featuredTrophies.contains(def.id);
                   return InkWell(
                     onTap: () => _swap(def.id),
@@ -1170,11 +1163,10 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                             width: 52,
                             height: 52,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color.withValues(alpha: 0.15),
-                              border: Border.all(color: color, width: 1.5),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
                             ),
-                            child: Icon(icon, color: color, size: 24),
+                            child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1236,8 +1228,4 @@ Color _crProfileTrophyColor(ChallengerRoadTrophyDefinition def) {
     case ChallengerRoadTrophyCategory.chirpy:
       return const Color(0xFF78909C);
   }
-}
-
-IconData _crProfileTrophyIcon(ChallengerRoadTrophyDefinition def) {
-  return ChallengerRoadService.iconForTrophy(def);
 }
