@@ -860,12 +860,10 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _crBadgeColor(widget.currentDef!).withValues(alpha: 0.18),
-                      border: Border.all(color: _crBadgeColor(widget.currentDef!), width: 2),
-                      boxShadow: [BoxShadow(color: _crBadgeColor(widget.currentDef!).withValues(alpha: 0.3), blurRadius: 6)],
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [BoxShadow(color: _crBadgeColor(widget.currentDef!).withValues(alpha: 0.35), blurRadius: 8)],
                     ),
-                    child: Icon(_crBadgeIcon(widget.currentDef!), color: _crBadgeColor(widget.currentDef!), size: 22),
+                    child: ChallengerRoadService.trophyIconWidget(widget.currentDef!, size: 46, color: _crBadgeColor(widget.currentDef!)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1010,10 +1008,6 @@ Color _crBadgeColor(ChallengerRoadTrophyDefinition def) {
     case ChallengerRoadTrophyCategory.chirpy:
       return const Color(0xFF78909C);
   }
-}
-
-IconData _crBadgeIcon(ChallengerRoadTrophyDefinition def) {
-  return ChallengerRoadService.iconForTrophy(def);
 }
 
 // ── Featured Badges Showcase ─────────────────────────────────────────────────
