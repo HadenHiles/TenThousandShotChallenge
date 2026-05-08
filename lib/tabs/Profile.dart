@@ -1191,41 +1191,4 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
 
 // ── CR badge color/icon helpers (profile dashboard card) ────────────────────
 
-Color _crProfileTrophyColor(ChallengerRoadTrophyDefinition def) {
-  switch (def.tier) {
-    case ChallengerRoadTrophyTier.legendary:
-      return const Color(0xFFFFD700);
-    case ChallengerRoadTrophyTier.epic:
-      return const Color(0xFFAB47BC);
-    case ChallengerRoadTrophyTier.hidden:
-      return const Color(0xFF78909C);
-    default:
-      break;
-  }
-  switch (def.category) {
-    case ChallengerRoadTrophyCategory.firstSteps:
-      return const Color(0xFF42A5F5);
-    case ChallengerRoadTrophyCategory.withinRunEfficiency:
-      return const Color(0xFF26C6DA);
-    case ChallengerRoadTrophyCategory.crossAttemptImprovement:
-      return const Color(0xFF66BB6A);
-    case ChallengerRoadTrophyCategory.grindAndResilience:
-      return const Color(0xFF8D6E63);
-    case ChallengerRoadTrophyCategory.levelAdvancement:
-      return const Color(0xFF26A69A);
-    case ChallengerRoadTrophyCategory.crShotMilestones:
-      return const Color(0xFFFF7043);
-    case ChallengerRoadTrophyCategory.crSessionAccuracy:
-      return const Color(0xFF5C6BC0);
-    case ChallengerRoadTrophyCategory.hotStreaks:
-      return const Color(0xFFEF5350);
-    case ChallengerRoadTrophyCategory.challengeMastery:
-      return const Color(0xFF5C6BC0);
-    case ChallengerRoadTrophyCategory.multiAttemptCareer:
-      return const Color(0xFF29B6F6);
-    case ChallengerRoadTrophyCategory.eliteEndgame:
-      return const Color(0xFFFFD700);
-    case ChallengerRoadTrophyCategory.chirpy:
-      return const Color(0xFF78909C);
-  }
-}
+Color _crProfileTrophyColor(ChallengerRoadTrophyDefinition def) => ChallengerRoadService.colorForTrophy(def);
