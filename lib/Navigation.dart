@@ -899,11 +899,13 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           backdropEnabled: true,
           controller: sessionPanelController,
           maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-          minHeight: activeChallengeSession.value != null
-              ? 60 + MediaQuery.of(context).padding.bottom
-              : sessionService.isRunning
-                  ? 62 + MediaQuery.of(context).padding.bottom
-                  : 0,
+          minHeight: () {
+            // main.dart adds safeBottom padding for three-button Android, so don't double-count it here.
+            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
+            if (activeChallengeSession.value != null) return 60 + safeBottom;
+            if (sessionService.isRunning) return 62 + safeBottom;
+            return 0.0;
+          }(),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
@@ -1073,7 +1075,10 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         ),
         bottomNavigationBar: Builder(
           builder: (context) {
-            final safeBottom = MediaQuery.of(context).padding.bottom;
+            // main.dart already shifts the whole app up by safeBottom for three-button Android
+            // navigation users, so we only need the internal bottom padding for gesture nav
+            // devices (iOS home indicator, gesture-only Android).
+            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
             final fullNavHeight = AppBar().preferredSize.height + safeBottom;
             return SizedOverflowBox(
               alignment: AlignmentDirectional.topCenter,
