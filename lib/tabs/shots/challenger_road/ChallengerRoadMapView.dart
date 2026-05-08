@@ -2137,16 +2137,12 @@ class _CRBadgeSheet extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
-                      border: Border.all(
-                        color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: earned ? [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)] : null,
                     ),
                     child: ChallengerRoadService.trophyIconWidget(
                       def,
-                      size: 22,
+                      size: 44,
                       color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
@@ -2324,12 +2320,7 @@ class _CRBadgeSheet extends StatelessWidget {
                                   width: 56,
                                   height: 56,
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: earned ? color.withValues(alpha: 0.16) : scheme.onSurface.withValues(alpha: 0.08),
-                                    border: Border.all(
-                                      color: earned ? color : scheme.onSurface.withValues(alpha: 0.3),
-                                      width: earned ? 2 : 1.2,
-                                    ),
+                                    borderRadius: BorderRadius.circular(8),
                                     boxShadow: earned
                                         ? [
                                             BoxShadow(
@@ -2341,7 +2332,7 @@ class _CRBadgeSheet extends StatelessWidget {
                                   ),
                                   child: ChallengerRoadService.trophyIconWidget(
                                     def,
-                                    size: 26,
+                                    size: 56,
                                     color: earned ? color : scheme.onSurface.withValues(alpha: 0.5),
                                   ),
                                 ),

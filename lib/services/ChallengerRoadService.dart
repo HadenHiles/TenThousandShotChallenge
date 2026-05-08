@@ -425,8 +425,20 @@ class ChallengerRoadService {
     }
   }
 
+  /// Returns the local asset path for a trophy's badge image.
+  ///
+  /// General rule: replace underscores in [id] with hyphens.
+  /// Two file-name exceptions are handled explicitly.
+  static String localAssetForTrophyId(String id) {
+    const exceptions = <String, String>{
+      'drop_the_biscuit': 'assets/images/trophies/drop-the-buscuit.png',
+      'well_never_runs_dry': 'assets/images/trophies/the-well-never-runs-dry.png',
+    };
+    return exceptions[id] ?? 'assets/images/trophies/${id.replaceAll('_', '-')}.png';
+  }
+
   /// Builds a badge icon widget honoring this precedence:
-  /// 1) icon_url (network image), 2) default_icon (mapped icon),
+  /// 1) icon_url (network image), 2) local asset badge image,
   /// 3) hardcoded category icon fallback.
   static Widget trophyIconWidget(
     ChallengerRoadTrophyDefinition def, {
@@ -435,18 +447,29 @@ class ChallengerRoadService {
   }) {
     final url = def.effectiveIconUrl?.trim();
     if (url != null && url.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(size * 0.18),
-        child: Image.network(
-          url,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Icon(iconForTrophy(def), size: size, color: color),
-        ),
+      return Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _localAssetWidget(def, size, color),
       );
     }
-    return Icon(iconForTrophy(def), size: size, color: color);
+    return _localAssetWidget(def, size, color);
+  }
+
+  static Widget _localAssetWidget(
+    ChallengerRoadTrophyDefinition def,
+    double size,
+    Color color,
+  ) {
+    return Image.asset(
+      localAssetForTrophyId(def.id),
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => Icon(iconForTrophy(def), size: size * 0.7, color: color),
+    );
   }
 
   /// Challenge docs owned by a specific level.

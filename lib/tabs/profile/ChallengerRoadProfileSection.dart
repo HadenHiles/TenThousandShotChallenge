@@ -637,10 +637,18 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
               children: [
                 Row(
                   children: [
-                    ChallengerRoadService.trophyIconWidget(
-                      def,
-                      size: 22,
-                      color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: earned ? [BoxShadow(color: _colorForBadge().withValues(alpha: 0.35), blurRadius: 8)] : null,
+                      ),
+                      child: ChallengerRoadService.trophyIconWidget(
+                        def,
+                        size: 44,
+                        color: earned ? _colorForBadge() : scheme.onSurface.withValues(alpha: 0.6),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -712,9 +720,9 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                   animation: _pulseAnim,
                   builder: (context, child) {
                     if (!highlight) return child!;
-                    return Container(
+                    return DecoratedBox(
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
                             color: badgeColor.withValues(alpha: 0.7 * _pulseAnim.value),
@@ -733,20 +741,7 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: earned ? badgeColor.withValues(alpha: 0.18) : Theme.of(context).primaryColor.withValues(alpha: 0.12),
-                      border: Border.all(
-                        color: highlight
-                            ? badgeColor
-                            : earned
-                                ? badgeColor
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                        width: highlight
-                            ? 3.0
-                            : earned
-                                ? 2.0
-                                : 1.2,
-                      ),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: !highlight && earned
                           ? [
                               BoxShadow(
@@ -758,7 +753,7 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                     ),
                     child: ChallengerRoadService.trophyIconWidget(
                       def,
-                      size: 26,
+                      size: 56,
                       color: earned ? badgeColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
@@ -937,7 +932,6 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
                 itemBuilder: (context, i) {
                   final def = earnedDefs[i];
                   final color = _crBadgeColor(def);
-                  final icon = _crBadgeIcon(def);
                   final isAlreadyFeatured = widget.summary.featuredTrophies.contains(def.id);
                   return InkWell(
                     onTap: () => _swap(def.id),
@@ -951,11 +945,10 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
                             width: 52,
                             height: 52,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color.withValues(alpha: 0.15),
-                              border: Border.all(color: color, width: 1.5),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
                             ),
-                            child: Icon(icon, color: color, size: 24),
+                            child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1091,7 +1084,6 @@ class _FeaturedShowcase extends StatelessWidget {
   Widget _showcaseSlot(BuildContext context, int slotIndex, ChallengerRoadTrophyDefinition? def) {
     if (def == null) return _emptySlot(context, slotIndex);
     final color = _crBadgeColor(def);
-    final icon = _crBadgeIcon(def);
     return InkWell(
       onTap: () => _showSwapSlot(context, slotIndex, def),
       borderRadius: BorderRadius.circular(32),
@@ -1101,12 +1093,10 @@ class _FeaturedShowcase extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.18),
-              border: Border.all(color: color, width: 2),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 6)],
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10)],
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
           ),
           const SizedBox(height: 4),
           SizedBox(
@@ -1309,7 +1299,6 @@ class _FeaturedTrophiesPickerSheetState extends State<_FeaturedTrophiesPickerShe
                 itemBuilder: (context, i) {
                   final def = earnedDefs[i];
                   final color = _crBadgeColor(def);
-                  final icon = _crBadgeIcon(def);
                   final isSelected = _selected.contains(def.id);
                   final isDisabled = !isSelected && _selected.length >= 5;
                   return InkWell(
@@ -1329,14 +1318,11 @@ class _FeaturedTrophiesPickerSheetState extends State<_FeaturedTrophiesPickerShe
                                   width: 52,
                                   height: 52,
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: color.withValues(alpha: isSelected ? 0.3 : 0.15),
-                                    border: Border.all(
-                                      color: isSelected ? primary : color,
-                                      width: isSelected ? 2.5 : 1.5,
-                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: isSelected ? Border.all(color: primary, width: 2.5) : null,
+                                    boxShadow: [BoxShadow(color: color.withValues(alpha: isSelected ? 0.45 : 0.3), blurRadius: 8)],
                                   ),
-                                  child: Icon(icon, color: color, size: 24),
+                                  child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(

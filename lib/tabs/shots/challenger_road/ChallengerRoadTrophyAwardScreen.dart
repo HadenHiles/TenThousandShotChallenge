@@ -226,16 +226,10 @@ class _ChallengerRoadTrophyAwardScreenState extends State<ChallengerRoadTrophyAw
                     builder: (_, child) {
                       final pulse = 0.92 + 0.08 * _pulseController.value;
                       return Container(
-                        width: 140 * pulse,
-                        height: 140 * pulse,
+                        width: 180 * pulse,
+                        height: 180 * pulse,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              color.withValues(alpha: 0.85),
-                              color.withValues(alpha: 0.45),
-                            ],
-                          ),
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
                               color: color.withValues(alpha: 0.55 + 0.2 * _pulseController.value),
@@ -244,10 +238,21 @@ class _ChallengerRoadTrophyAwardScreenState extends State<ChallengerRoadTrophyAw
                             ),
                           ],
                         ),
-                        child: Icon(
-                          _badgeIcon(def),
-                          size: 68,
-                          color: Colors.white,
+                        child: Image.asset(
+                          ChallengerRoadService.localAssetForTrophyId(def.id),
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  color.withValues(alpha: 0.85),
+                                  color.withValues(alpha: 0.45),
+                                ],
+                              ),
+                            ),
+                            child: Icon(_badgeIcon(def), size: 68, color: Colors.white),
+                          ),
                         ),
                       );
                     },
