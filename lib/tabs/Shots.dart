@@ -1171,11 +1171,13 @@ class _ShotsState extends State<Shots> {
           return ValueListenableBuilder<ChallengeSessionConfig?>(
             valueListenable: activeChallengeSession,
             builder: (context, activeSession, _) {
-              // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom
+              // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom.
+              // safeBottom appears twice: once for the nav bar's own safe area padding, once for
+              // the gap between the pill and the top of the nav bar.
               final bottomNavHeight = kBottomNavigationBarHeight;
               final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
               final safeBottom = MediaQuery.of(context).padding.bottom;
-              final inset = bottomNavHeight + sessionPanelHeight + safeBottom;
+              final inset = bottomNavHeight + sessionPanelHeight + safeBottom * 2 + 5;
               return ChallengerRoadMapView(
                 userId: user.uid,
                 onCloseTap: _closeChallengerRoad,
@@ -1255,7 +1257,7 @@ class _ShotsState extends State<Shots> {
             top: false,
             child: Container(
               padding: EdgeInsets.only(
-                bottom: !sessionService.isRunning ? AppBar().preferredSize.height : AppBar().preferredSize.height + 65,
+                bottom: !sessionService.isRunning ? AppBar().preferredSize.height + MediaQuery.paddingOf(context).bottom + 5 : AppBar().preferredSize.height + MediaQuery.paddingOf(context).bottom + 65 + 5,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
