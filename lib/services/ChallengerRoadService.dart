@@ -437,6 +437,27 @@ class ChallengerRoadService {
     return exceptions[id] ?? 'assets/images/trophies/${id.replaceAll('_', '-')}.png';
   }
 
+  /// Returns the tier-based glow/accent color for a trophy badge image.
+  /// Matches the metallic palette used when generating the badge artwork:
+  /// legendary=gold, epic=amethyst, rare=sapphire, uncommon=emerald,
+  /// hidden=steel, common=silver.
+  static Color colorForTrophy(ChallengerRoadTrophyDefinition def) {
+    switch (def.tier) {
+      case ChallengerRoadTrophyTier.legendary:
+        return const Color(0xFFFFD700);
+      case ChallengerRoadTrophyTier.epic:
+        return const Color(0xFFAB47BC);
+      case ChallengerRoadTrophyTier.rare:
+        return const Color(0xFF42A5F5);
+      case ChallengerRoadTrophyTier.uncommon:
+        return const Color(0xFF66BB6A);
+      case ChallengerRoadTrophyTier.hidden:
+        return const Color(0xFF78909C);
+      case ChallengerRoadTrophyTier.common:
+        return const Color(0xFF90A4AE);
+    }
+  }
+
   /// Builds a badge icon widget honoring this precedence:
   /// 1) icon_url (network image), 2) local asset badge image,
   /// 3) hardcoded category icon fallback.

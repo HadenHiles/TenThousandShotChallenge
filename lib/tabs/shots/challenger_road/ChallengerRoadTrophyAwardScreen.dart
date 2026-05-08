@@ -115,22 +115,7 @@ class _ChallengerRoadTrophyAwardScreenState extends State<ChallengerRoadTrophyAw
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Color _badgeColor(ChallengerRoadTrophyDefinition def) {
-    switch (def.tier) {
-      case ChallengerRoadTrophyTier.legendary:
-        return const Color(0xFFFFD700);
-      case ChallengerRoadTrophyTier.epic:
-        return const Color(0xFFAB47BC);
-      case ChallengerRoadTrophyTier.rare:
-        return const Color(0xFF42A5F5);
-      case ChallengerRoadTrophyTier.uncommon:
-        return const Color(0xFF66BB6A);
-      case ChallengerRoadTrophyTier.hidden:
-        return const Color(0xFF78909C);
-      case ChallengerRoadTrophyTier.common:
-        return const Color(0xFF90A4AE);
-    }
-  }
+  Color _badgeColor(ChallengerRoadTrophyDefinition def) => ChallengerRoadService.colorForTrophy(def);
 
   IconData _badgeIcon(ChallengerRoadTrophyDefinition def) {
     return ChallengerRoadService.iconForTrophy(def);

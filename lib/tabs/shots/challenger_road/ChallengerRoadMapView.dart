@@ -2098,22 +2098,7 @@ class _CRBadgeSheet extends StatelessWidget {
     );
   }
 
-  Color _colorFor(ChallengerRoadTrophyDefinition def) {
-    switch (def.tier) {
-      case ChallengerRoadTrophyTier.legendary:
-        return const Color(0xFFFFD700);
-      case ChallengerRoadTrophyTier.epic:
-        return const Color(0xFFAB47BC);
-      case ChallengerRoadTrophyTier.rare:
-        return const Color(0xFF42A5F5);
-      case ChallengerRoadTrophyTier.uncommon:
-        return const Color(0xFF66BB6A);
-      case ChallengerRoadTrophyTier.hidden:
-        return const Color(0xFF78909C);
-      case ChallengerRoadTrophyTier.common:
-        return const Color(0xFF90A4AE);
-    }
-  }
+  Color _colorFor(ChallengerRoadTrophyDefinition def) => ChallengerRoadService.colorForTrophy(def);
 
   void _showDetail(BuildContext context, ChallengerRoadTrophyDefinition def, bool earned) {
     final scheme = Theme.of(context).colorScheme;
