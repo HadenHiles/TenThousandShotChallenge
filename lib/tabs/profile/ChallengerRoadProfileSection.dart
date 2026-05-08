@@ -933,9 +933,7 @@ class _FeaturedSlotSwapSheetState extends State<_FeaturedSlotSwapSheet> {
 
 // ── Badge color/icon helpers (used by showcase + picker) ────────────────────
 
-Color _crBadgeColor(ChallengerRoadTrophyDefinition def) =>
-    ChallengerRoadService.colorForTrophy(def);
-
+Color _crBadgeColor(ChallengerRoadTrophyDefinition def) => ChallengerRoadService.colorForTrophy(def);
 
 // ── Featured Badges Showcase ─────────────────────────────────────────────────
 
@@ -991,11 +989,12 @@ class _FeaturedShowcase extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
+        Row(
           children: [
-            for (int i = 0; i < 5; i++) (i < featured.length && featured[i].isNotEmpty) ? _showcaseSlot(context, i, byId[featured[i]]) : _emptySlot(context, i),
+            for (int i = 0; i < 5; i++)
+              Expanded(
+                child: (i < featured.length && featured[i].isNotEmpty) ? _showcaseSlot(context, i, byId[featured[i]]) : _emptySlot(context, i),
+              ),
           ],
         ),
       ],
@@ -1009,30 +1008,30 @@ class _FeaturedShowcase extends StatelessWidget {
       onTap: () => _showSwapSlot(context, slotIndex, def),
       borderRadius: BorderRadius.circular(32),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10)],
+          Center(
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10)],
+              ),
+              child: ChallengerRoadService.trophyIconWidget(def, size: 44, color: color),
             ),
-            child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
           ),
           const SizedBox(height: 4),
-          SizedBox(
-            width: 64,
-            child: Text(
-              def.effectiveName,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                height: 1.2,
-              ),
+          Text(
+            def.effectiveName,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+              height: 1.2,
             ),
           ),
         ],
@@ -1062,20 +1061,22 @@ class _FeaturedShowcase extends StatelessWidget {
     return InkWell(
       onTap: () => _showSwapSlot(context, slotIndex, null),
       borderRadius: BorderRadius.circular(32),
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-            width: 1.5,
+      child: Center(
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
           ),
-        ),
-        child: Icon(
-          Icons.add_rounded,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
-          size: 22,
+          child: Icon(
+            Icons.add_rounded,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+            size: 22,
+          ),
         ),
       ),
     );
