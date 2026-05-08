@@ -899,7 +899,11 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           backdropEnabled: true,
           controller: sessionPanelController,
           maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-          minHeight: sessionService.isRunning || activeChallengeSession.value != null ? 65 : 0,
+          minHeight: activeChallengeSession.value != null
+              ? 60 + MediaQuery.of(context).padding.bottom
+              : sessionService.isRunning
+                  ? 62 + MediaQuery.of(context).padding.bottom
+                  : 0,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
@@ -1067,35 +1071,45 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             ),
           ),
         ),
-        bottomNavigationBar: SizedOverflowBox(
-          alignment: AlignmentDirectional.topCenter,
-          size: Size.fromHeight(AppBar().preferredSize.height - (AppBar().preferredSize.height * _bottomNavOffsetPercentage)),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.play_arrow_rounded),
-                label: 'Train',
+        bottomNavigationBar: Builder(
+          builder: (context) {
+            final safeBottom = MediaQuery.of(context).padding.bottom;
+            final fullNavHeight = AppBar().preferredSize.height + safeBottom;
+            return SizedOverflowBox(
+              alignment: AlignmentDirectional.topCenter,
+              size: Size.fromHeight(fullNavHeight * (1 - _bottomNavOffsetPercentage)),
+              child: Container(
+                color: Theme.of(context).colorScheme.primary,
+                padding: EdgeInsets.only(bottom: safeBottom),
+                child: BottomNavigationBar(
+                  type: BottomNavigationBarType.fixed,
+                  items: const <BottomNavigationBarItem>[
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.play_arrow_rounded),
+                      label: 'Train',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.groups_rounded),
+                      label: 'Community',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.dashboard_rounded),
+                      label: 'Learn',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      label: 'Me',
+                    ),
+                  ],
+                  currentIndex: _selectedIndex,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  selectedItemColor: Theme.of(context).primaryColor,
+                  unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
+                  onTap: _onItemTapped,
+                ),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.groups_rounded),
-                label: 'Community',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard_rounded),
-                label: 'Learn',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Me',
-              ),
-            ],
-            currentIndex: _selectedIndex,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
-            onTap: _onItemTapped,
-          ),
+            );
+          },
         ),
       ),
     );
