@@ -1174,9 +1174,10 @@ class _ShotsState extends State<Shots> {
               // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom.
               // safeBottom appears twice: once for the nav bar's own safe area padding, once for
               // the gap between the pill and the top of the nav bar.
+              // Three-button Android users are already shifted up by main.dart, so skip safeBottom there.
               final bottomNavHeight = kBottomNavigationBarHeight;
               final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
-              final safeBottom = MediaQuery.of(context).padding.bottom;
+              final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
               final inset = bottomNavHeight + sessionPanelHeight + safeBottom * 2 + 5;
               return ChallengerRoadMapView(
                 userId: user.uid,
