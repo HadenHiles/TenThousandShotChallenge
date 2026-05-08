@@ -834,12 +834,10 @@ class _PlayerState extends State<Player> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.15),
-              border: Border.all(color: color, width: 1.8),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 6)],
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
             ),
-            child: ChallengerRoadService.trophyIconWidget(def, size: 18, color: color),
+            child: ChallengerRoadService.trophyIconWidget(def, size: 36, color: color),
           ),
           const SizedBox(height: 4),
           SizedBox(
