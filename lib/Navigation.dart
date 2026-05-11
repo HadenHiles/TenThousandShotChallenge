@@ -900,10 +900,17 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           controller: sessionPanelController,
           maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
           minHeight: () {
-            // main.dart adds safeBottom padding for three-button Android, so don't double-count it here.
+            // The SlidingUpPanel lives inside Scaffold.body, whose bottom edge
+            // already aligns with the top of the BottomNavigationBar. So
+            // minHeight = header height alone positions the header bottom flush
+            // with the nav bar top on all layouts. For gesture-nav devices
+            // (iOS / gesture Android) safeBottom shifts things down into the
+            // home-indicator zone so we add it back; 3-button devices handled
+            // by main.dart Padding so safeBottom is 0 there.
             final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
-            if (activeChallengeSession.value != null) return 60 + safeBottom;
-            if (sessionService.isRunning) return 62 + safeBottom;
+            final threeButtonNudge = isThreeButtonAndroidNavigation(context) ? 12.0 : 0.0;
+            if (activeChallengeSession.value != null) return 60 + safeBottom + threeButtonNudge;
+            if (sessionService.isRunning) return 62 + safeBottom + threeButtonNudge;
             return 0.0;
           }(),
           borderRadius: const BorderRadius.only(
