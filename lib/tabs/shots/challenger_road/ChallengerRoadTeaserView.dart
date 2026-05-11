@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart' show ChallengeSessionConfig, activeChallengeSession;
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'ChallengerRoadMapView.dart';
 
 class ChallengerRoadTeaserView extends StatefulWidget {
@@ -200,7 +201,8 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
   }
 
   Widget _buildBottomBanner(BuildContext context, {required bool hasCollapsedChallengeSession}) {
-    final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+    final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
+    final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + safeBottom + 10 : 0.0;
     final sessionPanelInset = hasCollapsedChallengeSession ? _collapsedSessionPanelHeight : 0.0;
 
     return Positioned(
@@ -297,7 +299,8 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
     final body = ValueListenableBuilder<ChallengeSessionConfig?>(
       valueListenable: activeChallengeSession,
       builder: (context, activeSession, _) {
-        final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + 10 : 0.0;
+        final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
+        final bottomTabInset = widget.embedded ? kBottomNavigationBarHeight + safeBottom + 10 : 0.0;
         final hasCollapsedChallengeSession = widget.embedded && activeSession != null;
         final sessionPanelInset = hasCollapsedChallengeSession ? _collapsedSessionPanelHeight : 0.0;
 
@@ -309,7 +312,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
               isPreviewMode: true,
               previewMaxLevel: 1,
               onPreviewLevelUnlockAttempted: _promptGoPro,
-              mapBottomInset: 120 + bottomTabInset + sessionPanelInset,
+              mapBottomInset: 68 + bottomTabInset + sessionPanelInset,
               onCloseTap: widget.onCloseTap,
             ),
             if (_showWalkthrough) _buildWalkthroughCard(context),

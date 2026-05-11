@@ -20,6 +20,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeRes
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 
 import 'package:tenthousandshotchallenge/Navigation.dart' show sessionPanelController, activeChallengeSession, ChallengeSessionConfig;
+import 'package:tenthousandshotchallenge/services/utility.dart';
 
 /// Challenge shooting session shown inside the sliding panel in Navigation.
 ///
@@ -534,6 +535,32 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                         ),
                       ),
                       const Spacer(),
+                      GestureDetector(
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Clear all tries?'),
+                              content: const Text('This will remove all tries from this session.'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear all', style: TextStyle(color: Colors.red))),
+                              ],
+                            ),
+                          );
+                          if (confirm == true && mounted) setState(() => _shots.clear());
+                        },
+                        child: Text(
+                          'CLEAR ALL',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 11,
+                            letterSpacing: 0.5,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       Text(
                         '${_shots.length} tr${_shots.length == 1 ? 'y' : 'ies'}',
                         style: TextStyle(
@@ -558,36 +585,38 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         ),
 
         // Finish button - sticky at the bottom of the panel.
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: _saving ? null : _finishSession,
-                child: _saving
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text(
-                        'FINISH SESSION',
-                        style: TextStyle(
-                          fontFamily: 'NovecentoSans',
-                          fontSize: 18,
-                          color: Colors.white,
+        Builder(
+          builder: (context) {
+            final isThreeButton = isThreeButtonAndroidNavigation(context);
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, isThreeButton ? kBottomNavigationBarHeight - 26 : 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _saving ? null : _finishSession,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          'FINISH SESSION',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
@@ -757,7 +786,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       }
 
       return Dismissible(
-        key: UniqueKey(),
+        key: ValueKey('try_${s.date?.millisecondsSinceEpoch ?? i}'),
         onDismissed: (_) {
           Fluttertoast.showToast(
             msg: 'Try #$tryNumber deleted',

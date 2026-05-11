@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChalleng
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'ChallengeDetailSheet.dart';
 import 'ChallengeMapNode.dart';
 import 'ChallengerRoadHeader.dart';
@@ -28,6 +30,7 @@ const double _focusedSectionExtraHeight = 96.0;
 const double _focusExpandPerStep = 16.0;
 const double _focusMaxNodeShift = 48.0;
 const double _roadBoundaryLineHeight = 82.0;
+const double _previewBannerHeight = 58.0; // approx height of the free-mode Card banner
 const double _edgeFocusBufferMin = 100.0;
 const double _edgeFocusBufferMax = 200.0;
 const double _edgeFocusBufferFactor = 0.22;
@@ -276,6 +279,10 @@ class ChallengerRoadMapView extends StatefulWidget {
   final VoidCallback? onPreviewLevelUnlockAttempted;
   final double mapBottomInset;
 
+  /// Whether a shooting session panel is currently collapsed at the bottom.
+  /// Used to add extra clearance to the badges pill in preview mode.
+  final bool hasActiveSession;
+
   /// Called when a tappable node is pressed.
   final void Function(
     ChallengerRoadChallenge challenge,
@@ -293,6 +300,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     this.previewHeaderAttempt,
     this.onPreviewLevelUnlockAttempted,
     this.mapBottomInset = 16,
+    this.hasActiveSession = false,
   });
 
   @override
@@ -310,6 +318,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   bool _didScrollToCurrentLevel = false;
   final List<_ChallengeFocusTarget> _focusTargets = [];
   _ChallengeFocusTarget? _focusedTarget;
+
+  // ── Preview / walkthrough state ───────────────────────────────────────────
+  static const String _walkthroughSeenKey = 'challenger_road_preview_walkthrough_seen';
+  static const List<({String title, String body, IconData icon})> _walkthroughSlides = [
+    (title: 'How Challenger Road Works', body: 'Tap a challenge to open it. Then press Start to try the challenge.', icon: Icons.route_rounded),
+    (title: 'Level 1 Is Free', body: 'You can try Level 1 challenges for free.', icon: Icons.sports_hockey),
+    (title: 'Level 2 Requires Pro', body: 'When you finish Level 1, you can upgrade to unlock more levels.', icon: Icons.lock_open_rounded),
+  ];
+  bool _showWalkthrough = false;
+  final PageController _walkthroughPageController = PageController();
+  int _walkthroughPage = 0;
 
   // Track the height of each level section so we can scroll to the right level.
   // Key: level number, Value: cumulative top offset from the very top of scroll content.
@@ -338,6 +357,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 4));
     _scrollController.addListener(_handleScrollForFocusUpdate);
+    if (widget.isPreviewMode) _loadWalkthroughPreference();
   }
 
   @override
@@ -358,7 +378,38 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     _scrollController.removeListener(_handleScrollForFocusUpdate);
     _scrollController.dispose();
     _confettiController.dispose();
+    _walkthroughPageController.dispose();
     super.dispose();
+  }
+
+  // ── Preview walkthrough helpers ───────────────────────────────────────────
+
+  Future<void> _loadWalkthroughPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_walkthroughSeenKey) ?? false;
+    if (!mounted) return;
+    setState(() => _showWalkthrough = !seen);
+  }
+
+  Future<void> _dismissWalkthrough() async {
+    setState(() => _showWalkthrough = false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_walkthroughSeenKey, true);
+  }
+
+  Future<void> _nextWalkthroughPage() async {
+    if (_walkthroughPage >= _walkthroughSlides.length - 1) {
+      await _dismissWalkthrough();
+      return;
+    }
+    await _walkthroughPageController.nextPage(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _promptGoPro() async {
+    await presentPaywallIfNeeded(context);
   }
 
   Future<_CRMapData> _loadMapData() async {
@@ -1123,7 +1174,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 label: 'START LINE',
                 isFinish: false,
               ),
-              SizedBox(height: (edgeFocusBuffer * 0.30) + widget.mapBottomInset),
+              SizedBox(height: (edgeFocusBuffer * 0.30) + widget.mapBottomInset + (widget.isPreviewMode ? _previewBannerHeight + 8 : 0)),
             ],
           ),
         );
@@ -1682,19 +1733,190 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   // ── Floating badges button ────────────────────────────
                   if (_service != null)
                     Positioned(
-                      bottom: 16 + widget.mapBottomInset,
+                      bottom: 16 + widget.mapBottomInset + (widget.isPreviewMode ? _previewBannerHeight + 18 : 0) + (widget.hasActiveSession ? 8 : 0),
                       left: 16,
                       child: _BadgesFloatingButton(
                         userId: widget.userId,
                         service: _service!,
                       ),
                     ),
+                  // ── Free mode banner (preview only) ───────────────────
+                  if (widget.isPreviewMode) _buildPreviewBanner(context),
+                  // ── First-time walkthrough overlay (preview only) ─────
+                  if (widget.isPreviewMode && _showWalkthrough) _buildWalkthroughCard(context),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  // ── Preview mode UI helpers ───────────────────────────────────────────────
+
+  Widget _buildPreviewBanner(BuildContext context) {
+    return Positioned(
+      left: 14,
+      right: 14,
+      bottom: 16 + widget.mapBottomInset,
+      child: Card(
+        color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.95),
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Theme.of(context).primaryColor.withValues(alpha: 0.55)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Free mode: play all Level 1 challenges. Pro unlocks Level 2 and beyond.',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.82),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _promptGoPro,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'GO PRO',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWalkthroughCard(BuildContext context) {
+    final isLast = _walkthroughPage == _walkthroughSlides.length - 1;
+    return Positioned.fill(
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.25),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.98),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 270,
+                  child: PageView.builder(
+                    controller: _walkthroughPageController,
+                    itemCount: _walkthroughSlides.length,
+                    onPageChanged: (index) => setState(() => _walkthroughPage = index),
+                    itemBuilder: (context, index) {
+                      final slide = _walkthroughSlides[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(slide.icon, size: 44, color: Theme.of(context).primaryColor),
+                            const SizedBox(height: 14),
+                            Text(
+                              slide.title,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 22,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              slide.body,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                fontSize: 16,
+                                height: 1.35,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.78),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_walkthroughSlides.length, (i) {
+                    final selected = i == _walkthroughPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: selected ? 18 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: selected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: _dismissWalkthrough,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        textStyle: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 17,
+                        ),
+                      ),
+                      child: const Text('Skip'),
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: _nextWalkthroughPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 17,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                      ),
+                      child: Text(isLast ? 'Get Started' : 'Next'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

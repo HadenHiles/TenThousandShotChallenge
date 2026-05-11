@@ -22,7 +22,6 @@ import 'package:tenthousandshotchallenge/widgets/WeeklyAchievementsWidget.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
@@ -1143,7 +1142,7 @@ class _ShotsState extends State<Shots> {
         final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+          padding: EdgeInsets.fromLTRB(16, 12, 16, isThreeButtonAndroidNavigation(context) ? 180.0 : 140.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1167,29 +1166,26 @@ class _ShotsState extends State<Shots> {
         if (status == NetworkStatus.Offline) {
           return _buildChallengerRoadOfflinePlaceholder(context);
         }
-        if (_subscriptionLevel == 'pro') {
-          return ValueListenableBuilder<ChallengeSessionConfig?>(
-            valueListenable: activeChallengeSession,
-            builder: (context, activeSession, _) {
-              // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom.
-              // safeBottom appears twice: once for the nav bar's own safe area padding, once for
-              // the gap between the pill and the top of the nav bar.
-              // Three-button Android users are already shifted up by main.dart, so skip safeBottom there.
-              final bottomNavHeight = kBottomNavigationBarHeight;
-              final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
-              final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
-              final inset = bottomNavHeight + sessionPanelHeight + safeBottom * 2 + 5;
-              return ChallengerRoadMapView(
-                userId: user.uid,
-                onCloseTap: _closeChallengerRoad,
-                mapBottomInset: inset,
-              );
-            },
-          );
-        }
-        return ChallengerRoadTeaserView(
-          embedded: true,
-          onCloseTap: _closeChallengerRoad,
+        return ValueListenableBuilder<ChallengeSessionConfig?>(
+          valueListenable: activeChallengeSession,
+          builder: (context, activeSession, _) {
+            // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom.
+            // Three-button Android users are already shifted up by main.dart, so skip safeBottom there.
+            final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
+            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
+            // 3-button Android: edge-to-edge forces the map behind the system
+            // nav bar, so we must add the full nav bar height as an extra inset.
+            final threeButtonExtra = isThreeButtonAndroidNavigation(context) ? kBottomNavigationBarHeight.toDouble() : 0.0;
+            final inset = kBottomNavigationBarHeight + sessionPanelHeight + safeBottom + threeButtonExtra + 5;
+            return ChallengerRoadMapView(
+              userId: user.uid,
+              onCloseTap: _closeChallengerRoad,
+              isPreviewMode: _subscriptionLevel != 'pro',
+              mapBottomInset: inset,
+              hasActiveSession: sessionPanelHeight > 0,
+              onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
+            );
+          },
         );
       },
     );

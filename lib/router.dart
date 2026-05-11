@@ -27,7 +27,8 @@ import 'package:tenthousandshotchallenge/tabs/profile/History.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditProfile.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/notifications/NotificationsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
@@ -342,7 +343,30 @@ List<RouteBase> _buildTrainRoutes() {
     GoRoute(
       path: AppRoutePaths.challengerRoad,
       name: AppRouteNames.challengerRoad,
-      builder: (context, state) => const ChallengerRoadTeaserView(),
+      builder: (context, state) {
+        final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            leading: BackButton(color: Theme.of(context).colorScheme.onPrimary),
+            title: Text(
+              'Challenger Road',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 22,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ),
+          body: ChallengerRoadMapView(
+            userId: userId,
+            isPreviewMode: true,
+            onCloseTap: () => context.pop(),
+            onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
+          ),
+        );
+      },
     ),
   ];
 }

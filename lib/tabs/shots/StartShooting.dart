@@ -1487,6 +1487,60 @@ class _StartShootingState extends State<StartShooting> {
         const SizedBox(
           height: 15,
         ),
+        if (_shots.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Text(
+                  'SHOTS LOGGED',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    letterSpacing: 0.8,
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Clear all shots?'),
+                        content: const Text('This will remove all logged shots from this session.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear all', style: TextStyle(color: Colors.red))),
+                        ],
+                      ),
+                    );
+                    if (confirm == true && mounted) setState(() => _shots.clear());
+                  },
+                  child: Text(
+                    'CLEAR ALL',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '${_shots.fold(0, (sum, s) => sum + (s.count ?? 0))} shots',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
         ListView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1960,7 +2014,7 @@ class _StartShootingState extends State<StartShooting> {
 
     shots.asMap().forEach((i, s) {
       Dismissible tile = Dismissible(
-        key: UniqueKey(),
+        key: ValueKey('shot_${s.date?.millisecondsSinceEpoch ?? i}'),
         onDismissed: (direction) {
           Fluttertoast.showToast(
             msg: '${s.count} ${s.type} shots deleted',

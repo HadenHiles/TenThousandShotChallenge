@@ -16,7 +16,6 @@ import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRo
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMilestoneScreen.dart';
-import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTeaserView.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeResultScreen.dart';
 import '../mock_firebase.dart';
 
@@ -383,35 +382,6 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Group 6 – ChallengerRoadTeaserView (not signed in)
-  // When userId is null, TeaserView shows a simple sign-in prompt.
-  // No MapView is rendered, so no Firestore activity.
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  group('ChallengerRoadTeaserView - not signed in', () {
-    Widget buildScreen() {
-      final noAuth = MockFirebaseAuth(signedIn: false);
-      return MaterialApp(
-        home: Provider<FirebaseAuth>.value(
-          value: noAuth,
-          child: const Scaffold(
-            body: ChallengerRoadTeaserView(embedded: false),
-          ),
-        ),
-      );
-    }
-
-    testWidgets('shows sign-in prompt when user is null', (tester) async {
-      await tester.pumpWidget(buildScreen());
-      await pumpN(tester);
-      expect(
-        find.textContaining('Sign in', findRichText: true),
-        findsOneWidget,
-      );
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // Group 7 – ChallengerRoadMapView (preview / teaser mode with signed-in user)
   // MapView reads FirebaseFirestore via Provider → use FakeFirebaseFirestore so
   // queries resolve instantly without pending timers.
@@ -478,12 +448,13 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Group 8 – ChallengerRoadTeaserView (signed-in, walkthrough visible)
-  // TeaserView embeds MapView in preview mode.  SharedPreferences doesn't have
-  // the walkthrough-seen key so the walkthrough overlay is shown.
+  // Group 8 – ChallengerRoadMapView isPreviewMode (signed-in, walkthrough visible)
+  // MapView in isPreviewMode renders the walkthrough overlay on first visit and
+  // the free-mode GO PRO banner.  SharedPreferences doesn't have the
+  // walkthrough-seen key so the walkthrough overlay is shown.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  group('ChallengerRoadTeaserView - signed-in with walkthrough', () {
+  group('ChallengerRoadMapView - preview mode with walkthrough', () {
     late MockFirebaseAuth mockAuth;
     late FakeFirebaseFirestore fakeFirestore;
     late MockUser mockUser;
@@ -501,35 +472,39 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    Widget buildTeaserView() {
+    Widget buildPreviewView() {
       return MultiProvider(
         providers: [
           Provider<FirebaseAuth>.value(value: mockAuth),
           Provider<FirebaseFirestore>.value(value: fakeFirestore),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
           home: Scaffold(
-            body: ChallengerRoadTeaserView(embedded: true),
+            body: ChallengerRoadMapView(
+              userId: mockUser.uid,
+              isPreviewMode: true,
+              previewMaxLevel: 1,
+            ),
           ),
         ),
       );
     }
 
-    testWidgets('renders ChallengerRoadTeaserView', (tester) async {
-      await tester.pumpWidget(buildTeaserView());
+    testWidgets('renders ChallengerRoadMapView in preview mode', (tester) async {
+      await tester.pumpWidget(buildPreviewView());
       await pumpN(tester, 6);
-      expect(find.byType(ChallengerRoadTeaserView), findsOneWidget);
+      expect(find.byType(ChallengerRoadMapView), findsOneWidget);
     });
 
     testWidgets('shows walkthrough overlay on first visit', (tester) async {
-      await tester.pumpWidget(buildTeaserView());
+      await tester.pumpWidget(buildPreviewView());
       await pumpN(tester, 6);
       // Walkthrough card shows a "Skip" button
       expect(find.textContaining('Skip', findRichText: true), findsAtLeastNWidgets(1));
     });
 
     testWidgets('shows first slide title in walkthrough', (tester) async {
-      await tester.pumpWidget(buildTeaserView());
+      await tester.pumpWidget(buildPreviewView());
       await pumpN(tester, 6);
       expect(
         find.textContaining('How Challenger Road Works', findRichText: true),
@@ -538,13 +513,13 @@ void main() {
     });
 
     testWidgets('shows GO PRO bottom banner', (tester) async {
-      await tester.pumpWidget(buildTeaserView());
+      await tester.pumpWidget(buildPreviewView());
       await pumpN(tester, 6);
       expect(find.textContaining('GO PRO', findRichText: true), findsAtLeastNWidgets(1));
     });
 
     testWidgets('tapping Skip dismisses walkthrough', (tester) async {
-      await tester.pumpWidget(buildTeaserView());
+      await tester.pumpWidget(buildPreviewView());
       await pumpN(tester, 6);
       // Tap the Skip text button to dismiss the walkthrough
       final skipFinder = find.textContaining('Skip', findRichText: true);
