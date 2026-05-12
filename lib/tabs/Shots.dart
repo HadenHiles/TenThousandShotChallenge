@@ -1171,8 +1171,11 @@ class _ShotsState extends State<Shots> {
           builder: (context, activeSession, _) {
             // Badges pill must clear: bottom nav bar + session panel (if open) + safe area bottom.
             // Three-button Android users are already shifted up by main.dart, so skip safeBottom there.
+            // Use viewPadding (not padding) because Scaffold zeroes out padding.bottom inside the
+            // body, so viewPadding correctly reflects the original system safe area inset (e.g.
+            // iOS home indicator).
             final sessionPanelHeight = (sessionService.isRunning || activeSession != null) ? 65.0 : 0.0;
-            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
+            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).viewPadding.bottom;
             // 3-button Android: edge-to-edge forces the map behind the system
             // nav bar, so we must add the full nav bar height as an extra inset.
             final threeButtonExtra = isThreeButtonAndroidNavigation(context) ? kBottomNavigationBarHeight.toDouble() : 0.0;
@@ -1250,159 +1253,168 @@ class _ShotsState extends State<Shots> {
       child: AnimatedBuilder(
         animation: sessionService,
         builder: (context, child) {
-          return SafeArea(
-            top: false,
-            child: Container(
-              padding: EdgeInsets.only(
-                bottom: !sessionService.isRunning ? AppBar().preferredSize.height + MediaQuery.paddingOf(context).bottom + 5 : AppBar().preferredSize.height + MediaQuery.paddingOf(context).bottom + 65 + 5,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _activeIterationStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                        Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
-                        final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
-                        return iteration.total! < 10000
-                            ? Container()
-                            : _offlineWrap(
-                                isOffline,
-                                SizedBox(
-                                  width: MediaQuery.of(context).size.width - 30,
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.all(10),
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                    ),
-                                    onPressed: () {
-                                      dialog(
-                                        context,
-                                        ConfirmDialog(
-                                          'Start a new challenge?',
-                                          Text(
-                                            'Your current challenge data will remain in your profile.\n\nWould you like to continue?',
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                            ),
+          // SlidingUpPanel gives its body a Container with height =
+          // MediaQuery.size.height (full screen), starting at y=0 of the
+          // Scaffold body (i.e. below the status bar). Our Stack inside that
+          // Container also has height = screen_height. Positioned(bottom:0)
+          // puts the widget at y = screen_height below the Scaffold body top,
+          // which overflows the SlidingUpPanel clip by:
+          //   overflow = screen_height - body_height
+          //            = viewPadding.top + nav_bar_height
+          // To place the button 5dp above the nav bar we need padding equal to
+          // that overflow. This formula works on iOS and all Android nav modes:
+          //   iOS:          overflow = vp.top + (56 + vp.bottom)  (nav bar includes home indicator)
+          //   Android 3-btn: overflow = vp.top + 56 + vp.bottom   (main.dart shifts app up by vp.bottom)
+          final vp = MediaQuery.of(context).viewPadding;
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: vp.top + kBottomNavigationBarHeight + vp.bottom + (sessionService.isRunning ? 66 : 0) - 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _activeIterationStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                      Iteration iteration = Iteration.fromSnapshot(snapshot.data!.docs[0]);
+                      final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
+                      return iteration.total! < 10000
+                          ? Container()
+                          : _offlineWrap(
+                              isOffline,
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width - 30,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.all(10),
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                  ),
+                                  onPressed: () {
+                                    dialog(
+                                      context,
+                                      ConfirmDialog(
+                                        'Start a new challenge?',
+                                        Text(
+                                          'Your current challenge data will remain in your profile.\n\nWould you like to continue?',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
-                                          'Cancel',
-                                          () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          'Continue',
-                                          () {
-                                            startNewIteration(
-                                              Provider.of<FirebaseAuth>(context, listen: false),
-                                              Provider.of<FirebaseFirestore>(context, listen: false),
-                                            ).then((success) {
-                                              if (success!) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    duration: const Duration(milliseconds: 1200),
-                                                    content: Text(
-                                                      'Challenge restarted!',
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor: Theme.of(context).cardTheme.color,
-                                                    duration: const Duration(milliseconds: 1200),
-                                                    content: Text(
-                                                      'There was an error restarting the challenge :(',
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            });
-                                            context.pop();
-                                          },
                                         ),
-                                      );
-                                    },
-                                    child: Text(
-                                      'Start New Challenge'.toUpperCase(),
-                                      style: TextStyle(
-                                        fontFamily: 'NovecentoSans',
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 20,
+                                        'Cancel',
+                                        () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        'Continue',
+                                        () {
+                                          startNewIteration(
+                                            Provider.of<FirebaseAuth>(context, listen: false),
+                                            Provider.of<FirebaseFirestore>(context, listen: false),
+                                          ).then((success) {
+                                            if (success!) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 1200),
+                                                  content: Text(
+                                                    'Challenge restarted!',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: Theme.of(context).cardTheme.color,
+                                                  duration: const Duration(milliseconds: 1200),
+                                                  content: Text(
+                                                    'There was an error restarting the challenge :(',
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).colorScheme.onPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                          context.pop();
+                                        },
                                       ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Start New Challenge'.toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'NovecentoSans',
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 20,
                                     ),
                                   ),
-                                ));
-                      }
-                      return Container();
-                    },
-                  ),
-                  sessionService.isRunning
-                      ? Container()
-                      : Container(
-                          padding: isThreeButtonAndroidNavigation(context) ? EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + kBottomNavigationBarHeight) : const EdgeInsets.only(bottom: 15),
-                          width: MediaQuery.of(context).size.width - 30,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.all(10),
-                              backgroundColor: Theme.of(context).primaryColor,
-                            ),
-                            onPressed: () {
-                              if (!sessionService.isRunning) {
-                                Feedback.forTap(context);
-                                sessionService.start();
-                                LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
-                                widget.sessionPanelController.show();
-                                widget.sessionPanelController.open();
-                              } else {
-                                dialog(
-                                  context,
-                                  ConfirmDialog(
-                                    'Override current session?',
-                                    Text(
-                                      'Starting a new session will override your existing one.\n\nWould you like to continue?',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurface,
-                                      ),
+                                ),
+                              ));
+                    }
+                    return Container();
+                  },
+                ),
+                sessionService.isRunning
+                    ? Container()
+                    : SizedBox(
+                        width: MediaQuery.of(context).size.width - 30,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.all(10),
+                            backgroundColor: Theme.of(context).primaryColor,
+                          ),
+                          onPressed: () {
+                            if (!sessionService.isRunning) {
+                              Feedback.forTap(context);
+                              sessionService.start();
+                              LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
+                              widget.sessionPanelController.show();
+                              widget.sessionPanelController.open();
+                            } else {
+                              dialog(
+                                context,
+                                ConfirmDialog(
+                                  'Override current session?',
+                                  Text(
+                                    'Starting a new session will override your existing one.\n\nWould you like to continue?',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
-                                    'Cancel',
-                                    () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    'Continue',
-                                    () {
-                                      Feedback.forTap(context);
-                                      sessionService.reset();
-                                      Navigator.of(context).pop();
-                                      sessionService.start();
-                                      LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
-                                      widget.sessionPanelController.show();
-                                      widget.sessionPanelController.open();
-                                    },
                                   ),
-                                );
-                              }
-                            },
-                            child: Text(
-                              'Start Shooting'.toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 20,
-                              ),
+                                  'Cancel',
+                                  () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  'Continue',
+                                  () {
+                                    Feedback.forTap(context);
+                                    sessionService.reset();
+                                    Navigator.of(context).pop();
+                                    sessionService.start();
+                                    LocalNotificationService.showActiveSession(shotCount: 0, duration: Duration.zero);
+                                    widget.sessionPanelController.show();
+                                    widget.sessionPanelController.open();
+                                  },
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            'Start Shooting'.toUpperCase(),
+                            style: const TextStyle(
+                              fontFamily: 'NovecentoSans',
+                              fontSize: 20,
                             ),
                           ),
                         ),
-                ],
-              ),
+                      ),
+              ],
             ),
           );
         },
