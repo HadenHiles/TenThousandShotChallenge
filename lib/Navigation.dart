@@ -1088,13 +1088,14 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             // Three-button Android is already shifted up by main.dart so we
             // zero out the bottom safe area there to avoid double-counting.
             final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
-            final fullNavHeight = kBottomNavigationBarHeight + safeBottom;
+            final bottomPadding = (safeBottom - 15).clamp(0.0, safeBottom);
+            final fullNavHeight = kBottomNavigationBarHeight + bottomPadding;
             return SizedOverflowBox(
               alignment: AlignmentDirectional.topCenter,
               size: Size.fromHeight(fullNavHeight * (1 - _bottomNavOffsetPercentage)),
               child: Container(
                 color: Theme.of(context).colorScheme.primary,
-                padding: EdgeInsets.only(bottom: safeBottom),
+                padding: EdgeInsets.only(bottom: bottomPadding),
                 child: BottomNavigationBar(
                   type: BottomNavigationBarType.fixed,
                   items: const <BottomNavigationBarItem>[
