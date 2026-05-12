@@ -1038,6 +1038,21 @@ class ChallengerRoadService {
     return total;
   }
 
+  /// Returns the highest level number among all active levels, or 0 if none
+  /// exist. Used by the train-screen card to detect the road-complete state
+  /// via [ChallengerRoadAttempt.currentLevel] > maxLevel – matching the map's
+  /// own logic and avoiding false positives from the challenge-count heuristic.
+  Future<int> getMaxActiveLevel() async {
+    final levelsSnap = await _levelsRef.where('active', isEqualTo: true).get();
+    if (levelsSnap.docs.isEmpty) return 0;
+    int maxLvl = 0;
+    for (final doc in levelsSnap.docs) {
+      final lvl = ((doc.data() as Map<String, dynamic>?)?['level'] as num?)?.toInt() ?? 0;
+      if (lvl > maxLvl) maxLvl = lvl;
+    }
+    return maxLvl;
+  }
+
   /// Returns the count of active challenges in levels strictly below [level].
   /// Used to credit players who started at a higher level with those skipped
   /// challenges, so the progress percentage correctly reaches 100 % for them.
