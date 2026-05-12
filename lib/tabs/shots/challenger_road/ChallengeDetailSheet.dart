@@ -35,6 +35,12 @@ class ChallengeDetailSheet extends StatelessWidget {
   final VoidCallback? onPreviewLevelUnlockAttempted;
   final bool showStartCta;
 
+  /// When true the challenge is locked because the user's subscription has
+  /// lapsed (preview mode, level > previewMaxLevel). In this state the sheet
+  /// shows the try history but hides steps and replaces the CTA with an
+  /// "Upgrade to Pro" prompt.
+  final bool isSubscriptionLocked;
+
   const ChallengeDetailSheet._({
     required this.challenge,
     required this.levelDoc,
@@ -46,6 +52,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     this.previewMaxLevel = 1,
     this.onPreviewLevelUnlockAttempted,
     this.showStartCta = true,
+    this.isSubscriptionLocked = false,
   });
 
   /// Presents the sheet modally. Returns true if a session was completed.
@@ -61,6 +68,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     int previewMaxLevel = 1,
     VoidCallback? onPreviewLevelUnlockAttempted,
     bool showStartCta = true,
+    bool isSubscriptionLocked = false,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -77,6 +85,7 @@ class ChallengeDetailSheet extends StatelessWidget {
         previewMaxLevel: previewMaxLevel,
         onPreviewLevelUnlockAttempted: onPreviewLevelUnlockAttempted,
         showStartCta: showStartCta,
+        isSubscriptionLocked: isSubscriptionLocked,
       ),
     );
   }
@@ -103,8 +112,9 @@ class ChallengeDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initialSize = showStartCta ? 0.9 : 0.5;
-    final minSize = showStartCta ? 0.5 : 0.4;
+    // Subscription-locked view is shorter (no steps), but still shows history.
+    final initialSize = isSubscriptionLocked ? 0.6 : (showStartCta ? 0.9 : 0.5);
+    final minSize = isSubscriptionLocked ? 0.4 : (showStartCta ? 0.5 : 0.4);
 
     return DraggableScrollableSheet(
       initialChildSize: initialSize,
@@ -189,45 +199,53 @@ class ChallengeDetailSheet extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     // ── Try history link ──────────────────────────────────
-                    if (progress != null && progress!.totalAttempts > 0) _buildHistoryLink(context),
+                    // Always show the link – the history sheet queries across
+                    // all attempts, so prior-attempt tries are visible even
+                    // when progress for the current attempt is null.
+                    _buildHistoryLink(context),
 
                     const SizedBox(height: 20),
 
-                    // ── Steps header ──────────────────────────────────────
-                    Text(
-                      'STEPS',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 13,
-                        letterSpacing: 1.5,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    // ── Steps section (hidden for subscription-locked challenges) ────
+                    if (isSubscriptionLocked) ...[
+                      _buildSubscriptionLockedBanner(context)
+                    ] else ...[
+                      // ── Steps header ──────────────────────────────────────
+                      Text(
+                        'STEPS',
+                        style: TextStyle(
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 13,
+                          letterSpacing: 1.5,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 8),
 
-                    // ── Step viewer ───────────────────────────────────────
-                    if (_steps.isNotEmpty)
-                      ChallengeStepViewer(steps: _steps)
-                    else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'No steps available yet.',
-                            style: TextStyle(
-                              fontFamily: 'NovecentoSans',
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                      // ── Step viewer ───────────────────────────────────────
+                      if (_steps.isNotEmpty)
+                        ChallengeStepViewer(steps: _steps)
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'No steps available yet.',
+                              style: TextStyle(
+                                fontFamily: 'NovecentoSans',
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                    ],
                     const SizedBox(height: 20),
                   ],
                 ),
               ),
 
               // ── Pinned CTA footer ──────────────────────────────────────
-              if (showStartCta) _buildCTA(context),
+              if (isSubscriptionLocked || showStartCta) _buildCTA(context),
             ],
           ),
         );
@@ -344,25 +362,77 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
+  // ── Subscription-locked banner ────────────────────────────────────────────
+
+  Widget _buildSubscriptionLockedBanner(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lock_rounded,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Subscribe to Pro to view steps and play this challenge.',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── CTA button ────────────────────────────────────────────────────────────
 
   Widget _buildCTA(BuildContext context) {
     final String label;
     final bool enabled;
     final Color bgColor;
+    VoidCallback? onPressed;
 
-    if (_isLocked) {
+    if (isSubscriptionLocked) {
+      // Subscription-locked: show an upgrade prompt instead of start/retry.
+      label = 'Upgrade to Pro to Play';
+      enabled = onPreviewLevelUnlockAttempted != null;
+      bgColor = Theme.of(context).primaryColor;
+      onPressed = enabled
+          ? () {
+              Navigator.of(context).pop();
+              onPreviewLevelUnlockAttempted?.call();
+            }
+          : null;
+    } else if (_isLocked) {
       label = 'Complete Level ${attempt.currentLevel} First';
       enabled = false;
       bgColor = Colors.grey.shade600;
+      onPressed = null;
     } else if (_isPassed) {
       label = 'Retry Challenge';
       enabled = true;
       bgColor = Colors.indigo.shade600;
+      onPressed = () => _launchChallenge(context);
     } else {
       label = 'Start Challenge';
       enabled = true;
       bgColor = Theme.of(context).primaryColor;
+      onPressed = () => _launchChallenge(context);
     }
 
     return SafeArea(
@@ -379,7 +449,7 @@ class ChallengeDetailSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: enabled ? () => _launchChallenge(context) : null,
+            onPressed: onPressed,
             child: Text(
               label.toUpperCase(),
               style: const TextStyle(

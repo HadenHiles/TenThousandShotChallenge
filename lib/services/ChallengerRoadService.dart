@@ -1068,6 +1068,19 @@ class ChallengerRoadService {
   /// Returns the current active [ChallengerRoadAttempt] for a user, or null
   /// if the user has never started Challenger Road.
   Future<ChallengerRoadAttempt?> getActiveAttempt(String userId) async {
+    // Prefer the attempt pointed to by current_attempt_id in the user summary –
+    // this is always kept up-to-date when a new attempt is created or restarted,
+    // so it avoids returning a stale/old attempt when the unordered Firestore
+    // query might otherwise resolve to the wrong document.
+    final summary = await getUserSummary(userId);
+    if (summary.currentAttemptId != null) {
+      final doc = await _attemptsRef(userId).doc(summary.currentAttemptId!).get();
+      if (doc.exists) {
+        final attempt = ChallengerRoadAttempt.fromSnapshot(doc);
+        if (attempt.status == 'active') return attempt;
+      }
+    }
+    // Fallback: any active attempt (handles legacy data without current_attempt_id).
     final snap = await _attemptsRef(userId).where('status', isEqualTo: 'active').limit(1).get();
     if (snap.docs.isEmpty) return null;
     return ChallengerRoadAttempt.fromSnapshot(snap.docs.first);
