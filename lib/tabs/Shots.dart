@@ -1268,7 +1268,7 @@ class _ShotsState extends State<Shots> {
           final vp = MediaQuery.of(context).viewPadding;
           return Container(
             padding: EdgeInsets.only(
-              bottom: vp.top + kBottomNavigationBarHeight + vp.bottom - 15 + (sessionService.isRunning ? 66 : 0) - 20,
+              bottom: vp.top + kBottomNavigationBarHeight + vp.bottom - 15 + (sessionService.isRunning ? 74 : 0) - 20,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
