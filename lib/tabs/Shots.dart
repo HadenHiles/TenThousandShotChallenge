@@ -255,6 +255,57 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
     widget.onChallengerRoadAvailabilityChanged?.call(false);
   }
 
+  /// Shows the Run It Back confirmation dialog directly from the train-tab card
+  /// (without opening the full map view first).
+  Future<void> _runItBackFromCard(User user, ChallengerRoadAttempt attempt) async {
+    if (!mounted) return;
+    final highestReached = attempt.highestLevelReachedThisAttempt;
+    final nextInherited = (highestReached - 1).clamp(0, 999);
+
+    final result = await showDialog<int>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.80),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22)),
+        content: Text(
+          nextInherited >= 1
+              ? 'Your last run unlocked Levels 1–$nextInherited. Where do you want to start?'
+              : 'Start a brand-new run from Level 1?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancel'),
+          ),
+          if (nextInherited >= 1)
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(nextInherited + 1),
+              child: Text(
+                'Jump In — Level ${nextInherited + 1}',
+                style: TextStyle(color: Theme.of(ctx).primaryColor),
+              ),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(1),
+            child: Text(
+              'Full Grind — Level 1',
+              style: TextStyle(color: Theme.of(ctx).primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || !mounted) return;
+    await _crService.runItBack(user.uid, chosenStartingLevel: result);
+    if (mounted) {
+      setState(() {
+        _activeAttemptFuture = null;
+        _activeAttemptFetchedAt = null;
+      });
+    }
+  }
+
   void _syncTargetDate(Iteration iteration) {
     if (_targetDate != null) return;
     _targetDate = iteration.targetDate;
@@ -822,22 +873,31 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                                     ),
                                   ),
                                 ],
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(14),
-                                    color: accent,
-                                  ),
-                                  child: Text(
-                                    isRoadComplete
-                                        ? 'RUN IT BACK'
-                                        : hasStarted
-                                            ? 'CONTINUE'
-                                            : 'START',
-                                    style: const TextStyle(
-                                      fontFamily: 'NovecentoSans',
-                                      fontSize: 14,
-                                      color: Colors.white,
+                                // When road is complete, this button triggers
+                                // the run-it-back dialog directly (without
+                                // needing to open the full map first).
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: isRoadComplete
+                                      ? () => _runItBackFromCard(user!, attempt)
+                                      : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      color: accent,
+                                    ),
+                                    child: Text(
+                                      isRoadComplete
+                                          ? 'RUN IT BACK'
+                                          : hasStarted
+                                              ? 'CONTINUE'
+                                              : 'START',
+                                      style: const TextStyle(
+                                        fontFamily: 'NovecentoSans',
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
