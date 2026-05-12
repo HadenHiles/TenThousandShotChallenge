@@ -268,9 +268,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
       builder: (ctx) => AlertDialog(
         title: const Text('Run It Back?', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22)),
         content: Text(
-          nextInherited >= 1
-              ? 'Your last run unlocked Levels 1–$nextInherited. Where do you want to start?'
-              : 'Start a brand-new run from Level 1?',
+          nextInherited >= 1 ? 'Your last run unlocked Levels 1–$nextInherited. Where do you want to start?' : 'Start a brand-new run from Level 1?',
         ),
         actions: [
           TextButton(
@@ -878,9 +876,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                                 // needing to open the full map first).
                                 GestureDetector(
                                   behavior: HitTestBehavior.opaque,
-                                  onTap: isRoadComplete
-                                      ? () => _runItBackFromCard(user!, attempt)
-                                      : null,
+                                  onTap: isRoadComplete ? () => _runItBackFromCard(user!, attempt) : null,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     decoration: BoxDecoration(

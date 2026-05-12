@@ -532,6 +532,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final attempt = data.activeAttempt;
     if (attempt == null) return ChallengeNodeState.locked;
 
+    // When the road is complete, lock all nodes until the user runs it back.
+    if (_isRoadComplete(data)) return ChallengeNodeState.locked;
+
     final currentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
     if (level < currentLevel) return ChallengeNodeState.completed;
     if (level > currentLevel) return ChallengeNodeState.locked;
@@ -1486,6 +1489,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   // ── Victory banner (shown above FINISH LINE when all levels complete) ──────
 
   Widget _buildVictoryBanner(BuildContext context, _CRMapData data) {
+    final accent = Theme.of(context).primaryColor;
     return SizedBox(
       height: _victoryBannerHeight,
       child: Padding(
@@ -1498,13 +1502,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                gradient: const RadialGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFF4A400)],
+                gradient: RadialGradient(
+                  colors: [accent, accent.withValues(alpha: 0.7)],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.45),
+                    color: accent.withValues(alpha: 0.45),
                     blurRadius: 28,
                     spreadRadius: 5,
                   ),
@@ -1513,13 +1517,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               child: const Icon(Icons.emoji_events_rounded, size: 52, color: Colors.white),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'YOU\'VE CONQUERED\nCHALLENGER ROAD!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 26,
-                color: Color(0xFFFFD700),
+                color: accent,
                 height: 1.2,
                 letterSpacing: 0.8,
               ),
@@ -1547,8 +1551,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: Colors.black87,
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
