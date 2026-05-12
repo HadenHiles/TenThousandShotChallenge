@@ -1266,9 +1266,12 @@ class _ShotsState extends State<Shots> {
           //   iOS:          overflow = vp.top + (56 + vp.bottom)  (nav bar includes home indicator)
           //   Android 3-btn: overflow = vp.top + 56 + vp.bottom   (main.dart shifts app up by vp.bottom)
           final vp = MediaQuery.of(context).viewPadding;
+          final isGestureNavAndroid = Theme.of(context).platform == TargetPlatform.android && !isThreeButtonAndroidNavigation(context);
+          final androidGestureExtra = isGestureNavAndroid ? 10.0 : 0.0;
+          final androidButtonRaise = Theme.of(context).platform == TargetPlatform.android ? 8.0 : 0.0;
           return Container(
             padding: EdgeInsets.only(
-              bottom: vp.top + kBottomNavigationBarHeight + vp.bottom - 15 + (sessionService.isRunning ? 74 : 0) - 20,
+              bottom: vp.top + kBottomNavigationBarHeight + vp.bottom - 15 + (sessionService.isRunning ? 74 : 0) - 20 + androidGestureExtra + androidButtonRaise,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
