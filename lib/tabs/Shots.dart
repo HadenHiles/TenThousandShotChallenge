@@ -539,6 +539,9 @@ class _ShotsState extends State<Shots> {
         final hasStarted = attempt != null;
         final shotCount = attempt?.challengerRoadShotCount ?? 0;
         final level = attempt?.currentLevel ?? 1;
+        // Detect road-complete: all challenges finished but attempt not yet restarted
+        // (currentLevel was advanced past the last existing level by advanceLevel).
+        final isRoadComplete = hasStarted && totalChallenges > 0 && completedChallenges >= totalChallenges;
         // Progress = challenges fully completed ÷ total active challenges
         final crProgress = (hasStarted && totalChallenges > 0) ? (completedChallenges / totalChallenges).clamp(0.0, 1.0) : 0.0;
         final shotProgress = (shotCount / 10000).clamp(0.0, 1.0);
@@ -738,11 +741,13 @@ class _ShotsState extends State<Shots> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    hasStarted
-                                        ? '${crNumberFormat.format(shotCount)} / 10,000 shots'
-                                        : isPro
-                                            ? 'Can you make it to the end of the road?'
-                                            : 'Think you can complete every challenge?',
+                                    isRoadComplete
+                                        ? 'You finished the road! Run it again?'
+                                        : hasStarted
+                                            ? '${crNumberFormat.format(shotCount)} / 10,000 shots'
+                                            : isPro
+                                                ? 'Can you make it to the end of the road?'
+                                                : 'Think you can complete every challenge?',
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 13,
@@ -762,17 +767,20 @@ class _ShotsState extends State<Shots> {
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                     margin: const EdgeInsets.only(bottom: 6),
                                     decoration: BoxDecoration(
-                                      color: accent.withValues(alpha: 0.22),
+                                      color: isRoadComplete ? const Color(0xFFFFD700).withValues(alpha: 0.20) : accent.withValues(alpha: 0.22),
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: accent.withValues(alpha: 0.6), width: 1),
+                                      border: Border.all(
+                                        color: isRoadComplete ? const Color(0xFFFFD700).withValues(alpha: 0.7) : accent.withValues(alpha: 0.6),
+                                        width: 1,
+                                      ),
                                     ),
                                     child: Text(
-                                      'LVL $level',
+                                      isRoadComplete ? 'COMPLETE' : 'LVL $level',
                                       style: TextStyle(
                                         fontFamily: 'NovecentoSans',
                                         fontSize: 13,
                                         letterSpacing: 0.8,
-                                        color: accent,
+                                        color: isRoadComplete ? const Color(0xFFFFD700) : accent,
                                       ),
                                     ),
                                   ),
@@ -784,7 +792,11 @@ class _ShotsState extends State<Shots> {
                                     color: accent,
                                   ),
                                   child: Text(
-                                    hasStarted ? 'CONTINUE' : 'START',
+                                    isRoadComplete
+                                        ? 'RUN IT BACK'
+                                        : hasStarted
+                                            ? 'CONTINUE'
+                                            : 'START',
                                     style: const TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 14,
@@ -807,39 +819,41 @@ class _ShotsState extends State<Shots> {
                                 width: 82,
                                 child: Text('CHALLENGES', style: barTextStyle.copyWith(color: barLabelColor)),
                               ),
-                              Expanded(child: crBar(crProgress, accent, ghostFrac: ghostFraction)),
+                              Expanded(child: crBar(crProgress, isRoadComplete ? const Color(0xFFFFD700) : accent, ghostFrac: isRoadComplete ? null : ghostFraction)),
                               const SizedBox(width: 6),
                               Text(
                                 totalChallenges > 0 ? '$completedChallenges / $totalChallenges' : '${(crProgress * 100).round()}%',
-                                style: barTextStyle.copyWith(color: barLabelColor),
+                                style: barTextStyle.copyWith(color: isRoadComplete ? const Color(0xFFFFD700) : barLabelColor),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          // ── Shots (10k cycle) bar ─────────────────────────
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 82,
-                                child: Text('SHOTS', style: barTextStyle.copyWith(color: barLabelColor)),
-                              ),
-                              Expanded(child: crBar(shotProgress, paceBarColor)),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${crNumberFormat.format(shotCount)} / 10K',
-                                style: barTextStyle.copyWith(color: barLabelColor),
-                              ),
-                            ],
-                          ),
-                          if (paceText.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                paceText,
-                                style: barTextStyle.copyWith(color: paceTextColor, letterSpacing: 0.5),
-                              ),
+                          if (!isRoadComplete) ...[
+                            const SizedBox(height: 6),
+                            // ── Shots (10k cycle) bar ─────────────────────────
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 82,
+                                  child: Text('SHOTS', style: barTextStyle.copyWith(color: barLabelColor)),
+                                ),
+                                Expanded(child: crBar(shotProgress, paceBarColor)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${crNumberFormat.format(shotCount)} / 10K',
+                                  style: barTextStyle.copyWith(color: barLabelColor),
+                                ),
+                              ],
                             ),
+                            if (paceText.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  paceText,
+                                  style: barTextStyle.copyWith(color: paceTextColor, letterSpacing: 0.5),
+                                ),
+                              ),
+                            ],
                           ],
                         ],
                       ],

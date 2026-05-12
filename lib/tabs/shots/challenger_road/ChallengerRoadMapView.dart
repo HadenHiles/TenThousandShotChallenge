@@ -1335,7 +1335,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   );
 
                   final isFocused = interactive && _isChallengeFocused(challengeId, level);
-                  final challengeTap = interactive && attempt != null && nodeState != ChallengeNodeState.locked ? () => _handleNodeTap(challenge, level, attempt, data) : null;
+                  // In preview mode (subscription expired / non-pro), allow tapping
+                  // locked challenges so users can view their past-try history even
+                  // if they can no longer play those challenges.
+                  final isSubscriptionLocked = widget.isPreviewMode && nodeState == ChallengeNodeState.locked;
+                  final challengeTap = interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked) ? () => _handleNodeTap(challenge, level, attempt, data, isSubscriptionLocked: isSubscriptionLocked) : null;
                   final previewMedia = _resolvePreviewMedia(challenge);
                   const thumbWidth = 156.0;
                   const thumbHeight = 96.0;
@@ -1586,8 +1590,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     ChallengerRoadChallenge challenge,
     int level,
     ChallengerRoadAttempt attempt,
-    _CRMapData data,
-  ) async {
+    _CRMapData data, {
+    bool isSubscriptionLocked = false,
+  }) async {
     final levelDoc = challenge.toLevelDoc();
     if (!mounted) return;
 
@@ -1597,6 +1602,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     }
 
     // Default: show the challenge detail sheet.
+    // For subscription-locked challenges (preview mode, level > 1) we show
+    // a history-only view – no steps, no start CTA – so users can still review
+    // their past tries even if their subscription has lapsed.
     await ChallengeDetailSheet.show(
       context,
       challenge: challenge,
@@ -1604,10 +1612,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       attempt: attempt,
       userId: widget.userId,
       progress: data.progress[challenge.id],
-      onSessionComplete: _refreshData,
+      onSessionComplete: isSubscriptionLocked ? null : _refreshData,
       isPreviewMode: widget.isPreviewMode,
       previewMaxLevel: widget.previewMaxLevel,
       onPreviewLevelUnlockAttempted: widget.onPreviewLevelUnlockAttempted,
+      isSubscriptionLocked: isSubscriptionLocked,
     );
   }
 
