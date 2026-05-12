@@ -598,6 +598,38 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
   // ── Challenge session panel header ────────────────────────────────────────
 
+  Future<void> _confirmCloseSession() async {
+    final shouldClose = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('End session?'),
+        content: const Text(
+          'This will end your current shooting session. You can still collapse the panel with the arrow icon.',
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+              backgroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep session'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('End session', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldClose == true) {
+      sessionService.reset();
+      sessionPanelController.close();
+    }
+  }
+
   Future<void> _confirmCloseChallengeSession() async {
     final shouldClose = await showDialog<bool>(
       context: context,
@@ -910,7 +942,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             // a small nudge keeps the header clear of the system bar there.
             final threeButtonNudge = isThreeButtonAndroidNavigation(context) ? 12.0 : 0.0;
             if (activeChallengeSession.value != null) return 74 + threeButtonNudge;
-            if (sessionService.isRunning) return 66 + threeButtonNudge;
+            if (sessionService.isRunning) return 74 + threeButtonNudge;
             return 0.0;
           }(),
           borderRadius: const BorderRadius.only(
@@ -946,86 +978,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                     : AnimatedBuilder(
                         animation: sessionService,
                         builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            child: ListTile(
-                              tileColor: Theme.of(context).primaryColor,
-                              title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "${printWeekday(DateTime.now())} Session",
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSecondary,
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Feedback.forLongPress(context);
-                                          if (!sessionService.isPaused) {
-                                            sessionService.pause();
-                                          } else {
-                                            sessionService.resume();
-                                          }
-                                        },
-                                        focusColor: darken(Theme.of(context).primaryColor, 0.2),
-                                        enableFeedback: true,
-                                        borderRadius: BorderRadius.circular(30),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(10),
-                                          child: Icon(
-                                            sessionService.isPaused ? Icons.play_arrow : Icons.pause,
-                                            size: 30,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                      Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Text(
-                                            printDuration(sessionService.currentDuration, true),
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSecondary,
-                                              fontFamily: "NovecentoSans",
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: InkWell(
-                                focusColor: darken(Theme.of(context).primaryColor, 0.6),
-                                enableFeedback: true,
-                                borderRadius: BorderRadius.circular(30),
-                                child: Icon(
-                                  _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onSecondary,
-                                ),
-                                onTap: () {
-                                  Feedback.forLongPress(context);
-                                  if (sessionPanelController.isPanelClosed) {
-                                    sessionPanelController.open();
-                                    setState(() => _sessionPanelState = PanelState.OPEN);
-                                  } else {
-                                    sessionPanelController.close();
-                                    setState(() => _sessionPanelState = PanelState.CLOSED);
-                                  }
-                                },
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                          return Material(
+                            color: Theme.of(context).primaryColor,
+                            child: InkWell(
                               onTap: () {
                                 if (sessionPanelController.isPanelClosed) {
                                   sessionPanelController.open();
@@ -1035,6 +990,124 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                   setState(() => _sessionPanelState = PanelState.CLOSED);
                                 }
                               },
+                              child: SizedBox(
+                                height: 74,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.sports_hockey, color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              '${printWeekday(DateTime.now())} Session'.toUpperCase(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: 'NovecentoSans',
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 1),
+                                            Text(
+                                              'SESSION IN PROGRESS',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(alpha: 0.7),
+                                                fontFamily: 'NovecentoSans',
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // Pause/resume + timer pill
+                                      InkWell(
+                                        onTap: () {
+                                          Feedback.forLongPress(context);
+                                          if (!sessionService.isPaused) {
+                                            sessionService.pause();
+                                          } else {
+                                            sessionService.resume();
+                                          }
+                                        },
+                                        borderRadius: BorderRadius.circular(999),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                sessionService.isPaused ? Icons.play_arrow : Icons.pause,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              SizedBox(
+                                                width: 56,
+                                                child: Text(
+                                                  printDuration(sessionService.currentDuration, true),
+                                                  textAlign: TextAlign.left,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFeatures: [FontFeature.tabularFigures()],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      // Close session
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: () => _confirmCloseSession(),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Icon(Icons.close, color: Colors.white, size: 22),
+                                        ),
+                                      ),
+                                      // Collapse/expand panel
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: () {
+                                          if (sessionPanelController.isPanelClosed) {
+                                            sessionPanelController.open();
+                                            setState(() => _sessionPanelState = PanelState.OPEN);
+                                          } else {
+                                            sessionPanelController.close();
+                                            setState(() => _sessionPanelState = PanelState.CLOSED);
+                                          }
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8),
+                                          child: Icon(
+                                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         },
