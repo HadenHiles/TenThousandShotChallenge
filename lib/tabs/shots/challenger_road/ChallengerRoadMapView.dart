@@ -1596,6 +1596,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final levelDoc = challenge.toLevelDoc();
     if (!mounted) return;
 
+    // If the road is already complete, don't let the user play challenges —
+    // prompt them to Run It Back instead.
+    if (_isRoadComplete(data) && !isSubscriptionLocked) {
+      _confirmRunItBack(context);
+      return;
+    }
+
     if (widget.onChallengeTap != null) {
       widget.onChallengeTap!(challenge, levelDoc, attempt);
       return;

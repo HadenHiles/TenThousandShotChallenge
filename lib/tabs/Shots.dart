@@ -35,7 +35,11 @@ class _CRCardData {
   final ChallengerRoadAttempt? attempt;
   final int totalChallenges;
 
-  /// Credited total - includes challenges in skipped levels.
+  /// Challenges actually passed in this attempt (no skipped-level credit).
+  final int actualCompleted;
+
+  /// Credited total - includes challenges in skipped levels. Used for the
+  /// progress bar so jump-in users see 100 % when they finish their portion.
   final int completedChallenges;
 
   /// Number of active challenges through allTimeBestLevel (for ghost line).
@@ -47,6 +51,7 @@ class _CRCardData {
   const _CRCardData({
     required this.attempt,
     required this.totalChallenges,
+    required this.actualCompleted,
     required this.completedChallenges,
     required this.bestChallengesCompleted,
     required this.bestLevelShots,
@@ -73,7 +78,7 @@ class Shots extends StatefulWidget {
   State<Shots> createState() => _ShotsState();
 }
 
-class _ShotsState extends State<Shots> {
+class _ShotsState extends State<Shots> with WidgetsBindingObserver {
   // Static variables
   DateTime? _targetDate;
   final TextEditingController _targetDateController = TextEditingController();
@@ -84,6 +89,7 @@ class _ShotsState extends State<Shots> {
 
   final ChallengerRoadService _crService = ChallengerRoadService();
   Future<_CRCardData>? _activeAttemptFuture;
+  DateTime? _activeAttemptFetchedAt;
 
   // Real-time stream of the active (incomplete) iteration for live updates
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _activeIterationStream;
@@ -109,6 +115,19 @@ class _ShotsState extends State<Shots> {
       _loadSubscriptionLevel();
     });
     openChallengerRoadSignal.addListener(_onOpenChallengerRoadSignal);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Invalidate the cached card data whenever the app comes back to the
+    // foreground so the widget always reflects the current attempt.
+    if (state == AppLifecycleState.resumed) {
+      setState(() {
+        _activeAttemptFuture = null;
+        _activeAttemptFetchedAt = null;
+      });
+    }
   }
 
   void _onOpenChallengerRoadSignal() {
@@ -136,6 +155,7 @@ class _ShotsState extends State<Shots> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     openChallengerRoadSignal.removeListener(_onOpenChallengerRoadSignal);
     _customerInfoNotifier?.removeListener(_onSubscriptionChanged);
     _targetDateController.dispose();
@@ -229,7 +249,8 @@ class _ShotsState extends State<Shots> {
     if (!_showChallengerRoad) return;
     setState(() {
       _showChallengerRoad = false;
-      _activeAttemptFuture = null; // will be refreshed on next card render
+      _activeAttemptFuture = null;
+      _activeAttemptFetchedAt = null;
     });
     widget.onChallengerRoadAvailabilityChanged?.call(false);
   }
@@ -498,35 +519,47 @@ class _ShotsState extends State<Shots> {
     final cardBase = theme.cardTheme.color ?? theme.colorScheme.surface;
 
     if (user != null) {
-      _activeAttemptFuture ??= Future.wait([
-        _crService.getActiveAttempt(user.uid),
-        _crService.getTotalActiveChallengesCount(),
-        _crService.getUserSummary(user.uid),
-      ]).then((results) async {
-        final attempt = results[0] as ChallengerRoadAttempt?;
-        final totalChallenges = results[1] as int;
-        final summary = results[2] as ChallengerRoadUserSummary;
+      // Expire the cache after 60 seconds so the card stays in sync even if
+      // the user doesn't explicitly close and reopen the map (e.g. they ran it
+      // back on another device, or a previous close didn't fire correctly).
+      if (_activeAttemptFetchedAt != null && DateTime.now().difference(_activeAttemptFetchedAt!) > const Duration(seconds: 60)) {
+        _activeAttemptFuture = null;
+        _activeAttemptFetchedAt = null;
+      }
 
-        final actualCompleted = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
-        // Credit challenges in levels the user skipped so the percentage
-        // correctly reaches 100 % when they finish their portion of the road.
-        final skipped = attempt != null && attempt.startingLevel > 1 ? await _crService.getActiveChallengesCountBelowLevel(attempt.startingLevel) : 0;
-        final completedChallenges = actualCompleted + skipped;
+      if (_activeAttemptFuture == null) {
+        _activeAttemptFetchedAt = DateTime.now();
+        _activeAttemptFuture = Future.wait([
+          _crService.getActiveAttempt(user.uid),
+          _crService.getTotalActiveChallengesCount(),
+          _crService.getUserSummary(user.uid),
+        ]).then((results) async {
+          final attempt = results[0] as ChallengerRoadAttempt?;
+          final totalChallenges = results[1] as int;
+          final summary = results[2] as ChallengerRoadUserSummary;
 
-        // Ghost / pace data - challenges completed through the all-time best level.
-        int bestChallengesCompleted = 0;
-        if (summary.allTimeBestLevel > 0) {
-          bestChallengesCompleted = await _crService.getActiveChallengesCountBelowLevel(summary.allTimeBestLevel + 1);
-        }
+          final actualCompleted = attempt != null ? await _crService.getCompletedChallengesCount(user.uid, attempt.id!) : 0;
+          // Credit challenges in levels the user skipped so the percentage
+          // correctly reaches 100 % when they finish their portion of the road.
+          final skipped = attempt != null && attempt.startingLevel > 1 ? await _crService.getActiveChallengesCountBelowLevel(attempt.startingLevel) : 0;
+          final completedChallenges = actualCompleted + skipped;
 
-        return _CRCardData(
-          attempt: attempt,
-          totalChallenges: totalChallenges,
-          completedChallenges: completedChallenges,
-          bestChallengesCompleted: bestChallengesCompleted,
-          bestLevelShots: summary.allTimeBestLevelShots,
-        );
-      });
+          // Ghost / pace data - challenges completed through the all-time best level.
+          int bestChallengesCompleted = 0;
+          if (summary.allTimeBestLevel > 0) {
+            bestChallengesCompleted = await _crService.getActiveChallengesCountBelowLevel(summary.allTimeBestLevel + 1);
+          }
+
+          return _CRCardData(
+            attempt: attempt,
+            totalChallenges: totalChallenges,
+            actualCompleted: actualCompleted,
+            completedChallenges: completedChallenges,
+            bestChallengesCompleted: bestChallengesCompleted,
+            bestLevelShots: summary.allTimeBestLevelShots,
+          );
+        });
+      }
     }
 
     return FutureBuilder<_CRCardData>(
@@ -539,9 +572,13 @@ class _ShotsState extends State<Shots> {
         final hasStarted = attempt != null;
         final shotCount = attempt?.challengerRoadShotCount ?? 0;
         final level = attempt?.currentLevel ?? 1;
-        // Detect road-complete: all challenges finished but attempt not yet restarted
-        // (currentLevel was advanced past the last existing level by advanceLevel).
-        final isRoadComplete = hasStarted && totalChallenges > 0 && completedChallenges >= totalChallenges;
+        // Road is complete when the user has actually passed at least one
+        // challenge in this attempt AND all challenges (including skipped-level
+        // credit for jump-in starts) are accounted for. Using actualCompleted > 0
+        // ensures a brand-new attempt – even one whose startingLevel already
+        // exceeds the active level count – is never shown as complete.
+        final actualCompleted = data?.actualCompleted ?? 0;
+        final isRoadComplete = hasStarted && totalChallenges > 0 && actualCompleted > 0 && completedChallenges >= totalChallenges;
         // Progress = challenges fully completed ÷ total active challenges
         final crProgress = (hasStarted && totalChallenges > 0) ? (completedChallenges / totalChallenges).clamp(0.0, 1.0) : 0.0;
         final shotProgress = (shotCount / 10000).clamp(0.0, 1.0);
@@ -767,10 +804,10 @@ class _ShotsState extends State<Shots> {
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                     margin: const EdgeInsets.only(bottom: 6),
                                     decoration: BoxDecoration(
-                                      color: isRoadComplete ? const Color(0xFFFFD700).withValues(alpha: 0.20) : accent.withValues(alpha: 0.22),
+                                      color: accent.withValues(alpha: 0.22),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: isRoadComplete ? const Color(0xFFFFD700).withValues(alpha: 0.7) : accent.withValues(alpha: 0.6),
+                                        color: accent.withValues(alpha: 0.6),
                                         width: 1,
                                       ),
                                     ),
@@ -780,7 +817,7 @@ class _ShotsState extends State<Shots> {
                                         fontFamily: 'NovecentoSans',
                                         fontSize: 13,
                                         letterSpacing: 0.8,
-                                        color: isRoadComplete ? const Color(0xFFFFD700) : accent,
+                                        color: accent,
                                       ),
                                     ),
                                   ),
@@ -819,11 +856,11 @@ class _ShotsState extends State<Shots> {
                                 width: 82,
                                 child: Text('CHALLENGES', style: barTextStyle.copyWith(color: barLabelColor)),
                               ),
-                              Expanded(child: crBar(crProgress, isRoadComplete ? const Color(0xFFFFD700) : accent, ghostFrac: isRoadComplete ? null : ghostFraction)),
+                              Expanded(child: crBar(crProgress, accent, ghostFrac: isRoadComplete ? null : ghostFraction)),
                               const SizedBox(width: 6),
                               Text(
                                 totalChallenges > 0 ? '$completedChallenges / $totalChallenges' : '${(crProgress * 100).round()}%',
-                                style: barTextStyle.copyWith(color: isRoadComplete ? const Color(0xFFFFD700) : barLabelColor),
+                                style: barTextStyle.copyWith(color: barLabelColor),
                               ),
                             ],
                           ),
