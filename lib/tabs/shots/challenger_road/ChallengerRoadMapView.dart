@@ -479,7 +479,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   }
 
   bool _isRoadComplete(_CRMapData data) {
-    if (widget.isPreviewMode) return false;
+    // Road-complete is a data state: the attempt's currentLevel has been
+    // advanced past the last active level by advanceLevel(). This is true
+    // regardless of subscription/preview state — a non-pro user can never
+    // reach currentLevel > levels.last because they cannot play level-2+
+    // challenges to trigger advanceLevel().
     if (data.activeAttempt == null || data.levels.isEmpty) return false;
     return data.activeAttempt!.currentLevel > data.levels.last;
   }
@@ -1703,7 +1707,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               attempt: widget.isPreviewMode ? (widget.previewHeaderAttempt ?? attempt) : attempt,
               levelLabel: levelLabel,
               topPadding: MediaQuery.of(context).padding.top,
-              onRestartTap: (!widget.isPreviewMode && attempt != null) ? () => _confirmRestart(context, attempt) : null,
+              onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
               onCloseTap: widget.onCloseTap,
             ),
 
