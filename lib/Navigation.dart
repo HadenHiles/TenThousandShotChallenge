@@ -1160,8 +1160,10 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             // all iOS/Android device variants and navigation modes.
             // Three-button Android is already shifted up by main.dart so we
             // zero out the bottom safe area there to avoid double-counting.
+            final isGestureNavAndroid = Theme.of(context).platform == TargetPlatform.android && !isThreeButtonAndroidNavigation(context);
             final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
-            final bottomPadding = (safeBottom - 15).clamp(0.0, safeBottom);
+            final androidGestureExtra = isGestureNavAndroid ? 10.0 : 0.0;
+            final bottomPadding = (safeBottom - 15).clamp(0.0, safeBottom) + androidGestureExtra;
             final fullNavHeight = kBottomNavigationBarHeight + bottomPadding;
             return SizedOverflowBox(
               alignment: AlignmentDirectional.topCenter,
