@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyBackfillService.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/GlobalTrophyGroupAwardScreen.dart';
 
 /// Shows the one-time historical backfill sheet if needed.
 ///
@@ -24,7 +25,7 @@ Future<void> maybeShowBackfillSheet(
 
   if (!context.mounted) return;
 
-  await showModalBottomSheet<void>(
+  final claimed = await showModalBottomSheet<List<GlobalTrophyDefinition>>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -35,6 +36,15 @@ Future<void> maybeShowBackfillSheet(
       result: result,
     ),
   );
+
+  if (claimed != null && claimed.isNotEmpty && context.mounted) {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => GlobalTrophyGroupAwardScreen(trophies: claimed),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +68,7 @@ class _GlobalTrophyBackfillSheetState extends State<_GlobalTrophyBackfillSheet> 
   Future<void> _claim() async {
     setState(() => _saving = true);
     await GlobalTrophyBackfillService().apply(widget.userId, widget.result, award: true);
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop(widget.result.earnedTrophies);
   }
 
   Future<void> _dismiss() async {
