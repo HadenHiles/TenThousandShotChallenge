@@ -30,6 +30,10 @@ class ResetDataService {
   /// Sessions with [is_challenger_road == true] are preserved as documents but
   /// NOT counted in the iteration totals (per product spec: "exclude any
   /// challenger road sessions from the new count but don't delete those").
+  ///
+  /// The global trophy counters (all_time_total, all_time_sessions, etc.) are
+  /// decremented by the deleted session totals so that future trophy evaluation
+  /// runs against an accurate baseline rather than inflated counts.
   Future<void> restartCurrentChallenge() async {
     // Find the current incomplete iteration.
     final iterSnap = await _firestore.collection('iterations').doc(_uid).collection('iterations').where('complete', isEqualTo: false).get();
@@ -41,16 +45,35 @@ class ResetDataService {
     // Fetch all sessions under this iteration.
     final sessionsSnap = await iterDoc.reference.collection('sessions').get();
 
-    // Batch-delete all non-CR sessions.
+    // Collect non-CR sessions and accumulate their totals for counter adjustment.
+    int deletedTotal = 0;
+    int deletedWrist = 0;
+    int deletedSnap = 0;
+    int deletedSlap = 0;
+    int deletedBackhand = 0;
+    int deletedSessionCount = 0;
+
     final nonCrDocs = sessionsSnap.docs.where((doc) {
       final data = doc.data();
       return data['is_challenger_road'] != true;
     }).toList();
 
-    await _deleteDocs(nonCrDocs.map((d) => d.reference).toList());
+    for (final doc in nonCrDocs) {
+      final data = doc.data();
+      deletedTotal += (data['total'] as num?)?.toInt() ?? 0;
+      deletedWrist += (data['total_wrist'] as num?)?.toInt() ?? 0;
+      deletedSnap += (data['total_snap'] as num?)?.toInt() ?? 0;
+      deletedSlap += (data['total_slap'] as num?)?.toInt() ?? 0;
+      deletedBackhand += (data['total_backhand'] as num?)?.toInt() ?? 0;
+      deletedSessionCount++;
+    }
 
-    // Zero out the iteration totals (CR shots are excluded from the regular
-    // challenge count by design; the iteration total stays at 0).
+    // Delete the shots sub-collection under each session, then the session itself.
+    for (final doc in nonCrDocs) {
+      await _deleteSessionWithShots(doc.reference);
+    }
+
+    // Zero out the iteration totals.
     await iterDoc.reference.update({
       'total': 0,
       'total_wrist': 0,
@@ -63,6 +86,25 @@ class ResetDataService {
       'complete': false,
       'updated_at': DateTime.now(),
     });
+
+    // Decrement global trophy counters so future trophy evaluation uses an
+    // accurate baseline instead of inflated counts that include deleted sessions.
+    if (deletedSessionCount > 0) {
+      final globalRef = _firestore.collection('users').doc(_uid).collection('global_trophies').doc('summary');
+      final globalSnap = await globalRef.get();
+      if (globalSnap.exists) {
+        final d = globalSnap.data()!;
+        final safeInt = (String key) => (d[key] as num?)?.toInt() ?? 0;
+        await globalRef.update({
+          'all_time_total': (safeInt('all_time_total') - deletedTotal).clamp(0, double.maxFinite.toInt()),
+          'all_time_wrist': (safeInt('all_time_wrist') - deletedWrist).clamp(0, double.maxFinite.toInt()),
+          'all_time_snap': (safeInt('all_time_snap') - deletedSnap).clamp(0, double.maxFinite.toInt()),
+          'all_time_slap': (safeInt('all_time_slap') - deletedSlap).clamp(0, double.maxFinite.toInt()),
+          'all_time_backhand': (safeInt('all_time_backhand') - deletedBackhand).clamp(0, double.maxFinite.toInt()),
+          'all_time_sessions': (safeInt('all_time_sessions') - deletedSessionCount).clamp(0, double.maxFinite.toInt()),
+        });
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -184,12 +226,15 @@ class ResetDataService {
   /// Deletes every iteration and all its sessions, resets both trophy
   /// summaries, and erases all Challenger Road data.
   Future<void> eraseAllShootingData() async {
-    // 1. Delete all iterations and their sessions.
+    // 1. Delete all iterations, their sessions, and the shots sub-collections
+    //    nested under each session.
     final iterationsSnap = await _firestore.collection('iterations').doc(_uid).collection('iterations').get();
 
     for (final iterDoc in iterationsSnap.docs) {
       final sessionsSnap = await iterDoc.reference.collection('sessions').get();
-      await _deleteDocs(sessionsSnap.docs.map((d) => d.reference).toList());
+      for (final sessionDoc in sessionsSnap.docs) {
+        await _deleteSessionWithShots(sessionDoc.reference);
+      }
     }
 
     await _deleteDocs(iterationsSnap.docs.map((d) => d.reference).toList());
@@ -228,6 +273,15 @@ class ResetDataService {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  /// Deletes the `shots` sub-collection of a session document and then deletes
+  /// the session document itself.  Firestore does not auto-delete sub-collections
+  /// when a parent document is deleted, so this must be done explicitly.
+  Future<void> _deleteSessionWithShots(DocumentReference sessionRef) async {
+    final shotsSnap = await sessionRef.collection('shots').get();
+    await _deleteDocs(shotsSnap.docs.map((d) => d.reference).toList());
+    await sessionRef.delete();
+  }
 
   /// Deletes a list of document references in batches of [_batchSize].
   Future<void> _deleteDocs(List<DocumentReference> refs) async {
