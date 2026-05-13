@@ -228,21 +228,37 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
 
       // Evaluate global trophies for this CR session (fire-and-forget).
-      // CR shots count toward all-time volume, sessions, weekly, and time-of-day
-      // trophies just like regular sessions.
+      // Each challenge has exactly one shot type, so sum by type from the
+      // recorded shot list to populate per-type accumulators correctly.
       final trophyUid = auth.currentUser?.uid;
       if (trophyUid != null) {
         Future(() async {
           try {
+            int wristCount = 0, snapCount = 0, slapCount = 0, backhandCount = 0;
+            int wristHits = 0, snapHits = 0, slapHits = 0, backhandHits = 0;
+            for (final s in session.shots) {
+              final c = s.count ?? 0;
+              final h = s.targetsHit ?? 0;
+              switch (s.type) {
+                case 'wrist':    wristCount += c;    wristHits += h;    break;
+                case 'snap':     snapCount += c;     snapHits += h;     break;
+                case 'slap':     slapCount += c;     slapHits += h;     break;
+                case 'backhand': backhandCount += c; backhandHits += h; break;
+              }
+            }
             final subLevel = await subscriptionLevel(context);
             final newTrophies = await GlobalTrophyService().evaluateAfterSession(
               trophyUid,
               GlobalSessionInput(
                 total: session.totalShots,
-                wrist: 0,
-                snap: 0,
-                slap: 0,
-                backhand: 0,
+                wrist: wristCount,
+                snap: snapCount,
+                slap: slapCount,
+                backhand: backhandCount,
+                wristTargetsHit: wristHits,
+                snapTargetsHit: snapHits,
+                slapTargetsHit: slapHits,
+                backhandTargetsHit: backhandHits,
                 sessionDate: session.date,
               ),
               isPro: subLevel == 'pro',

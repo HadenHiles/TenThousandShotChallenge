@@ -39,10 +39,10 @@ const CATEGORY_ICON = {
 
 // ---------------------------------------------------------------------------
 // Trophy catalog — inclusive descriptions.
-// Volume, sessions, weekly, and time-of-day trophies count ALL session types
-// (regular training + Challenger Road). Shot-type and accuracy trophies are
-// earned only from regular sessions, which are the only sessions that track
-// a per-type (wrist/snap/slap/backhand) breakdown.
+// ALL session types count toward every category. Regular training sessions
+// and Challenger Road sessions both supply per-type shot data (each CR
+// challenge requires a specific shot type), so shot-type and accuracy
+// trophies accumulate from both.
 // ---------------------------------------------------------------------------
 const TROPHIES = [
     // ── Volume ──────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ const TROPHIES = [
     { id: 'g_week_streak_12', name: 'Quarter Year', desc: 'Twelve straight weeks of sessions. Three months of consistent work.', category: 'weekly', tier: 'legendary', proOnly: true },
     { id: 'g_fifty_a_day_7', name: 'Daily Devotion', desc: '50+ shots logged on every single day of a calendar week.', category: 'weekly', tier: 'rare', proOnly: true },
 
-    // ── Shot Type (per-type tracking; regular sessions only) ────────────────
+    // ── Shot Type (per-type totals across all sessions, including CR) ────────
     { id: 'g_wrist_50', name: 'Wristmaster Apprentice', desc: '50 wrist shots logged.', category: 'shotType', tier: 'common', proOnly: false },
     { id: 'g_snap_50', name: 'Snap Happy', desc: '50 snap shots logged.', category: 'shotType', tier: 'common', proOnly: false },
     { id: 'g_slap_50', name: 'Bomb Squad Rookie', desc: '50 slap shots logged.', category: 'shotType', tier: 'common', proOnly: false },
@@ -114,7 +114,7 @@ const TROPHIES = [
     { id: 'g_sunrise_shooter', name: 'Before The World Wakes', desc: '25 sessions started before 6 AM. Absolutely no excuses ever.', category: 'timeOfDay', tier: 'epic', proOnly: true },
     { id: 'g_weekend_grinder', name: 'Weekend Machine', desc: 'Logged sessions on both Saturday and Sunday for 4 consecutive weekends.', category: 'timeOfDay', tier: 'epic', proOnly: true },
 
-    // ── Accuracy (Pro only — requires per-type shot tracking) ───────────────
+    // ── Accuracy (Pro only — requires per-type shot data; regular + CR) ─────
     { id: 'g_wrist_accuracy_80', name: 'Laser Wrist', desc: '80%+ wrist accuracy in a single training session (min. 25 wrist shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_snap_accuracy_80', name: 'Snap Sniper', desc: '80%+ snap accuracy in a single training session (min. 25 snap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_slap_accuracy_80', name: 'Precision Bomb', desc: '80%+ slap accuracy in a single training session (min. 25 slap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
