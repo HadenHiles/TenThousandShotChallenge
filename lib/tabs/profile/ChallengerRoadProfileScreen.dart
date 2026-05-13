@@ -121,7 +121,7 @@ class _ChallengerRoadProfileScreenState extends State<ChallengerRoadProfileScree
                     ChallengerRoadProfileSection(
                       userId: widget.userId ?? user.uid,
                       isPro: _subscriptionLevel == 'pro',
-                      isEditable: widget.userId == null,
+                      isEditable: false,
                       showOnlyEarned: widget.userId != null,
                       highlightTrophyId: widget.highlightTrophyId,
                       onGoProTap: () async {
