@@ -39,8 +39,7 @@ class GlobalTrophyBackfillService {
 
   final FirebaseFirestore _firestore;
 
-  GlobalTrophyBackfillService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  GlobalTrophyBackfillService({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ---------------------------------------------------------------------------
   // Public API
@@ -70,22 +69,14 @@ class GlobalTrophyBackfillService {
     required bool award,
   }) async {
     final summary = result.historicalSummary;
-    final updatedTrophies = award
-        ? (List<String>.from(summary.trophies)
-          ..addAll(result.earnedTrophies.map((d) => d.id)))
-        : summary.trophies;
+    final updatedTrophies = award ? (List<String>.from(summary.trophies)..addAll(result.earnedTrophies.map((d) => d.id))) : summary.trophies;
 
     final finalSummary = summary.copyWith(
       trophies: updatedTrophies,
       backfillVersion: kBackfillVersion,
     );
 
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('global_trophies')
-        .doc('summary')
-        .set(finalSummary.toMap(), SetOptions(merge: true));
+    await _firestore.collection('users').doc(userId).collection('global_trophies').doc('summary').set(finalSummary.toMap(), SetOptions(merge: true));
   }
 
   // ---------------------------------------------------------------------------
@@ -95,11 +86,7 @@ class GlobalTrophyBackfillService {
   Future<List<ShootingSession>> _loadAllSessions(String userId) async {
     final result = <ShootingSession>[];
     try {
-      final iterSnap = await _firestore
-          .collection('iterations')
-          .doc(userId)
-          .collection('iterations')
-          .get();
+      final iterSnap = await _firestore.collection('iterations').doc(userId).collection('iterations').get();
 
       for (final iterDoc in iterSnap.docs) {
         try {
@@ -131,11 +118,7 @@ class GlobalTrophyBackfillService {
     bool isPro,
   ) {
     // Filter to regular (non-CR) sessions with required fields, sorted by date.
-    final valid = sessions
-        .where((s) =>
-            s.isChallengerRoad != true && s.date != null && s.total != null)
-        .toList()
-      ..sort((a, b) => a.date!.compareTo(b.date!));
+    final valid = sessions.where((s) => s.isChallengerRoad != true && s.date != null && s.total != null).toList()..sort((a, b) => a.date!.compareTo(b.date!));
 
     if (valid.isEmpty) {
       // Nothing to backfill — just mark as done.
@@ -185,8 +168,7 @@ class GlobalTrophyBackfillService {
       allTimeBackhand += backhand;
 
       // Time-of-day (EST)
-      final localHour =
-          ((s.date!.toUtc().hour + _estOffsetHours) % 24 + 24) % 24;
+      final localHour = ((s.date!.toUtc().hour + _estOffsetHours) % 24 + 24) % 24;
       if (localHour < 6) earlyMorningSessions++;
       if (localHour >= 22) lateNightSessions++;
       if (localHour >= 11 && localHour < 13) hasLunchBreak = true;
@@ -194,8 +176,7 @@ class GlobalTrophyBackfillService {
       // Weekly bucketing
       final weekKey = _weekKey(s.date!);
       final dayKey = _dateKey(s.date!);
-      weekDayTotals.putIfAbsent(weekKey, () => {})[dayKey] =
-          (weekDayTotals[weekKey]![dayKey] ?? 0) + total;
+      weekDayTotals.putIfAbsent(weekKey, () => {})[dayKey] = (weekDayTotals[weekKey]![dayKey] ?? 0) + total;
 
       // Accuracy (pro only)
       if (isPro) {
@@ -226,15 +207,7 @@ class GlobalTrophyBackfillService {
           }
 
           // All-types 80% in same session
-          if (!hasAllTypesAcc80 &&
-              wrist >= kMin &&
-              wristHit / wrist >= 0.80 &&
-              snap >= kMin &&
-              snapHit / snap >= 0.80 &&
-              slap >= kMin &&
-              slapHit / slap >= 0.80 &&
-              backhand >= kMin &&
-              backhandHit / backhand >= 0.80) {
+          if (!hasAllTypesAcc80 && wrist >= kMin && wristHit / wrist >= 0.80 && snap >= kMin && snapHit / snap >= 0.80 && slap >= kMin && slapHit / slap >= 0.80 && backhand >= kMin && backhandHit / backhand >= 0.80) {
             hasAllTypesAcc80 = true;
           }
 
@@ -264,10 +237,8 @@ class GlobalTrophyBackfillService {
       final weekTotal = dayMap.values.fold(0, (a, b) => a + b);
 
       maxWeekTotal = max(maxWeekTotal, weekTotal);
-      maxDaysWithMin100 =
-          max(maxDaysWithMin100, dayMap.values.where((v) => v >= 100).length);
-      maxDaysWithMin50 =
-          max(maxDaysWithMin50, dayMap.values.where((v) => v >= 50).length);
+      maxDaysWithMin100 = max(maxDaysWithMin100, dayMap.values.where((v) => v >= 100).length);
+      maxDaysWithMin50 = max(maxDaysWithMin50, dayMap.values.where((v) => v >= 50).length);
 
       // Weekend warrior: Saturday AND Sunday in same week
       final satKey = _dayKey(weekStart, 6);
@@ -304,8 +275,7 @@ class GlobalTrophyBackfillService {
       final hasBoth = dayMap.containsKey(satKey) && dayMap.containsKey(sunKey);
 
       if (hasBoth) {
-        if (prevWeekendWeekStart != null &&
-            weekStart.difference(prevWeekendWeekStart).inDays == 7) {
+        if (prevWeekendWeekStart != null && weekStart.difference(prevWeekendWeekStart).inDays == 7) {
           curConsecWeekends++;
         } else {
           curConsecWeekends = 1;
@@ -322,17 +292,13 @@ class GlobalTrophyBackfillService {
     final currentWeekStart = GlobalTrophyService.currentWeekStartUtc();
     final currentWeekKey = _weekKey(DateTime.now());
     final currentWeekDayMap = weekDayTotals[currentWeekKey] ?? {};
-    final currentWeekDays = currentWeekDayMap.entries
-        .map((e) => GlobalWeeklySessionEntry(dateKey: e.key, total: e.value))
-        .toList();
-    final currentWeekTotal =
-        currentWeekDayMap.values.fold(0, (a, b) => a + b);
+    final currentWeekDays = currentWeekDayMap.entries.map((e) => GlobalWeeklySessionEntry(dateKey: e.key, total: e.value)).toList();
+    final currentWeekTotal = currentWeekDayMap.values.fold(0, (a, b) => a + b);
 
     final reconstructed = GlobalTrophySummary(
       trophies: List<String>.from(existing.trophies),
       featuredTrophies: existing.featuredTrophies,
-      trackingStartedAt:
-          existing.trackingStartedAt ?? valid.first.date,
+      trackingStartedAt: existing.trackingStartedAt ?? valid.first.date,
       allTimeTotal: allTimeTotal,
       allTimeWrist: allTimeWrist,
       allTimeSnap: allTimeSnap,
@@ -355,8 +321,7 @@ class GlobalTrophyBackfillService {
 
     void award(String id) {
       if (alreadyEarned.contains(id)) return;
-      final def =
-          GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
+      final def = GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
       if (def == null) return;
       if (def.proOnly && !isPro) return;
       newly.add(def);
@@ -407,34 +372,22 @@ class GlobalTrophyBackfillService {
     if (allTimeSnap >= 50) award('g_snap_50');
     if (allTimeSlap >= 50) award('g_slap_50');
     if (allTimeBackhand >= 50) award('g_backhand_50');
-    if (allTimeWrist >= 50 &&
-        allTimeSnap >= 50 &&
-        allTimeSlap >= 50 &&
-        allTimeBackhand >= 50) award('g_all_types_50');
+    if (allTimeWrist >= 50 && allTimeSnap >= 50 && allTimeSlap >= 50 && allTimeBackhand >= 50) award('g_all_types_50');
     if (allTimeWrist >= 200) award('g_wrist_200');
     if (allTimeSnap >= 200) award('g_snap_200');
     if (allTimeSlap >= 200) award('g_slap_200');
     if (allTimeBackhand >= 200) award('g_backhand_200');
-    if (allTimeWrist >= 200 &&
-        allTimeSnap >= 200 &&
-        allTimeSlap >= 200 &&
-        allTimeBackhand >= 200) award('g_all_types_200');
+    if (allTimeWrist >= 200 && allTimeSnap >= 200 && allTimeSlap >= 200 && allTimeBackhand >= 200) award('g_all_types_200');
     if (allTimeWrist >= 500) award('g_wrist_500');
     if (allTimeSnap >= 500) award('g_snap_500');
     if (allTimeSlap >= 500) award('g_slap_500');
     if (allTimeBackhand >= 500) award('g_backhand_500');
-    if (allTimeWrist >= 500 &&
-        allTimeSnap >= 500 &&
-        allTimeSlap >= 500 &&
-        allTimeBackhand >= 500) award('g_all_types_500');
+    if (allTimeWrist >= 500 && allTimeSnap >= 500 && allTimeSlap >= 500 && allTimeBackhand >= 500) award('g_all_types_500');
     if (allTimeWrist >= 1000) award('g_wrist_1000');
     if (allTimeSnap >= 1000) award('g_snap_1000');
     if (allTimeSlap >= 1000) award('g_slap_1000');
     if (allTimeBackhand >= 1000) award('g_backhand_1000');
-    if (allTimeWrist >= 1000 &&
-        allTimeSnap >= 1000 &&
-        allTimeSlap >= 1000 &&
-        allTimeBackhand >= 1000) award('g_all_types_1000');
+    if (allTimeWrist >= 1000 && allTimeSnap >= 1000 && allTimeSlap >= 1000 && allTimeBackhand >= 1000) award('g_all_types_1000');
 
     // Time of day
     if (earlyMorningSessions >= 1) award('g_early_riser');

@@ -11,16 +11,14 @@ Future<void> maybeShowBackfillSheet(
   required String userId,
   required bool isPro,
 }) async {
-  final result =
-      await GlobalTrophyBackfillService().computeIfNeeded(userId, isPro);
+  final result = await GlobalTrophyBackfillService().computeIfNeeded(userId, isPro);
 
   if (result == null) return; // Already done.
 
   // Even if there are no trophy unlocks, we still need to persist the updated
   // counters so future evaluations work from the right baseline.
   if (!result.hasTrophies) {
-    await GlobalTrophyBackfillService()
-        .apply(userId, result, award: false);
+    await GlobalTrophyBackfillService().apply(userId, result, award: false);
     return;
   }
 
@@ -51,26 +49,22 @@ class _GlobalTrophyBackfillSheet extends StatefulWidget {
   final BackfillResult result;
 
   @override
-  State<_GlobalTrophyBackfillSheet> createState() =>
-      _GlobalTrophyBackfillSheetState();
+  State<_GlobalTrophyBackfillSheet> createState() => _GlobalTrophyBackfillSheetState();
 }
 
-class _GlobalTrophyBackfillSheetState
-    extends State<_GlobalTrophyBackfillSheet> {
+class _GlobalTrophyBackfillSheetState extends State<_GlobalTrophyBackfillSheet> {
   bool _saving = false;
 
   Future<void> _claim() async {
     setState(() => _saving = true);
-    await GlobalTrophyBackfillService()
-        .apply(widget.userId, widget.result, award: true);
+    await GlobalTrophyBackfillService().apply(widget.userId, widget.result, award: true);
     if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _dismiss() async {
     setState(() => _saving = true);
     // Persist updated counters but don't award trophies.
-    await GlobalTrophyBackfillService()
-        .apply(widget.userId, widget.result, award: false);
+    await GlobalTrophyBackfillService().apply(widget.userId, widget.result, award: false);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -89,8 +83,7 @@ class _GlobalTrophyBackfillSheetState
         return Container(
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -115,8 +108,7 @@ class _GlobalTrophyBackfillSheetState
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.workspace_premium_rounded,
-                            size: 22, color: Colors.white),
+                        const Icon(Icons.workspace_premium_rounded, size: 22, color: Colors.white),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -138,8 +130,7 @@ class _GlobalTrophyBackfillSheetState
                                 style: TextStyle(
                                   fontFamily: 'NovecentoSans',
                                   fontSize: 13,
-                                  color:
-                                      Colors.white.withValues(alpha: 0.80),
+                                  color: Colors.white.withValues(alpha: 0.80),
                                 ),
                               ),
                             ],
@@ -154,8 +145,7 @@ class _GlobalTrophyBackfillSheetState
               Expanded(
                 child: ListView.builder(
                   controller: scrollController,
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   itemCount: trophies.length,
                   itemBuilder: (context, i) {
                     final def = trophies[i];
@@ -166,11 +156,9 @@ class _GlobalTrophyBackfillSheetState
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: color.withValues(alpha: 0.30)),
+                        border: Border.all(color: color.withValues(alpha: 0.30)),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: Row(
                         children: [
                           Container(
@@ -179,19 +167,14 @@ class _GlobalTrophyBackfillSheetState
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: color.withValues(alpha: 0.15),
-                              border: Border.all(
-                                  color: color.withValues(alpha: 0.55),
-                                  width: 1.5),
+                              border: Border.all(color: color.withValues(alpha: 0.55), width: 1.5),
                             ),
                             child: ClipOval(
                               child: def.effectiveIconUrl != null
                                   ? Image.network(
                                       def.effectiveIconUrl!,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                          icon,
-                                          size: 22,
-                                          color: color),
+                                      errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: color),
                                     )
                                   : Icon(icon, size: 22, color: color),
                             ),
@@ -199,8 +182,7 @@ class _GlobalTrophyBackfillSheetState
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   def.effectiveName,
@@ -218,16 +200,13 @@ class _GlobalTrophyBackfillSheetState
                                   style: TextStyle(
                                     fontFamily: 'NovecentoSans',
                                     fontSize: 11,
-                                    color: scheme.onSurface
-                                        .withValues(alpha: 0.55),
+                                    color: scheme.onSurface.withValues(alpha: 0.55),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Icon(Icons.check_circle_rounded,
-                              size: 16,
-                              color: color.withValues(alpha: 0.8)),
+                          Icon(Icons.check_circle_rounded, size: 16, color: color.withValues(alpha: 0.8)),
                         ],
                       ),
                     );
@@ -239,9 +218,7 @@ class _GlobalTrophyBackfillSheetState
                 decoration: BoxDecoration(
                   color: scheme.surface,
                   border: Border(
-                    top: BorderSide(
-                        color:
-                            scheme.onSurface.withValues(alpha: 0.1)),
+                    top: BorderSide(color: scheme.onSurface.withValues(alpha: 0.1)),
                   ),
                 ),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -257,35 +234,29 @@ class _GlobalTrophyBackfillSheetState
                           backgroundColor: primary,
                           foregroundColor: Colors.white,
                           minimumSize: const Size.fromHeight(50),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: _saving
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
                             : const Text(
                                 'CLAIM TROPHIES',
-                                style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 17),
+                                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 17),
                               ),
                       ),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _saving ? null : _dismiss,
                         style: TextButton.styleFrom(
-                          foregroundColor:
-                              scheme.onSurface.withValues(alpha: 0.5),
+                          foregroundColor: scheme.onSurface.withValues(alpha: 0.5),
                           minimumSize: const Size.fromHeight(42),
                         ),
                         child: const Text(
                           'NOT NOW',
-                          style: TextStyle(
-                              fontFamily: 'NovecentoSans', fontSize: 14),
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14),
                         ),
                       ),
                     ],

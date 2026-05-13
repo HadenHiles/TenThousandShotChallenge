@@ -1172,23 +1172,12 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
     // ── Build all-earned lists ──────────────────────────────────────────────
     final currentFeatured = widget.globalSummary.featuredTrophies.toSet();
     final earnedGlobalIds = widget.globalSummary.trophies.toSet();
-    final earnedFreeDefs = GlobalTrophyService.catalog
-        .where((d) => !d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId)
-        .toList()
-      ..sort((a, b) => a.tier.index.compareTo(b.tier.index));
-    final earnedProDefs = GlobalTrophyService.catalog
-        .where((d) => d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId)
-        .toList()
-      ..sort((a, b) => a.tier.index.compareTo(b.tier.index));
+    final earnedFreeDefs = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => a.tier.index.compareTo(b.tier.index));
+    final earnedProDefs = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => a.tier.index.compareTo(b.tier.index));
 
     final crById = {for (final d in widget.crCatalog) d.id: d};
     final earnedCrIds = widget.crSummary.trophies.toSet();
-    final earnedCrDefs = earnedCrIds
-        .map((id) => crById[id])
-        .whereType<ChallengerRoadTrophyDefinition>()
-        .where((d) => d.id != widget.slotId)
-        .toList()
-      ..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
+    final earnedCrDefs = earnedCrIds.map((id) => crById[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return SafeArea(
       child: Column(
@@ -1289,10 +1278,7 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                     if (earnedFreeDefs.isEmpty && earnedProDefs.isEmpty && earnedCrDefs.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text('No trophies earned yet.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14,
-                                color: scheme.onSurface.withValues(alpha: 0.5))),
+                        child: Text('No trophies earned yet.', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: scheme.onSurface.withValues(alpha: 0.5))),
                       ),
                   ],
                 ),
@@ -1366,10 +1352,7 @@ class _SwapGlobalRow extends StatelessWidget {
                   border: Border.all(color: color.withValues(alpha: 0.55), width: 1.5),
                 ),
                 child: ClipOval(
-                  child: def.effectiveIconUrl != null
-                      ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: color))
-                      : Icon(icon, size: 22, color: color),
+                  child: def.effectiveIconUrl != null ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: color)) : Icon(icon, size: 22, color: color),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1377,15 +1360,9 @@ class _SwapGlobalRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(def.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15,
-                            color: theme.colorScheme.onSurface)),
+                    Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 2),
-                    Text(def.effectiveDescription,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
+                    Text(def.effectiveDescription, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
                   ],
                 ),
               ),
@@ -1431,15 +1408,9 @@ class _SwapCrRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(def.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15,
-                            color: theme.colorScheme.onSurface)),
+                    Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 2),
-                    Text(def.effectiveDescription,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
+                    Text(def.effectiveDescription, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
                   ],
                 ),
               ),
