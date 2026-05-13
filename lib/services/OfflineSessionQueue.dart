@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:sqflite/sqflite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 
 /// Persists shooting sessions to a local SQLite database when offline,
@@ -112,16 +113,63 @@ class OfflineSessionQueue {
         final isChallengerRoad = (row['is_challenger_road'] as int?) == 1;
         final startedAtMs = row['session_started_at'] as int?;
         final durationMs = row['duration_ms'] as int?;
+        final sessionDate = startedAtMs != null ? DateTime.fromMillisecondsSinceEpoch(startedAtMs) : DateTime.now();
         final success = await saveShootingSession(
           shots,
           auth,
           firestore,
           isChallengerRoad: isChallengerRoad,
-          sessionDateOverride: startedAtMs != null ? DateTime.fromMillisecondsSinceEpoch(startedAtMs) : null,
+          sessionDateOverride: sessionDate,
           sessionDurationOverride: durationMs != null ? Duration(milliseconds: durationMs) : null,
         );
         if (success) {
           await db.delete('pending_sessions', where: 'id = ?', whereArgs: [row['id']]);
+
+          // Evaluate global trophies for non-CR sessions (best-effort, no UI).
+          if (!isChallengerRoad && auth.currentUser != null) {
+            try {
+              int total = 0, wrist = 0, snap = 0, slap = 0, backhand = 0;
+              int wristHits = 0, snapHits = 0, slapHits = 0, backhandHits = 0;
+              for (final s in shots) {
+                switch (s.type) {
+                  case 'wrist':
+                    wrist += s.count ?? 0;
+                    wristHits += s.targetsHit ?? 0;
+                    break;
+                  case 'snap':
+                    snap += s.count ?? 0;
+                    snapHits += s.targetsHit ?? 0;
+                    break;
+                  case 'slap':
+                    slap += s.count ?? 0;
+                    slapHits += s.targetsHit ?? 0;
+                    break;
+                  case 'backhand':
+                    backhand += s.count ?? 0;
+                    backhandHits += s.targetsHit ?? 0;
+                    break;
+                }
+                total += s.count ?? 0;
+              }
+              await GlobalTrophyService().evaluateAfterSession(
+                auth.currentUser!.uid,
+                GlobalSessionInput(
+                  total: total,
+                  wrist: wrist,
+                  snap: snap,
+                  slap: slap,
+                  backhand: backhand,
+                  wristTargetsHit: wristHits,
+                  snapTargetsHit: snapHits,
+                  slapTargetsHit: slapHits,
+                  backhandTargetsHit: backhandHits,
+                  sessionDate: sessionDate,
+                ),
+              );
+            } catch (_) {
+              // Trophy evaluation is best-effort during offline sync.
+            }
+          }
         }
       } catch (_) {
         // Leave the row in the queue; retry next time.

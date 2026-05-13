@@ -15,6 +15,9 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/models/firestore/GlobalTrophySummary.dart';
+import 'package:tenthousandshotchallenge/widgets/AllTrophiesSheet.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
@@ -351,6 +354,8 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                             _buildProgressCard(context),
                             const SizedBox(height: 12),
                             _buildStatsChips(context),
+                            const SizedBox(height: 12),
+                            _buildTrophyCase(context),
                             const SizedBox(height: 12),
                             _buildAchievementsCard(context),
                             const SizedBox(height: 12),
@@ -693,6 +698,158 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
 
   Widget _buildStatsChips(BuildContext context) {
     return UserStatsChipsRow(userId: widget.uid, showAchievementChips: false, playerName: _userPlayer?.notifName);
+  }
+
+  Widget _buildTrophyCase(BuildContext context) {
+    final theme = Theme.of(context);
+    final playerIsPro = _userPlayer?.isPro ?? false;
+    return StreamBuilder<GlobalTrophySummary>(
+      stream: GlobalTrophyService().watchUserSummary(widget.uid),
+      builder: (context, globalSnap) {
+        final globalSummary = globalSnap.data ?? GlobalTrophySummary.empty();
+        return StreamBuilder<ChallengerRoadUserSummary>(
+          stream: ChallengerRoadService().watchUserSummary(widget.uid),
+          builder: (context, crSnap) {
+            final crSummary = crSnap.data ?? ChallengerRoadUserSummary.empty();
+            return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+              future: ChallengerRoadService().getTrophyCatalogForUser(widget.uid),
+              builder: (context, catSnap) {
+                final catalog = catSnap.data ?? [];
+                final crById = {for (final d in catalog) d.id: d};
+                final featured = globalSummary.featuredTrophies;
+
+                if (featured.isEmpty && crSummary.trophies.isEmpty && globalSummary.trophies.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'TROPHY CASE',
+                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => showAllTrophiesSheet(context, userId: widget.uid, isPro: playerIsPro),
+                            child: Text(
+                              'VIEW ALL',
+                              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.primaryColor, letterSpacing: 1.1),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          for (int i = 0; i < 5; i++) _trophyCaseSlot(context, theme, i, featured, crById, globalSummary, crSummary),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _trophyCaseSlot(
+    BuildContext context,
+    ThemeData theme,
+    int i,
+    List<String> featured,
+    Map<String, ChallengerRoadTrophyDefinition> crById,
+    GlobalTrophySummary globalSummary,
+    ChallengerRoadUserSummary crSummary,
+  ) {
+    final id = i < featured.length ? featured[i] : '';
+
+    if (id.isNotEmpty) {
+      final bool isGlobal = id.startsWith('g_');
+
+      Widget icon;
+      String label;
+
+      if (isGlobal) {
+        final gDef = GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
+        if (gDef == null) return const SizedBox(width: 52, height: 60);
+        final color = GlobalTrophyService.colorForTrophy(gDef);
+        label = gDef.name;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.15),
+            border: Border.all(color: color.withValues(alpha: 0.6), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: Icon(GlobalTrophyService.iconForTrophy(gDef), size: 20, color: color),
+        );
+      } else {
+        final crDef = crById[id];
+        if (crDef == null) return const SizedBox(width: 52, height: 60);
+        final color = ChallengerRoadService.colorForTrophy(crDef);
+        label = crDef.effectiveName;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: ChallengerRoadService.trophyIconWidget(crDef, size: 36, color: color),
+        );
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 52,
+            height: 24,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.8), height: 1.2),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.08), width: 1.2),
+          ),
+        ),
+        const SizedBox(height: 4),
+        const SizedBox(width: 52, height: 24),
+      ],
+    );
   }
 
   Widget _buildAchievementsCard(BuildContext context) {

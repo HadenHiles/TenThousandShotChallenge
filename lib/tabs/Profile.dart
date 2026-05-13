@@ -25,6 +25,9 @@ import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/models/firestore/GlobalTrophySummary.dart';
+import 'package:tenthousandshotchallenge/widgets/AllTrophiesSheet.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key, this.sessionPanelController, this.updateSessionShotsCB});
@@ -856,45 +859,62 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // ── Profile trophy case (compact card, top of profile) ────────────────────
+  // ── Profile trophy case — unified (CR + session trophies) ─────────────────
 
   Widget _buildProfileTrophyCase(BuildContext context, User currentUser) {
     final theme = Theme.of(context);
-    return StreamBuilder<ChallengerRoadUserSummary>(
-      stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
-      builder: (context, snap) {
-        if (!snap.hasData) return const SizedBox.shrink();
-        final summary = snap.data!;
-        final featured = summary.featuredTrophies;
-        return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
-          future: ChallengerRoadService().getTrophyCatalogForUser(currentUser.uid),
-          builder: (context, catSnap) {
-            if (!catSnap.hasData) return const SizedBox.shrink();
-            final catalog = catSnap.data!;
-            final byId = {for (final d in catalog) d.id: d};
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
-              ),
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'TROPHY CASE',
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
+    return StreamBuilder<GlobalTrophySummary>(
+      stream: GlobalTrophyService().watchUserSummary(currentUser.uid),
+      builder: (context, globalSnap) {
+        final globalSummary = globalSnap.data ?? GlobalTrophySummary.empty();
+        return StreamBuilder<ChallengerRoadUserSummary>(
+          stream: ChallengerRoadService().watchUserSummary(currentUser.uid),
+          builder: (context, crSnap) {
+            final crSummary = crSnap.data ?? ChallengerRoadUserSummary.empty();
+            return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+              future: ChallengerRoadService().getTrophyCatalogForUser(currentUser.uid),
+              builder: (context, catSnap) {
+                final catalog = catSnap.data ?? [];
+                final crById = {for (final d in catalog) d.id: d};
+                // Featured list is now owned by globalSummary
+                final featured = globalSummary.featuredTrophies;
+                return Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (int i = 0; i < 5; i++) _profileTrophyCaseSlot(context, theme, i, featured, byId, currentUser.uid, summary, catalog),
+                      Row(
+                        children: [
+                          Text(
+                            'TROPHY CASE',
+                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => showAllTrophiesSheet(context, userId: currentUser.uid, isPro: _subscriptionLevel == 'pro'),
+                            child: Text(
+                              'VIEW ALL',
+                              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.primaryColor, letterSpacing: 1.1),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          for (int i = 0; i < 5; i++) _profileTrophyCaseSlot(context, theme, i, featured, crById, currentUser.uid, crSummary, catalog, globalSummary),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -907,52 +927,79 @@ class _ProfileState extends State<Profile> {
     ThemeData theme,
     int i,
     List<String> featured,
-    Map<String, ChallengerRoadTrophyDefinition> byId,
+    Map<String, ChallengerRoadTrophyDefinition> crById,
     String userId,
-    ChallengerRoadUserSummary summary,
-    List<ChallengerRoadTrophyDefinition> catalog,
+    ChallengerRoadUserSummary crSummary,
+    List<ChallengerRoadTrophyDefinition> crCatalog,
+    GlobalTrophySummary globalSummary,
   ) {
     final id = i < featured.length ? featured[i] : '';
-    final def = id.isNotEmpty ? byId[id] : null;
-    if (def != null) {
-      final color = _crProfileTrophyColor(def);
+
+    if (id.isNotEmpty) {
+      // ── Filled slot ──
+      final bool isGlobal = id.startsWith('g_');
+
+      Widget icon;
+      String label;
+
+      if (isGlobal) {
+        final gDef = GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
+        if (gDef == null) return const SizedBox(width: 52, height: 60);
+        final color = GlobalTrophyService.colorForTrophy(gDef);
+        label = gDef.name;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.15),
+            border: Border.all(color: color.withValues(alpha: 0.6), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: Icon(GlobalTrophyService.iconForTrophy(gDef), size: 20, color: color),
+        );
+      } else {
+        final crDef = crById[id];
+        if (crDef == null) return const SizedBox(width: 52, height: 60);
+        final color = _crProfileTrophyColor(crDef);
+        label = crDef.effectiveName;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: ChallengerRoadService.trophyIconWidget(crDef, size: 36, color: color),
+        );
+      }
+
       return GestureDetector(
-        onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: id, currentDef: def, summary: summary, catalog: catalog),
+        onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: id, crSummary: crSummary, crCatalog: crCatalog, globalSummary: globalSummary),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
-              ),
-              child: ChallengerRoadService.trophyIconWidget(def, size: 36, color: color),
-            ),
+            icon,
             const SizedBox(height: 4),
             SizedBox(
               width: 52,
               height: 24,
               child: Text(
-                def.effectiveName,
+                label,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 10,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                  height: 1.2,
-                ),
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.8), height: 1.2),
               ),
             ),
           ],
         ),
       );
     }
+
+    // ── Empty slot — tap opens unified picker ──
     return GestureDetector(
-      onTap: () => context.push(AppRoutePaths.profileChallengerRoad),
+      onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: '', crSummary: crSummary, crCatalog: crCatalog, globalSummary: globalSummary),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -976,9 +1023,9 @@ class _ProfileState extends State<Profile> {
     BuildContext context, {
     required String userId,
     required String slotId,
-    required ChallengerRoadTrophyDefinition currentDef,
-    required ChallengerRoadUserSummary summary,
-    required List<ChallengerRoadTrophyDefinition> catalog,
+    required ChallengerRoadUserSummary crSummary,
+    required List<ChallengerRoadTrophyDefinition> crCatalog,
+    required GlobalTrophySummary globalSummary,
   }) {
     showModalBottomSheet(
       context: context,
@@ -990,9 +1037,9 @@ class _ProfileState extends State<Profile> {
       builder: (_) => _ProfileTrophySwapSheet(
         userId: userId,
         slotId: slotId,
-        currentDef: currentDef,
-        summary: summary,
-        catalog: catalog,
+        crSummary: crSummary,
+        crCatalog: crCatalog,
+        globalSummary: globalSummary,
       ),
     );
   }
@@ -1023,22 +1070,24 @@ class _DashboardCard extends StatelessWidget {
   }
 }
 
-// ── CR badge swap sheet (profile dashboard card) ────────────────────────────
+// ── Unified trophy swap sheet (CR + session trophies) ───────────────────────
 
 class _ProfileTrophySwapSheet extends StatefulWidget {
   const _ProfileTrophySwapSheet({
     required this.userId,
     required this.slotId,
-    required this.currentDef,
-    required this.summary,
-    required this.catalog,
+    required this.crSummary,
+    required this.crCatalog,
+    required this.globalSummary,
   });
 
   final String userId;
+
+  /// ID of the trophy currently in the tapped slot, or '' for an empty slot.
   final String slotId;
-  final ChallengerRoadTrophyDefinition currentDef;
-  final ChallengerRoadUserSummary summary;
-  final List<ChallengerRoadTrophyDefinition> catalog;
+  final ChallengerRoadUserSummary crSummary;
+  final List<ChallengerRoadTrophyDefinition> crCatalog;
+  final GlobalTrophySummary globalSummary;
 
   @override
   State<_ProfileTrophySwapSheet> createState() => _ProfileTrophySwapSheetState();
@@ -1047,32 +1096,87 @@ class _ProfileTrophySwapSheet extends StatefulWidget {
 class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
   bool _saving = false;
 
-  Future<void> _swap(String newTrophyId) async {
-    if (newTrophyId == widget.slotId) {
+  Future<void> _pick(String newId) async {
+    if (newId == widget.slotId) {
       Navigator.of(context).pop();
       return;
     }
     setState(() => _saving = true);
-    final newFeatured = List<String>.from(widget.summary.featuredTrophies);
-    newFeatured.remove(newTrophyId); // pull out if already in another slot
-    final idx = newFeatured.indexOf(widget.slotId);
-    if (idx >= 0) {
-      newFeatured[idx] = newTrophyId;
+    final newFeatured = List<String>.from(widget.globalSummary.featuredTrophies);
+    newFeatured.remove(newId); // remove from another slot if already featured
+    if (widget.slotId.isEmpty) {
+      newFeatured.add(newId);
     } else {
-      newFeatured.add(newTrophyId);
+      final idx = newFeatured.indexOf(widget.slotId);
+      if (idx >= 0) {
+        newFeatured[idx] = newId;
+      } else {
+        newFeatured.add(newId);
+      }
     }
-    await ChallengerRoadService().updateFeaturedTrophies(widget.userId, newFeatured.take(5).toList());
+    await GlobalTrophyService().setFeaturedTrophies(widget.userId, newFeatured.take(5).toList());
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final byId = {for (final d in widget.catalog) d.id: d};
-    final earnedIds = widget.summary.trophies.toSet();
-    final earnedDefs = earnedIds.map((id) => byId[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
-    final currentColor = _crProfileTrophyColor(widget.currentDef);
+    // ── Resolve current slot trophy (global or CR) ──────────────────────────
+    final bool slotIsGlobal = widget.slotId.startsWith('g_');
+    final bool slotIsEmpty = widget.slotId.isEmpty;
+
+    Widget? currentIcon;
+    String currentName = '';
+    String currentDesc = '';
+
+    if (!slotIsEmpty) {
+      if (slotIsGlobal) {
+        final gDef = GlobalTrophyService.catalog.where((d) => d.id == widget.slotId).firstOrNull;
+        if (gDef != null) {
+          final color = GlobalTrophyService.colorForTrophy(gDef);
+          currentName = gDef.name;
+          currentDesc = gDef.description;
+          currentIcon = Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.15),
+              border: Border.all(color: color.withValues(alpha: 0.6), width: 1.5),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
+            ),
+            child: Icon(GlobalTrophyService.iconForTrophy(gDef), size: 26, color: color),
+          );
+        }
+      } else {
+        final crById = {for (final d in widget.crCatalog) d.id: d};
+        final crDef = crById[widget.slotId];
+        if (crDef != null) {
+          final color = _crProfileTrophyColor(crDef);
+          currentName = crDef.effectiveName;
+          currentDesc = crDef.effectiveDescription;
+          currentIcon = Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
+            ),
+            child: ChallengerRoadService.trophyIconWidget(crDef, size: 46, color: color),
+          );
+        }
+      }
+    }
+
+    // ── Build all-earned lists ──────────────────────────────────────────────
+    final currentFeatured = widget.globalSummary.featuredTrophies.toSet();
+    final earnedGlobalIds = widget.globalSummary.trophies.toSet();
+    final earnedGlobalDefs = GlobalTrophyService.catalog.where((d) => earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => a.name.compareTo(b.name));
+
+    final crById = {for (final d in widget.crCatalog) d.id: d};
+    final earnedCrIds = widget.crSummary.trophies.toSet();
+    final earnedCrDefs = earnedCrIds.map((id) => crById[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
 
     return SafeArea(
       child: Column(
@@ -1087,100 +1191,155 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [BoxShadow(color: currentColor.withValues(alpha: 0.35), blurRadius: 8)],
+          // ── Current trophy preview (or "Add" header) ──────────────────
+          if (!slotIsEmpty && currentIcon != null) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+              child: Row(
+                children: [
+                  currentIcon,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(currentName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: scheme.onSurface)),
+                        Text(currentDesc, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.6))),
+                      ],
+                    ),
                   ),
-                  child: ChallengerRoadService.trophyIconWidget(widget.currentDef, size: 46, color: currentColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.currentDef.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: scheme.onSurface),
-                      ),
-                      Text(
-                        widget.currentDef.effectiveDescription,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.6)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+              child: Text('ADD TO TROPHY CASE', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: scheme.onSurface)),
+            ),
+          ],
           const Divider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'SWAP WITH',
+                slotIsEmpty ? 'SELECT A TROPHY' : 'SWAP WITH',
                 style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.55), letterSpacing: 1.2),
               ),
             ),
           ),
+          // ── Picker grid ───────────────────────────────────────────────
           if (_saving)
             const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: CircularProgressIndicator())
           else
             ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-              child: GridView.builder(
-                shrinkWrap: true,
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                itemCount: earnedDefs.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.9,
-                ),
-                itemBuilder: (context, i) {
-                  final def = earnedDefs[i];
-                  final color = _crProfileTrophyColor(def);
-                  final isAlreadyFeatured = widget.summary.featuredTrophies.contains(def.id);
-                  return InkWell(
-                    onTap: () => _swap(def.id),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Opacity(
-                      opacity: isAlreadyFeatured ? 0.45 : 1.0,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
-                            ),
-                            child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            def.effectiveName,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: scheme.onSurface.withValues(alpha: 0.85), height: 1.2),
-                          ),
-                        ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Session trophies
+                    if (earnedGlobalDefs.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6, top: 4),
+                        child: Text('SESSION TROPHIES', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: scheme.onSurface.withValues(alpha: 0.45), letterSpacing: 1.2)),
                       ),
-                    ),
-                  );
-                },
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: earnedGlobalDefs.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemBuilder: (context, i) {
+                          final def = earnedGlobalDefs[i];
+                          final color = GlobalTrophyService.colorForTrophy(def);
+                          final alreadyFeatured = currentFeatured.contains(def.id);
+                          return InkWell(
+                            onTap: () => _pick(def.id),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Opacity(
+                              opacity: alreadyFeatured ? 0.45 : 1.0,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 52,
+                                    height: 52,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: color.withValues(alpha: 0.15),
+                                      border: Border.all(color: color.withValues(alpha: 0.6), width: 1.5),
+                                      boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
+                                    ),
+                                    child: Icon(GlobalTrophyService.iconForTrophy(def), size: 28, color: color),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(def.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: scheme.onSurface.withValues(alpha: 0.85), height: 1.2)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    // Challenger Road trophies
+                    if (earnedCrDefs.isNotEmpty) ...[
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 6, top: earnedGlobalDefs.isNotEmpty ? 14 : 4),
+                        child: Text('CHALLENGER ROAD', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: scheme.onSurface.withValues(alpha: 0.45), letterSpacing: 1.2)),
+                      ),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: earnedCrDefs.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemBuilder: (context, i) {
+                          final def = earnedCrDefs[i];
+                          final color = _crProfileTrophyColor(def);
+                          final alreadyFeatured = currentFeatured.contains(def.id);
+                          return InkWell(
+                            onTap: () => _pick(def.id),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Opacity(
+                              opacity: alreadyFeatured ? 0.45 : 1.0,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 52,
+                                    height: 52,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8)],
+                                    ),
+                                    child: ChallengerRoadService.trophyIconWidget(def, size: 52, color: color),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(def.effectiveName, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: scheme.onSurface.withValues(alpha: 0.85), height: 1.2)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    if (earnedGlobalDefs.isEmpty && earnedCrDefs.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text('No trophies earned yet.', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: scheme.onSurface.withValues(alpha: 0.5))),
+                      ),
+                  ],
+                ),
               ),
             ),
         ],
