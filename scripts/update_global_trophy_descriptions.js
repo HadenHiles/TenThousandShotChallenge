@@ -8,7 +8,7 @@
  * display fields on every document so improvements are always reflected
  * in Firestore.
  *
- * icon_url is NOT touched — custom images set via the admin dashboard are
+ * icon_url is NOT touched - custom images set via the admin dashboard are
  * preserved.
  *
  * Usage:
@@ -38,7 +38,7 @@ const CATEGORY_ICON = {
 };
 
 // ---------------------------------------------------------------------------
-// Trophy catalog — inclusive descriptions.
+// Trophy catalog - inclusive descriptions.
 // ALL session types count toward every category. Regular training sessions
 // and Challenger Road sessions both supply per-type shot data (each CR
 // challenge requires a specific shot type), so shot-type and accuracy
@@ -56,7 +56,7 @@ const TROPHIES = [
     { id: 'g_shots_7500', name: 'Deep In It', desc: '7,500 total shots logged. The finish line is in sight.', category: 'volume', tier: 'rare', proOnly: false },
     { id: 'g_shots_10000', name: 'The Full Ten', desc: '10,000 total shots logged. You completed the entire challenge.', category: 'volume', tier: 'epic', proOnly: false },
     { id: 'g_shots_15000', name: 'Encore', desc: "15,000 total shots logged. Once wasn't enough for you.", category: 'volume', tier: 'epic', proOnly: false },
-    { id: 'g_shots_20000', name: 'Double Down', desc: '20,000 total shots logged — two full challenges worth of reps.', category: 'volume', tier: 'epic', proOnly: true },
+    { id: 'g_shots_20000', name: 'Double Down', desc: '20,000 total shots logged - two full challenges worth of reps.', category: 'volume', tier: 'epic', proOnly: true },
     { id: 'g_shots_25000', name: 'Obsessed', desc: '25,000 total shots logged. Honestly, we respect it.', category: 'volume', tier: 'legendary', proOnly: true },
     { id: 'g_shots_50000', name: 'Five Times Ten Thousand', desc: '50,000 total shots logged. Absolute menace. In the best way.', category: 'volume', tier: 'legendary', proOnly: true },
 
@@ -64,7 +64,7 @@ const TROPHIES = [
     { id: 'g_first_session', name: 'Warming Up', desc: 'Finished your first session in the app.', category: 'sessions', tier: 'common', proOnly: false },
     { id: 'g_sessions_5', name: 'Five and Counting', desc: '5 sessions completed. A habit is forming.', category: 'sessions', tier: 'common', proOnly: false },
     { id: 'g_sessions_10', name: 'Getting Reps In', desc: '10 sessions in the bag.', category: 'sessions', tier: 'common', proOnly: false },
-    { id: 'g_sessions_25', name: 'Committed', desc: "25 sessions. This isn't a phase — it's a practice.", category: 'sessions', tier: 'uncommon', proOnly: false },
+    { id: 'g_sessions_25', name: 'Committed', desc: "25 sessions. This isn't a phase - it's a practice.", category: 'sessions', tier: 'uncommon', proOnly: false },
     { id: 'g_sessions_50', name: 'Half a Century', desc: '50 sessions completed. You show up more than most.', category: 'sessions', tier: 'uncommon', proOnly: false },
     { id: 'g_sessions_100', name: 'Century', desc: "100 sessions. You're a grinder.", category: 'sessions', tier: 'rare', proOnly: false },
     { id: 'g_sessions_150', name: 'Regular', desc: "150 sessions. You're practically a fixture at the rink.", category: 'sessions', tier: 'rare', proOnly: true },
@@ -114,7 +114,7 @@ const TROPHIES = [
     { id: 'g_sunrise_shooter', name: 'Before The World Wakes', desc: '25 sessions started before 6 AM. Absolutely no excuses ever.', category: 'timeOfDay', tier: 'epic', proOnly: true },
     { id: 'g_weekend_grinder', name: 'Weekend Machine', desc: 'Logged sessions on both Saturday and Sunday for 4 consecutive weekends.', category: 'timeOfDay', tier: 'epic', proOnly: true },
 
-    // ── Accuracy (Pro only — requires per-type shot data; regular + CR) ─────
+    // ── Accuracy (Pro only - requires per-type shot data; regular + CR) ─────
     { id: 'g_wrist_accuracy_80', name: 'Laser Wrist', desc: '80%+ wrist accuracy in a single training session (min. 25 wrist shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_snap_accuracy_80', name: 'Snap Sniper', desc: '80%+ snap accuracy in a single training session (min. 25 snap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_slap_accuracy_80', name: 'Precision Bomb', desc: '80%+ slap accuracy in a single training session (min. 25 slap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
@@ -154,7 +154,7 @@ async function updateDescriptions() {
 
     await batch.commit();
     console.log(`✓ Updated ${TROPHIES.length} global trophy definitions in Firestore.`);
-    console.log('  (icon_url fields were NOT touched — existing custom images are preserved)');
+    console.log('  (icon_url fields were NOT touched - existing custom images are preserved)');
 }
 
 updateDescriptions().catch((err) => {

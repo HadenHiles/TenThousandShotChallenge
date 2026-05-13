@@ -9,7 +9,7 @@
  *      (if not already set) so the admin and app can filter by type.
  *   3. Delete all docs from global_trophy_definitions.
  *
- * Safe to re-run — already-migrated trophy docs are detected by checking for
+ * Safe to re-run - already-migrated trophy docs are detected by checking for
  * type='global' on the destination. Already-stamped CR badge docs are skipped.
  *
  * Usage:
@@ -35,7 +35,7 @@ async function migrate() {
 
     const srcDocs = srcSnap.docs;
     if (srcDocs.length === 0) {
-        console.log('global_trophy_definitions is empty — nothing to migrate.');
+        console.log('global_trophy_definitions is empty - nothing to migrate.');
     } else {
         console.log(`Found ${srcDocs.length} trophy definition(s) to migrate…`);
     }
@@ -58,7 +58,7 @@ async function migrate() {
         }
         console.log('  ✓ CR badges stamped.');
     } else {
-        console.log('All existing CR badge docs already have a type field — skipping stamp step.');
+        console.log('All existing CR badge docs already have a type field - skipping stamp step.');
     }
 
     // ── 3. Copy trophy docs to challenger_road_badges ───────────────────────
@@ -69,7 +69,7 @@ async function migrate() {
         const alreadyDone = srcDocs.length - toMigrate.length;
 
         if (alreadyDone > 0) {
-            console.log(`  ${alreadyDone} trophy doc(s) already exist in challenger_road_badges — skipping.`);
+            console.log(`  ${alreadyDone} trophy doc(s) already exist in challenger_road_badges - skipping.`);
         }
 
         if (toMigrate.length > 0) {

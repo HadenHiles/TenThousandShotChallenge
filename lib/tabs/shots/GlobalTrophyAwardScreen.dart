@@ -5,7 +5,7 @@ import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
 /// Full-screen badge award celebration shown after a session unlocks one or
 /// more new global trophies.
 ///
-/// Uses the plain icon badge design (no custom artwork) — the category icon is
+/// Uses the plain icon badge design (no custom artwork) - the category icon is
 /// always rendered in a radial gradient circle, distinguishing these from the
 /// Challenger Road trophies that use bespoke badge images.
 ///

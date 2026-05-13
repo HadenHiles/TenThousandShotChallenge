@@ -481,7 +481,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   bool _isRoadComplete(_CRMapData data) {
     // Road-complete is a data state: the attempt's currentLevel has been
     // advanced past the last active level by advanceLevel(). This is true
-    // regardless of subscription/preview state — a non-pro user can never
+    // regardless of subscription/preview state - a non-pro user can never
     // reach currentLevel > levels.last because they cannot play level-2+
     // challenges to trigger advanceLevel().
     if (data.activeAttempt == null || data.levels.isEmpty) return false;
@@ -1604,7 +1604,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final levelDoc = challenge.toLevelDoc();
     if (!mounted) return;
 
-    // If the road is already complete, don't let the user play challenges —
+    // If the road is already complete, don't let the user play challenges -
     // prompt them to Run It Back instead.
     if (_isRoadComplete(data) && !isSubscriptionLocked) {
       _confirmRunItBack(context);

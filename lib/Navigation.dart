@@ -1179,7 +1179,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         bottomNavigationBar: Builder(
           builder: (context) {
             // Use SafeArea to handle the home indicator inset rather than
-            // manually computing safeBottom — this is more reliable across
+            // manually computing safeBottom - this is more reliable across
             // all iOS/Android device variants and navigation modes.
             // Three-button Android is already shifted up by main.dart so we
             // zero out the bottom safe area there to avoid double-counting.

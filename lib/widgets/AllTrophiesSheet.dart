@@ -510,7 +510,7 @@ class _CrTrophyRow extends StatelessWidget {
   }
 }
 
-// ── Global trophy row (for FREE and PRO tabs — matches CR row style) ─────────
+// ── Global trophy row (for FREE and PRO tabs - matches CR row style) ─────────
 
 class _GlobalTrophyRow extends StatelessWidget {
   const _GlobalTrophyRow({

@@ -49,7 +49,7 @@ const CATEGORY_ICON = {
 };
 
 // ---------------------------------------------------------------------------
-// Trophy catalog — mirrors GlobalTrophyService.catalog in Dart exactly.
+// Trophy catalog - mirrors GlobalTrophyService.catalog in Dart exactly.
 // Never rename IDs; they are persisted in user documents.
 // ---------------------------------------------------------------------------
 const TROPHIES = [
@@ -168,7 +168,7 @@ async function seed() {
 
     const missing = TROPHIES.filter((t) => !existingIds.has(t.id));
     if (missing.length === 0) {
-        console.log('All global_trophy_definitions already exist — nothing to seed.');
+        console.log('All global_trophy_definitions already exist - nothing to seed.');
         return;
     }
 
