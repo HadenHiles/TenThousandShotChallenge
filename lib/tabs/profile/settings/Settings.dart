@@ -13,7 +13,9 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
+import 'package:tenthousandshotchallenge/services/ResetDataService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/widgets/ConfirmResetDialog.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -37,6 +39,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _publicProfile = true;
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
+  bool _isResetting = false;
 
   // Local notification settings
   bool _localPracticeReminders = true;
@@ -755,6 +758,291 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 if (mounted) setState(() => _activeSessionNotification = value);
                                 if (!value) await LocalNotificationService.cancelActiveSession();
                               },
+                            ),
+                          ],
+                        ),
+                        // ── Reset ────────────────────────────────────────────
+                        SettingsSection(
+                          title: Text('Reset', style: Theme.of(context).textTheme.titleLarge),
+                          tiles: [
+                            CustomSettingsTile(
+                              child: Opacity(
+                                opacity: isOffline ? 0.4 : 1.0,
+                                child: IgnorePointer(
+                                  ignoring: isOffline || _isResetting,
+                                  child: SettingsTile(
+                                    title: Text(
+                                      'Restart Current Challenge',
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    description: Text(
+                                      'Delete all sessions from this challenge and reset the count to 0. Challenger Road sessions are preserved.',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    leading: _isResetting
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(context).primaryColor,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.restart_alt_rounded, color: Colors.orange),
+                                    onPressed: (ctx) async {
+                                      final confirmed = await showConfirmResetDialog(
+                                        context: ctx,
+                                        title: 'Restart Current Challenge',
+                                        description: 'This will permanently delete all non–Challenger Road sessions from your current challenge and reset the shot count to 0.\n\nChallenger Road sessions will be kept but will not count toward the new total.\n\nThis cannot be undone.',
+                                        confirmPhrase: 'RESTART',
+                                        actionLabel: 'Restart',
+                                        actionColor: Colors.orange,
+                                      );
+                                      if (confirmed != true || !mounted) return;
+                                      setState(() => _isResetting = true);
+                                      try {
+                                        await ResetDataService(
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                        ).restartCurrentChallenge();
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Challenge restarted',
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } catch (_) {
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Something went wrong. Please try again.',
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } finally {
+                                        if (mounted) setState(() => _isResetting = false);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            CustomSettingsTile(
+                              child: Opacity(
+                                opacity: isOffline ? 0.4 : 1.0,
+                                child: IgnorePointer(
+                                  ignoring: isOffline || _isResetting,
+                                  child: SettingsTile(
+                                    title: Text(
+                                      'Reset All Trophies',
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    description: Text(
+                                      'Clears all earned trophies and resets trophy tracking counters. Session history is kept.',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    leading: _isResetting
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(context).primaryColor,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.emoji_events_rounded, color: Colors.orange),
+                                    onPressed: (ctx) async {
+                                      final confirmed = await showConfirmResetDialog(
+                                        context: ctx,
+                                        title: 'Reset All Trophies',
+                                        description: 'This will permanently clear all of your earned trophies (global and Challenger Road) and reset all trophy tracking counters.\n\nYour shooting sessions are not affected.\n\nThis cannot be undone.',
+                                        confirmPhrase: 'RESET TROPHIES',
+                                        actionLabel: 'Reset Trophies',
+                                        actionColor: Colors.orange,
+                                      );
+                                      if (confirmed != true || !mounted) return;
+                                      setState(() => _isResetting = true);
+                                      try {
+                                        await ResetDataService(
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                        ).resetAllTrophies();
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'All trophies reset',
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } catch (_) {
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Something went wrong. Please try again.',
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } finally {
+                                        if (mounted) setState(() => _isResetting = false);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            CustomSettingsTile(
+                              child: Opacity(
+                                opacity: isOffline ? 0.4 : 1.0,
+                                child: IgnorePointer(
+                                  ignoring: isOffline || _isResetting,
+                                  child: SettingsTile(
+                                    title: Text(
+                                      'Erase Challenger Road',
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    description: Text(
+                                      'Delete all Challenger Road attempts, sessions, challenge history, and Challenger Road trophies.',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    leading: _isResetting
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(context).primaryColor,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.route_rounded, color: Colors.red),
+                                    onPressed: (ctx) async {
+                                      final confirmed = await showConfirmResetDialog(
+                                        context: ctx,
+                                        title: 'Erase Challenger Road',
+                                        description: 'This will permanently delete all of your Challenger Road attempts, challenge sessions, progress history, and Challenger Road trophies.\n\nYour regular shooting sessions are not affected.\n\nThis cannot be undone.',
+                                        confirmPhrase: 'ERASE CHALLENGER ROAD',
+                                        actionLabel: 'Erase',
+                                        actionColor: Colors.red,
+                                      );
+                                      if (confirmed != true || !mounted) return;
+                                      setState(() => _isResetting = true);
+                                      try {
+                                        await ResetDataService(
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                        ).eraseAllChallengerRoad();
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Challenger Road data erased',
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } catch (_) {
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Something went wrong. Please try again.',
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } finally {
+                                        if (mounted) setState(() => _isResetting = false);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            CustomSettingsTile(
+                              child: Opacity(
+                                opacity: isOffline ? 0.4 : 1.0,
+                                child: IgnorePointer(
+                                  ignoring: isOffline || _isResetting,
+                                  child: SettingsTile(
+                                    title: Text(
+                                      'Erase All Shooting Data',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize,
+                                      ),
+                                    ),
+                                    description: Text(
+                                      'Complete clean slate — deletes every session, all trophies, and all Challenger Road data.',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    leading: _isResetting
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.red,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                                    onPressed: (ctx) async {
+                                      final confirmed = await showConfirmResetDialog(
+                                        context: ctx,
+                                        title: 'Erase All Shooting Data',
+                                        description: 'This is a complete clean slate.\n\nEvery shooting session, iteration, trophy, Challenger Road attempt, and challenge history will be permanently deleted.\n\nThis cannot be undone.',
+                                        confirmPhrase: 'ERASE ALL',
+                                        actionLabel: 'Erase Everything',
+                                        actionColor: Colors.red,
+                                      );
+                                      if (confirmed != true || !mounted) return;
+                                      setState(() => _isResetting = true);
+                                      try {
+                                        await ResetDataService(
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                        ).eraseAllShootingData();
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'All shooting data erased',
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } catch (_) {
+                                        if (mounted) {
+                                          Fluttertoast.showToast(
+                                            msg: 'Something went wrong. Please try again.',
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.BOTTOM,
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            textColor: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } finally {
+                                        if (mounted) setState(() => _isResetting = false);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
