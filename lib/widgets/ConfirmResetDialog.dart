@@ -86,67 +86,71 @@ class _ConfirmResetDialogState extends State<_ConfirmResetDialog> {
           fontSize: 22,
         ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.description,
-            style: TextStyle(
-              color: theme.colorScheme.onPrimary,
-              fontSize: 14,
+      // SingleChildScrollView prevents RenderFlex overflow when the soft
+      // keyboard pushes the dialog up on smaller screens.
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.description,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontSize: 14,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Type  "${widget.confirmPhrase}"  to confirm:',
-            style: TextStyle(
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 20),
+            Text(
+              'Type  "${widget.confirmPhrase}"  to confirm:',
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            autocorrect: false,
-            textCapitalization: TextCapitalization.characters,
-            style: TextStyle(
-              color: theme.colorScheme.onPrimary,
-              fontFamily: 'NovecentoSans',
-              fontSize: 16,
-              letterSpacing: 1.5,
-            ),
-            decoration: InputDecoration(
-              hintText: widget.confirmPhrase,
-              hintStyle: TextStyle(
-                color: theme.colorScheme.onPrimary.withValues(alpha: 0.3),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.characters,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
                 fontFamily: 'NovecentoSans',
+                fontSize: 16,
                 letterSpacing: 1.5,
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surface.withValues(alpha: 0.15),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.colorScheme.onPrimary.withValues(alpha: 0.3)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.colorScheme.onPrimary.withValues(alpha: 0.3)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: _matches ? Colors.green : widget.actionColor,
-                  width: 2,
+              decoration: InputDecoration(
+                hintText: widget.confirmPhrase,
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.3),
+                  fontFamily: 'NovecentoSans',
+                  letterSpacing: 1.5,
                 ),
+                filled: true,
+                fillColor: theme.colorScheme.surface.withValues(alpha: 0.15),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary.withValues(alpha: 0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary.withValues(alpha: 0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: _matches ? Colors.green : widget.actionColor,
+                    width: 2,
+                  ),
+                ),
+                suffixIcon: _matches ? const Icon(Icons.check_circle, color: Colors.green) : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
-              suffixIcon: _matches ? const Icon(Icons.check_circle, color: Colors.green) : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -163,14 +167,13 @@ class _ConfirmResetDialogState extends State<_ConfirmResetDialog> {
           onPressed: _matches ? () => Navigator.of(context).pop(true) : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: widget.actionColor,
-            disabledBackgroundColor: widget.actionColor.withValues(alpha: 0.3),
+            disabledBackgroundColor: widget.actionColor.withValues(alpha: 0.25),
+            // Explicit foreground colours ensure text is legible in both states.
             foregroundColor: Colors.white,
-            disabledForegroundColor: Colors.white.withValues(alpha: 0.4),
+            disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
+            textStyle: const TextStyle(fontFamily: 'NovecentoSans', fontWeight: FontWeight.w700),
           ),
-          child: Text(
-            widget.actionLabel.toUpperCase(),
-            style: const TextStyle(fontFamily: 'NovecentoSans'),
-          ),
+          child: Text(widget.actionLabel.toUpperCase()),
         ),
       ],
     );

@@ -471,73 +471,6 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 }
                               },
                             ),
-                            CustomSettingsTile(
-                                child: Opacity(
-                                    opacity: isOffline ? 0.4 : 1.0,
-                                    child: IgnorePointer(
-                                        ignoring: isOffline,
-                                        child: SettingsTile(
-                                          title: Text(
-                                            "Recalculate Shot Totals",
-                                            style: Theme.of(context).textTheme.bodyLarge,
-                                          ),
-                                          description: Text(
-                                            "Use this if your shot count is out of sync",
-                                            style: Theme.of(context).textTheme.bodyMedium,
-                                          ),
-                                          leading: _refreshingShots
-                                              ? SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child: CircularProgressIndicator(
-                                                    color: Theme.of(context).primaryColor,
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  Icons.refresh_rounded,
-                                                  color: Theme.of(context).colorScheme.onPrimary,
-                                                ),
-                                          onPressed: (context) async {
-                                            if (_shotsRefreshedOnce) {
-                                              setState(() {
-                                                _refreshingShots = true;
-                                              });
-
-                                              Future.delayed(const Duration(milliseconds: 800)).then(
-                                                (value) => setState(() {
-                                                  _refreshingShots = false;
-                                                }),
-                                              );
-                                            } else {
-                                              setState(() {
-                                                _refreshingShots = true;
-                                              });
-                                              await recalculateIterationTotals(
-                                                Provider.of<FirebaseAuth>(context, listen: false),
-                                                Provider.of<FirebaseFirestore>(context, listen: false),
-                                              ).then((_) {
-                                                Future.delayed(const Duration(milliseconds: 200)).then(
-                                                  (value) {
-                                                    setState(() {
-                                                      _refreshingShots = false;
-                                                      _shotsRefreshedOnce = true;
-                                                    });
-
-                                                    Fluttertoast.showToast(
-                                                      msg: 'Finished recalculating shot totals',
-                                                      toastLength: Toast.LENGTH_SHORT,
-                                                      gravity: ToastGravity.BOTTOM,
-                                                      timeInSecForIosWeb: 1,
-                                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                                      textColor: Theme.of(context).colorScheme.onPrimary,
-                                                      fontSize: 16.0,
-                                                    );
-                                                  },
-                                                );
-                                              });
-                                            }
-                                          },
-                                        )))),
                           ],
                         ),
                         SettingsSection(
@@ -765,6 +698,76 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         SettingsSection(
                           title: Text('Reset', style: Theme.of(context).textTheme.titleLarge),
                           tiles: [
+                            // Recalculate (non-destructive) — listed first so it
+                            // stands apart visually from the destructive options below.
+                            CustomSettingsTile(
+                              child: Opacity(
+                                opacity: isOffline ? 0.4 : 1.0,
+                                child: IgnorePointer(
+                                  ignoring: isOffline,
+                                  child: SettingsTile(
+                                    title: Text(
+                                      'Recalculate Shot Totals',
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    description: Text(
+                                      'Use this if your shot count looks out of sync',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    leading: _refreshingShots
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.refresh_rounded,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                    onPressed: (context) async {
+                                      if (_shotsRefreshedOnce) {
+                                        setState(() {
+                                          _refreshingShots = true;
+                                        });
+                                        Future.delayed(const Duration(milliseconds: 800)).then(
+                                          (value) => setState(() {
+                                            _refreshingShots = false;
+                                          }),
+                                        );
+                                      } else {
+                                        setState(() {
+                                          _refreshingShots = true;
+                                        });
+                                        await recalculateIterationTotals(
+                                          Provider.of<FirebaseAuth>(context, listen: false),
+                                          Provider.of<FirebaseFirestore>(context, listen: false),
+                                        ).then((_) {
+                                          Future.delayed(const Duration(milliseconds: 200)).then(
+                                            (value) {
+                                              setState(() {
+                                                _refreshingShots = false;
+                                                _shotsRefreshedOnce = true;
+                                              });
+                                              Fluttertoast.showToast(
+                                                msg: 'Finished recalculating shot totals',
+                                                toastLength: Toast.LENGTH_SHORT,
+                                                gravity: ToastGravity.BOTTOM,
+                                                timeInSecForIosWeb: 1,
+                                                backgroundColor: Theme.of(context).cardTheme.color,
+                                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                                fontSize: 16.0,
+                                              );
+                                            },
+                                          );
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
                             CustomSettingsTile(
                               child: Opacity(
                                 opacity: isOffline ? 0.4 : 1.0,
@@ -776,7 +779,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       style: Theme.of(context).textTheme.bodyLarge,
                                     ),
                                     description: Text(
-                                      'Delete all sessions from this challenge and reset the count to 0. Challenger Road sessions are preserved.',
+                                      'Delete all sessions from your current challenge and reset the shot count back to 0. Challenger Road sessions are kept.',
                                       style: Theme.of(context).textTheme.bodySmall,
                                     ),
                                     leading: _isResetting
@@ -793,7 +796,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       final confirmed = await showConfirmResetDialog(
                                         context: ctx,
                                         title: 'Restart Current Challenge',
-                                        description: 'This will permanently delete all non–Challenger Road sessions from your current challenge and reset the shot count to 0.\n\nChallenger Road sessions will be kept but will not count toward the new total.\n\nThis cannot be undone.',
+                                        description: 'All of your shooting sessions in the current challenge will be permanently deleted and your shot count will reset to 0.\n\nChallenger Road sessions will be kept but will not count toward the new total.\n\nThis cannot be undone.',
                                         confirmPhrase: 'RESTART',
                                         actionLabel: 'Restart',
                                         actionColor: Colors.orange,
@@ -845,7 +848,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       style: Theme.of(context).textTheme.bodyLarge,
                                     ),
                                     description: Text(
-                                      'Clears all earned trophies and resets trophy tracking counters. Session history is kept.',
+                                      'Clears all earned trophies and resets trophy tracking. Your shooting sessions are kept.',
                                       style: Theme.of(context).textTheme.bodySmall,
                                     ),
                                     leading: _isResetting
@@ -862,7 +865,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       final confirmed = await showConfirmResetDialog(
                                         context: ctx,
                                         title: 'Reset All Trophies',
-                                        description: 'This will permanently clear all of your earned trophies (global and Challenger Road) and reset all trophy tracking counters.\n\nYour shooting sessions are not affected.\n\nThis cannot be undone.',
+                                        description: 'All of your earned trophies — including Challenger Road badges — will be permanently cleared. Trophy tracking counters will reset.\n\nYour shooting sessions and challenge history are not affected.\n\nThis cannot be undone.',
                                         confirmPhrase: 'RESET TROPHIES',
                                         actionLabel: 'Reset Trophies',
                                         actionColor: Colors.orange,
@@ -914,7 +917,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       style: Theme.of(context).textTheme.bodyLarge,
                                     ),
                                     description: Text(
-                                      'Delete all Challenger Road attempts, sessions, challenge history, and Challenger Road trophies.',
+                                      'Deletes all Challenger Road attempts, sessions, badges, and challenge history. Your regular shot history is kept.',
                                       style: Theme.of(context).textTheme.bodySmall,
                                     ),
                                     leading: _isResetting
@@ -931,7 +934,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       final confirmed = await showConfirmResetDialog(
                                         context: ctx,
                                         title: 'Erase Challenger Road',
-                                        description: 'This will permanently delete all of your Challenger Road attempts, challenge sessions, progress history, and Challenger Road trophies.\n\nYour regular shooting sessions are not affected.\n\nThis cannot be undone.',
+                                        description: 'All of your Challenger Road attempts, sessions, badges, and challenge history will be permanently deleted.\n\nYour regular shooting sessions and challenge progress are not affected.\n\nThis cannot be undone.',
                                         confirmPhrase: 'ERASE CHALLENGER ROAD',
                                         actionLabel: 'Erase',
                                         actionColor: Colors.red,
@@ -986,7 +989,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       ),
                                     ),
                                     description: Text(
-                                      'Complete clean slate — deletes every session, all trophies, and all Challenger Road data.',
+                                      'Complete clean slate - deletes every session, all trophies, and all Challenger Road data.',
                                       style: Theme.of(context).textTheme.bodySmall,
                                     ),
                                     leading: _isResetting
@@ -1003,7 +1006,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       final confirmed = await showConfirmResetDialog(
                                         context: ctx,
                                         title: 'Erase All Shooting Data',
-                                        description: 'This is a complete clean slate.\n\nEvery shooting session, iteration, trophy, Challenger Road attempt, and challenge history will be permanently deleted.\n\nThis cannot be undone.',
+                                        description: 'This is a complete clean slate.\n\nEvery shooting session, season, trophy, Challenger Road attempt, and challenge history will be permanently deleted.\n\nThis cannot be undone.',
                                         confirmPhrase: 'ERASE ALL',
                                         actionLabel: 'Erase Everything',
                                         actionColor: Colors.red,
