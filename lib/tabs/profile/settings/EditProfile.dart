@@ -88,7 +88,7 @@ class _EditProfileState extends State<EditProfile> {
 
   Future<void> _loadAvatars() async {
     final manifest = await AssetManifest.loadFromAssetBundle(DefaultAssetBundle.of(context));
-    final all = manifest.listAssets();
+    final all = manifest.listAssets().where((k) => k.endsWith('.png')).toList();
     final mascots = all.where((k) => k.startsWith('assets/images/avatars/mascots/')).toList()..sort();
     final characters = all.where((k) => k.startsWith('assets/images/avatars/characters/')).toList()..sort();
     final players = all.where((k) => k.startsWith('assets/images/avatars/players/')).toList()..sort();
