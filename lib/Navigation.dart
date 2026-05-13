@@ -10,6 +10,8 @@ import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/widgets/GlobalTrophyBackfillSheet.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
@@ -287,6 +289,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       updateLastSeenIfNeeded(context);
+      _checkTrophyBackfill();
     });
 
     _loadPreferences();
@@ -787,6 +790,26 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   // Helper to get FirebaseFirestore from Provider
   FirebaseFirestore getFirestore(BuildContext context) => Provider.of<FirebaseFirestore>(context, listen: false);
   FirebaseAuth getAuth(BuildContext context) => Provider.of<FirebaseAuth>(context, listen: false);
+
+  // ── One-time historical trophy backfill check ─────────────────────────────
+  Future<void> _checkTrophyBackfill() async {
+    // Small delay so the UI has settled before we start loading sessions.
+    await Future<void>.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final uid = auth.currentUser?.uid;
+    if (uid == null) return;
+
+    final level = await subscriptionLevel(context);
+    if (!mounted) return;
+
+    await maybeShowBackfillSheet(
+      context,
+      userId: uid,
+      isPro: level == 'pro',
+    );
+  }
 
   // Load shared preferences
   void _loadPreferences() async {

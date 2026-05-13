@@ -94,6 +94,11 @@ class GlobalTrophySummary {
   /// Resets to 0 when a session falls below the threshold.
   final int currentAccuracyStreak;
 
+  /// Version of the one-time historical backfill that has been applied.
+  /// null = not yet run. Bump [GlobalTrophyBackfillService.kBackfillVersion]
+  /// to re-trigger for all users.
+  final int? backfillVersion;
+
   DocumentReference? reference;
 
   GlobalTrophySummary({
@@ -114,6 +119,7 @@ class GlobalTrophySummary {
     this.lateNightSessions = 0,
     this.consecutiveWeekendCount = 0,
     this.currentAccuracyStreak = 0,
+    this.backfillVersion,
     this.reference,
   });
 
@@ -134,7 +140,8 @@ class GlobalTrophySummary {
         earlyMorningSessions = 0,
         lateNightSessions = 0,
         consecutiveWeekendCount = 0,
-        currentAccuracyStreak = 0;
+        currentAccuracyStreak = 0,
+        backfillVersion = null;
 
   factory GlobalTrophySummary.fromMap(Map<String, dynamic> map, {DocumentReference? reference}) {
     DateTime? parseTimestamp(dynamic v) {
@@ -165,6 +172,7 @@ class GlobalTrophySummary {
       lateNightSessions: (map['late_night_sessions'] as num?)?.toInt() ?? 0,
       consecutiveWeekendCount: (map['consecutive_weekend_count'] as num?)?.toInt() ?? 0,
       currentAccuracyStreak: (map['current_accuracy_streak'] as num?)?.toInt() ?? 0,
+      backfillVersion: (map['backfill_version'] as num?)?.toInt(),
       reference: reference,
     );
   }
@@ -187,6 +195,7 @@ class GlobalTrophySummary {
         'late_night_sessions': lateNightSessions,
         'consecutive_weekend_count': consecutiveWeekendCount,
         'current_accuracy_streak': currentAccuracyStreak,
+        if (backfillVersion != null) 'backfill_version': backfillVersion,
       };
 
   GlobalTrophySummary copyWith({
@@ -207,6 +216,7 @@ class GlobalTrophySummary {
     int? lateNightSessions,
     int? consecutiveWeekendCount,
     int? currentAccuracyStreak,
+    int? backfillVersion,
     DocumentReference? reference,
   }) {
     return GlobalTrophySummary(
@@ -227,6 +237,7 @@ class GlobalTrophySummary {
       lateNightSessions: lateNightSessions ?? this.lateNightSessions,
       consecutiveWeekendCount: consecutiveWeekendCount ?? this.consecutiveWeekendCount,
       currentAccuracyStreak: currentAccuracyStreak ?? this.currentAccuracyStreak,
+      backfillVersion: backfillVersion ?? this.backfillVersion,
       reference: reference ?? this.reference,
     );
   }
