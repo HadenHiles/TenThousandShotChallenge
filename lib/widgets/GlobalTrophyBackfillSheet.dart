@@ -6,7 +6,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/GlobalTrophyGroupAwardScreen
 /// Shows the one-time historical backfill sheet if needed.
 ///
 /// Handles the full async flow: loading → prompt → claim/dismiss.
-/// Safe to call on every app launch — exits immediately if backfill is done.
+/// Safe to call on every app launch - exits immediately if backfill is done.
 Future<void> maybeShowBackfillSheet(
   BuildContext context, {
   required String userId,

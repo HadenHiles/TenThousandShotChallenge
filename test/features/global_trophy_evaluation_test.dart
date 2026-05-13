@@ -11,7 +11,7 @@ import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
 // Strategy
 // --------
 // • All tests call [evaluateAfterSession] via a [GlobalTrophyService] that is
-//   wired to a [FakeFirebaseFirestore] instance — no real Firebase required.
+//   wired to a [FakeFirebaseFirestore] instance - no real Firebase required.
 // • Where a trophy needs specific accumulated state (e.g., 999 shots already
 //   logged), the Firestore doc is pre-seeded before the evaluation call.
 // • "Boundary" tests verify both N-1 (NOT awarded) and N (awarded).
@@ -121,7 +121,7 @@ void main() {
       );
     }
 
-    /// Mirrors [GlobalTrophyService._dateKey] — formats a UTC date as YYYY-MM-DD.
+    /// Mirrors [GlobalTrophyService._dateKey] - formats a UTC date as YYYY-MM-DD.
     String dateKey(DateTime dt) {
       final d = dt.toUtc();
       return '${d.year.toString().padLeft(4, '0')}-'
@@ -200,7 +200,7 @@ void main() {
     // =========================================================================
 
     group('Volume trophies', () {
-      // Parameterised helper — registers two tests per trophy.
+      // Parameterised helper - registers two tests per trophy.
       void volumeTest(String id, int threshold, {bool proOnly = false}) {
         test('$id: awarded when allTimeTotal crosses $threshold', () async {
           await seed(blank(total: threshold - 1));
@@ -797,7 +797,7 @@ void main() {
           weekStart: currWeekStart,
           weekDays: [GlobalWeeklySessionEntry(dateKey: saturdayKey(), total: 50)],
         ));
-        // Eval on Wednesday — adds Wednesday key but not Sunday
+        // Eval on Wednesday - adds Wednesday key but not Sunday
         final earned = await eval(total: 50);
         expect(earned, isNot(contains('g_weekend_warrior')));
       });
@@ -1390,7 +1390,7 @@ void main() {
         ));
         // Eval in the new week with only 100 shots
         final earned = await eval(total: 100);
-        // g_week_1000 should NOT be awarded — weekly counter was reset
+        // g_week_1000 should NOT be awarded - weekly counter was reset
         expect(earned, isNot(contains('g_week_1000')));
         // But g_week_500 should also NOT be awarded (only 100 shots this week)
         expect(earned, isNot(contains('g_week_500')));

@@ -132,7 +132,7 @@ class GlobalSessionInput {
   final int slap;
   final int backhand;
 
-  /// Targets hit per type — only populated for Pro users.
+  /// Targets hit per type - only populated for Pro users.
   final int wristTargetsHit;
   final int snapTargetsHit;
   final int slapTargetsHit;
@@ -244,10 +244,10 @@ class GlobalTrophyService {
   /// Firestore path: challenger_road_badges (type == 'global')
   ///
   /// Supported fields on each doc:
-  ///   display_name        — override trophy name shown in UI
-  ///   display_description — override description shown in UI
-  ///   icon_url            — remote image URL (Firebase Storage); replaces icon
-  ///   default_icon        — local asset key fallback
+  ///   display_name        - override trophy name shown in UI
+  ///   display_description - override description shown in UI
+  ///   icon_url            - remote image URL (Firebase Storage); replaces icon
+  ///   default_icon        - local asset key fallback
   Query get _trophyOverridesQuery => _firestore.collection('challenger_road_badges').where('type', isEqualTo: 'global');
 
   /// Returns the catalog with any admin-managed display overrides applied.
@@ -288,7 +288,7 @@ class GlobalTrophyService {
     // FREE TROPHIES
     // =========================================================================
 
-    // ── VOLUME — all time (free) ──────────────────────────────────────────────
+    // ── VOLUME - all time (free) ──────────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_first_shot',
       name: 'Biscuit on Ice',
@@ -360,7 +360,7 @@ class GlobalTrophyService {
       tier: GlobalTrophyTier.epic,
     ),
 
-    // ── SESSIONS — all time (free) ────────────────────────────────────────────
+    // ── SESSIONS - all time (free) ────────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_first_session',
       name: 'Warming Up',
@@ -540,7 +540,7 @@ class GlobalTrophyService {
     // PRO TROPHIES
     // =========================================================================
 
-    // ── VOLUME — high range (pro) ─────────────────────────────────────────────
+    // ── VOLUME - high range (pro) ─────────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_shots_25000',
       name: 'Obsessed',
@@ -566,7 +566,7 @@ class GlobalTrophyService {
       proOnly: true,
     ),
 
-    // ── SESSIONS — high range (pro) ───────────────────────────────────────────
+    // ── SESSIONS - high range (pro) ───────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_sessions_150',
       name: 'Regular',
@@ -592,7 +592,7 @@ class GlobalTrophyService {
       proOnly: true,
     ),
 
-    // ── WEEKLY — high intensity (pro) ─────────────────────────────────────────
+    // ── WEEKLY - high intensity (pro) ─────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_week_2000',
       name: 'The Grind Never Stops',
@@ -634,7 +634,7 @@ class GlobalTrophyService {
       proOnly: true,
     ),
 
-    // ── SHOT TYPE — high volume (pro) ─────────────────────────────────────────
+    // ── SHOT TYPE - high volume (pro) ─────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_wrist_500',
       name: 'Wrist of Steel',
@@ -716,7 +716,7 @@ class GlobalTrophyService {
       proOnly: true,
     ),
 
-    // ── TIME OF DAY — extremes (pro) ──────────────────────────────────────────
+    // ── TIME OF DAY - extremes (pro) ──────────────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_morning_grinder',
       name: 'Morning Grinder',
@@ -750,7 +750,7 @@ class GlobalTrophyService {
       proOnly: true,
     ),
 
-    // ── ACCURACY — shot-type specific (pro) ───────────────────────────────────
+    // ── ACCURACY - shot-type specific (pro) ───────────────────────────────────
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_80',
       name: 'Laser Wrist',
@@ -920,7 +920,7 @@ class GlobalTrophyService {
   // Core evaluation
   // ---------------------------------------------------------------------------
 
-  /// Called after every session save — both regular training sessions and
+  /// Called after every session save - both regular training sessions and
   /// Challenger Road sessions. CR sessions carry full per-type shot data
   /// (each challenge requires a specific shot type, stored in `shots`), so
   /// all trophy categories including shot-type and accuracy accumulate from

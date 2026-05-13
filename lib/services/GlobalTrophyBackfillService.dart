@@ -61,7 +61,7 @@ class GlobalTrophyBackfillService {
   /// When [award] is true the newly earned trophies are added to the summary's
   /// `trophies` list and the user sees them in the collection.
   /// When [award] is false the summary counters are still updated (so forward
-  /// evaluation works) but no new trophy IDs are written — the user's slate
+  /// evaluation works) but no new trophy IDs are written - the user's slate
   /// starts fresh from now without false "first shot" re-awards.
   Future<void> apply(
     String userId,
@@ -103,7 +103,7 @@ class GlobalTrophyBackfillService {
         }
       }
     } catch (_) {
-      // If we can't read iterations at all, return empty — caller handles it.
+      // If we can't read iterations at all, return empty - caller handles it.
     }
     return result;
   }
@@ -121,7 +121,7 @@ class GlobalTrophyBackfillService {
     final valid = sessions.where((s) => s.isChallengerRoad != true && s.date != null && s.total != null).toList()..sort((a, b) => a.date!.compareTo(b.date!));
 
     if (valid.isEmpty) {
-      // Nothing to backfill — just mark as done.
+      // Nothing to backfill - just mark as done.
       return BackfillResult(
         earnedTrophies: [],
         historicalSummary: existing.copyWith(backfillVersion: kBackfillVersion),

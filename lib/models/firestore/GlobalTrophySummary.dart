@@ -34,7 +34,7 @@ class GlobalWeeklySessionEntry {
 ///   session save, so award evaluation never needs a separate Firestore read of
 ///   the full session history.
 /// - `tracking_started_at` is set once to the Sunday-of-current-week when the
-///   doc is first created, and never changed — ensuring we only award trophies
+///   doc is first created, and never changed - ensuring we only award trophies
 ///   for sessions from that point forward.
 class GlobalTrophySummary {
   // ── Earned trophies ──────────────────────────────────────────────────────

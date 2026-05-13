@@ -859,7 +859,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // ── Profile trophy case — unified (CR + session trophies) ─────────────────
+  // ── Profile trophy case - unified (CR + session trophies) ─────────────────
 
   Widget _buildProfileTrophyCase(BuildContext context, User currentUser) {
     final theme = Theme.of(context);
@@ -997,7 +997,7 @@ class _ProfileState extends State<Profile> {
       );
     }
 
-    // ── Empty slot — tap opens unified picker ──
+    // ── Empty slot - tap opens unified picker ──
     return GestureDetector(
       onTap: () => _showProfileTrophySwapSheet(context, userId: userId, slotId: '', crSummary: crSummary, crCatalog: crCatalog, globalSummary: globalSummary),
       child: Column(

@@ -165,7 +165,7 @@ class ResetDataService {
   /// the per-challenge all-time history, and resets the CR user summary.
   ///
   /// CR sessions that were also saved as regular [ShootingSession] records under
-  /// the iterations tree are left in place — those represent real shots taken
+  /// the iterations tree are left in place - those represent real shots taken
   /// and continue to count toward the regular challenge totals.
   ///
   /// Any Challenger Road trophy IDs featured in the global trophy summary are

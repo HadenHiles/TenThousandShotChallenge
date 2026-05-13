@@ -279,14 +279,14 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(nextInherited + 1),
               child: Text(
-                'Jump In — Level ${nextInherited + 1}',
+                'Jump In - Level ${nextInherited + 1}',
                 style: TextStyle(color: Theme.of(ctx).primaryColor),
               ),
             ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(1),
             child: Text(
-              'Full Grind — Level 1',
+              'Full Grind - Level 1',
               style: TextStyle(color: Theme.of(ctx).primaryColor),
             ),
           ),
