@@ -240,10 +240,22 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
               final c = s.count ?? 0;
               final h = s.targetsHit ?? 0;
               switch (s.type) {
-                case 'wrist':    wristCount += c;    wristHits += h;    break;
-                case 'snap':     snapCount += c;     snapHits += h;     break;
-                case 'slap':     slapCount += c;     slapHits += h;     break;
-                case 'backhand': backhandCount += c; backhandHits += h; break;
+                case 'wrist':
+                  wristCount += c;
+                  wristHits += h;
+                  break;
+                case 'snap':
+                  snapCount += c;
+                  snapHits += h;
+                  break;
+                case 'slap':
+                  slapCount += c;
+                  slapHits += h;
+                  break;
+                case 'backhand':
+                  backhandCount += c;
+                  backhandHits += h;
+                  break;
               }
             }
             final subLevel = await subscriptionLevel(context);
