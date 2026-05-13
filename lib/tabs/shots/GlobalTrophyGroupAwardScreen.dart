@@ -45,12 +45,10 @@ class GlobalTrophyGroupAwardScreen extends StatefulWidget {
   final List<GlobalTrophyDefinition> trophies;
 
   @override
-  State<GlobalTrophyGroupAwardScreen> createState() =>
-      _GlobalTrophyGroupAwardScreenState();
+  State<GlobalTrophyGroupAwardScreen> createState() => _GlobalTrophyGroupAwardScreenState();
 }
 
-class _GlobalTrophyGroupAwardScreenState
-    extends State<GlobalTrophyGroupAwardScreen> with TickerProviderStateMixin {
+class _GlobalTrophyGroupAwardScreenState extends State<GlobalTrophyGroupAwardScreen> with TickerProviderStateMixin {
   // Tier order: easiest → hardest (mirrors how the user "levelled up")
   static const _tierOrder = [
     GlobalTrophyTier.common,
@@ -76,31 +74,21 @@ class _GlobalTrophyGroupAwardScreenState
   void initState() {
     super.initState();
 
-    _groups = _tierOrder
-        .map((t) =>
-            _TierGroup(t, widget.trophies.where((d) => d.tier == t).toList()))
-        .where((g) => g.trophies.isNotEmpty)
-        .toList();
+    _groups = _tierOrder.map((t) => _TierGroup(t, widget.trophies.where((d) => d.tier == t).toList())).where((g) => g.trophies.isNotEmpty).toList();
 
-    _glowController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
-          ..repeat(reverse: true);
+    _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);
 
-    _burstController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _burstController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
 
-    _contentController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 460));
+    _contentController = AnimationController(vsync: this, duration: const Duration(milliseconds: 460));
     _contentFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _contentController, curve: Curves.easeOut),
     );
-    _contentSlide =
-        Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero).animate(
+    _contentSlide = Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero).animate(
       CurvedAnimation(parent: _contentController, curve: Curves.easeOutCubic),
     );
 
-    _buttonController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 320));
+    _buttonController = AnimationController(vsync: this, duration: const Duration(milliseconds: 320));
     _buttonFade = Tween<double>(begin: 0, end: 1).animate(_buttonController);
 
     _playEntrance();
@@ -191,9 +179,7 @@ class _GlobalTrophyGroupAwardScreenState
                           width: active ? 20 : 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: active
-                                ? color
-                                : Colors.white.withValues(alpha: 0.2),
+                            color: active ? color : Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         );
@@ -227,24 +213,19 @@ class _GlobalTrophyGroupAwardScreenState
                           children: [
                             // Tier badge pill
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 7),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                    color: color.withValues(alpha: 0.7),
-                                    width: 1.4),
+                                border: Border.all(color: color.withValues(alpha: 0.7), width: 1.4),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.star_rounded,
-                                      size: 13, color: color),
+                                  Icon(Icons.star_rounded, size: 13, color: color),
                                   const SizedBox(width: 6),
                                   Text(
-                                    GlobalTrophyService.tierLabel(group.tier)
-                                        .toUpperCase(),
+                                    GlobalTrophyService.tierLabel(group.tier).toUpperCase(),
                                     style: TextStyle(
                                       fontFamily: 'NovecentoSans',
                                       fontSize: 13,
@@ -278,11 +259,12 @@ class _GlobalTrophyGroupAwardScreenState
                               spacing: 14,
                               runSpacing: 22,
                               alignment: WrapAlignment.center,
-                              children:
-                                  group.trophies.map((def) => _TrophyCell(
+                              children: group.trophies
+                                  .map((def) => _TrophyCell(
                                         def: def,
                                         color: color,
-                                      )).toList(),
+                                      ))
+                                  .toList(),
                             ),
 
                             const SizedBox(height: 16),
@@ -375,8 +357,7 @@ class _TrophyCell extends StatelessWidget {
                     child: Image.network(
                       def.effectiveIconUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(icon, size: 32, color: Colors.white),
+                      errorBuilder: (_, __, ___) => Icon(icon, size: 32, color: Colors.white),
                     ),
                   )
                 : Icon(icon, size: 32, color: Colors.white),
@@ -425,8 +406,7 @@ class _GlowBackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GlowBackgroundPainter old) =>
-      old.progress != progress || old.color != color;
+  bool shouldRepaint(_GlowBackgroundPainter old) => old.progress != progress || old.color != color;
 }
 
 class _ParticleBurstPainter extends CustomPainter {
@@ -439,8 +419,7 @@ class _ParticleBurstPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (progress <= 0) return;
     final center = Offset(size.width / 2, size.height * 0.38);
-    final paint = Paint()
-      ..color = color.withValues(alpha: (1 - progress) * 0.65);
+    final paint = Paint()..color = color.withValues(alpha: (1 - progress) * 0.65);
     const count = 20;
     for (int i = 0; i < count; i++) {
       final angle = (i / count) * 2 * math.pi;
@@ -454,6 +433,5 @@ class _ParticleBurstPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ParticleBurstPainter old) =>
-      old.progress != progress || old.color != color;
+  bool shouldRepaint(_ParticleBurstPainter old) => old.progress != progress || old.color != color;
 }
