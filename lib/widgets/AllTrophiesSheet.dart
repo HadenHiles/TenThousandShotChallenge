@@ -91,7 +91,6 @@ class AllTrophiesSheet extends StatelessWidget {
                       ),
                       // ── Tab bar ──────────────────────────────────────────
                       TabBar(
-                        isScrollable: true,
                         tabAlignment: TabAlignment.fill,
                         labelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
                         unselectedLabelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
@@ -562,11 +561,9 @@ class _GlobalTrophyRow extends StatelessWidget {
                         fit: BoxFit.cover,
                         color: earned ? null : Colors.white.withValues(alpha: canEarn ? 0.22 : 0.15),
                         colorBlendMode: earned ? null : BlendMode.dstIn,
-                        errorBuilder: (_, __, ___) => Icon(icon, size: 22,
-                            color: earned ? color : theme.colorScheme.onSurface.withValues(alpha: canEarn ? 0.22 : 0.15)),
+                        errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: earned ? color : theme.colorScheme.onSurface.withValues(alpha: canEarn ? 0.22 : 0.15)),
                       )
-                    : Icon(icon, size: 22,
-                        color: earned ? color : theme.colorScheme.onSurface.withValues(alpha: canEarn ? 0.22 : 0.15)),
+                    : Icon(icon, size: 22, color: earned ? color : theme.colorScheme.onSurface.withValues(alpha: canEarn ? 0.22 : 0.15)),
               ),
             ),
             const SizedBox(width: 12),
@@ -579,9 +576,7 @@ class _GlobalTrophyRow extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'NovecentoSans',
                       fontSize: 15,
-                      color: earned
-                          ? theme.colorScheme.onSurface
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                      color: earned ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withValues(alpha: 0.45),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -630,11 +625,7 @@ class _GlobalTrophyRow extends StatelessWidget {
                     ),
                     child: ClipOval(
                       child: def.effectiveIconUrl != null
-                          ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover,
-                              color: earned ? null : color.withValues(alpha: 0.35),
-                              colorBlendMode: earned ? null : BlendMode.dstIn,
-                              errorBuilder: (_, __, ___) => Icon(icon, size: 28,
-                                  color: earned ? color : color.withValues(alpha: 0.35)))
+                          ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover, color: earned ? null : color.withValues(alpha: 0.35), colorBlendMode: earned ? null : BlendMode.dstIn, errorBuilder: (_, __, ___) => Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)))
                           : Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)),
                     ),
                   ),
@@ -643,8 +634,7 @@ class _GlobalTrophyRow extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(def.effectiveName,
-                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: theme.colorScheme.onSurface)),
+                        Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: theme.colorScheme.onSurface)),
                         const SizedBox(height: 4),
                         Row(children: [
                           _TierBadge(tier: def.tier),
@@ -660,19 +650,14 @@ class _GlobalTrophyRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              Text(def.effectiveDescription,
-                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, height: 1.45,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+              Text(def.effectiveDescription, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, height: 1.45, color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
               if (!earned && !requiresPro) ...[
                 const SizedBox(height: 10),
-                Text('Not yet earned',
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45))),
+                Text('Not yet earned', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.45))),
               ],
               if (requiresPro && !canEarn) ...[
                 const SizedBox(height: 10),
-                Text('Upgrade to Pro to earn this trophy.',
-                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: Colors.amber.withValues(alpha: 0.85))),
+                Text('Upgrade to Pro to earn this trophy.', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: Colors.amber.withValues(alpha: 0.85))),
               ],
             ],
           ),
@@ -754,6 +739,7 @@ class _TrophyCaseSectionBody extends StatelessWidget {
     final crById = {for (final d in crCatalog) d.id: d};
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -977,17 +963,11 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
     final scheme = theme.colorScheme;
 
     final earnedGlobalIds = widget.globalSummary.trophies.toSet();
-    final earnedFree = GlobalTrophyService.catalog
-        .where((d) => !d.proOnly && earnedGlobalIds.contains(d.id))
-        .toList();
-    final earnedPro = GlobalTrophyService.catalog
-        .where((d) => d.proOnly && earnedGlobalIds.contains(d.id))
-        .toList();
+    final earnedFree = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id)).toList();
+    final earnedPro = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id)).toList();
 
     final earnedCrIds = widget.crSummary.trophies.toSet();
-    final earnedCr = ChallengerRoadService.visibleDisplayTrophyDefs(trophies: widget.crCatalog)
-        .where((d) => earnedCrIds.contains(d.id))
-        .toList();
+    final earnedCr = ChallengerRoadService.visibleDisplayTrophyDefs(trophies: widget.crCatalog).where((d) => earnedCrIds.contains(d.id)).toList();
 
     // Group free/pro earned trophies by tier (legendary first)
     List<_TierGroup> groupByTier(List<GlobalTrophyDefinition> list) {
@@ -1234,9 +1214,7 @@ class _PickerGlobalRow extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 6),
           decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.08)
-                : theme.colorScheme.onSurface.withValues(alpha: 0.02),
+            color: selected ? color.withValues(alpha: 0.08) : theme.colorScheme.onSurface.withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? color.withValues(alpha: 0.5) : theme.colorScheme.onSurface.withValues(alpha: 0.07),
@@ -1255,10 +1233,7 @@ class _PickerGlobalRow extends StatelessWidget {
                   border: Border.all(color: color.withValues(alpha: 0.55), width: 1.5),
                 ),
                 child: ClipOval(
-                  child: def.effectiveIconUrl != null
-                      ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: color))
-                      : Icon(icon, size: 22, color: color),
+                  child: def.effectiveIconUrl != null ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(icon, size: 22, color: color)) : Icon(icon, size: 22, color: color),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1266,15 +1241,9 @@ class _PickerGlobalRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(def.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15,
-                            color: theme.colorScheme.onSurface)),
+                    Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 2),
-                    Text(def.effectiveDescription,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
+                    Text(def.effectiveDescription, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
                   ],
                 ),
               ),
@@ -1313,9 +1282,7 @@ class _PickerCrRow extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 6),
           decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.08)
-                : theme.colorScheme.onSurface.withValues(alpha: 0.02),
+            color: selected ? color.withValues(alpha: 0.08) : theme.colorScheme.onSurface.withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? color.withValues(alpha: 0.5) : theme.colorScheme.onSurface.withValues(alpha: 0.07),
@@ -1335,15 +1302,9 @@ class _PickerCrRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(def.effectiveName,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15,
-                            color: theme.colorScheme.onSurface)),
+                    Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 2),
-                    Text(def.effectiveDescription,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
+                    Text(def.effectiveDescription, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
                   ],
                 ),
               ),
