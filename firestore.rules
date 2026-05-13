@@ -35,6 +35,13 @@ service cloud.firestore {
           allow write, delete: if request.auth.uid == userId
         }
 
+        match /global_trophies/{docId} {
+          // Any authenticated user may read (for shared trophy showcase).
+          allow read: if request.auth != null;
+          // Only the owner may write their own global trophy summary.
+          allow write, delete: if request.auth.uid == userId;
+        }
+
         match /meta {
           allow read: if request.auth != null
           allow write, delete: if request.auth.uid == userId
@@ -141,6 +148,8 @@ service cloud.firestore {
 
     // Challenger Road Badges - read by all authenticated users (Flutter app
     // displays badges); write/delete restricted to content admins (admin UI).
+    // Also stores global trophy definitions (type='global') used by the app
+    // for general-session trophy display overrides.
     match /challenger_road_badges/{badgeId} {
       allow read: if request.auth != null;
       allow write, delete: if isContentAdmin();

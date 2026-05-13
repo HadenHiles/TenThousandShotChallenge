@@ -24,6 +24,8 @@ import 'package:tenthousandshotchallenge/tabs/shots/TargetAccuracyVisualizer.dar
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/HandsfreeCountdownMode.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/GlobalTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/widgets/MilestoneShareCard.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -1605,6 +1607,31 @@ class _StartShootingState extends State<StartShooting> {
                           totalShots += s.count!;
                         }
 
+                        // Capture per-type totals before _shots is cleared.
+                        int wristShots = 0, snapShots = 0, slapShots = 0, backhandShots = 0;
+                        int wristHits = 0, snapHits = 0, slapHits = 0, backhandHits = 0;
+                        for (final s in _shots) {
+                          switch (s.type) {
+                            case 'wrist':
+                              wristShots += s.count ?? 0;
+                              wristHits += s.targetsHit ?? 0;
+                              break;
+                            case 'snap':
+                              snapShots += s.count ?? 0;
+                              snapHits += s.targetsHit ?? 0;
+                              break;
+                            case 'slap':
+                              slapShots += s.count ?? 0;
+                              slapHits += s.targetsHit ?? 0;
+                              break;
+                            case 'backhand':
+                              backhandShots += s.count ?? 0;
+                              backhandHits += s.targetsHit ?? 0;
+                              break;
+                          }
+                        }
+                        final sessionSavedAt = DateTime.now();
+
                         final auth = Provider.of<FirebaseAuth>(context, listen: false);
                         final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
 
@@ -1700,6 +1727,41 @@ class _StartShootingState extends State<StartShooting> {
                                 // Health sync is best-effort; never block the user.
                               }
                             });
+
+                            // Evaluate global trophies (fire-and-forget).
+                            final uid = auth.currentUser?.uid;
+                            if (uid != null) {
+                              Future(() async {
+                                try {
+                                  final newTrophies = await GlobalTrophyService().evaluateAfterSession(
+                                    uid,
+                                    GlobalSessionInput(
+                                      total: totalShots,
+                                      wrist: wristShots,
+                                      snap: snapShots,
+                                      slap: slapShots,
+                                      backhand: backhandShots,
+                                      wristTargetsHit: wristHits,
+                                      snapTargetsHit: snapHits,
+                                      slapTargetsHit: slapHits,
+                                      backhandTargetsHit: backhandHits,
+                                      sessionDate: sessionSavedAt,
+                                    ),
+                                    isPro: _subscriptionLevel == 'pro',
+                                  );
+                                  if (newTrophies.isNotEmpty && mounted && context.mounted) {
+                                    await Navigator.of(context).push<void>(
+                                      MaterialPageRoute(
+                                        fullscreenDialog: true,
+                                        builder: (_) => GlobalTrophyAwardScreen(trophies: newTrophies),
+                                      ),
+                                    );
+                                  }
+                                } catch (_) {
+                                  // Trophy evaluation is best-effort; never block the user.
+                                }
+                              });
+                            }
                           }
 
                           await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
