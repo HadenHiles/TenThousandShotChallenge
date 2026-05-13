@@ -698,7 +698,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                         SettingsSection(
                           title: Text('Reset', style: Theme.of(context).textTheme.titleLarge),
                           tiles: [
-                            // Recalculate (non-destructive) — listed first so it
+                            // Recalculate (non-destructive) - listed first so it
                             // stands apart visually from the destructive options below.
                             CustomSettingsTile(
                               child: Opacity(
@@ -865,7 +865,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                       final confirmed = await showConfirmResetDialog(
                                         context: ctx,
                                         title: 'Reset All Trophies',
-                                        description: 'All of your earned trophies — including Challenger Road badges — will be permanently cleared. Trophy tracking counters will reset.\n\nYour shooting sessions and challenge history are not affected.\n\nThis cannot be undone.',
+                                        description: 'All of your earned trophies - including Challenger Road badges - will be permanently cleared. Trophy tracking counters will reset.\n\nYour shooting sessions and challenge history are not affected.\n\nThis cannot be undone.',
                                         confirmPhrase: 'RESET TROPHIES',
                                         actionLabel: 'Reset Trophies',
                                         actionColor: Colors.orange,
