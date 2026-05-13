@@ -45,12 +45,7 @@ void main() {
 
     /// Writes [s] to the fake Firestore summary doc so that the next
     /// [evaluateAfterSession] call starts from the desired state.
-    Future<void> seed(GlobalTrophySummary s) => fakeFirestore
-        .collection('users')
-        .doc(uid)
-        .collection('global_trophies')
-        .doc('summary')
-        .set(s.toMap());
+    Future<void> seed(GlobalTrophySummary s) => fakeFirestore.collection('users').doc(uid).collection('global_trophies').doc('summary').set(s.toMap());
 
     /// Thin wrapper around [evaluateAfterSession].
     /// Returns only the IDs of newly-earned trophies for easy assertions.
@@ -242,9 +237,16 @@ void main() {
       test('all free volume trophies awarded in one huge session', () async {
         final earned = await eval(total: 15000, pro: false);
         for (final id in [
-          'g_first_shot', 'g_shots_100', 'g_shots_250', 'g_shots_500',
-          'g_shots_1000', 'g_shots_2500', 'g_shots_5000', 'g_shots_7500',
-          'g_shots_10000', 'g_shots_15000',
+          'g_first_shot',
+          'g_shots_100',
+          'g_shots_250',
+          'g_shots_500',
+          'g_shots_1000',
+          'g_shots_2500',
+          'g_shots_5000',
+          'g_shots_7500',
+          'g_shots_10000',
+          'g_shots_15000',
         ]) {
           expect(earned, contains(id), reason: '$id should be awarded');
         }
@@ -1304,8 +1306,13 @@ void main() {
       test('large first session awards all reachable volume thresholds', () async {
         final earned = await eval(total: 5000, pro: false);
         for (final id in [
-          'g_first_shot', 'g_shots_100', 'g_shots_250', 'g_shots_500',
-          'g_shots_1000', 'g_shots_2500', 'g_shots_5000',
+          'g_first_shot',
+          'g_shots_100',
+          'g_shots_250',
+          'g_shots_500',
+          'g_shots_1000',
+          'g_shots_2500',
+          'g_shots_5000',
         ]) {
           expect(earned, contains(id), reason: '$id should be awarded');
         }
@@ -1367,8 +1374,7 @@ void main() {
       });
 
       test('weekly total resets when entering a new week', () async {
-        final prevWeekStart = GlobalTrophyService.currentWeekStartUtc()
-            .subtract(const Duration(days: 7));
+        final prevWeekStart = GlobalTrophyService.currentWeekStartUtc().subtract(const Duration(days: 7));
         // Pre-seed with 900 shots last week
         await seed(blank(
           weekTotal: 900,
