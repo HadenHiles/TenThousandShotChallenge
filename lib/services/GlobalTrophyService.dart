@@ -920,7 +920,10 @@ class GlobalTrophyService {
   // Core evaluation
   // ---------------------------------------------------------------------------
 
-  /// Called after every successful normal (non-CR) session save.
+  /// Called after every session save — both regular training sessions and
+  /// Challenger Road sessions.  CR sessions pass per-type shot counts as 0
+  /// since challenges don't track wrist/snap/slap/backhand breakdowns; all
+  /// volume, session-count, weekly, and time-of-day criteria still accumulate.
   ///
   /// 1. Reads or initialises the user's [GlobalTrophySummary].
   /// 2. Rolls the weekly cache forward if the calendar week has changed.

@@ -10,7 +10,9 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadChalleng
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/tabs/shots/GlobalTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengeDetailSheet.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadTrophyAwardScreen.dart';
@@ -224,6 +226,40 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
       // Save to ChallengerRoad sub-collection - this is the critical write.
       await service.saveChallengeSession(widget.userId, widget.attempt.id!, session);
+
+      // Evaluate global trophies for this CR session (fire-and-forget).
+      // CR shots count toward all-time volume, sessions, weekly, and time-of-day
+      // trophies just like regular sessions.
+      final trophyUid = auth.currentUser?.uid;
+      if (trophyUid != null) {
+        Future(() async {
+          try {
+            final subLevel = await subscriptionLevel(context);
+            final newTrophies = await GlobalTrophyService().evaluateAfterSession(
+              trophyUid,
+              GlobalSessionInput(
+                total: session.totalShots,
+                wrist: 0,
+                snap: 0,
+                slap: 0,
+                backhand: 0,
+                sessionDate: session.date,
+              ),
+              isPro: subLevel == 'pro',
+            );
+            if (newTrophies.isNotEmpty && mounted && context.mounted) {
+              await Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  fullscreenDialog: true,
+                  builder: (_) => GlobalTrophyAwardScreen(trophies: newTrophies),
+                ),
+              );
+            }
+          } catch (_) {
+            // Trophy evaluation is best-effort; never block the user.
+          }
+        });
+      }
 
       // Save to the global shooting session so the main iteration counter
       // updates.  This is best-effort: a missing index or network hiccup
