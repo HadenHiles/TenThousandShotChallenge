@@ -211,6 +211,7 @@ class _TrophiesTabState extends State<_TrophiesTab> {
                         def: def,
                         earned: earned.contains(def.id),
                         canEarn: !def.proOnly || widget.isPro,
+                        userId: widget.userId,
                       ),
                   ],
                 );
@@ -361,6 +362,7 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
                 return _CrTrophyRow(
                   def: def,
                   earned: earnedCr.contains(def.id),
+                  userId: widget.userId,
                 );
               },
             );
@@ -372,10 +374,11 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
 }
 
 class _CrTrophyRow extends StatelessWidget {
-  const _CrTrophyRow({required this.def, required this.earned});
+  const _CrTrophyRow({required this.def, required this.earned, required this.userId});
 
   final ChallengerRoadTrophyDefinition def;
   final bool earned;
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -441,69 +444,38 @@ class _CrTrophyRow extends StatelessWidget {
   void _showDetail(BuildContext context, ThemeData theme, Color color) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder: (_) => _TrophyDetailSwapSheet(
+        userId: userId,
+        trophyId: def.id,
+        earned: earned,
+        trophyColor: color,
+        description: def.effectiveDescription,
+        footerText: !earned ? 'Not yet earned' : null,
+        header: Row(
+          children: [
+            SizedBox(
+              width: 54,
+              height: 54,
+              child: ChallengerRoadService.trophyIconWidget(def, size: 54, color: earned ? color : color.withValues(alpha: 0.35)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 54,
-                    height: 54,
-                    child: ChallengerRoadService.trophyIconWidget(def, size: 54, color: earned ? color : color.withValues(alpha: 0.35)),
+                  Text(
+                    def.effectiveName,
+                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: theme.colorScheme.onSurface),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          def.effectiveName,
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 22,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            if (earned) Icon(Icons.check_circle_rounded, size: 14, color: color),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 4),
+                  if (earned) Icon(Icons.check_circle_rounded, size: 14, color: color),
                 ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                def.effectiveDescription,
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 15,
-                  height: 1.45,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                ),
-              ),
-              if (!earned) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'Not yet earned',
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -517,11 +489,13 @@ class _GlobalTrophyRow extends StatelessWidget {
     required this.def,
     required this.earned,
     required this.canEarn,
+    required this.userId,
   });
 
   final GlobalTrophyDefinition def;
   final bool earned;
   final bool canEarn;
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -602,65 +576,57 @@ class _GlobalTrophyRow extends StatelessWidget {
 
   void _showDetail(BuildContext context, ThemeData theme, Color color, IconData icon) {
     final requiresPro = def.proOnly && !earned;
+    final footerText = (!earned && !requiresPro)
+        ? 'Not yet earned'
+        : (requiresPro && !canEarn)
+            ? 'Upgrade to Pro to earn this trophy.'
+            : null;
+    final footerColor = (requiresPro && !canEarn) ? Colors.amber.withValues(alpha: 0.85) : null;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder: (_) => _TrophyDetailSwapSheet(
+        userId: userId,
+        trophyId: def.id,
+        earned: earned,
+        trophyColor: color,
+        description: def.effectiveDescription,
+        footerText: footerText,
+        footerColor: footerColor,
+        header: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: earned ? 0.15 : 0.07),
+                border: Border.all(color: color.withValues(alpha: earned ? 0.6 : 0.25), width: 1.5),
+              ),
+              child: ClipOval(
+                child: def.effectiveIconUrl != null
+                    ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover, color: earned ? null : color.withValues(alpha: 0.35), colorBlendMode: earned ? null : BlendMode.dstIn, errorBuilder: (_, __, ___) => Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)))
+                    : Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: color.withValues(alpha: earned ? 0.15 : 0.07),
-                      border: Border.all(color: color.withValues(alpha: earned ? 0.6 : 0.25), width: 1.5),
-                    ),
-                    child: ClipOval(
-                      child: def.effectiveIconUrl != null
-                          ? Image.network(def.effectiveIconUrl!, fit: BoxFit.cover, color: earned ? null : color.withValues(alpha: 0.35), colorBlendMode: earned ? null : BlendMode.dstIn, errorBuilder: (_, __, ___) => Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)))
-                          : Icon(icon, size: 28, color: earned ? color : color.withValues(alpha: 0.35)),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: theme.colorScheme.onSurface)),
-                        const SizedBox(height: 4),
-                        Row(children: [
-                          _TierBadge(tier: def.tier),
-                          if (def.proOnly) ...[const SizedBox(width: 6), _ProBadge()],
-                          if (earned) ...[
-                            const SizedBox(width: 6),
-                            Icon(Icons.check_circle_rounded, size: 14, color: color),
-                          ],
-                        ]),
-                      ],
-                    ),
-                  ),
+                  Text(def.effectiveName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: theme.colorScheme.onSurface)),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    _TierBadge(tier: def.tier),
+                    if (def.proOnly) ...[const SizedBox(width: 6), _ProBadge()],
+                    if (earned) ...[const SizedBox(width: 6), Icon(Icons.check_circle_rounded, size: 14, color: color)],
+                  ]),
                 ],
               ),
-              const SizedBox(height: 14),
-              Text(def.effectiveDescription, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, height: 1.45, color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
-              if (!earned && !requiresPro) ...[
-                const SizedBox(height: 10),
-                Text('Not yet earned', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.45))),
-              ],
-              if (requiresPro && !canEarn) ...[
-                const SizedBox(height: 10),
-                Text('Upgrade to Pro to earn this trophy.', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 13, color: Colors.amber.withValues(alpha: 0.85))),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -893,6 +859,276 @@ class _TrophyCaseSectionBody extends StatelessWidget {
         globalSummary: globalSummary,
         crSummary: crSummary,
         crCatalog: crCatalog,
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Trophy detail sheet with inline trophy-case swap
+// ═════════════════════════════════════════════════════════════════════════════
+
+/// Detail sheet for any trophy. When the trophy is earned, a mini trophy-case
+/// row is shown at the bottom so the user can tap a slot to place (or swap)
+/// this trophy directly onto the shelf — without opening the full picker.
+class _TrophyDetailSwapSheet extends StatefulWidget {
+  const _TrophyDetailSwapSheet({
+    required this.userId,
+    required this.trophyId,
+    required this.earned,
+    required this.header,
+    required this.description,
+    required this.trophyColor,
+    this.footerText,
+    this.footerColor,
+  });
+
+  final String userId;
+  final String trophyId;
+  final bool earned;
+  final Widget header;
+  final String description;
+  final Color trophyColor;
+  final String? footerText;
+  final Color? footerColor;
+
+  @override
+  State<_TrophyDetailSwapSheet> createState() => _TrophyDetailSwapSheetState();
+}
+
+class _TrophyDetailSwapSheetState extends State<_TrophyDetailSwapSheet> {
+  late final Future<List<ChallengerRoadTrophyDefinition>> _crCatalogFuture;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _crCatalogFuture = ChallengerRoadService().getTrophyCatalogForUser(widget.userId);
+  }
+
+  Future<void> _swapIntoSlot(int slotIndex, List<String> currentSlots) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+
+    final slots = List<String>.generate(5, (i) => i < currentSlots.length ? currentSlots[i] : '');
+    final existingIdx = slots.indexOf(widget.trophyId);
+
+    if (existingIdx == slotIndex) {
+      // Tap own slot → remove from case
+      slots[slotIndex] = '';
+    } else if (existingIdx >= 0) {
+      // Already in another slot → swap the two positions
+      slots[existingIdx] = slots[slotIndex];
+      slots[slotIndex] = widget.trophyId;
+    } else {
+      // Not in case → place in this slot, displacing whatever was there
+      slots[slotIndex] = widget.trophyId;
+    }
+
+    try {
+      await GlobalTrophyService().setFeaturedTrophies(widget.userId, slots);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            widget.header,
+            const SizedBox(height: 14),
+            Text(
+              widget.description,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 15,
+                height: 1.45,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+            if (widget.footerText != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                widget.footerText!,
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 13,
+                  color: widget.footerColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+            // ── Inline trophy-case swap (earned trophies only) ────────────
+            if (widget.earned) ...[
+              const SizedBox(height: 18),
+              Divider(height: 1, color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+              const SizedBox(height: 12),
+              StreamBuilder<GlobalTrophySummary>(
+                stream: GlobalTrophyService().watchUserSummary(widget.userId),
+                builder: (context, snap) {
+                  final featured = snap.data?.featuredTrophies ?? [];
+                  return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+                    future: _crCatalogFuture,
+                    builder: (context, catSnap) {
+                      final crCatalog = catSnap.data ?? [];
+                      final crById = {for (final d in crCatalog) d.id: d};
+                      final slots = List<String>.generate(5, (i) => i < featured.length ? featured[i] : '');
+                      final thisSlotIdx = slots.indexOf(widget.trophyId);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'TROPHY CASE',
+                                style: TextStyle(
+                                  fontFamily: 'NovecentoSans',
+                                  fontSize: 10,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  thisSlotIdx >= 0 ? 'Tap another slot to swap \u2022 tap to remove' : 'Tap a slot to place here',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 10,
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              for (int i = 0; i < 5; i++) _buildSwapSlot(context, theme, i, slots, crById, thisSlotIdx),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwapSlot(
+    BuildContext context,
+    ThemeData theme,
+    int i,
+    List<String> slots,
+    Map<String, ChallengerRoadTrophyDefinition> crById,
+    int thisSlotIdx,
+  ) {
+    final id = slots[i];
+    final isCurrentSlot = (i == thisSlotIdx);
+    Widget inner;
+
+    if (id.isEmpty) {
+      inner = Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
+            width: 1.2,
+          ),
+        ),
+        child: Icon(
+          Icons.add_rounded,
+          size: 18,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+        ),
+      );
+    } else if (id.startsWith('g_')) {
+      final gDef = GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
+      if (gDef == null) return const SizedBox(width: 44, height: 44);
+      final c = GlobalTrophyService.colorForTrophy(gDef);
+      final ico = GlobalTrophyService.iconForTrophy(gDef);
+      inner = Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: c.withValues(alpha: 0.15),
+          border: Border.all(
+            color: isCurrentSlot ? widget.trophyColor : c.withValues(alpha: 0.6),
+            width: isCurrentSlot ? 2.5 : 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isCurrentSlot ? widget.trophyColor : c).withValues(alpha: isCurrentSlot ? 0.5 : 0.25),
+              blurRadius: isCurrentSlot ? 10 : 5,
+              spreadRadius: isCurrentSlot ? 1 : 0,
+            ),
+          ],
+        ),
+        child: Icon(ico, size: 22, color: c),
+      );
+    } else {
+      final crDef = crById[id];
+      if (crDef == null) return const SizedBox(width: 44, height: 44);
+      final c = ChallengerRoadService.colorForTrophy(crDef);
+      Widget iconWidget = SizedBox(
+        width: 44,
+        height: 44,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ChallengerRoadService.trophyIconWidget(crDef, size: 44, color: c),
+            if (isCurrentSlot)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: widget.trophyColor, width: 2.5),
+                ),
+              ),
+          ],
+        ),
+      );
+      inner = isCurrentSlot
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.trophyColor.withValues(alpha: 0.45),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: iconWidget,
+            )
+          : iconWidget;
+    }
+
+    return GestureDetector(
+      onTap: _saving ? null : () => _swapIntoSlot(i, slots),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: _saving ? 0.5 : 1.0,
+        child: inner,
       ),
     );
   }
