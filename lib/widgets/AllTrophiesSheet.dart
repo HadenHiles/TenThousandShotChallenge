@@ -99,9 +99,9 @@ class AllTrophiesSheet extends StatelessWidget {
                         indicatorColor: Colors.white,
                         dividerColor: Colors.transparent,
                         tabs: const [
-                          Tab(text: 'FREE'),
+                          Tab(text: 'STANDARD'),
                           Tab(text: 'CHALLENGER ROAD'),
-                          Tab(text: 'PRO'),
+                          Tab(text: 'ACCURACY'),
                         ],
                       ),
                     ],
@@ -116,7 +116,7 @@ class AllTrophiesSheet extends StatelessWidget {
                       _TrophiesTab(
                         userId: userId,
                         isPro: isPro,
-                        proOnly: false,
+                        accuracyOnly: false,
                         scrollController: scrollController,
                       ),
                       _ChallengerRoadTab(
@@ -127,7 +127,7 @@ class AllTrophiesSheet extends StatelessWidget {
                       _TrophiesTab(
                         userId: userId,
                         isPro: isPro,
-                        proOnly: true,
+                        accuracyOnly: true,
                         scrollController: scrollController,
                       ),
                     ],
@@ -142,21 +142,21 @@ class AllTrophiesSheet extends StatelessWidget {
   }
 }
 
-// ── Unified trophies tab (FREE or PRO) ───────────────────────────────────────
+// ── Unified trophies tab (STANDARD or ACCURACY) ─────────────────────────────
 
 class _TrophiesTab extends StatefulWidget {
   const _TrophiesTab({
     required this.userId,
     required this.isPro,
-    required this.proOnly,
+    required this.accuracyOnly,
     required this.scrollController,
   });
 
   final String userId;
   final bool isPro;
 
-  /// When true, shows pro-only trophies; when false, shows free trophies.
-  final bool proOnly;
+  /// When true, shows accuracy-category trophies only; when false, shows all others.
+  final bool accuracyOnly;
   final ScrollController scrollController;
 
   @override
@@ -184,8 +184,12 @@ class _TrophiesTabState extends State<_TrophiesTab> {
             final summary = snap.data ?? GlobalTrophySummary.empty();
             final earned = summary.trophies.toSet();
 
-            // Filter catalog to the correct tier group
-            final filtered = catalog.where((d) => d.proOnly == widget.proOnly).toList();
+            // Filter catalog to the correct category group
+            final filtered = catalog
+                .where((d) => widget.accuracyOnly
+                    ? d.category == GlobalTrophyCategory.accuracy
+                    : d.category != GlobalTrophyCategory.accuracy)
+                .toList();
 
             // Group by tier (legendary first)
             final groups = <_TierGroup>[];
@@ -1199,8 +1203,8 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
     final scheme = theme.colorScheme;
 
     final earnedGlobalIds = widget.globalSummary.trophies.toSet();
-    final earnedFree = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id)).toList();
-    final earnedPro = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id)).toList();
+    final earnedStandard = GlobalTrophyService.catalog.where((d) => d.category != GlobalTrophyCategory.accuracy && earnedGlobalIds.contains(d.id)).toList();
+    final earnedAccuracy = GlobalTrophyService.catalog.where((d) => d.category == GlobalTrophyCategory.accuracy && earnedGlobalIds.contains(d.id)).toList();
 
     final earnedCrIds = widget.crSummary.trophies.toSet();
     final earnedCr = ChallengerRoadService.visibleDisplayTrophyDefs(trophies: widget.crCatalog).where((d) => earnedCrIds.contains(d.id)).toList();
@@ -1215,8 +1219,8 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
       return groups;
     }
 
-    final freeGroups = groupByTier(earnedFree);
-    final proGroups = groupByTier(earnedPro);
+    final standardGroups = groupByTier(earnedStandard);
+    final accuracyGroups = groupByTier(earnedAccuracy);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.88,
@@ -1293,11 +1297,11 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   children: [
-                    // FREE section
-                    if (earnedFree.isNotEmpty) ...[
-                      _PickerSectionHeader(label: 'FREE', scheme: scheme),
+                    // STANDARD section
+                    if (earnedStandard.isNotEmpty) ...[
+                      _PickerSectionHeader(label: 'STANDARD', scheme: scheme),
                       const SizedBox(height: 8),
-                      for (final group in freeGroups) ...[
+                      for (final group in standardGroups) ...[
                         _TierHeader(tier: group.tier),
                         const SizedBox(height: 6),
                         for (final def in group.defs)
@@ -1310,12 +1314,12 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
                         const SizedBox(height: 8),
                       ],
                     ],
-                    // PRO section
-                    if (earnedPro.isNotEmpty) ...[
-                      if (earnedFree.isNotEmpty) const SizedBox(height: 4),
-                      _PickerSectionHeader(label: 'PRO', scheme: scheme),
+                    // ACCURACY section
+                    if (earnedAccuracy.isNotEmpty) ...[
+                      if (earnedStandard.isNotEmpty) const SizedBox(height: 4),
+                      _PickerSectionHeader(label: 'ACCURACY', scheme: scheme),
                       const SizedBox(height: 8),
-                      for (final group in proGroups) ...[
+                      for (final group in accuracyGroups) ...[
                         _TierHeader(tier: group.tier),
                         const SizedBox(height: 6),
                         for (final def in group.defs)
@@ -1330,7 +1334,7 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
                     ],
                     // CHALLENGER ROAD section
                     if (earnedCr.isNotEmpty) ...[
-                      if (earnedFree.isNotEmpty || earnedPro.isNotEmpty) const SizedBox(height: 4),
+                      if (earnedStandard.isNotEmpty || earnedAccuracy.isNotEmpty) const SizedBox(height: 4),
                       _PickerSectionHeader(label: 'CHALLENGER ROAD', scheme: scheme),
                       const SizedBox(height: 8),
                       for (final def in earnedCr)
@@ -1341,7 +1345,7 @@ class _TrophyCasePickerSheetState extends State<_TrophyCasePickerSheet> {
                           onTap: () => _toggle(def.id),
                         ),
                     ],
-                    if (earnedFree.isEmpty && earnedPro.isEmpty && earnedCr.isEmpty)
+                    if (earnedStandard.isEmpty && earnedAccuracy.isEmpty && earnedCr.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 32),
                         child: Text(
