@@ -35,6 +35,8 @@ class _CompareStatsState extends State<CompareStats> {
   UserProfile? _friendProfile;
   ChallengerRoadUserSummary? _myCrSummary;
   ChallengerRoadUserSummary? _friendCrSummary;
+  int? _myCompletedChallenges;
+  int? _friendCompletedChallenges;
   GlobalTrophySummary? _myGlobalTrophySummary;
   GlobalTrophySummary? _friendGlobalTrophySummary;
   bool _loading = true;
@@ -87,6 +89,21 @@ class _CompareStatsState extends State<CompareStats> {
         _friendCrSummary = results[5] as ChallengerRoadUserSummary;
         _myGlobalTrophySummary = results[6] as GlobalTrophySummary;
         _friendGlobalTrophySummary = results[7] as GlobalTrophySummary;
+      });
+    }
+
+    // Fetch completed challenge counts — requires attemptId from summaries.
+    final myAttemptId = _myCrSummary?.currentAttemptId;
+    final frAttemptId = _friendCrSummary?.currentAttemptId;
+    final completedResults = await Future.wait([
+      myAttemptId != null ? crService.getCompletedChallengesCount(myUid, myAttemptId) : Future.value(0),
+      frAttemptId != null ? crService.getCompletedChallengesCount(widget.friendUid, frAttemptId) : Future.value(0),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        _myCompletedChallenges = completedResults[0];
+        _friendCompletedChallenges = completedResults[1];
         _loading = false;
       });
     }
@@ -897,6 +914,7 @@ class _CompareStatsState extends State<CompareStats> {
     return Column(
       children: [
         _buildCrLevelRow(context, my?.allTimeBestLevel ?? 0, fr?.allTimeBestLevel ?? 0),
+        _buildStatRow(context, 'Challenges', _myCompletedChallenges, _friendCompletedChallenges),
         _buildStatRow(context, 'Attempts', my?.totalAttempts, fr?.totalAttempts),
         _buildStatRow(context, 'Shots', my?.allTimeTotalChallengerRoadShots, fr?.allTimeTotalChallengerRoadShots),
         _buildStatRow(context, 'Trophies', my?.trophies.length, fr?.trophies.length),
