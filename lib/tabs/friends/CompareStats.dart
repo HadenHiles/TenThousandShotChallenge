@@ -7,7 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:provider/provider.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
+import 'package:tenthousandshotchallenge/models/firestore/GlobalTrophySummary.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
@@ -29,6 +33,10 @@ class _CompareStatsState extends State<CompareStats> {
   _UserStats? _friendStats;
   UserProfile? _myProfile;
   UserProfile? _friendProfile;
+  ChallengerRoadUserSummary? _myCrSummary;
+  ChallengerRoadUserSummary? _friendCrSummary;
+  GlobalTrophySummary? _myGlobalTrophySummary;
+  GlobalTrophySummary? _friendGlobalTrophySummary;
   bool _loading = true;
   bool _statsLoading = false;
   _CompareScope _scope = _CompareScope.allTime;
@@ -53,11 +61,18 @@ class _CompareStatsState extends State<CompareStats> {
       return;
     }
 
+    final crService = ChallengerRoadService();
+    final globalTrophyService = GlobalTrophyService();
+
     final results = await Future.wait([
       _loadStats(firestore, myUid, scope: _scope, selectedRange: effectiveSelectedRange),
       _loadStats(firestore, widget.friendUid, scope: _scope, selectedRange: effectiveSelectedRange),
       firestore.collection('users').doc(myUid).get(),
       firestore.collection('users').doc(widget.friendUid).get(),
+      crService.getUserSummary(myUid),
+      crService.getUserSummary(widget.friendUid),
+      globalTrophyService.getUserSummary(myUid),
+      globalTrophyService.getUserSummary(widget.friendUid),
     ]);
 
     if (mounted) {
@@ -68,6 +83,10 @@ class _CompareStatsState extends State<CompareStats> {
         if (myDoc.exists) _myProfile = UserProfile.fromSnapshot(myDoc);
         final friendDoc = results[3] as DocumentSnapshot;
         if (friendDoc.exists) _friendProfile = UserProfile.fromSnapshot(friendDoc);
+        _myCrSummary = results[4] as ChallengerRoadUserSummary;
+        _friendCrSummary = results[5] as ChallengerRoadUserSummary;
+        _myGlobalTrophySummary = results[6] as GlobalTrophySummary;
+        _friendGlobalTrophySummary = results[7] as GlobalTrophySummary;
         _loading = false;
       });
     }
@@ -554,6 +573,18 @@ class _CompareStatsState extends State<CompareStats> {
                                     _buildLockedAccuracyPreview(context),
                                   ],
                                 ),
+
+                              // ── Challenger Road section ───────────────────────────
+                              const SizedBox(height: 16),
+                              _SectionHeader(label: 'Challenger Road'),
+                              const SizedBox(height: 8),
+                              _buildCrSection(context),
+
+                              // ── Trophies section ─────────────────────────────────
+                              const SizedBox(height: 16),
+                              _SectionHeader(label: 'Trophies'),
+                              const SizedBox(height: 8),
+                              _buildTrophiesSection(context),
                             ],
                           ),
                         ),
@@ -723,7 +754,7 @@ class _CompareStatsState extends State<CompareStats> {
     );
   }
 
-  Widget _buildStatRow(BuildContext context, String label, int? myVal, int? friendVal, {String suffix = ''}) {
+  Widget _buildStatRow(BuildContext context, String label, int? myVal, int? friendVal, {String suffix = '', Color? color}) {
     final my = myVal ?? 0;
     final fr = friendVal ?? 0;
     final myWins = my > fr;
@@ -735,7 +766,7 @@ class _CompareStatsState extends State<CompareStats> {
         children: [
           Row(
             children: [
-              _StatValue(value: _numberFmt.format(my) + suffix, highlight: myWins),
+              _StatValue(value: _numberFmt.format(my) + suffix, highlight: myWins, color: color),
               Expanded(
                 child: Center(
                   child: Text(
@@ -749,11 +780,11 @@ class _CompareStatsState extends State<CompareStats> {
                   ),
                 ),
               ),
-              _StatValue(value: _numberFmt.format(fr) + suffix, highlight: frWins, alignRight: true),
+              _StatValue(value: _numberFmt.format(fr) + suffix, highlight: frWins, alignRight: true, color: color),
             ],
           ),
           const SizedBox(height: 4),
-          _CompareBar(myVal: my.toDouble(), friendVal: fr.toDouble()),
+          _CompareBar(myVal: my.toDouble(), friendVal: fr.toDouble(), color: color),
         ],
       ),
     );
@@ -833,6 +864,209 @@ class _CompareStatsState extends State<CompareStats> {
           ),
           const SizedBox(height: 4),
           _CompareBar(myVal: myPct, friendVal: frPct, color: color),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCrSection(BuildContext context) {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final my = _myCrSummary;
+    final fr = _friendCrSummary;
+    final myName = _myProfile?.displayName ?? auth.currentUser?.displayName ?? 'You';
+    final frName = _friendProfile?.displayName ?? 'Friend';
+
+    final bool neitherStarted = (my?.totalAttempts ?? 0) == 0 && (fr?.totalAttempts ?? 0) == 0;
+    if (neitherStarted) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Neither player has started Challenger Road yet.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75)),
+        ),
+      );
+    }
+
+    const crColor = Color(0xFFFFD700);
+
+    return Column(
+      children: [
+        _buildCrLevelRow(context, my?.allTimeBestLevel ?? 0, fr?.allTimeBestLevel ?? 0),
+        _buildStatRow(context, 'Attempts', my?.totalAttempts, fr?.totalAttempts),
+        _buildStatRow(context, 'CR Shots', my?.allTimeTotalChallengerRoadShots, fr?.allTimeTotalChallengerRoadShots),
+        _buildStatRow(context, 'CR Trophies', my?.trophies.length, fr?.trophies.length, color: crColor),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _CrViewButton(
+                label: myName,
+                uid: _myProfile?.reference?.id ?? '',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _CrViewButton(
+                label: frName,
+                uid: widget.friendUid,
+                alignRight: true,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCrLevelRow(BuildContext context, int myLevel, int frLevel) {
+    final myWins = myLevel > frLevel;
+    final frWins = frLevel > myLevel;
+    const highlight = Color(0xFFFFD700);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _StatValue(
+                value: myLevel > 0 ? 'Lvl $myLevel' : '-',
+                highlight: myWins,
+                color: highlight,
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Best Level',
+                    style: TextStyle(
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              _StatValue(
+                value: frLevel > 0 ? 'Lvl $frLevel' : '-',
+                highlight: frWins,
+                alignRight: true,
+                color: highlight,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _CompareBar(
+            myVal: myLevel > 0 ? myLevel.toDouble() : null,
+            friendVal: frLevel > 0 ? frLevel.toDouble() : null,
+            color: highlight,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrophiesSection(BuildContext context) {
+    final my = _myGlobalTrophySummary;
+    final fr = _friendGlobalTrophySummary;
+    final myCr = _myCrSummary;
+    final frCr = _friendCrSummary;
+
+    final myGlobal = my?.trophies.length ?? 0;
+    final frGlobal = fr?.trophies.length ?? 0;
+    final myCrCount = myCr?.trophies.length ?? 0;
+    final frCrCount = frCr?.trophies.length ?? 0;
+    final myTotal = myGlobal + myCrCount;
+    final frTotal = frGlobal + frCrCount;
+
+    // Tier breakdown for earned global trophies
+    final Map<GlobalTrophyTier, int> myByTier = {};
+    final Map<GlobalTrophyTier, int> frByTier = {};
+    for (final def in GlobalTrophyService.catalog) {
+      if (my?.trophies.contains(def.id) == true) {
+        myByTier[def.tier] = (myByTier[def.tier] ?? 0) + 1;
+      }
+      if (fr?.trophies.contains(def.id) == true) {
+        frByTier[def.tier] = (frByTier[def.tier] ?? 0) + 1;
+      }
+    }
+
+    final hasTierData = myByTier.isNotEmpty || frByTier.isNotEmpty;
+
+    return Column(
+      children: [
+        _buildStatRow(context, 'Total Trophies', myTotal, frTotal),
+        _buildStatRow(context, 'Global Trophies', myGlobal, frGlobal),
+        _buildStatRow(context, 'CR Trophies', myCrCount, frCrCount, color: const Color(0xFFFFD700)),
+        if (hasTierData) ...[
+          const SizedBox(height: 8),
+          ...GlobalTrophyTier.values.reversed.map((tier) {
+            final myCount = myByTier[tier] ?? 0;
+            final frCount = frByTier[tier] ?? 0;
+            if (myCount == 0 && frCount == 0) return const SizedBox.shrink();
+            return _buildStatRow(
+              context,
+              GlobalTrophyService.tierLabel(tier),
+              myCount,
+              frCount,
+              color: GlobalTrophyService.colorForTier(tier),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+}
+
+// ── CR view button ─────────────────────────────────────────────────────────────
+
+class _CrViewButton extends StatelessWidget {
+  const _CrViewButton({required this.label, required this.uid, this.alignRight = false});
+
+  final String label;
+  final String uid;
+  final bool alignRight;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: uid.isNotEmpty ? () => context.push(AppRoutePaths.playerChallengerRoadPathFor(uid)) : null,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Row(
+        mainAxisAlignment: alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!alignRight) ...[
+            Icon(Icons.route_rounded, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+              ),
+            ),
+          ),
+          if (alignRight) ...[
+            const SizedBox(width: 6),
+            Icon(Icons.route_rounded, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+          ],
         ],
       ),
     );

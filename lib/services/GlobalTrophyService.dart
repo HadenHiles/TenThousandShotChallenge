@@ -1297,7 +1297,11 @@ class GlobalTrophyService {
   }
 
   static Color colorForTrophy(GlobalTrophyDefinition def) {
-    switch (def.tier) {
+    return colorForTier(def.tier);
+  }
+
+  static Color colorForTier(GlobalTrophyTier tier) {
+    switch (tier) {
       case GlobalTrophyTier.legendary:
         return const Color(0xFFFFD700);
       case GlobalTrophyTier.epic:
