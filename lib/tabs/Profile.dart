@@ -1172,12 +1172,12 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
     // ── Build all-earned lists ──────────────────────────────────────────────
     final currentFeatured = widget.globalSummary.featuredTrophies.toSet();
     final earnedGlobalIds = widget.globalSummary.trophies.toSet();
-    final earnedFreeDefs = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => a.tier.index.compareTo(b.tier.index));
-    final earnedProDefs = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => a.tier.index.compareTo(b.tier.index));
+    final earnedFreeDefs = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
+    final earnedProDefs = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
 
     final crById = {for (final d in widget.crCatalog) d.id: d};
     final earnedCrIds = widget.crSummary.trophies.toSet();
-    final earnedCrDefs = earnedCrIds.map((id) => crById[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => a.effectiveName.compareTo(b.effectiveName));
+    final earnedCrDefs = earnedCrIds.map((id) => crById[id]).whereType<ChallengerRoadTrophyDefinition>().where((d) => d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
 
     return SafeArea(
       child: Column(
@@ -1240,6 +1240,18 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // CHALLENGER ROAD trophies (first — hardest to easiest)
+                    if (earnedCrDefs.isNotEmpty) ...[
+                      _SwapSectionHeader(label: 'CHALLENGER ROAD', scheme: scheme),
+                      const SizedBox(height: 6),
+                      for (final def in earnedCrDefs)
+                        _SwapCrRow(
+                          def: def,
+                          dimmed: currentFeatured.contains(def.id),
+                          onTap: () => _pick(def.id),
+                        ),
+                      const SizedBox(height: 10),
+                    ],
                     // FREE trophies
                     if (earnedFreeDefs.isNotEmpty) ...[
                       _SwapSectionHeader(label: 'FREE', scheme: scheme),
@@ -1258,18 +1270,6 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                       const SizedBox(height: 6),
                       for (final def in earnedProDefs)
                         _SwapGlobalRow(
-                          def: def,
-                          dimmed: currentFeatured.contains(def.id),
-                          onTap: () => _pick(def.id),
-                        ),
-                      const SizedBox(height: 10),
-                    ],
-                    // CHALLENGER ROAD trophies
-                    if (earnedCrDefs.isNotEmpty) ...[
-                      _SwapSectionHeader(label: 'CHALLENGER ROAD', scheme: scheme),
-                      const SizedBox(height: 6),
-                      for (final def in earnedCrDefs)
-                        _SwapCrRow(
                           def: def,
                           dimmed: currentFeatured.contains(def.id),
                           onTap: () => _pick(def.id),
