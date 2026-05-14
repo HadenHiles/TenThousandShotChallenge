@@ -12,7 +12,8 @@
         "seed:badges": "node scripts/seed_challenger_road_badges.js",
         "unseed:badges": "node scripts/unseed_challenger_road_badges.js",
         "seed:badges:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/seed_challenger_road_badges.js",
-        "unseed:badges:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road_badges.js"
+        "unseed:badges:emulator": "FIRESTORE_EMULATOR_HOST=localhost:8080 node scripts/unseed_challenger_road_badges.js",
+        "seed:accuracy-trophies": "node scripts/seed_new_accuracy_trophies.js"
     },
     "dependencies": {
         "firebase-admin": "^13.4.0",
