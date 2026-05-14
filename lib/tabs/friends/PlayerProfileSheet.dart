@@ -738,21 +738,9 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            'TROPHY CASE',
-                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () => showAllTrophiesSheet(context, userId: widget.uid, isPro: playerIsPro),
-                            child: Text(
-                              'VIEW ALL',
-                              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.primaryColor, letterSpacing: 1.1),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'TROPHY CASE',
+                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -760,6 +748,20 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                         children: [
                           for (int i = 0; i < 5; i++) _trophyCaseSlot(context, theme, i, featured, crById, globalSummary, crSummary),
                         ],
+                      ),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => showAllTrophiesSheet(context, userId: widget.uid, isPro: playerIsPro),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Center(
+                            child: Text(
+                              'VIEW ALL TROPHIES',
+                              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 12, color: theme.primaryColor, letterSpacing: 1.2),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
