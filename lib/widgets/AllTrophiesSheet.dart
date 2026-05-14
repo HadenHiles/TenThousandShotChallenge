@@ -403,11 +403,9 @@ class _CrListItem {
 
   const _CrListItem._({required this.isHeader, required this.addSpacing, this.tier, this.def});
 
-  factory _CrListItem.header(ChallengerRoadTrophyTier tier, bool addSpacing) =>
-      _CrListItem._(isHeader: true, addSpacing: addSpacing, tier: tier);
+  factory _CrListItem.header(ChallengerRoadTrophyTier tier, bool addSpacing) => _CrListItem._(isHeader: true, addSpacing: addSpacing, tier: tier);
 
-  factory _CrListItem.trophy(ChallengerRoadTrophyDefinition def) =>
-      _CrListItem._(isHeader: false, addSpacing: false, def: def);
+  factory _CrListItem.trophy(ChallengerRoadTrophyDefinition def) => _CrListItem._(isHeader: false, addSpacing: false, def: def);
 }
 
 class _CrTierHeader extends StatelessWidget {
