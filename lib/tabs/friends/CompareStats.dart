@@ -898,8 +898,8 @@ class _CompareStatsState extends State<CompareStats> {
       children: [
         _buildCrLevelRow(context, my?.allTimeBestLevel ?? 0, fr?.allTimeBestLevel ?? 0),
         _buildStatRow(context, 'Attempts', my?.totalAttempts, fr?.totalAttempts),
-        _buildStatRow(context, 'CR Shots', my?.allTimeTotalChallengerRoadShots, fr?.allTimeTotalChallengerRoadShots),
-        _buildStatRow(context, 'CR Trophies', my?.trophies.length, fr?.trophies.length),
+        _buildStatRow(context, 'Shots', my?.allTimeTotalChallengerRoadShots, fr?.allTimeTotalChallengerRoadShots),
+        _buildStatRow(context, 'Trophies', my?.trophies.length, fr?.trophies.length),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -992,28 +992,18 @@ class _CompareStatsState extends State<CompareStats> {
       }
     }
 
-    final hasTierData = myByTier.isNotEmpty || frByTier.isNotEmpty;
-
     return Column(
       children: [
-        _buildStatRow(context, 'Total Trophies', myTotal, frTotal),
-        _buildStatRow(context, 'Global Trophies', myGlobal, frGlobal),
-        _buildStatRow(context, 'CR Trophies', myCrCount, frCrCount),
-        if (hasTierData) ...[
-          const SizedBox(height: 8),
-          ...GlobalTrophyTier.values.reversed.map((tier) {
-            final myCount = myByTier[tier] ?? 0;
-            final frCount = frByTier[tier] ?? 0;
-            if (myCount == 0 && frCount == 0) return const SizedBox.shrink();
-            return _buildStatRow(
-              context,
-              GlobalTrophyService.tierLabel(tier),
-              myCount,
-              frCount,
-              color: GlobalTrophyService.colorForTier(tier),
-            );
-          }),
-        ],
+        _buildStatRow(context, 'Total', myTotal, frTotal),
+        ...GlobalTrophyTier.values.reversed.map(
+          (tier) => _buildStatRow(
+            context,
+            GlobalTrophyService.tierLabel(tier),
+            myByTier[tier] ?? 0,
+            frByTier[tier] ?? 0,
+            color: GlobalTrophyService.colorForTier(tier),
+          ),
+        ),
       ],
     );
   }
