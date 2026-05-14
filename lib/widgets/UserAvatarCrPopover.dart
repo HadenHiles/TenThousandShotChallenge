@@ -70,7 +70,8 @@ class UserAvatarCrPopover extends StatelessWidget {
         final bool viewerIsPro = Provider.of<CustomerInfoNotifier>(context, listen: false).isPro;
         // Show CR action whenever the target has activity (or is a pro placeholder),
         // regardless of whether the caller passed showAccomplishment.
-        final bool hasCrAction = (hasCrActivity || showProFallback) && ((viewerIsPro && onViewCrProgress != null) || (!viewerIsPro && onUnlockChallengerRoad != null));
+        // All viewers see "View Their Progress" when onViewCrProgress is provided.
+        final bool hasCrAction = (hasCrActivity || showProFallback) && (onViewCrProgress != null || (!viewerIsPro && onUnlockChallengerRoad != null && onViewCrProgress == null));
         final bool canOnlyViewProfile = !hasCrAction && onViewProfile != null && onEditAvatar == null && onShowQrCode == null && extraActions.isEmpty;
 
         if (!hasCrAction && canOnlyViewProfile) {
@@ -108,7 +109,7 @@ class UserAvatarCrPopover extends StatelessWidget {
               final items = <PopupMenuEntry<String>>[];
 
               if (hasCrAction) {
-                if (viewerIsPro && onViewCrProgress != null) {
+                if (onViewCrProgress != null) {
                   items.add(
                     PopupMenuItem<String>(
                       value: 'cr_progress',
@@ -127,7 +128,8 @@ class UserAvatarCrPopover extends StatelessWidget {
                       ),
                     ),
                   );
-                } else if (!viewerIsPro && onUnlockChallengerRoad != null) {
+                } else if (onUnlockChallengerRoad != null) {
+                  // Fallback: no CR progress route available for this context
                   items.add(
                     PopupMenuItem<String>(
                       value: 'unlock_cr',
@@ -135,13 +137,13 @@ class UserAvatarCrPopover extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Unlock Challenger Road'.toUpperCase(),
+                            'View Challenger Road'.toUpperCase(),
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          Icon(Icons.lock_open_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                          Icon(Icons.route_rounded, color: Theme.of(context).colorScheme.onPrimary),
                         ],
                       ),
                     ),
