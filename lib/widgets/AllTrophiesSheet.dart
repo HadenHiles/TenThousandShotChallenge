@@ -13,6 +13,7 @@ void showAllTrophiesSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: (_) => AllTrophiesSheet(userId: userId, isPro: isPro),
   );
