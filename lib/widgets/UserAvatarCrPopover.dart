@@ -33,7 +33,7 @@ class UserAvatarCrPopover extends StatelessWidget {
     this.onViewCrProgress,
     this.onUnlockChallengerRoad,
     this.extraActions = const <UserAvatarPopoverAction>[],
-    this.viewProfileActionLabel = 'Continue / View Profile',
+    this.viewProfileActionLabel = 'View Profile',
   });
 
   final String userId;
@@ -108,6 +108,27 @@ class UserAvatarCrPopover extends StatelessWidget {
             itemBuilder: (_) {
               final items = <PopupMenuEntry<String>>[];
 
+              if (onViewProfile != null) {
+                items.add(
+                  PopupMenuItem<String>(
+                    value: 'view',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          viewProfileActionLabel.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                        Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               if (hasCrAction) {
                 if (onViewCrProgress != null) {
                   items.add(
@@ -149,27 +170,6 @@ class UserAvatarCrPopover extends StatelessWidget {
                     ),
                   );
                 }
-              }
-
-              if (onViewProfile != null) {
-                items.add(
-                  PopupMenuItem<String>(
-                    value: 'view',
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          viewProfileActionLabel.toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        Icon(Icons.route_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                      ],
-                    ),
-                  ),
-                );
               }
 
               if (onEditAvatar != null) {
