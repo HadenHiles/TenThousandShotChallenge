@@ -348,20 +348,41 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
             final crSummary = crSnap.data ?? ChallengerRoadUserSummary.empty();
             final earnedCr = crSummary.trophies.toSet();
 
-            // Filter out hidden-tier badges just like the main CR screen.
-            final visible = ChallengerRoadService.visibleDisplayTrophyDefs(
+            // Group by tier, legendary first — same order as standard tab.
+            final groups = ChallengerRoadService.groupDisplayTrophiesByTier(
               trophies: catalog,
-            );
+              earnedTrophyIds: crSummary.trophies,
+            ).reversed.toList();
+
+            // Build a flat item list: [header, row, row, ...] per group.
+            final items = <_CrListItem>[];
+            for (var gi = 0; gi < groups.length; gi++) {
+              final group = groups[gi];
+              items.add(_CrListItem.header(group.tier, gi > 0));
+              for (final def in group.trophies) {
+                items.add(_CrListItem.trophy(def));
+              }
+            }
 
             return ListView.builder(
               controller: widget.scrollController,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-              itemCount: visible.length,
+              itemCount: items.length,
               itemBuilder: (context, i) {
-                final def = visible[i];
+                final item = items[i];
+                if (item.isHeader) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (item.addSpacing) const SizedBox(height: 16),
+                      _CrTierHeader(tier: item.tier!),
+                      const SizedBox(height: 8),
+                    ],
+                  );
+                }
                 return _CrTrophyRow(
-                  def: def,
-                  earned: earnedCr.contains(def.id),
+                  def: item.def!,
+                  earned: earnedCr.contains(item.def!.id),
                   userId: widget.userId,
                 );
               },
@@ -369,6 +390,47 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
           },
         );
       },
+    );
+  }
+}
+
+// Flat list item used to interleave tier headers with trophy rows.
+class _CrListItem {
+  final bool isHeader;
+  final bool addSpacing;
+  final ChallengerRoadTrophyTier? tier;
+  final ChallengerRoadTrophyDefinition? def;
+
+  const _CrListItem._({required this.isHeader, required this.addSpacing, this.tier, this.def});
+
+  factory _CrListItem.header(ChallengerRoadTrophyTier tier, bool addSpacing) =>
+      _CrListItem._(isHeader: true, addSpacing: addSpacing, tier: tier);
+
+  factory _CrListItem.trophy(ChallengerRoadTrophyDefinition def) =>
+      _CrListItem._(isHeader: false, addSpacing: false, def: def);
+}
+
+class _CrTierHeader extends StatelessWidget {
+  const _CrTierHeader({required this.tier});
+  final ChallengerRoadTrophyTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ChallengerRoadService.colorForTrophy(
+      ChallengerRoadService.trophyCatalog.firstWhere(
+        (d) => d.tier == tier,
+        orElse: () => ChallengerRoadService.trophyCatalog.first,
+      ),
+    );
+    return Row(
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+        const SizedBox(width: 8),
+        Text(
+          ChallengerRoadService.tierLabel(tier).toUpperCase(),
+          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 1.4, color: color),
+        ),
+      ],
     );
   }
 }
