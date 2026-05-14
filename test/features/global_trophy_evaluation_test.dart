@@ -903,7 +903,7 @@ void main() {
           final earned = await eval(total: minShots, wrist: minShots, wristH: hitsForPass, pro: true);
           expect(earned, contains(id));
         });
-        test('$id: NOT awarded below threshold (${hitsForFail}/$minShots, pro)', () async {
+        test('$id: NOT awarded below threshold ($hitsForFail/$minShots, pro)', () async {
           final earned = await eval(total: minShots, wrist: minShots, wristH: hitsForFail, pro: true);
           expect(earned, isNot(contains(id)));
         });
