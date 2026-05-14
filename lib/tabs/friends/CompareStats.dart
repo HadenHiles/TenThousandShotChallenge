@@ -991,22 +991,19 @@ class _CompareStatsState extends State<CompareStats> {
     final myCr = _myCrSummary;
     final frCr = _friendCrSummary;
 
-    final myGlobal = my?.trophies.length ?? 0;
-    final frGlobal = fr?.trophies.length ?? 0;
-    final myCrCount = myCr?.trophies.length ?? 0;
-    final frCrCount = frCr?.trophies.length ?? 0;
-    final myTotal = myGlobal + myCrCount;
-    final frTotal = frGlobal + frCrCount;
-
     // Tier breakdown combining global and CR trophies into a shared map.
+    // Both totals and per-tier counts are derived from the same catalog walk
+    // so they always add up correctly.
     final Map<GlobalTrophyTier, int> myByTier = {};
     final Map<GlobalTrophyTier, int> frByTier = {};
 
+    final myEarnedGlobal = my?.trophies.toSet() ?? {};
+    final frEarnedGlobal = fr?.trophies.toSet() ?? {};
     for (final def in GlobalTrophyService.catalog) {
-      if (my?.trophies.contains(def.id) == true) {
+      if (myEarnedGlobal.contains(def.id)) {
         myByTier[def.tier] = (myByTier[def.tier] ?? 0) + 1;
       }
-      if (fr?.trophies.contains(def.id) == true) {
+      if (frEarnedGlobal.contains(def.id)) {
         frByTier[def.tier] = (frByTier[def.tier] ?? 0) + 1;
       }
     }
@@ -1019,16 +1016,22 @@ class _CompareStatsState extends State<CompareStats> {
       ChallengerRoadTrophyTier.uncommon: GlobalTrophyTier.uncommon,
       ChallengerRoadTrophyTier.common: GlobalTrophyTier.common,
     };
+    final myEarnedCr = myCr?.trophies.toSet() ?? {};
+    final frEarnedCr = frCr?.trophies.toSet() ?? {};
     for (final def in ChallengerRoadService.trophyCatalog) {
       final globalTier = crToGlobal[def.tier];
       if (globalTier == null) continue; // skip hidden
-      if (myCr?.trophies.contains(def.id) == true) {
+      if (myEarnedCr.contains(def.id)) {
         myByTier[globalTier] = (myByTier[globalTier] ?? 0) + 1;
       }
-      if (frCr?.trophies.contains(def.id) == true) {
+      if (frEarnedCr.contains(def.id)) {
         frByTier[globalTier] = (frByTier[globalTier] ?? 0) + 1;
       }
     }
+
+    // Derive totals from the same tier maps so sum == total always.
+    final myTotal = myByTier.values.fold(0, (a, b) => a + b);
+    final frTotal = frByTier.values.fold(0, (a, b) => a + b);
 
     return Column(
       children: [
