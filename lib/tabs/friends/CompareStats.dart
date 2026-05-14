@@ -998,15 +998,35 @@ class _CompareStatsState extends State<CompareStats> {
     final myTotal = myGlobal + myCrCount;
     final frTotal = frGlobal + frCrCount;
 
-    // Tier breakdown for earned global trophies
+    // Tier breakdown combining global and CR trophies into a shared map.
     final Map<GlobalTrophyTier, int> myByTier = {};
     final Map<GlobalTrophyTier, int> frByTier = {};
+
     for (final def in GlobalTrophyService.catalog) {
       if (my?.trophies.contains(def.id) == true) {
         myByTier[def.tier] = (myByTier[def.tier] ?? 0) + 1;
       }
       if (fr?.trophies.contains(def.id) == true) {
         frByTier[def.tier] = (frByTier[def.tier] ?? 0) + 1;
+      }
+    }
+
+    // Map CR tier → GlobalTrophyTier so both systems share the same rows.
+    const crToGlobal = {
+      ChallengerRoadTrophyTier.legendary: GlobalTrophyTier.legendary,
+      ChallengerRoadTrophyTier.epic: GlobalTrophyTier.epic,
+      ChallengerRoadTrophyTier.rare: GlobalTrophyTier.rare,
+      ChallengerRoadTrophyTier.uncommon: GlobalTrophyTier.uncommon,
+      ChallengerRoadTrophyTier.common: GlobalTrophyTier.common,
+    };
+    for (final def in ChallengerRoadService.trophyCatalog) {
+      final globalTier = crToGlobal[def.tier];
+      if (globalTier == null) continue; // skip hidden
+      if (myCr?.trophies.contains(def.id) == true) {
+        myByTier[globalTier] = (myByTier[globalTier] ?? 0) + 1;
+      }
+      if (frCr?.trophies.contains(def.id) == true) {
+        frByTier[globalTier] = (frByTier[globalTier] ?? 0) + 1;
       }
     }
 
