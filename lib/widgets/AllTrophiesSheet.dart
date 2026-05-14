@@ -36,9 +36,9 @@ class AllTrophiesSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final headerColor = theme.primaryColor; // brand red
     return DraggableScrollableSheet(
-      initialChildSize: 0.92,
+      initialChildSize: 1.0,
       minChildSize: 0.5,
-      maxChildSize: 0.96,
+      maxChildSize: 1.0,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -185,11 +185,7 @@ class _TrophiesTabState extends State<_TrophiesTab> {
             final earned = summary.trophies.toSet();
 
             // Filter catalog to the correct category group
-            final filtered = catalog
-                .where((d) => widget.accuracyOnly
-                    ? d.category == GlobalTrophyCategory.accuracy
-                    : d.category != GlobalTrophyCategory.accuracy)
-                .toList();
+            final filtered = catalog.where((d) => widget.accuracyOnly ? d.category == GlobalTrophyCategory.accuracy : d.category != GlobalTrophyCategory.accuracy).toList();
 
             // Group by tier (legendary first)
             final groups = <_TierGroup>[];

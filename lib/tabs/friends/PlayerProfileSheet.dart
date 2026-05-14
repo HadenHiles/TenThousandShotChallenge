@@ -542,6 +542,12 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                         menuColor: theme.colorScheme.primary,
                         showAccomplishment: isProForDisplay,
                         showProFallback: isProForDisplay,
+                        onViewCrProgress: widget.uid.isNotEmpty
+                            ? () {
+                                Feedback.forTap(context);
+                                context.push(AppRoutePaths.playerChallengerRoadPathFor(widget.uid));
+                              }
+                            : null,
                         extraActions: _buildPlayerPopoverActions(),
                         child: UserAvatar(user: _userPlayer, backgroundColor: Colors.transparent),
                       ),
