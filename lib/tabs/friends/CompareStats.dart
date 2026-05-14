@@ -1036,10 +1036,12 @@ class _CrViewButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
     return OutlinedButton(
       onPressed: uid.isNotEmpty ? () => context.push(AppRoutePaths.playerChallengerRoadPathFor(uid)) : null,
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
+        foregroundColor: primary,
+        side: BorderSide(color: primary.withValues(alpha: 0.35)),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         minimumSize: const Size(0, 36),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1048,7 +1050,7 @@ class _CrViewButton extends StatelessWidget {
         mainAxisAlignment: alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!alignRight) ...[
-            Icon(Icons.route_rounded, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            Icon(Icons.route_rounded, size: 14, color: primary),
             const SizedBox(width: 6),
           ],
           Flexible(
@@ -1059,13 +1061,13 @@ class _CrViewButton extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                color: primary,
               ),
             ),
           ),
           if (alignRight) ...[
             const SizedBox(width: 6),
-            Icon(Icons.route_rounded, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            Icon(Icons.route_rounded, size: 14, color: primary),
           ],
         ],
       ),
