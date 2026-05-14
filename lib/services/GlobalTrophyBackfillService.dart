@@ -208,19 +208,31 @@ class GlobalTrophyBackfillService {
           if (wrist >= 10) bestWristAcc10 = max(bestWristAcc10, wristHit / wrist);
           if (wrist >= 15) bestWristAcc15 = max(bestWristAcc15, wristHit / wrist);
           if (wrist >= 20) bestWristAcc20 = max(bestWristAcc20, wristHit / wrist);
-          if (wrist >= 25) { bestWristAcc25 = max(bestWristAcc25, wristHit / wrist); if (wristHit == wrist) hasWristPerfect = true; }
+          if (wrist >= 25) {
+            bestWristAcc25 = max(bestWristAcc25, wristHit / wrist);
+            if (wristHit == wrist) hasWristPerfect = true;
+          }
           if (snap >= 10) bestSnapAcc10 = max(bestSnapAcc10, snapHit / snap);
           if (snap >= 15) bestSnapAcc15 = max(bestSnapAcc15, snapHit / snap);
           if (snap >= 20) bestSnapAcc20 = max(bestSnapAcc20, snapHit / snap);
-          if (snap >= 25) { bestSnapAcc25 = max(bestSnapAcc25, snapHit / snap); if (snapHit == snap) hasSnapPerfect = true; }
+          if (snap >= 25) {
+            bestSnapAcc25 = max(bestSnapAcc25, snapHit / snap);
+            if (snapHit == snap) hasSnapPerfect = true;
+          }
           if (slap >= 10) bestSlapAcc10 = max(bestSlapAcc10, slapHit / slap);
           if (slap >= 15) bestSlapAcc15 = max(bestSlapAcc15, slapHit / slap);
           if (slap >= 20) bestSlapAcc20 = max(bestSlapAcc20, slapHit / slap);
-          if (slap >= 25) { bestSlapAcc25 = max(bestSlapAcc25, slapHit / slap); if (slapHit == slap) hasSlapPerfect = true; }
+          if (slap >= 25) {
+            bestSlapAcc25 = max(bestSlapAcc25, slapHit / slap);
+            if (slapHit == slap) hasSlapPerfect = true;
+          }
           if (backhand >= 10) bestBackhandAcc10 = max(bestBackhandAcc10, backhandHit / backhand);
           if (backhand >= 15) bestBackhandAcc15 = max(bestBackhandAcc15, backhandHit / backhand);
           if (backhand >= 20) bestBackhandAcc20 = max(bestBackhandAcc20, backhandHit / backhand);
-          if (backhand >= 25) { bestBackhandAcc25 = max(bestBackhandAcc25, backhandHit / backhand); if (backhandHit == backhand) hasBackhandPerfect = true; }
+          if (backhand >= 25) {
+            bestBackhandAcc25 = max(bestBackhandAcc25, backhandHit / backhand);
+            if (backhandHit == backhand) hasBackhandPerfect = true;
+          }
 
           // Perfect sessions.
           if (typedTotal >= 25 && allHits == typedTotal) hasPerfect25 = true;

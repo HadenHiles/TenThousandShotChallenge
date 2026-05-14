@@ -100,6 +100,7 @@ void main() {
       int earlyMorning = 0,
       int lateNight = 0,
       int weekendCount = 0,
+      int accuracyStreak65 = 0,
       int accuracyStreak = 0,
     }) {
       return GlobalTrophySummary(
@@ -117,6 +118,7 @@ void main() {
         earlyMorningSessions: earlyMorning,
         lateNightSessions: lateNight,
         consecutiveWeekendCount: weekendCount,
+        currentAccuracyStreak65: accuracyStreak65,
         currentAccuracyStreak: accuracyStreak,
       );
     }
@@ -134,8 +136,8 @@ void main() {
     // =========================================================================
 
     group('Catalog integrity', () {
-      test('catalog contains exactly 73 trophies', () {
-        expect(GlobalTrophyService.catalog.length, 73);
+      test('catalog contains exactly 123 trophies', () {
+        expect(GlobalTrophyService.catalog.length, 123);
       });
 
       test('all trophy IDs are unique', () {
@@ -179,14 +181,36 @@ void main() {
           'g_early_riser', 'g_night_owl', 'g_lunch_break', 'g_weekend_warrior',
           'g_morning_grinder', 'g_midnight_sniper', 'g_sunrise_shooter',
           'g_weekend_grinder',
-          // Accuracy
-          'g_wrist_accuracy_80', 'g_snap_accuracy_80', 'g_slap_accuracy_80',
-          'g_backhand_accuracy_80',
-          'g_wrist_accuracy_90', 'g_snap_accuracy_90', 'g_slap_accuracy_90',
-          'g_backhand_accuracy_90',
-          'g_all_types_accuracy_80', 'g_overall_accuracy_75',
+          // Accuracy – first session
+          'g_accuracy_first_session',
+          // Overall accuracy
+          'g_overall_accuracy_50', 'g_overall_accuracy_60', 'g_overall_accuracy_65',
+          'g_overall_accuracy_75', 'g_overall_accuracy_80', 'g_overall_accuracy_85',
+          'g_overall_accuracy_90', 'g_overall_accuracy_95',
+          // Per-type accuracy
+          'g_wrist_accuracy_50', 'g_wrist_accuracy_60', 'g_wrist_accuracy_70',
+          'g_wrist_accuracy_75', 'g_wrist_accuracy_80', 'g_wrist_accuracy_85',
+          'g_wrist_accuracy_90', 'g_wrist_accuracy_95', 'g_wrist_perfect',
+          'g_snap_accuracy_50', 'g_snap_accuracy_60', 'g_snap_accuracy_70',
+          'g_snap_accuracy_75', 'g_snap_accuracy_80', 'g_snap_accuracy_85',
+          'g_snap_accuracy_90', 'g_snap_accuracy_95', 'g_snap_perfect',
+          'g_slap_accuracy_50', 'g_slap_accuracy_60', 'g_slap_accuracy_70',
+          'g_slap_accuracy_75', 'g_slap_accuracy_80', 'g_slap_accuracy_85',
+          'g_slap_accuracy_90', 'g_slap_accuracy_95', 'g_slap_perfect',
+          'g_backhand_accuracy_50', 'g_backhand_accuracy_60', 'g_backhand_accuracy_70',
+          'g_backhand_accuracy_75', 'g_backhand_accuracy_80', 'g_backhand_accuracy_85',
+          'g_backhand_accuracy_90', 'g_backhand_accuracy_95', 'g_backhand_perfect',
+          // All-types accuracy
+          'g_all_types_accuracy_50', 'g_all_types_accuracy_60', 'g_all_types_accuracy_70',
+          'g_all_types_accuracy_80', 'g_all_types_accuracy_85', 'g_all_types_accuracy_90',
+          'g_all_types_accuracy_95', 'g_all_types_perfect',
+          // Perfect sessions
           'g_perfect_session', 'g_perfect_session_50',
+          'g_perfect_session_75', 'g_perfect_session_100',
+          // Accuracy streaks
+          'g_accuracy_streak_2', 'g_accuracy_streak_3', 'g_accuracy_streak_4',
           'g_accuracy_streak_5', 'g_accuracy_streak_10',
+          'g_accuracy_streak_15', 'g_accuracy_streak_20',
         ];
         final catalogIds = GlobalTrophyService.catalog.map((d) => d.id).toSet();
         for (final id in expected) {
@@ -850,411 +874,422 @@ void main() {
     // =========================================================================
 
     group('Accuracy trophies', () {
-      // Minimum shot counts per type (kMin = 25, kMin50 = 50)
-      const kMin = 25;
-      const kMin50 = 50;
+      // ── g_accuracy_first_session ─────────────────────────────────────────────
 
-      // ── Per-type 80% accuracy ────────────────────────────────────────────────
+      test('g_accuracy_first_session: awarded on any session with typed shots (pro)', () async {
+        final earned = await eval(total: 1, wrist: 1, wristH: 0, pro: true);
+        expect(earned, contains('g_accuracy_first_session'));
+      });
 
-      test('g_wrist_accuracy_80: awarded with 25 wrist shots at 80% hit rate (pro)', () async {
+      test('g_accuracy_first_session: NOT awarded when typedTotal is zero (pro)', () async {
+        // A session where only untargeted shots are taken (no wrist/snap/slap/backhand)
+        final earned = await eval(total: 5, pro: true);
+        expect(earned, isNot(contains('g_accuracy_first_session')));
+      });
+
+      test('g_accuracy_first_session: NOT awarded to free user', () async {
+        final earned = await eval(total: 1, wrist: 1, wristH: 1, pro: false);
+        expect(earned, isNot(contains('g_accuracy_first_session')));
+      });
+
+      // ── Overall accuracy thresholds ──────────────────────────────────────────
+
+      // Parameterised helper: tests a given overall-accuracy trophy.
+      //   [threshold] = % as 0.XX, [minShots] = minimum typed shots required,
+      //   [hitsForPass] = hits that yield just-enough accuracy,
+      //   [hitsForFail] = hits that yield just-below accuracy.
+      void overallAccTest(String id, int minShots, int hitsForPass, int hitsForFail) {
+        test('$id: awarded at ${(hitsForPass / minShots * 100).round()}% with $minShots shots (pro)', () async {
+          final earned = await eval(total: minShots, wrist: minShots, wristH: hitsForPass, pro: true);
+          expect(earned, contains(id));
+        });
+        test('$id: NOT awarded below threshold (${hitsForFail}/$minShots, pro)', () async {
+          final earned = await eval(total: minShots, wrist: minShots, wristH: hitsForFail, pro: true);
+          expect(earned, isNot(contains(id)));
+        });
+        test('$id: NOT awarded with fewer than $minShots typed shots (pro)', () async {
+          final shots = minShots - 1;
+          final earned = await eval(total: shots, wrist: shots, wristH: shots, pro: true);
+          expect(earned, isNot(contains(id)));
+        });
+        test('$id: NOT awarded to free user', () async {
+          final earned = await eval(total: minShots, wrist: minShots, wristH: hitsForPass, pro: false);
+          expect(earned, isNot(contains(id)));
+        });
+      }
+
+      overallAccTest('g_overall_accuracy_50', 10, 5, 4); // 50% vs 40%
+      overallAccTest('g_overall_accuracy_60', 25, 15, 14); // 60% vs 56%
+      overallAccTest('g_overall_accuracy_65', 30, 20, 19); // 66.7% vs 63.3%
+      overallAccTest('g_overall_accuracy_75', 50, 38, 37); // 76% vs 74%
+      overallAccTest('g_overall_accuracy_80', 50, 40, 39); // 80% vs 78%
+      overallAccTest('g_overall_accuracy_85', 50, 43, 42); // 86% vs 84%
+      overallAccTest('g_overall_accuracy_90', 50, 45, 44); // 90% vs 88%
+      overallAccTest('g_overall_accuracy_95', 50, 48, 47); // 96% vs 94%
+
+      // ── Per-type accuracy: parameterised helper ────────────────────────────
+
+      // [shotField]: which typed-shot count to use (wrist/snap/slap/backhand).
+      // [min]: minimum shots required for this threshold.
+      // [hits]: hits needed to just-exceed the threshold.
+      // [failHits]: hits that fall just below.
+      void perTypeTest(
+        String id,
+        String shotField,
+        int min,
+        int hits,
+        int failHits,
+      ) {
+        Future<List<String>> fire(int shotCount, int hitCount, {bool pro = true}) {
+          switch (shotField) {
+            case 'wrist':
+              return eval(total: shotCount, wrist: shotCount, wristH: hitCount, pro: pro);
+            case 'snap':
+              return eval(total: shotCount, snap: shotCount, snapH: hitCount, pro: pro);
+            case 'slap':
+              return eval(total: shotCount, slap: shotCount, slapH: hitCount, pro: pro);
+            default: // backhand
+              return eval(total: shotCount, backhand: shotCount, backhandH: hitCount, pro: pro);
+          }
+        }
+
+        test('$id: awarded at ${(hits / min * 100).round()}% with $min $shotField shots (pro)', () async {
+          expect(await fire(min, hits), contains(id));
+        });
+        test('$id: NOT awarded at ${(failHits / min * 100).round()}% ($failHits/$min, pro)', () async {
+          expect(await fire(min, failHits), isNot(contains(id)));
+        });
+        test('$id: NOT awarded with ${min - 1} $shotField shots even at 100% (pro)', () async {
+          expect(await fire(min - 1, min - 1), isNot(contains(id)));
+        });
+        test('$id: NOT awarded to free user', () async {
+          expect(await fire(min, hits, pro: false), isNot(contains(id)));
+        });
+      }
+
+      // Wrist
+      perTypeTest('g_wrist_accuracy_50', 'wrist', 10, 5, 4);
+      perTypeTest('g_wrist_accuracy_60', 'wrist', 15, 9, 8);
+      perTypeTest('g_wrist_accuracy_70', 'wrist', 20, 14, 13);
+      perTypeTest('g_wrist_accuracy_75', 'wrist', 20, 15, 14);
+      perTypeTest('g_wrist_accuracy_80', 'wrist', 25, 20, 19);
+      perTypeTest('g_wrist_accuracy_85', 'wrist', 25, 22, 21);
+      perTypeTest('g_wrist_accuracy_90', 'wrist', 25, 23, 22);
+      perTypeTest('g_wrist_accuracy_95', 'wrist', 25, 24, 23);
+
+      test('g_wrist_perfect: awarded with 25/25 wrist shots (pro)', () async {
+        expect(await eval(total: 25, wrist: 25, wristH: 25, pro: true), contains('g_wrist_perfect'));
+      });
+      test('g_wrist_perfect: NOT awarded with one miss (24/25, pro)', () async {
+        expect(await eval(total: 25, wrist: 25, wristH: 24, pro: true), isNot(contains('g_wrist_perfect')));
+      });
+      test('g_wrist_perfect: NOT awarded with fewer than 25 wrist shots', () async {
+        expect(await eval(total: 24, wrist: 24, wristH: 24, pro: true), isNot(contains('g_wrist_perfect')));
+      });
+
+      // Snap
+      perTypeTest('g_snap_accuracy_50', 'snap', 10, 5, 4);
+      perTypeTest('g_snap_accuracy_60', 'snap', 15, 9, 8);
+      perTypeTest('g_snap_accuracy_70', 'snap', 20, 14, 13);
+      perTypeTest('g_snap_accuracy_75', 'snap', 20, 15, 14);
+      perTypeTest('g_snap_accuracy_80', 'snap', 25, 20, 19);
+      perTypeTest('g_snap_accuracy_85', 'snap', 25, 22, 21);
+      perTypeTest('g_snap_accuracy_90', 'snap', 25, 23, 22);
+      perTypeTest('g_snap_accuracy_95', 'snap', 25, 24, 23);
+
+      test('g_snap_perfect: awarded with 25/25 snap shots (pro)', () async {
+        expect(await eval(total: 25, snap: 25, snapH: 25, pro: true), contains('g_snap_perfect'));
+      });
+      test('g_snap_perfect: NOT awarded with 24/25 snap shots', () async {
+        expect(await eval(total: 25, snap: 25, snapH: 24, pro: true), isNot(contains('g_snap_perfect')));
+      });
+
+      // Slap
+      perTypeTest('g_slap_accuracy_50', 'slap', 10, 5, 4);
+      perTypeTest('g_slap_accuracy_60', 'slap', 15, 9, 8);
+      perTypeTest('g_slap_accuracy_70', 'slap', 20, 14, 13);
+      perTypeTest('g_slap_accuracy_75', 'slap', 20, 15, 14);
+      perTypeTest('g_slap_accuracy_80', 'slap', 25, 20, 19);
+      perTypeTest('g_slap_accuracy_85', 'slap', 25, 22, 21);
+      perTypeTest('g_slap_accuracy_90', 'slap', 25, 23, 22);
+      perTypeTest('g_slap_accuracy_95', 'slap', 25, 24, 23);
+
+      test('g_slap_perfect: awarded with 25/25 slap shots (pro)', () async {
+        expect(await eval(total: 25, slap: 25, slapH: 25, pro: true), contains('g_slap_perfect'));
+      });
+      test('g_slap_perfect: NOT awarded with 24/25 slap shots', () async {
+        expect(await eval(total: 25, slap: 25, slapH: 24, pro: true), isNot(contains('g_slap_perfect')));
+      });
+
+      // Backhand
+      perTypeTest('g_backhand_accuracy_50', 'backhand', 10, 5, 4);
+      perTypeTest('g_backhand_accuracy_60', 'backhand', 15, 9, 8);
+      perTypeTest('g_backhand_accuracy_70', 'backhand', 20, 14, 13);
+      perTypeTest('g_backhand_accuracy_75', 'backhand', 20, 15, 14);
+      perTypeTest('g_backhand_accuracy_80', 'backhand', 25, 20, 19);
+      perTypeTest('g_backhand_accuracy_85', 'backhand', 25, 22, 21);
+      perTypeTest('g_backhand_accuracy_90', 'backhand', 25, 23, 22);
+      perTypeTest('g_backhand_accuracy_95', 'backhand', 25, 24, 23);
+
+      test('g_backhand_perfect: awarded with 25/25 backhand shots (pro)', () async {
+        expect(await eval(total: 25, backhand: 25, backhandH: 25, pro: true), contains('g_backhand_perfect'));
+      });
+      test('g_backhand_perfect: NOT awarded with 24/25 backhand shots', () async {
+        expect(await eval(total: 25, backhand: 25, backhandH: 24, pro: true), isNot(contains('g_backhand_perfect')));
+      });
+
+      // ── All-types accuracy ────────────────────────────────────────────────────
+
+      // Helper: all four types with equal shot counts and equal hit counts.
+      Future<List<String>> allTypes(int each, int hitsEach, {bool pro = true}) => eval(
+            total: each * 4,
+            wrist: each,
+            snap: each,
+            slap: each,
+            backhand: each,
+            wristH: hitsEach,
+            snapH: hitsEach,
+            slapH: hitsEach,
+            backhandH: hitsEach,
+            pro: pro,
+          );
+
+      void allTypesAccTest(String id, int minEach, int hitsForPass, int hitsForFail) {
+        test('$id: awarded when all types hit threshold ($hitsForPass/$minEach each, pro)', () async {
+          expect(await allTypes(minEach, hitsForPass), contains(id));
+        });
+        test('$id: NOT awarded when all types fall below threshold ($hitsForFail/$minEach, pro)', () async {
+          expect(await allTypes(minEach, hitsForFail), isNot(contains(id)));
+        });
+        test('$id: NOT awarded when one type is below minimum shots (pro)', () async {
+          // backhand is one short
+          final earned = await eval(
+            total: minEach * 3 + (minEach - 1),
+            wrist: minEach,
+            snap: minEach,
+            slap: minEach,
+            backhand: minEach - 1,
+            wristH: hitsForPass,
+            snapH: hitsForPass,
+            slapH: hitsForPass,
+            backhandH: hitsForPass,
+            pro: true,
+          );
+          expect(earned, isNot(contains(id)));
+        });
+        test('$id: NOT awarded to free user', () async {
+          expect(await allTypes(minEach, hitsForPass, pro: false), isNot(contains(id)));
+        });
+      }
+
+      allTypesAccTest('g_all_types_accuracy_50', 10, 5, 4); // 50% vs 40%
+      allTypesAccTest('g_all_types_accuracy_60', 10, 6, 5); // 60% vs 50%
+      allTypesAccTest('g_all_types_accuracy_70', 15, 11, 10); // 73% vs 67%
+      allTypesAccTest('g_all_types_accuracy_80', 25, 20, 19); // 80% vs 76%
+      allTypesAccTest('g_all_types_accuracy_85', 25, 22, 21); // 88% vs 84%
+      allTypesAccTest('g_all_types_accuracy_90', 25, 23, 22); // 92% vs 88%
+      allTypesAccTest('g_all_types_accuracy_95', 25, 24, 23); // 96% vs 92%
+
+      test('g_all_types_perfect: awarded with 25/25 on all four types (pro)', () async {
+        expect(await allTypes(25, 25), contains('g_all_types_perfect'));
+      });
+      test('g_all_types_perfect: NOT awarded when one type has a miss (pro)', () async {
         final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: 20, // 20/25 = 80%
+          total: 100,
+          wrist: 25, snap: 25, slap: 25, backhand: 25,
+          wristH: 25, snapH: 25, slapH: 25,
+          backhandH: 24, // one miss
           pro: true,
         );
-        expect(earned, contains('g_wrist_accuracy_80'));
+        expect(earned, isNot(contains('g_all_types_perfect')));
       });
 
-      test('g_wrist_accuracy_80: NOT awarded below 80% (19/25 = 76%)', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: 19,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_wrist_accuracy_80')));
-      });
+      // ── Perfect sessions ──────────────────────────────────────────────────────
 
-      test('g_wrist_accuracy_80: NOT awarded with fewer than 25 wrist shots', () async {
-        final earned = await eval(
-          total: kMin - 1,
-          wrist: kMin - 1,
-          wristH: kMin - 1, // 100% but only 24 shots
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_wrist_accuracy_80')));
-      });
-
-      test('g_wrist_accuracy_80: NOT awarded to free user', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: 20,
-          pro: false,
-        );
-        expect(earned, isNot(contains('g_wrist_accuracy_80')));
-      });
-
-      test('g_snap_accuracy_80: awarded with 25 snap shots at 80% (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          snap: kMin,
-          snapH: 20,
-          pro: true,
-        );
-        expect(earned, contains('g_snap_accuracy_80'));
-      });
-
-      test('g_slap_accuracy_80: awarded with 25 slap shots at 80% (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          slap: kMin,
-          slapH: 20,
-          pro: true,
-        );
-        expect(earned, contains('g_slap_accuracy_80'));
-      });
-
-      test('g_backhand_accuracy_80: awarded with 25 backhand shots at 80% (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          backhand: kMin,
-          backhandH: 20,
-          pro: true,
-        );
-        expect(earned, contains('g_backhand_accuracy_80'));
-      });
-
-      // ── Per-type 90% accuracy ────────────────────────────────────────────────
-
-      test('g_wrist_accuracy_90: awarded with 25 wrist shots at 90% (23/25, pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: 23, // 23/25 = 92% ≥ 90%
-          pro: true,
-        );
-        expect(earned, contains('g_wrist_accuracy_90'));
-      });
-
-      test('g_wrist_accuracy_90: NOT awarded at 88% (22/25)', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: 22, // 22/25 = 88% < 90%
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_wrist_accuracy_90')));
-      });
-
-      test('g_snap_accuracy_90: awarded with 90%+ snap accuracy (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          snap: kMin,
-          snapH: 23,
-          pro: true,
-        );
-        expect(earned, contains('g_snap_accuracy_90'));
-      });
-
-      test('g_slap_accuracy_90: awarded with 90%+ slap accuracy (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          slap: kMin,
-          slapH: 23,
-          pro: true,
-        );
-        expect(earned, contains('g_slap_accuracy_90'));
-      });
-
-      test('g_backhand_accuracy_90: awarded with 90%+ backhand accuracy (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          backhand: kMin,
-          backhandH: 23,
-          pro: true,
-        );
-        expect(earned, contains('g_backhand_accuracy_90'));
-      });
-
-      // ── g_all_types_accuracy_80 ────────────────────────────────────────────────
-
-      test('g_all_types_accuracy_80: awarded when all four types hit 80%+ (pro)', () async {
-        final earned = await eval(
-          total: 4 * kMin,
-          wrist: kMin,
-          snap: kMin,
-          slap: kMin,
-          backhand: kMin,
-          wristH: 20,
-          snapH: 20,
-          slapH: 20,
-          backhandH: 20,
-          pro: true,
-        );
-        expect(earned, contains('g_all_types_accuracy_80'));
-      });
-
-      test('g_all_types_accuracy_80: NOT awarded when one type misses 80%', () async {
-        final earned = await eval(
-          total: 4 * kMin,
-          wrist: kMin,
-          snap: kMin,
-          slap: kMin,
-          backhand: kMin,
-          wristH: 20,
-          snapH: 20,
-          slapH: 20,
-          backhandH: 19, // 76% < 80%
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_all_types_accuracy_80')));
-      });
-
-      test('g_all_types_accuracy_80: NOT awarded when one type has fewer than 25 shots', () async {
-        final earned = await eval(
-          total: kMin * 3 + (kMin - 1),
-          wrist: kMin,
-          snap: kMin,
-          slap: kMin,
-          backhand: kMin - 1, // only 24 backhand shots
-          wristH: 20,
-          snapH: 20,
-          slapH: 20,
-          backhandH: kMin - 1,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_all_types_accuracy_80')));
-      });
-
-      test('g_all_types_accuracy_80: NOT awarded to free user', () async {
-        final earned = await eval(
-          total: 4 * kMin,
-          wrist: kMin,
-          snap: kMin,
-          slap: kMin,
-          backhand: kMin,
-          wristH: 20,
-          snapH: 20,
-          slapH: 20,
-          backhandH: 20,
-          pro: false,
-        );
-        expect(earned, isNot(contains('g_all_types_accuracy_80')));
-      });
-
-      // ── g_overall_accuracy_75 ─────────────────────────────────────────────────
-
-      test('g_overall_accuracy_75: awarded at exactly 75% with 50 typed shots (pro)', () async {
-        // typedTotal = 50, totalHits = 38 → 38/50 = 76% ≥ 75%
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: true,
-        );
-        expect(earned, contains('g_overall_accuracy_75'));
-      });
-
-      test('g_overall_accuracy_75: NOT awarded below 75% (37/50 = 74%)', () async {
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 37,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_overall_accuracy_75')));
-      });
-
-      test('g_overall_accuracy_75: NOT awarded with fewer than 50 typed shots', () async {
-        final earned = await eval(
-          total: kMin50 - 1,
-          wrist: kMin50 - 1,
-          wristH: kMin50 - 1, // 100% but only 49 typed shots
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_overall_accuracy_75')));
-      });
-
-      test('g_overall_accuracy_75: NOT awarded to free user', () async {
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: false,
-        );
-        expect(earned, isNot(contains('g_overall_accuracy_75')));
-      });
-
-      // ── g_perfect_session ─────────────────────────────────────────────────────
-
-      test('g_perfect_session: awarded with 25 typed shots and 100% accuracy (pro)', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: kMin, // all 25 hit
-          pro: true,
-        );
-        expect(earned, contains('g_perfect_session'));
+      test('g_perfect_session: awarded with 25+ typed shots at 100% accuracy (pro)', () async {
+        expect(await eval(total: 25, wrist: 25, wristH: 25, pro: true), contains('g_perfect_session'));
       });
 
       test('g_perfect_session: NOT awarded with 24 typed shots even at 100%', () async {
-        final earned = await eval(
-          total: kMin - 1,
-          wrist: kMin - 1,
-          wristH: kMin - 1,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_perfect_session')));
+        expect(await eval(total: 24, wrist: 24, wristH: 24, pro: true), isNot(contains('g_perfect_session')));
       });
 
-      test('g_perfect_session: NOT awarded with one miss (24/25 = 96%)', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: kMin - 1, // one miss
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_perfect_session')));
+      test('g_perfect_session: NOT awarded with one miss (24/25)', () async {
+        expect(await eval(total: 25, wrist: 25, wristH: 24, pro: true), isNot(contains('g_perfect_session')));
       });
 
       test('g_perfect_session: NOT awarded to free user', () async {
-        final earned = await eval(
-          total: kMin,
-          wrist: kMin,
-          wristH: kMin,
-          pro: false,
-        );
-        expect(earned, isNot(contains('g_perfect_session')));
+        expect(await eval(total: 25, wrist: 25, wristH: 25, pro: false), isNot(contains('g_perfect_session')));
       });
 
-      // ── g_perfect_session_50 ─────────────────────────────────────────────────
-
-      test('g_perfect_session_50: awarded with 50 typed shots at 100% (pro)', () async {
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: kMin50,
-          pro: true,
-        );
+      test('g_perfect_session_50: awarded with 50+ typed shots at 100% (pro)', () async {
+        final earned = await eval(total: 50, wrist: 50, wristH: 50, pro: true);
+        expect(earned, contains('g_perfect_session'));
         expect(earned, contains('g_perfect_session_50'));
       });
 
       test('g_perfect_session_50: NOT awarded with 49 typed shots', () async {
-        final earned = await eval(
-          total: kMin50 - 1,
-          wrist: kMin50 - 1,
-          wristH: kMin50 - 1,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_perfect_session_50')));
+        expect(await eval(total: 49, wrist: 49, wristH: 49, pro: true), isNot(contains('g_perfect_session_50')));
       });
 
-      test('g_perfect_session_50: g_perfect_session also fires when ≥50 shots (pro)', () async {
-        // Both perfect-session trophies awarded when typedTotal >= 50
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: kMin50,
-          pro: true,
-        );
-        expect(earned, contains('g_perfect_session'));
+      test('g_perfect_session_75: awarded with 75+ typed shots at 100% (pro)', () async {
+        final earned = await eval(total: 75, wrist: 75, wristH: 75, pro: true);
+        expect(earned, contains('g_perfect_session_75'));
         expect(earned, contains('g_perfect_session_50'));
+        expect(earned, contains('g_perfect_session'));
       });
 
-      // ── Accuracy streak ───────────────────────────────────────────────────────
+      test('g_perfect_session_75: NOT awarded with 74 typed shots', () async {
+        expect(await eval(total: 74, wrist: 74, wristH: 74, pro: true), isNot(contains('g_perfect_session_75')));
+      });
 
-      test('g_accuracy_streak_5: awarded on 5th consecutive 70%+ accuracy session (pro)', () async {
-        await seed(blank(accuracyStreak: 4));
-        // 38/50 = 76% ≥ 70% → streak becomes 5
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: true,
-        );
+      test('g_perfect_session_100: awarded with 100+ typed shots at 100% (pro)', () async {
+        final earned = await eval(total: 100, wrist: 100, wristH: 100, pro: true);
+        expect(earned, contains('g_perfect_session_100'));
+        expect(earned, contains('g_perfect_session_75'));
+        expect(earned, contains('g_perfect_session_50'));
+        expect(earned, contains('g_perfect_session'));
+      });
+
+      test('g_perfect_session_100: NOT awarded with 99 typed shots', () async {
+        expect(await eval(total: 99, wrist: 99, wristH: 99, pro: true), isNot(contains('g_perfect_session_100')));
+      });
+
+      // ── Accuracy streak trophies ──────────────────────────────────────────────
+      //
+      // g_accuracy_streak_2 uses the 65% (streak65) counter.
+      // g_accuracy_streak_3 and above use the 70% counter.
+
+      // --- streak_2 (65% threshold) ---
+
+      test('g_accuracy_streak_2: awarded on 2nd consecutive 65%+ session (pro)', () async {
+        // Seed streak65=1, then pass with 66.7% (20/30)
+        await seed(blank(accuracyStreak65: 1, total: 100, sessions: 5));
+        final earned = await eval(total: 30, wrist: 30, wristH: 20, pro: true);
+        expect(earned, contains('g_accuracy_streak_2'));
+      });
+
+      test('g_accuracy_streak_2: NOT awarded when session drops to 64% (pro)', () async {
+        await seed(blank(accuracyStreak65: 1, total: 100, sessions: 5));
+        // 19/30 = 63.3% < 65% → streak65 resets to 0
+        final earned = await eval(total: 30, wrist: 30, wristH: 19, pro: true);
+        expect(earned, isNot(contains('g_accuracy_streak_2')));
+        final s = await service.getUserSummary(uid);
+        expect(s.currentAccuracyStreak65, 0);
+      });
+
+      test('g_accuracy_streak_2: NOT awarded to free user', () async {
+        await seed(blank(accuracyStreak65: 1, total: 100, sessions: 5));
+        final earned = await eval(total: 30, wrist: 30, wristH: 20, pro: false);
+        expect(earned, isNot(contains('g_accuracy_streak_2')));
+      });
+
+      // Session exactly at 65% should count toward streak65 but NOT streak70
+      test('65% session increments streak65 but not streak70 (pro)', () async {
+        // 65/100 = exactly 65%
+        await eval(total: 100, wrist: 100, wristH: 65, pro: true);
+        final s = await service.getUserSummary(uid);
+        expect(s.currentAccuracyStreak65, 1);
+        expect(s.currentAccuracyStreak, 0); // 65% < 70%
+      });
+
+      // --- streak_3 (70% threshold) ---
+
+      test('g_accuracy_streak_3: awarded on 3rd consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 2, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true); // 76% ≥ 70%
+        expect(earned, contains('g_accuracy_streak_3'));
+      });
+
+      test('g_accuracy_streak_3: NOT awarded on 2nd consecutive session', () async {
+        await seed(blank(accuracyStreak: 1, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
+        expect(earned, isNot(contains('g_accuracy_streak_3')));
+      });
+
+      // --- streak_4 ---
+
+      test('g_accuracy_streak_4: awarded on 4th consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 3, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
+        expect(earned, contains('g_accuracy_streak_4'));
+      });
+
+      // --- streak_5 ---
+
+      test('g_accuracy_streak_5: awarded on 5th consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 4, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
         expect(earned, contains('g_accuracy_streak_5'));
       });
 
-      test('g_accuracy_streak_5: NOT awarded with streak at 4 and session at 69%', () async {
-        await seed(blank(accuracyStreak: 4));
-        // 34/50 = 68% < 70% → streak resets to 0
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 34,
-          pro: true,
-        );
+      test('g_accuracy_streak_5: NOT awarded on 4th consecutive session', () async {
+        await seed(blank(accuracyStreak: 3, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
         expect(earned, isNot(contains('g_accuracy_streak_5')));
       });
 
       test('g_accuracy_streak_5: NOT awarded to free user', () async {
-        await seed(blank(accuracyStreak: 4));
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: false,
-        );
+        await seed(blank(accuracyStreak: 4, total: 100, sessions: 5));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: false);
         expect(earned, isNot(contains('g_accuracy_streak_5')));
       });
 
-      test('g_accuracy_streak_10: awarded on 10th consecutive 70%+ accuracy session (pro)', () async {
-        await seed(blank(accuracyStreak: 9));
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: true,
-        );
+      // --- streak_10 ---
+
+      test('g_accuracy_streak_10: awarded on 10th consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 9, total: 100, sessions: 10));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
         expect(earned, contains('g_accuracy_streak_10'));
       });
 
       test('g_accuracy_streak_10: NOT awarded on 9th consecutive session', () async {
-        await seed(blank(accuracyStreak: 8));
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 38,
-          pro: true,
-        );
+        await seed(blank(accuracyStreak: 8, total: 100, sessions: 9));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
         expect(earned, isNot(contains('g_accuracy_streak_10')));
       });
 
-      test('accuracy streak resets when session drops below 70%', () async {
-        // Build a streak of 5, then fail one session
-        await seed(blank(accuracyStreak: 5));
-        // Session with 60% accuracy resets streak to 0
-        final earned = await eval(
-          total: kMin50,
-          wrist: kMin50,
-          wristH: 30, // 30/50 = 60%
-          pro: true,
-        );
-        // g_accuracy_streak_5 already earned once (not re-awarded)
-        // But the key check: neither streak_5 nor streak_10 awarded
-        expect(earned, isNot(contains('g_accuracy_streak_5')));
-        expect(earned, isNot(contains('g_accuracy_streak_10')));
-        // Verify streak was actually reset in Firestore
-        final updatedSummary = await service.getUserSummary(uid);
-        expect(updatedSummary.currentAccuracyStreak, 0);
+      // --- streak_15 ---
+
+      test('g_accuracy_streak_15: awarded on 15th consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 14, total: 200, sessions: 15));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
+        expect(earned, contains('g_accuracy_streak_15'));
       });
 
-      test('accuracy streak not affected by session with zero typed shots', () async {
-        await seed(blank(accuracyStreak: 4));
-        // No typed shots in this session → streak stays at 4
-        final earned = await eval(
-          total: 50,
-          wrist: 0,
-          snap: 0,
-          slap: 0,
-          backhand: 0,
-          pro: true,
-        );
-        expect(earned, isNot(contains('g_accuracy_streak_5')));
-        final updatedSummary = await service.getUserSummary(uid);
-        expect(updatedSummary.currentAccuracyStreak, 4);
+      // --- streak_20 ---
+
+      test('g_accuracy_streak_20: awarded on 20th consecutive 70%+ session (pro)', () async {
+        await seed(blank(accuracyStreak: 19, total: 300, sessions: 20));
+        final earned = await eval(total: 50, wrist: 50, wristH: 38, pro: true);
+        expect(earned, contains('g_accuracy_streak_20'));
+      });
+
+      // --- streak reset / zero-typed-shots boundary ---
+
+      test('70%+ streak resets to 0 when session drops below 70% (pro)', () async {
+        await seed(blank(accuracyStreak: 5, total: 100, sessions: 6));
+        // 30/50 = 60% < 70%
+        await eval(total: 50, wrist: 50, wristH: 30, pro: true);
+        final s = await service.getUserSummary(uid);
+        expect(s.currentAccuracyStreak, 0);
+      });
+
+      test('65%+ streak resets to 0 when session drops below 65% (pro)', () async {
+        await seed(blank(accuracyStreak65: 3, total: 100, sessions: 4));
+        // 19/30 = 63.3% < 65%
+        await eval(total: 30, wrist: 30, wristH: 19, pro: true);
+        final s = await service.getUserSummary(uid);
+        expect(s.currentAccuracyStreak65, 0);
+      });
+
+      test('both streaks preserved when session has zero typed shots (pro)', () async {
+        await seed(blank(accuracyStreak65: 3, accuracyStreak: 3, total: 100, sessions: 4));
+        // No typed shots → neither streak changes
+        await eval(total: 10, wrist: 0, snap: 0, slap: 0, backhand: 0, pro: true);
+        final s = await service.getUserSummary(uid);
+        expect(s.currentAccuracyStreak65, 3);
+        expect(s.currentAccuracyStreak, 3);
       });
     });
 
@@ -1292,7 +1327,6 @@ void main() {
       });
     });
 
-    // =========================================================================
     // 11. MULTI-TROPHY SESSIONS
     // =========================================================================
 
