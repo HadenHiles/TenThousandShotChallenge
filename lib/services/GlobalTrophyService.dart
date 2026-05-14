@@ -1412,13 +1412,22 @@ class GlobalTrophyService {
       }
     }
 
-    // Accuracy streak: consecutive sessions with 70%+ overall accuracy (pro only).
+    // Accuracy streaks (pro only).
+    // streak65: consecutive sessions with ≥65%+ overall accuracy (for g_accuracy_streak_2).
+    // streak70: consecutive sessions with ≥70%+ overall accuracy (for g_accuracy_streak_3+).
+    int newAccuracyStreak65 = summary.currentAccuracyStreak65;
     int newAccuracyStreak = summary.currentAccuracyStreak;
     if (isPro) {
       final typedTotal = session.wrist + session.snap + session.slap + session.backhand;
       if (typedTotal > 0) {
         final totalHits = session.wristTargetsHit + session.snapTargetsHit + session.slapTargetsHit + session.backhandTargetsHit;
-        if (totalHits / typedTotal >= 0.70) {
+        final overallAcc = totalHits / typedTotal;
+        if (overallAcc >= 0.65) {
+          newAccuracyStreak65 += 1;
+        } else {
+          newAccuracyStreak65 = 0;
+        }
+        if (overallAcc >= 0.70) {
           newAccuracyStreak += 1;
         } else {
           newAccuracyStreak = 0;
@@ -1442,6 +1451,7 @@ class GlobalTrophyService {
       earlyMorningSessions: summary.earlyMorningSessions + (isEarlyMorning ? 1 : 0),
       lateNightSessions: summary.lateNightSessions + (isLateNight ? 1 : 0),
       consecutiveWeekendCount: newConsecutiveWeekendCount,
+      currentAccuracyStreak65: newAccuracyStreak65,
       currentAccuracyStreak: newAccuracyStreak,
     );
 
@@ -1602,44 +1612,114 @@ class GlobalTrophyService {
 
     // ── ACCURACY (pro-only, session-specific) ─────────────────────────────────
     if (isPro) {
-      const int kMin = 25;
-      const int kMin50 = 50;
-
-      final wristAcc = session.wrist >= kMin ? session.wristTargetsHit / session.wrist : 0.0;
-      final snapAcc = session.snap >= kMin ? session.snapTargetsHit / session.snap : 0.0;
-      final slapAcc = session.slap >= kMin ? session.slapTargetsHit / session.slap : 0.0;
-      final backhandAcc = session.backhand >= kMin ? session.backhandTargetsHit / session.backhand : 0.0;
-
-      if (session.wrist >= kMin && wristAcc >= 0.80) check('g_wrist_accuracy_80');
-      if (session.snap >= kMin && snapAcc >= 0.80) check('g_snap_accuracy_80');
-      if (session.slap >= kMin && slapAcc >= 0.80) check('g_slap_accuracy_80');
-      if (session.backhand >= kMin && backhandAcc >= 0.80) check('g_backhand_accuracy_80');
-
-      if (session.wrist >= kMin && wristAcc >= 0.90) check('g_wrist_accuracy_90');
-      if (session.snap >= kMin && snapAcc >= 0.90) check('g_snap_accuracy_90');
-      if (session.slap >= kMin && slapAcc >= 0.90) check('g_slap_accuracy_90');
-      if (session.backhand >= kMin && backhandAcc >= 0.90) check('g_backhand_accuracy_90');
-
-      // All types ≥80% in same session with ≥25 each.
-      if (session.wrist >= kMin && session.snap >= kMin && session.slap >= kMin && session.backhand >= kMin && wristAcc >= 0.80 && snapAcc >= 0.80 && slapAcc >= 0.80 && backhandAcc >= 0.80) check('g_all_types_accuracy_80');
-
-      // Overall accuracy across all shots taken in this session.
       final typedTotal = session.wrist + session.snap + session.slap + session.backhand;
       final totalHits = session.wristTargetsHit + session.snapTargetsHit + session.slapTargetsHit + session.backhandTargetsHit;
+      final overallAcc = typedTotal > 0 ? totalHits / typedTotal : 0.0;
 
-      if (typedTotal >= kMin50 && typedTotal > 0 && totalHits / typedTotal >= 0.75) check('g_overall_accuracy_75');
+      // Raw per-type accuracy (computed against actual shot count).
+      final wristAcc = session.wrist > 0 ? session.wristTargetsHit / session.wrist : 0.0;
+      final snapAcc = session.snap > 0 ? session.snapTargetsHit / session.snap : 0.0;
+      final slapAcc = session.slap > 0 ? session.slapTargetsHit / session.slap : 0.0;
+      final backhandAcc = session.backhand > 0 ? session.backhandTargetsHit / session.backhand : 0.0;
 
-      // Perfect session: 100% accuracy.
-      if (typedTotal >= kMin && typedTotal > 0 && totalHits == typedTotal) {
-        check('g_perfect_session');
+      // First session with accuracy tracked.
+      if (typedTotal > 0) check('g_accuracy_first_session');
+
+      // ── Overall accuracy ─────────────────────────────────────────────────
+      if (typedTotal >= 10 && overallAcc >= 0.50) check('g_overall_accuracy_50');
+      if (typedTotal >= 25 && overallAcc >= 0.60) check('g_overall_accuracy_60');
+      if (typedTotal >= 30 && overallAcc >= 0.65) check('g_overall_accuracy_65');
+      if (typedTotal >= 50 && overallAcc >= 0.75) check('g_overall_accuracy_75');
+      if (typedTotal >= 50 && overallAcc >= 0.80) check('g_overall_accuracy_80');
+      if (typedTotal >= 50 && overallAcc >= 0.85) check('g_overall_accuracy_85');
+      if (typedTotal >= 50 && overallAcc >= 0.90) check('g_overall_accuracy_90');
+      if (typedTotal >= 50 && overallAcc >= 0.95) check('g_overall_accuracy_95');
+
+      // ── Wrist accuracy ────────────────────────────────────────────────────
+      if (session.wrist >= 10 && wristAcc >= 0.50) check('g_wrist_accuracy_50');
+      if (session.wrist >= 15 && wristAcc >= 0.60) check('g_wrist_accuracy_60');
+      if (session.wrist >= 20 && wristAcc >= 0.70) check('g_wrist_accuracy_70');
+      if (session.wrist >= 20 && wristAcc >= 0.75) check('g_wrist_accuracy_75');
+      if (session.wrist >= 25 && wristAcc >= 0.80) check('g_wrist_accuracy_80');
+      if (session.wrist >= 25 && wristAcc >= 0.85) check('g_wrist_accuracy_85');
+      if (session.wrist >= 25 && wristAcc >= 0.90) check('g_wrist_accuracy_90');
+      if (session.wrist >= 25 && wristAcc >= 0.95) check('g_wrist_accuracy_95');
+      if (session.wrist >= 25 && session.wristTargetsHit == session.wrist) check('g_wrist_perfect');
+
+      // ── Snap accuracy ─────────────────────────────────────────────────────
+      if (session.snap >= 10 && snapAcc >= 0.50) check('g_snap_accuracy_50');
+      if (session.snap >= 15 && snapAcc >= 0.60) check('g_snap_accuracy_60');
+      if (session.snap >= 20 && snapAcc >= 0.70) check('g_snap_accuracy_70');
+      if (session.snap >= 20 && snapAcc >= 0.75) check('g_snap_accuracy_75');
+      if (session.snap >= 25 && snapAcc >= 0.80) check('g_snap_accuracy_80');
+      if (session.snap >= 25 && snapAcc >= 0.85) check('g_snap_accuracy_85');
+      if (session.snap >= 25 && snapAcc >= 0.90) check('g_snap_accuracy_90');
+      if (session.snap >= 25 && snapAcc >= 0.95) check('g_snap_accuracy_95');
+      if (session.snap >= 25 && session.snapTargetsHit == session.snap) check('g_snap_perfect');
+
+      // ── Slap accuracy ─────────────────────────────────────────────────────
+      if (session.slap >= 10 && slapAcc >= 0.50) check('g_slap_accuracy_50');
+      if (session.slap >= 15 && slapAcc >= 0.60) check('g_slap_accuracy_60');
+      if (session.slap >= 20 && slapAcc >= 0.70) check('g_slap_accuracy_70');
+      if (session.slap >= 20 && slapAcc >= 0.75) check('g_slap_accuracy_75');
+      if (session.slap >= 25 && slapAcc >= 0.80) check('g_slap_accuracy_80');
+      if (session.slap >= 25 && slapAcc >= 0.85) check('g_slap_accuracy_85');
+      if (session.slap >= 25 && slapAcc >= 0.90) check('g_slap_accuracy_90');
+      if (session.slap >= 25 && slapAcc >= 0.95) check('g_slap_accuracy_95');
+      if (session.slap >= 25 && session.slapTargetsHit == session.slap) check('g_slap_perfect');
+
+      // ── Backhand accuracy ─────────────────────────────────────────────────
+      if (session.backhand >= 10 && backhandAcc >= 0.50) check('g_backhand_accuracy_50');
+      if (session.backhand >= 15 && backhandAcc >= 0.60) check('g_backhand_accuracy_60');
+      if (session.backhand >= 20 && backhandAcc >= 0.70) check('g_backhand_accuracy_70');
+      if (session.backhand >= 20 && backhandAcc >= 0.75) check('g_backhand_accuracy_75');
+      if (session.backhand >= 25 && backhandAcc >= 0.80) check('g_backhand_accuracy_80');
+      if (session.backhand >= 25 && backhandAcc >= 0.85) check('g_backhand_accuracy_85');
+      if (session.backhand >= 25 && backhandAcc >= 0.90) check('g_backhand_accuracy_90');
+      if (session.backhand >= 25 && backhandAcc >= 0.95) check('g_backhand_accuracy_95');
+      if (session.backhand >= 25 && session.backhandTargetsHit == session.backhand) check('g_backhand_perfect');
+
+      // ── All-types accuracy ────────────────────────────────────────────────
+      if (session.wrist >= 10 && session.snap >= 10 && session.slap >= 10 && session.backhand >= 10 && wristAcc >= 0.50 && snapAcc >= 0.50 && slapAcc >= 0.50 && backhandAcc >= 0.50) {
+        check('g_all_types_accuracy_50');
       }
-      if (typedTotal >= kMin50 && typedTotal > 0 && totalHits == typedTotal) {
-        check('g_perfect_session_50');
+      if (session.wrist >= 10 && session.snap >= 10 && session.slap >= 10 && session.backhand >= 10 && wristAcc >= 0.60 && snapAcc >= 0.60 && slapAcc >= 0.60 && backhandAcc >= 0.60) {
+        check('g_all_types_accuracy_60');
+      }
+      if (session.wrist >= 15 && session.snap >= 15 && session.slap >= 15 && session.backhand >= 15 && wristAcc >= 0.70 && snapAcc >= 0.70 && slapAcc >= 0.70 && backhandAcc >= 0.70) {
+        check('g_all_types_accuracy_70');
+      }
+      if (session.wrist >= 25 && session.snap >= 25 && session.slap >= 25 && session.backhand >= 25 && wristAcc >= 0.80 && snapAcc >= 0.80 && slapAcc >= 0.80 && backhandAcc >= 0.80) {
+        check('g_all_types_accuracy_80');
+      }
+      if (session.wrist >= 25 && session.snap >= 25 && session.slap >= 25 && session.backhand >= 25 && wristAcc >= 0.85 && snapAcc >= 0.85 && slapAcc >= 0.85 && backhandAcc >= 0.85) {
+        check('g_all_types_accuracy_85');
+      }
+      if (session.wrist >= 25 && session.snap >= 25 && session.slap >= 25 && session.backhand >= 25 && wristAcc >= 0.90 && snapAcc >= 0.90 && slapAcc >= 0.90 && backhandAcc >= 0.90) {
+        check('g_all_types_accuracy_90');
+      }
+      if (session.wrist >= 25 && session.snap >= 25 && session.slap >= 25 && session.backhand >= 25 && wristAcc >= 0.95 && snapAcc >= 0.95 && slapAcc >= 0.95 && backhandAcc >= 0.95) {
+        check('g_all_types_accuracy_95');
+      }
+      if (session.wrist >= 25 && session.snap >= 25 && session.slap >= 25 && session.backhand >= 25 && session.wristTargetsHit == session.wrist && session.snapTargetsHit == session.snap && session.slapTargetsHit == session.slap && session.backhandTargetsHit == session.backhand) {
+        check('g_all_types_perfect');
       }
 
-      // Accuracy streak trophies.
+      // ── Perfect session (overall) ─────────────────────────────────────────
+      if (typedTotal >= 25 && totalHits == typedTotal) check('g_perfect_session');
+      if (typedTotal >= 50 && totalHits == typedTotal) check('g_perfect_session_50');
+      if (typedTotal >= 75 && totalHits == typedTotal) check('g_perfect_session_75');
+      if (typedTotal >= 100 && totalHits == typedTotal) check('g_perfect_session_100');
+
+      // ── Accuracy streak trophies ──────────────────────────────────────────
+      // streak_2 uses 65%+ threshold; streak_3+ use 70%+ threshold.
+      if (updated.currentAccuracyStreak65 >= 2) check('g_accuracy_streak_2');
+      if (updated.currentAccuracyStreak >= 3) check('g_accuracy_streak_3');
+      if (updated.currentAccuracyStreak >= 4) check('g_accuracy_streak_4');
       if (updated.currentAccuracyStreak >= 5) check('g_accuracy_streak_5');
       if (updated.currentAccuracyStreak >= 10) check('g_accuracy_streak_10');
+      if (updated.currentAccuracyStreak >= 15) check('g_accuracy_streak_15');
+      if (updated.currentAccuracyStreak >= 20) check('g_accuracy_streak_20');
     }
 
     return newlyEarned;

@@ -90,8 +90,13 @@ class GlobalTrophySummary {
   /// The current in-progress week is not included until it rolls over.
   final int consecutiveWeekendCount;
 
-  /// Current streak of sessions with 70%+ overall accuracy (pro-gated).
+  /// Current streak of sessions with 65%+ overall accuracy (pro-gated).
+  /// Used exclusively for the g_accuracy_streak_2 trophy which has a lower bar.
   /// Resets to 0 when a session falls below the threshold.
+  final int currentAccuracyStreak65;
+
+  /// Current streak of sessions with 70%+ overall accuracy (pro-gated).
+  /// Used for g_accuracy_streak_3 and above. Resets to 0 on any miss.
   final int currentAccuracyStreak;
 
   /// Version of the one-time historical backfill that has been applied.
@@ -118,6 +123,7 @@ class GlobalTrophySummary {
     this.earlyMorningSessions = 0,
     this.lateNightSessions = 0,
     this.consecutiveWeekendCount = 0,
+    this.currentAccuracyStreak65 = 0,
     this.currentAccuracyStreak = 0,
     this.backfillVersion,
     this.reference,
@@ -140,6 +146,7 @@ class GlobalTrophySummary {
         earlyMorningSessions = 0,
         lateNightSessions = 0,
         consecutiveWeekendCount = 0,
+        currentAccuracyStreak65 = 0,
         currentAccuracyStreak = 0,
         backfillVersion = null;
 
@@ -171,6 +178,7 @@ class GlobalTrophySummary {
       earlyMorningSessions: (map['early_morning_sessions'] as num?)?.toInt() ?? 0,
       lateNightSessions: (map['late_night_sessions'] as num?)?.toInt() ?? 0,
       consecutiveWeekendCount: (map['consecutive_weekend_count'] as num?)?.toInt() ?? 0,
+      currentAccuracyStreak65: (map['current_accuracy_streak_65'] as num?)?.toInt() ?? 0,
       currentAccuracyStreak: (map['current_accuracy_streak'] as num?)?.toInt() ?? 0,
       backfillVersion: (map['backfill_version'] as num?)?.toInt(),
       reference: reference,
@@ -194,6 +202,7 @@ class GlobalTrophySummary {
         'early_morning_sessions': earlyMorningSessions,
         'late_night_sessions': lateNightSessions,
         'consecutive_weekend_count': consecutiveWeekendCount,
+        'current_accuracy_streak_65': currentAccuracyStreak65,
         'current_accuracy_streak': currentAccuracyStreak,
         if (backfillVersion != null) 'backfill_version': backfillVersion,
       };
@@ -215,6 +224,7 @@ class GlobalTrophySummary {
     int? earlyMorningSessions,
     int? lateNightSessions,
     int? consecutiveWeekendCount,
+    int? currentAccuracyStreak65,
     int? currentAccuracyStreak,
     int? backfillVersion,
     DocumentReference? reference,
@@ -236,6 +246,7 @@ class GlobalTrophySummary {
       earlyMorningSessions: earlyMorningSessions ?? this.earlyMorningSessions,
       lateNightSessions: lateNightSessions ?? this.lateNightSessions,
       consecutiveWeekendCount: consecutiveWeekendCount ?? this.consecutiveWeekendCount,
+      currentAccuracyStreak65: currentAccuracyStreak65 ?? this.currentAccuracyStreak65,
       currentAccuracyStreak: currentAccuracyStreak ?? this.currentAccuracyStreak,
       backfillVersion: backfillVersion ?? this.backfillVersion,
       reference: reference ?? this.reference,
