@@ -894,14 +894,12 @@ class _CompareStatsState extends State<CompareStats> {
       );
     }
 
-    const crColor = Color(0xFFFFD700);
-
     return Column(
       children: [
         _buildCrLevelRow(context, my?.allTimeBestLevel ?? 0, fr?.allTimeBestLevel ?? 0),
         _buildStatRow(context, 'Attempts', my?.totalAttempts, fr?.totalAttempts),
         _buildStatRow(context, 'CR Shots', my?.allTimeTotalChallengerRoadShots, fr?.allTimeTotalChallengerRoadShots),
-        _buildStatRow(context, 'CR Trophies', my?.trophies.length, fr?.trophies.length, color: crColor),
+        _buildStatRow(context, 'CR Trophies', my?.trophies.length, fr?.trophies.length),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -928,7 +926,6 @@ class _CompareStatsState extends State<CompareStats> {
   Widget _buildCrLevelRow(BuildContext context, int myLevel, int frLevel) {
     final myWins = myLevel > frLevel;
     final frWins = frLevel > myLevel;
-    const highlight = Color(0xFFFFD700);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -939,7 +936,6 @@ class _CompareStatsState extends State<CompareStats> {
               _StatValue(
                 value: myLevel > 0 ? 'Lvl $myLevel' : '-',
                 highlight: myWins,
-                color: highlight,
               ),
               Expanded(
                 child: Center(
@@ -958,7 +954,6 @@ class _CompareStatsState extends State<CompareStats> {
                 value: frLevel > 0 ? 'Lvl $frLevel' : '-',
                 highlight: frWins,
                 alignRight: true,
-                color: highlight,
               ),
             ],
           ),
@@ -966,7 +961,6 @@ class _CompareStatsState extends State<CompareStats> {
           _CompareBar(
             myVal: myLevel > 0 ? myLevel.toDouble() : null,
             friendVal: frLevel > 0 ? frLevel.toDouble() : null,
-            color: highlight,
           ),
         ],
       ),
@@ -1004,7 +998,7 @@ class _CompareStatsState extends State<CompareStats> {
       children: [
         _buildStatRow(context, 'Total Trophies', myTotal, frTotal),
         _buildStatRow(context, 'Global Trophies', myGlobal, frGlobal),
-        _buildStatRow(context, 'CR Trophies', myCrCount, frCrCount, color: const Color(0xFFFFD700)),
+        _buildStatRow(context, 'CR Trophies', myCrCount, frCrCount),
         if (hasTierData) ...[
           const SizedBox(height: 8),
           ...GlobalTrophyTier.values.reversed.map((tier) {
