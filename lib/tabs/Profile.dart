@@ -1172,8 +1172,8 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
     // ── Build all-earned lists ──────────────────────────────────────────────
     final currentFeatured = widget.globalSummary.featuredTrophies.toSet();
     final earnedGlobalIds = widget.globalSummary.trophies.toSet();
-    final earnedFreeDefs = GlobalTrophyService.catalog.where((d) => !d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
-    final earnedProDefs = GlobalTrophyService.catalog.where((d) => d.proOnly && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
+    final earnedStandardDefs = GlobalTrophyService.catalog.where((d) => d.category != GlobalTrophyCategory.accuracy && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
+    final earnedAccuracyDefs = GlobalTrophyService.catalog.where((d) => d.category == GlobalTrophyCategory.accuracy && earnedGlobalIds.contains(d.id) && d.id != widget.slotId).toList()..sort((a, b) => b.tier.index.compareTo(a.tier.index));
 
     final crById = {for (final d in widget.crCatalog) d.id: d};
     final earnedCrIds = widget.crSummary.trophies.toSet();
@@ -1252,11 +1252,11 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                         ),
                       const SizedBox(height: 10),
                     ],
-                    // FREE trophies
-                    if (earnedFreeDefs.isNotEmpty) ...[
-                      _SwapSectionHeader(label: 'FREE', scheme: scheme),
+                    // STANDARD trophies
+                    if (earnedStandardDefs.isNotEmpty) ...[
+                      _SwapSectionHeader(label: 'STANDARD', scheme: scheme),
                       const SizedBox(height: 6),
-                      for (final def in earnedFreeDefs)
+                      for (final def in earnedStandardDefs)
                         _SwapGlobalRow(
                           def: def,
                           dimmed: currentFeatured.contains(def.id),
@@ -1264,18 +1264,18 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                         ),
                       const SizedBox(height: 10),
                     ],
-                    // PRO trophies
-                    if (earnedProDefs.isNotEmpty) ...[
-                      _SwapSectionHeader(label: 'PRO', scheme: scheme),
+                    // ACCURACY trophies
+                    if (earnedAccuracyDefs.isNotEmpty) ...[
+                      _SwapSectionHeader(label: 'ACCURACY', scheme: scheme),
                       const SizedBox(height: 6),
-                      for (final def in earnedProDefs)
+                      for (final def in earnedAccuracyDefs)
                         _SwapGlobalRow(
                           def: def,
                           dimmed: currentFeatured.contains(def.id),
                           onTap: () => _pick(def.id),
                         ),
                     ],
-                    if (earnedFreeDefs.isEmpty && earnedProDefs.isEmpty && earnedCrDefs.isEmpty)
+                    if (earnedStandardDefs.isEmpty && earnedAccuracyDefs.isEmpty && earnedCrDefs.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Text('No trophies earned yet.', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: scheme.onSurface.withValues(alpha: 0.5))),
