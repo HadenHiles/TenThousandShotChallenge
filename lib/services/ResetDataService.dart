@@ -94,7 +94,7 @@ class ResetDataService {
       final globalSnap = await globalRef.get();
       if (globalSnap.exists) {
         final d = globalSnap.data()!;
-        final safeInt = (String key) => (d[key] as num?)?.toInt() ?? 0;
+        int safeInt(String key) => (d[key] as num?)?.toInt() ?? 0;
         await globalRef.update({
           'all_time_total': (safeInt('all_time_total') - deletedTotal).clamp(0, double.maxFinite.toInt()),
           'all_time_wrist': (safeInt('all_time_wrist') - deletedWrist).clamp(0, double.maxFinite.toInt()),
