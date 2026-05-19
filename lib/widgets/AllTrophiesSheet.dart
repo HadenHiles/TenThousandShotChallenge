@@ -1,8 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/models/firestore/GlobalTrophySummary.dart';
+import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 
 /// Opens the full trophy browser as a modal bottom sheet.
 void showAllTrophiesSheet(
@@ -35,7 +39,7 @@ class AllTrophiesSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final headerColor = theme.primaryColor; // brand red
+    final isOwnProfile = FirebaseAuth.instance.currentUser?.uid == userId;
     return DraggableScrollableSheet(
       initialChildSize: 1.0,
       minChildSize: 0.5,
@@ -50,66 +54,9 @@ class AllTrophiesSheet extends StatelessWidget {
             length: 3,
             child: Column(
               children: [
-                // ── Red header (fills to top; drag handle lives inside it) ──
-                Container(
-                  color: headerColor,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 8, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Drag handle
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.workspace_premium_rounded, size: 18, color: Colors.white),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'TROPHIES',
-                            style: TextStyle(
-                              fontFamily: 'NovecentoSans',
-                              fontSize: 17,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ],
-                      ),
-                      // ── Tab bar ──────────────────────────────────────────
-                      TabBar(
-                        tabAlignment: TabAlignment.fill,
-                        labelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
-                        unselectedLabelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
-                        indicatorColor: Colors.white,
-                        dividerColor: Colors.transparent,
-                        tabs: const [
-                          Tab(text: 'STANDARD'),
-                          Tab(text: 'CHALLENGER ROAD'),
-                          Tab(text: 'ACCURACY'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                if (isOwnProfile) _buildOwnHeader(context, theme) else _buildPlayerHeader(context, theme),
                 // ── Trophy case ────────────────────────────────────────────
-                _TrophyCaseSection(userId: userId, isPro: isPro),
+                _TrophyCaseSection(userId: userId, isPro: isPro, isOwnProfile: isOwnProfile),
                 // ── Tab views ─────────────────────────────────────────────
                 Expanded(
                   child: TabBarView(
@@ -118,17 +65,20 @@ class AllTrophiesSheet extends StatelessWidget {
                         userId: userId,
                         isPro: isPro,
                         accuracyOnly: false,
+                        isOwnProfile: isOwnProfile,
                         scrollController: scrollController,
                       ),
                       _ChallengerRoadTab(
                         userId: userId,
                         isPro: isPro,
+                        isOwnProfile: isOwnProfile,
                         scrollController: scrollController,
                       ),
                       _TrophiesTab(
                         userId: userId,
                         isPro: isPro,
                         accuracyOnly: true,
+                        isOwnProfile: isOwnProfile,
                         scrollController: scrollController,
                       ),
                     ],
@@ -141,6 +91,129 @@ class AllTrophiesSheet extends StatelessWidget {
       },
     );
   }
+
+  static Widget _dragHandle() => Center(
+        child: Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      );
+
+  static TabBar _tabBar() => TabBar(
+        tabAlignment: TabAlignment.fill,
+        labelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
+        unselectedLabelStyle: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, letterSpacing: 0.5),
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
+        indicatorColor: Colors.white,
+        dividerColor: Colors.transparent,
+        tabs: const [
+          Tab(text: 'STANDARD'),
+          Tab(text: 'CHALLENGER ROAD'),
+          Tab(text: 'ACCURACY'),
+        ],
+      );
+
+  // ── Own-profile header: brand red ─────────────────────────────────────────
+  Widget _buildOwnHeader(BuildContext context, ThemeData theme) {
+    return Container(
+      color: theme.primaryColor,
+      padding: const EdgeInsets.fromLTRB(18, 0, 8, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          _dragHandle(),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium_rounded, size: 18, color: Colors.white),
+              const SizedBox(width: 8),
+              const Text(
+                'TROPHIES',
+                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 17, color: Colors.white, letterSpacing: 1.2),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          _tabBar(),
+        ],
+      ),
+    );
+  }
+
+  // ── Other player header: near-black with avatar + name ────────────────────
+  Widget _buildPlayerHeader(BuildContext context, ThemeData theme) {
+    const headerBg = Color(0xFF1C1C1E);
+    return Container(
+      color: headerBg,
+      padding: const EdgeInsets.fromLTRB(18, 0, 8, 0),
+      child: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+        builder: (context, snap) {
+          final profile = snap.hasData && snap.data!.exists ? UserProfile.fromSnapshot(snap.data!) : null;
+          final displayName = profile?.displayName ?? '';
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              _dragHandle(),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: UserAvatar(user: profile, backgroundColor: Colors.white12),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (displayName.isNotEmpty)
+                          Text(
+                            displayName,
+                            style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: Colors.white, letterSpacing: 0.5),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        Text(
+                          'TROPHIES',
+                          style: TextStyle(
+                            fontFamily: 'NovecentoSans',
+                            fontSize: displayName.isNotEmpty ? 11 : 17,
+                            color: displayName.isNotEmpty ? Colors.white60 : Colors.white,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              _tabBar(),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 // ── Unified trophies tab (STANDARD or ACCURACY) ─────────────────────────────
@@ -150,6 +223,7 @@ class _TrophiesTab extends StatefulWidget {
     required this.userId,
     required this.isPro,
     required this.accuracyOnly,
+    required this.isOwnProfile,
     required this.scrollController,
   });
 
@@ -158,6 +232,7 @@ class _TrophiesTab extends StatefulWidget {
 
   /// When true, shows accuracy-category trophies only; when false, shows all others.
   final bool accuracyOnly;
+  final bool isOwnProfile;
   final ScrollController scrollController;
 
   @override
@@ -186,7 +261,21 @@ class _TrophiesTabState extends State<_TrophiesTab> {
             final earned = summary.trophies.toSet();
 
             // Filter catalog to the correct category group
-            final filtered = catalog.where((d) => widget.accuracyOnly ? d.category == GlobalTrophyCategory.accuracy : d.category != GlobalTrophyCategory.accuracy).toList();
+            var filtered = catalog.where((d) => widget.accuracyOnly ? d.category == GlobalTrophyCategory.accuracy : d.category != GlobalTrophyCategory.accuracy).toList();
+
+            // When viewing another player, only show trophies they've earned
+            if (!widget.isOwnProfile) {
+              filtered = filtered.where((d) => earned.contains(d.id)).toList();
+            }
+
+            if (filtered.isEmpty) {
+              return Center(
+                child: Text(
+                  'No trophies earned yet',
+                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), letterSpacing: 0.5),
+                ),
+              );
+            }
 
             // Group by tier (legendary first)
             final groups = <_TierGroup>[];
@@ -317,11 +406,13 @@ class _ChallengerRoadTab extends StatefulWidget {
   const _ChallengerRoadTab({
     required this.userId,
     required this.isPro,
+    required this.isOwnProfile,
     required this.scrollController,
   });
 
   final String userId;
   final bool isPro;
+  final bool isOwnProfile;
   final ScrollController scrollController;
 
   @override
@@ -350,10 +441,31 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
             final earnedCr = crSummary.trophies.toSet();
 
             // Group by tier, legendary first — same order as standard tab.
-            final groups = ChallengerRoadService.groupDisplayTrophiesByTier(
+            var groups = ChallengerRoadService.groupDisplayTrophiesByTier(
               trophies: catalog,
               earnedTrophyIds: crSummary.trophies,
             ).reversed.toList();
+
+            // When viewing another player, only show trophies they've earned
+            if (!widget.isOwnProfile) {
+              groups = groups
+                  .map((g) => ChallengerRoadTrophyTierGroup(
+                        tier: g.tier,
+                        label: g.label,
+                        trophies: g.trophies.where((d) => earnedCr.contains(d.id)).toList(),
+                      ))
+                  .where((g) => g.trophies.isNotEmpty)
+                  .toList();
+            }
+
+            if (!widget.isOwnProfile && groups.isEmpty) {
+              return Center(
+                child: Text(
+                  'No trophies earned yet',
+                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), letterSpacing: 0.5),
+                ),
+              );
+            }
 
             // Build a flat item list: [header, row, row, ...] per group.
             final items = <_CrListItem>[];
@@ -699,10 +811,11 @@ class _GlobalTrophyRow extends StatelessWidget {
 // ═════════════════════════════════════════════════════════════════════════════
 
 class _TrophyCaseSection extends StatefulWidget {
-  const _TrophyCaseSection({required this.userId, required this.isPro});
+  const _TrophyCaseSection({required this.userId, required this.isPro, required this.isOwnProfile});
 
   final String userId;
   final bool isPro;
+  final bool isOwnProfile;
 
   @override
   State<_TrophyCaseSection> createState() => _TrophyCaseSectionState();
@@ -736,6 +849,7 @@ class _TrophyCaseSectionState extends State<_TrophyCaseSection> {
                   globalSummary: globalSummary,
                   crSummary: crSummary,
                   crCatalog: crCatalog,
+                  isOwnProfile: widget.isOwnProfile,
                 );
               },
             );
@@ -752,12 +866,14 @@ class _TrophyCaseSectionBody extends StatelessWidget {
     required this.globalSummary,
     required this.crSummary,
     required this.crCatalog,
+    required this.isOwnProfile,
   });
 
   final String userId;
   final GlobalTrophySummary globalSummary;
   final ChallengerRoadUserSummary crSummary;
   final List<ChallengerRoadTrophyDefinition> crCatalog;
+  final bool isOwnProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -783,16 +899,17 @@ class _TrophyCaseSectionBody extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              TextButton(
-                onPressed: () => _openPicker(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: theme.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              if (isOwnProfile)
+                TextButton(
+                  onPressed: () => _openPicker(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.primaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('EDIT', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 12)),
                 ),
-                child: const Text('EDIT', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 12)),
-              ),
             ],
           ),
         ),
@@ -803,7 +920,7 @@ class _TrophyCaseSectionBody extends StatelessWidget {
             children: [
               for (int i = 0; i < 5; i++)
                 GestureDetector(
-                  onTap: () => _openPicker(context),
+                  onTap: isOwnProfile ? () => _openPicker(context) : null,
                   child: _buildSlot(context, theme, i, featured, crById),
                 ),
             ],

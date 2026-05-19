@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengeSession.dart';
+import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 
@@ -69,7 +72,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           // Stats row
           _StatsRow(summary: summary),
           const SizedBox(height: 20),
-          // Badge catalog powers both the featured showcase and the full grid.
+          // Badge catalog — shown for all users; earned-only filter for other players.
           _TrophyCatalogSection(
             userId: userId,
             summary: summary,
@@ -77,6 +80,12 @@ class ChallengerRoadProfileSection extends StatelessWidget {
             showOnlyEarned: showOnlyEarned,
             highlightTrophyId: highlightTrophyId,
           ),
+          const SizedBox(height: 20),
+          // Recent individual challenge sessions
+          _RecentChallengesSection(userId: userId),
+          const SizedBox(height: 20),
+          // Recent attempt history
+          _RecentAttemptsSection(userId: userId),
           const SizedBox(height: 12),
         ],
       ),
@@ -143,7 +152,7 @@ class _TrophyCatalogSectionState extends State<_TrophyCatalogSection> {
               const SizedBox(height: 20),
             ],
             Text(
-              'TROPHIES',
+              'CHALLENGER ROAD BADGES',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 14,
@@ -351,9 +360,9 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 8),
         _statChip(
           context,
-          label: 'TROPHIES',
-          value: '${summary.trophies.length}',
-          icon: Icons.military_tech_rounded,
+          label: 'BEST LEVEL',
+          value: summary.allTimeBestLevel > 0 ? '${summary.allTimeBestLevel}' : '—',
+          icon: Icons.route_rounded,
         ),
       ],
     );
@@ -399,6 +408,326 @@ class _StatsRow extends StatelessWidget {
   String _formatShots(int n) {
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
     return '$n';
+  }
+}
+
+// ── Recent challenge sessions section ──────────────────────────────────────
+
+class _RecentChallengesSection extends StatefulWidget {
+  const _RecentChallengesSection({required this.userId});
+  final String userId;
+
+  @override
+  State<_RecentChallengesSection> createState() => _RecentChallengesSectionState();
+}
+
+class _RecentChallengesSectionState extends State<_RecentChallengesSection> {
+  late final Future<List<ChallengeSession>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _fetchRecentSessions();
+  }
+
+  Future<List<ChallengeSession>> _fetchRecentSessions() async {
+    final attemptsSnap = await FirebaseFirestore.instance.collection('users').doc(widget.userId).collection('challenger_road_attempts').orderBy('attempt_number', descending: true).limit(2).get();
+    if (attemptsSnap.docs.isEmpty) return [];
+    final sessionFutures = attemptsSnap.docs.map(
+      (attemptDoc) => attemptDoc.reference.collection('challenge_sessions').orderBy('date', descending: true).limit(5).get().then((snap) => snap.docs.map(ChallengeSession.fromSnapshot).toList()),
+    );
+    final all = (await Future.wait(sessionFutures)).expand((l) => l).toList();
+    all.sort((a, b) => b.date.compareTo(a.date));
+    return all.take(10).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<ChallengeSession>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final sessions = snap.data ?? [];
+        if (sessions.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'RECENT CHALLENGES',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final session in sessions) _ChallengeSessionRow(session: session),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ChallengeSessionRow extends StatelessWidget {
+  const _ChallengeSessionRow({required this.session});
+  final ChallengeSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final passed = session.passed;
+    final passColor = passed ? const Color(0xFF4CAF50) : scheme.onSurface.withValues(alpha: 0.4);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          // Level badge
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: Text(
+                'L${session.level}',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 11,
+                  color: theme.primaryColor,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Challenge name + date
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.challengeName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 13,
+                    color: scheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  _formatDate(session.date),
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 10,
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Score + pass/fail
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${session.shotsMade}/${session.shotsToPass}',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 14,
+                  color: passColor,
+                ),
+              ),
+              Text(
+                passed ? 'PASSED' : 'FAILED',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 9,
+                  color: passColor,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+}
+
+// ── Recent attempts section ─────────────────────────────────────────────────
+
+class _RecentAttemptsSection extends StatefulWidget {
+  const _RecentAttemptsSection({required this.userId});
+  final String userId;
+
+  @override
+  State<_RecentAttemptsSection> createState() => _RecentAttemptsSectionState();
+}
+
+class _RecentAttemptsSectionState extends State<_RecentAttemptsSection> {
+  late final Future<List<ChallengerRoadAttempt>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = FirebaseFirestore.instance.collection('users').doc(widget.userId).collection('challenger_road_attempts').orderBy('attempt_number', descending: true).limit(5).get().then((snap) => snap.docs.map(ChallengerRoadAttempt.fromSnapshot).toList());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<ChallengerRoadAttempt>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final attempts = snap.data ?? [];
+        if (attempts.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'RECENT ATTEMPTS',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final attempt in attempts) _AttemptRow(attempt: attempt),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AttemptRow extends StatelessWidget {
+  const _AttemptRow({required this.attempt});
+  final ChallengerRoadAttempt attempt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final primary = theme.primaryColor;
+    final isActive = attempt.status == 'active';
+    final levelsCompleted = attempt.highestLevelReachedThisAttempt;
+    final shots = attempt.totalShotsThisAttempt;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+        border: isActive ? Border.all(color: primary.withValues(alpha: 0.5), width: 1.2) : null,
+      ),
+      child: Row(
+        children: [
+          // Attempt number circle
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? primary : scheme.onSurface.withValues(alpha: 0.08),
+            ),
+            child: Center(
+              child: Text(
+                '${attempt.attemptNumber}',
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 15,
+                  color: isActive ? Colors.white : scheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      levelsCompleted > 0 ? 'Level $levelsCompleted reached' : 'In progress',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 14,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    if (isActive) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'ACTIVE',
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: primary, letterSpacing: 0.8),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_formatShotCount(shots)} shots  ·  started ${_formatDate(attempt.startDate)}',
+                  style: TextStyle(
+                    fontFamily: 'NovecentoSans',
+                    fontSize: 11,
+                    color: scheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 }
 
@@ -465,31 +794,26 @@ class _TrophyWrapGrid extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: groups[i].trophies.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.95,
-            ),
-            itemBuilder: (context, index) {
-              final def = groups[i].trophies[index];
-              final earned = earnedTrophies.contains(def.id);
-              return Align(
-                alignment: Alignment.topCenter,
-                child: _TrophyChip(
+          SizedBox(
+            height: 104,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              itemCount: groups[i].trophies.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final def = groups[i].trophies[index];
+                final earned = earnedTrophies.contains(def.id);
+                return _TrophyChip(
                   key: ValueKey(def.id),
                   def: def,
                   earned: earned,
                   summary: summary,
                   highlight: highlightTrophyId != null && def.id == highlightTrophyId,
-                ),
-              );
-            },
+                  compact: true,
+                );
+              },
+            ),
           ),
         ],
       ],
@@ -504,11 +828,13 @@ class _TrophyChip extends StatefulWidget {
     required this.earned,
     required this.summary,
     this.highlight = false,
+    this.compact = false,
   });
   final ChallengerRoadTrophyDefinition def;
   final bool earned;
   final ChallengerRoadUserSummary summary;
   final bool highlight;
+  final bool compact;
 
   @override
   State<_TrophyChip> createState() => _TrophyChipState();
@@ -674,7 +1000,7 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
         child: Opacity(
           opacity: earned ? 1.0 : 0.45,
           child: SizedBox(
-            width: 104,
+            width: widget.compact ? 72 : 104,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -700,8 +1026,8 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                     );
                   },
                   child: Container(
-                    width: 56,
-                    height: 56,
+                    width: widget.compact ? 40 : 56,
+                    height: widget.compact ? 40 : 56,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: !highlight && earned
@@ -715,7 +1041,7 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                     ),
                     child: ChallengerRoadService.trophyIconWidget(
                       def,
-                      size: 56,
+                      size: widget.compact ? 40 : 56,
                       color: earned ? badgeColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
@@ -724,11 +1050,11 @@ class _TrophyChipState extends State<_TrophyChip> with SingleTickerProviderState
                 Text(
                   def.effectiveName,
                   textAlign: TextAlign.center,
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'NovecentoSans',
-                    fontSize: 11,
+                    fontSize: widget.compact ? 9 : 11,
                     color: earned ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                     height: 1.2,
                   ),

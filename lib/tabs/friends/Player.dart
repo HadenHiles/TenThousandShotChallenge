@@ -15,6 +15,9 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
+import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/models/firestore/GlobalTrophySummary.dart';
+import 'package:tenthousandshotchallenge/widgets/AllTrophiesSheet.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -728,7 +731,7 @@ class _PlayerState extends State<Player> {
                         const SizedBox(height: 12),
                         _buildStatsChips(context),
                         const SizedBox(height: 12),
-                        _buildFeaturedTrophies(context),
+                        _buildTrophyCase(context),
                         const SizedBox(height: 12),
                         _buildAchievementsCard(context),
                         const SizedBox(height: 12),
@@ -751,64 +754,69 @@ class _PlayerState extends State<Player> {
     super.dispose();
   }
 
-  Widget _buildFeaturedTrophies(BuildContext context) {
+  Widget _buildTrophyCase(BuildContext context) {
     if (widget.uid == null) return const SizedBox.shrink();
-    return StreamBuilder<ChallengerRoadUserSummary>(
-      stream: ChallengerRoadService().watchUserSummary(widget.uid!),
-      builder: (context, snap) {
-        if (!snap.hasData) return const SizedBox.shrink();
-        final summary = snap.data!;
-        final featured = summary.featuredTrophies;
-        final theme = Theme.of(context);
-        return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
-          future: ChallengerRoadService().getTrophyCatalogForUser(widget.uid!),
-          builder: (context, catalogSnap) {
-            if (!catalogSnap.hasData) return const SizedBox.shrink();
-            final byId = {for (final d in catalogSnap.data!) d.id: d};
-            return Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 4),
-              child: GestureDetector(
-                onTap: () => context.push(AppRoutePaths.playerChallengerRoadPathFor(widget.uid!)),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                      width: 1,
+    final theme = Theme.of(context);
+    final playerIsPro = _userPlayer?.isPro ?? false;
+    return StreamBuilder<GlobalTrophySummary>(
+      stream: GlobalTrophyService().watchUserSummary(widget.uid!),
+      builder: (context, globalSnap) {
+        final globalSummary = globalSnap.data ?? GlobalTrophySummary.empty();
+        return StreamBuilder<ChallengerRoadUserSummary>(
+          stream: ChallengerRoadService().watchUserSummary(widget.uid!),
+          builder: (context, crSnap) {
+            final crSummary = crSnap.data ?? ChallengerRoadUserSummary.empty();
+            return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
+              future: ChallengerRoadService().getTrophyCatalogForUser(widget.uid!),
+              builder: (context, catSnap) {
+                final catalog = catSnap.data ?? [];
+                final crById = {for (final d in catalog) d.id: d};
+                final featured = globalSummary.featuredTrophies;
+                if (featured.isEmpty && crSummary.trophies.isEmpty && globalSummary.trophies.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
                     ),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(12, 8, 8, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'TROPHY CASE',
+                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.38), letterSpacing: 1.2),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Text(
-                              'TROPHY CASE',
-                              style: TextStyle(
-                                fontFamily: 'NovecentoSans',
-                                fontSize: 10,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                for (int i = 0; i < 5; i++) _trophyCaseSlot(context, theme, byId, featured, i),
-                              ],
-                            ),
+                            for (int i = 0; i < 5; i++) _trophyCaseSlot(context, theme, i, featured, crById, globalSummary, crSummary),
                           ],
                         ),
-                      ),
-                      Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurface.withValues(alpha: 0.3), size: 20),
-                    ],
+                        const SizedBox(height: 4),
+                        InkWell(
+                          onTap: () => showAllTrophiesSheet(context, userId: widget.uid!, isPro: playerIsPro),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: Text(
+                                'VIEW ALL TROPHIES',
+                                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 12, color: theme.primaryColor, letterSpacing: 1.2),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
         );
@@ -819,41 +827,62 @@ class _PlayerState extends State<Player> {
   Widget _trophyCaseSlot(
     BuildContext context,
     ThemeData theme,
-    Map<String, ChallengerRoadTrophyDefinition> byId,
-    List<String> featured,
     int i,
+    List<String> featured,
+    Map<String, ChallengerRoadTrophyDefinition> crById,
+    GlobalTrophySummary globalSummary,
+    ChallengerRoadUserSummary crSummary,
   ) {
     final id = i < featured.length ? featured[i] : '';
-    final def = id.isNotEmpty ? byId[id] : null;
-    if (def != null) {
-      final color = _playerTrophyColor(def);
+    if (id.isNotEmpty) {
+      final bool isGlobal = id.startsWith('g_');
+      Widget icon;
+      String label;
+      if (isGlobal) {
+        final gDef = GlobalTrophyService.catalog.where((d) => d.id == id).firstOrNull;
+        if (gDef == null) return const SizedBox(width: 52, height: 60);
+        final color = GlobalTrophyService.colorForTrophy(gDef);
+        label = gDef.name;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.15),
+            border: Border.all(color: color.withValues(alpha: 0.6), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: Icon(GlobalTrophyService.iconForTrophy(gDef), size: 20, color: color),
+        );
+      } else {
+        final crDef = crById[id];
+        if (crDef == null) return const SizedBox(width: 52, height: 60);
+        final color = ChallengerRoadService.colorForTrophy(crDef);
+        label = crDef.effectiveName;
+        icon = Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
+          ),
+          child: ChallengerRoadService.trophyIconWidget(crDef, size: 36, color: color),
+        );
+      }
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6)],
-            ),
-            child: ChallengerRoadService.trophyIconWidget(def, size: 36, color: color),
-          ),
+          icon,
           const SizedBox(height: 4),
           SizedBox(
             width: 52,
             height: 24,
             child: Text(
-              def.effectiveName,
+              label,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                fontSize: 10,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                height: 1.2,
-              ),
+              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.8), height: 1.2),
             ),
           ),
         ],
@@ -867,10 +896,7 @@ class _PlayerState extends State<Player> {
           height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-              width: 1.2,
-            ),
+            border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.08), width: 1.2),
           ),
         ),
         const SizedBox(height: 4),
@@ -887,27 +913,29 @@ class _PlayerState extends State<Player> {
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final summary = snap.data!;
-        final bool hasActivity = summary.totalAttempts > 0 || summary.trophies.isNotEmpty;
+        final bool hasActivity = summary.totalAttempts > 0;
         if (!hasActivity) return const SizedBox.shrink();
 
         final badges = summary.trophies.toSet();
         final bool roadComplete = badges.contains('the_general') || badges.contains('playoff_mode');
-        final int? shots = summary.allTimeBestLevelShots;
-        String headline;
+        final bool hasActiveAttempt = summary.currentAttemptId != null;
+
+        // Best level line
+        String bestLine;
         if (roadComplete) {
-          if (shots != null && shots == 10000) {
-            headline = 'road complete - exactly\n10,000 shots';
-          } else if (shots != null) {
-            headline = 'road complete -\n${_fmtShots(shots)} shots';
-          } else {
-            headline = 'road complete!';
-          }
+          final shots = summary.allTimeBestLevelShots;
+          bestLine = shots != null ? 'road complete · ${_fmtShots(shots)} shots' : 'road complete!';
         } else if (summary.allTimeBestLevel > 0) {
-          final t = summary.totalAttempts;
-          headline = 'level ${summary.allTimeBestLevel}\n$t attempt${t == 1 ? '' : 's'}';
+          final shots = summary.allTimeBestLevelShots;
+          bestLine = shots != null ? 'best: level ${summary.allTimeBestLevel} · ${_fmtShots(shots)} shots' : 'best: level ${summary.allTimeBestLevel}';
         } else {
-          headline = '${summary.trophies.length} ${summary.trophies.length == 1 ? 'trophy' : 'trophies'} earned';
+          bestLine = 'in progress';
         }
+
+        // Attempts + total CR shots line
+        final t = summary.totalAttempts;
+        final totalCrShots = summary.allTimeTotalChallengerRoadShots;
+        final attemptsLine = '$t attempt${t == 1 ? '' : 's'} · ${_fmtShots(totalCrShots)} shots';
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -931,18 +959,29 @@ class _PlayerState extends State<Player> {
             ),
             const SizedBox(height: 2),
             Text(
-              headline,
+              bestLine,
               textAlign: TextAlign.end,
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
-                fontSize: 15,
-                color: roadComplete ? const Color(0xFFFFD700) : theme.colorScheme.onSurface,
-                shadows: roadComplete ? [const Shadow(color: Color(0xFFFFD700), blurRadius: 6)] : null,
+                fontSize: 14,
+                color: roadComplete ? theme.primaryColor : theme.colorScheme.onSurface,
+                shadows: roadComplete ? [Shadow(color: theme.primaryColor.withValues(alpha: 0.5), blurRadius: 6)] : null,
               ),
             ),
+            const SizedBox(height: 1),
+            Text(
+              attemptsLine,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 11,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+              ),
+            ),
+            if (hasActiveAttempt) ...[const SizedBox(height: 1), Text('active attempt', textAlign: TextAlign.end, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: theme.primaryColor))],
             const SizedBox(height: 2),
             Text(
-              'view',
+              'view →',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
                 fontSize: 12,
@@ -1393,5 +1432,3 @@ String _fmtShots(int n) {
   }
   return buf.toString();
 }
-
-Color _playerTrophyColor(ChallengerRoadTrophyDefinition def) => ChallengerRoadService.colorForTrophy(def);
