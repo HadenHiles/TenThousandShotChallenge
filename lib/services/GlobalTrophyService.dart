@@ -754,7 +754,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_80',
       name: 'Laser Wrist',
-      description: '80%+ wrist accuracy in a single session (25+ wrist shots).',
+      description: '80%+ wrist shot accuracy in a single session (25+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -762,7 +762,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_80',
       name: 'Snap Sniper',
-      description: '80%+ snap accuracy in a single session (25+ snap shots).',
+      description: '80%+ snap shot accuracy in a single session (25+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -770,7 +770,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_80',
       name: 'Precision Bomb',
-      description: '80%+ slap accuracy in a single session (25+ slap shots).',
+      description: '80%+ slap shot accuracy in a single session (25+ slap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -794,7 +794,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_90',
       name: 'Surgical Wrist',
-      description: '90%+ wrist accuracy in a single session (25+ wrist shots).',
+      description: '90%+ wrist shot accuracy in a single session (25+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -802,7 +802,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_90',
       name: 'Pinpoint',
-      description: '90%+ snap accuracy in a single session (25+ snap shots).',
+      description: '90%+ snap shot accuracy in a single session (25+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -810,7 +810,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_90',
       name: 'Heat Seeking',
-      description: '90%+ slap accuracy in a single session (25+ slap shots).',
+      description: '90%+ slap shot accuracy in a single session (25+ slap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -892,7 +892,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_50',
       name: 'Wrist in Check',
-      description: '50%+ wrist accuracy in a session (10+ wrist shots).',
+      description: '50%+ wrist shot accuracy in a session (10+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -900,7 +900,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_50',
       name: 'Snap Study',
-      description: '50%+ snap accuracy in a session (10+ snap shots).',
+      description: '50%+ snap shot accuracy in a session (10+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -908,7 +908,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_50',
       name: 'Slap Starter',
-      description: '50%+ slap accuracy in a session (10+ slap shots). Aim, then bomb.',
+      description: '50%+ slap shot accuracy in a session (10+ slap shots). Aim, then bomb.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -924,7 +924,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_60',
       name: 'Wrist Warm',
-      description: '60%+ wrist accuracy in a session (15+ wrist shots).',
+      description: '60%+ wrist shot accuracy in a session (15+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -932,7 +932,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_60',
       name: 'Finding the Snap',
-      description: '60%+ snap accuracy in a session (15+ snap shots).',
+      description: '60%+ snap shot accuracy in a session (15+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -940,7 +940,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_60',
       name: 'Controlled Chaos',
-      description: '60%+ slap accuracy in a session (15+ slap shots). Not all bombs are wild.',
+      description: '60%+ slap shot accuracy in a session (15+ slap shots). Not all bombs are wild.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -974,7 +974,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_70',
       name: 'Wrist Work',
-      description: '70%+ wrist accuracy in a session (20+ wrist shots).',
+      description: '70%+ wrist shot accuracy in a session (20+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -982,7 +982,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_70',
       name: 'Snap Sharp',
-      description: '70%+ snap accuracy in a session (20+ snap shots).',
+      description: '70%+ snap shot accuracy in a session (20+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -990,7 +990,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_70',
       name: 'Locked In',
-      description: '70%+ slap accuracy in a session (20+ slap shots). That bomb has a target.',
+      description: '70%+ slap shot accuracy in a session (20+ slap shots). That bomb has a target.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1038,7 +1038,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_75',
       name: 'Wrist Precision',
-      description: '75%+ wrist accuracy in a session (20+ wrist shots).',
+      description: '75%+ wrist shot accuracy in a session (20+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1046,7 +1046,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_75',
       name: 'Snap Precision',
-      description: '75%+ snap accuracy in a session (20+ snap shots).',
+      description: '75%+ snap shot accuracy in a session (20+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1054,7 +1054,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_75',
       name: 'Slap Precision',
-      description: '75%+ slap accuracy in a session (20+ slap shots).',
+      description: '75%+ slap shot accuracy in a session (20+ slap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1088,7 +1088,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_85',
       name: 'Wrist Expert',
-      description: '85%+ wrist accuracy in a session (25+ wrist shots).',
+      description: '85%+ wrist shot accuracy in a session (25+ wrist shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -1096,7 +1096,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_85',
       name: 'Snap Expert',
-      description: '85%+ snap accuracy in a session (25+ snap shots).',
+      description: '85%+ snap shot accuracy in a session (25+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -1104,7 +1104,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_85',
       name: 'Slap Expert',
-      description: '85%+ slap accuracy in a session (25+ slap shots).',
+      description: '85%+ slap shot accuracy in a session (25+ slap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -1154,7 +1154,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_accuracy_95',
       name: 'Wrist Surgeon',
-      description: '95%+ wrist accuracy in a session (25+ wrist shots). That release is a weapon.',
+      description: '95%+ wrist shot accuracy in a session (25+ wrist shots). That release is a weapon.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -1162,7 +1162,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_accuracy_95',
       name: 'Snap Surgeon',
-      description: '95%+ snap accuracy in a session (25+ snap shots).',
+      description: '95%+ snap shot accuracy in a session (25+ snap shots).',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -1170,7 +1170,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_95',
       name: 'Slap Surgeon',
-      description: '95%+ slap accuracy in a session (25+ slap shots). The bomb is now guided.',
+      description: '95%+ slap shot accuracy in a session (25+ slap shots). The bomb is now guided.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -1228,7 +1228,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_wrist_perfect',
       name: 'Wrist of God',
-      description: '100% wrist accuracy in a session with 25+ wrist shots. Zero misses. Actual zero.',
+      description: '100% wrist shot accuracy in a session with 25+ wrist shots. Zero misses. Actual zero.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.legendary,
       proOnly: true,
@@ -1236,7 +1236,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_snap_perfect',
       name: 'Snap of God',
-      description: '100% snap accuracy in a session with 25+ snap shots.',
+      description: '100% snap shot accuracy in a session with 25+ snap shots.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.legendary,
       proOnly: true,
@@ -1244,7 +1244,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_perfect',
       name: 'Bomb Perfect',
-      description: '100% slap accuracy in a session with 25+ slap shots. Full power. Full precision.',
+      description: '100% slap shot accuracy in a session with 25+ slap shots. Full power. Full precision.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.legendary,
       proOnly: true,
@@ -1292,8 +1292,28 @@ class GlobalTrophyService {
       case GlobalTrophyCategory.timeOfDay:
         return Icons.schedule_rounded;
       case GlobalTrophyCategory.accuracy:
-        return Icons.track_changes_rounded;
+        return _accuracyIcon(def.id);
     }
+  }
+
+  /// Maps accuracy trophy IDs to distinct icons so each sub-group is visually
+  /// distinguishable at a glance in the trophy browser and trophy case.
+  static IconData _accuracyIcon(String id) {
+    // Shot-type specific ─────────────────────────────────────────────────────
+    if (id.startsWith('g_wrist_')) return Icons.back_hand_rounded; // wrist / hand release
+    if (id.startsWith('g_snap_')) return Icons.electric_bolt_rounded; // quick snap
+    if (id.startsWith('g_slap_')) return Icons.whatshot_rounded; // powerful bomb
+    if (id.startsWith('g_backhand_')) return Icons.flip_rounded; // reversed / other side
+    // Consistency streaks ────────────────────────────────────────────────────
+    if (id.startsWith('g_accuracy_streak_')) return Icons.local_fire_department_rounded;
+    // All shot types in one session ──────────────────────────────────────────
+    if (id.startsWith('g_all_types_')) return Icons.done_all_rounded;
+    // Perfect-session (100%) milestones ──────────────────────────────────────
+    if (id.startsWith('g_perfect_session_')) return Icons.verified_rounded;
+    // Very first accuracy session ────────────────────────────────────────────
+    if (id == 'g_accuracy_first_session') return Icons.visibility_rounded;
+    // Overall accuracy (g_overall_accuracy_*) and any future additions ───────
+    return Icons.adjust_rounded;
   }
 
   static Color colorForTrophy(GlobalTrophyDefinition def) {
