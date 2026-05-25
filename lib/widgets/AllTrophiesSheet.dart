@@ -302,6 +302,7 @@ class _TrophiesTabState extends State<_TrophiesTab> {
                         earned: earned.contains(def.id),
                         canEarn: !def.proOnly || widget.isPro,
                         userId: widget.userId,
+                        isOwnProfile: widget.isOwnProfile,
                       ),
                   ],
                 );
@@ -497,6 +498,7 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
                   def: item.def!,
                   earned: earnedCr.contains(item.def!.id),
                   userId: widget.userId,
+                  isOwnProfile: widget.isOwnProfile,
                 );
               },
             );
@@ -547,11 +549,12 @@ class _CrTierHeader extends StatelessWidget {
 }
 
 class _CrTrophyRow extends StatelessWidget {
-  const _CrTrophyRow({required this.def, required this.earned, required this.userId});
+  const _CrTrophyRow({required this.def, required this.earned, required this.userId, required this.isOwnProfile});
 
   final ChallengerRoadTrophyDefinition def;
   final bool earned;
   final String userId;
+  final bool isOwnProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -624,6 +627,7 @@ class _CrTrophyRow extends StatelessWidget {
         userId: userId,
         trophyId: def.id,
         earned: earned,
+        isOwnProfile: isOwnProfile,
         trophyColor: color,
         description: def.effectiveDescription,
         footerText: !earned ? 'Not yet earned' : null,
@@ -663,12 +667,14 @@ class _GlobalTrophyRow extends StatelessWidget {
     required this.earned,
     required this.canEarn,
     required this.userId,
+    required this.isOwnProfile,
   });
 
   final GlobalTrophyDefinition def;
   final bool earned;
   final bool canEarn;
   final String userId;
+  final bool isOwnProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -764,6 +770,7 @@ class _GlobalTrophyRow extends StatelessWidget {
         userId: userId,
         trophyId: def.id,
         earned: earned,
+        isOwnProfile: isOwnProfile,
         trophyColor: color,
         description: def.effectiveDescription,
         footerText: footerText,
@@ -843,7 +850,7 @@ class _TrophyCaseSectionState extends State<_TrophyCaseSection> {
             return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
               future: _crCatalogFuture,
               builder: (context, catSnap) {
-                final crCatalog = catSnap.data ?? [];
+                final crCatalog = catSnap.data ?? ChallengerRoadService.trophyCatalog;
                 return _TrophyCaseSectionBody(
                   userId: widget.userId,
                   globalSummary: globalSummary,
@@ -1054,6 +1061,7 @@ class _TrophyDetailSwapSheet extends StatefulWidget {
     required this.userId,
     required this.trophyId,
     required this.earned,
+    required this.isOwnProfile,
     required this.header,
     required this.description,
     required this.trophyColor,
@@ -1064,6 +1072,7 @@ class _TrophyDetailSwapSheet extends StatefulWidget {
   final String userId;
   final String trophyId;
   final bool earned;
+  final bool isOwnProfile;
   final Widget header;
   final String description;
   final Color trophyColor;
@@ -1144,8 +1153,8 @@ class _TrophyDetailSwapSheetState extends State<_TrophyDetailSwapSheet> {
                 ),
               ),
             ],
-            // ── Inline trophy-case swap (earned trophies only) ────────────
-            if (widget.earned) ...[
+            // ── Inline trophy-case swap (own profile earned trophies only) ─
+            if (widget.earned && widget.isOwnProfile) ...[
               const SizedBox(height: 18),
               Divider(height: 1, color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
               const SizedBox(height: 12),
@@ -1156,7 +1165,7 @@ class _TrophyDetailSwapSheetState extends State<_TrophyDetailSwapSheet> {
                   return FutureBuilder<List<ChallengerRoadTrophyDefinition>>(
                     future: _crCatalogFuture,
                     builder: (context, catSnap) {
-                      final crCatalog = catSnap.data ?? [];
+                      final crCatalog = catSnap.data ?? ChallengerRoadService.trophyCatalog;
                       final crById = {for (final d in crCatalog) d.id: d};
                       final slots = List<String>.generate(5, (i) => i < featured.length ? featured[i] : '');
                       final thisSlotIdx = slots.indexOf(widget.trophyId);

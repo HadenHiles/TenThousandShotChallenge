@@ -4,9 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatConfig.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 
 /// Persists shooting sessions to a local SQLite database when offline,
@@ -165,6 +167,7 @@ class OfflineSessionQueue {
                   backhandTargetsHit: backhandHits,
                   sessionDate: sessionDate,
                 ),
+                isPro: await _checkIsPro(),
               );
             } catch (_) {
               // Trophy evaluation is best-effort during offline sync.
@@ -181,5 +184,16 @@ class OfflineSessionQueue {
   Future<void> closeForTesting() async {
     await _db?.close();
     _db = null;
+  }
+
+  /// Fetches Pro status from RevenueCat without requiring a BuildContext.
+  Future<bool> _checkIsPro() async {
+    if (!RevenueCatConfig.configured) return false;
+    try {
+      final ci = await Purchases.getCustomerInfo();
+      return ci.entitlements.active.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 }
