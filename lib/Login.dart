@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 import 'package:tenthousandshotchallenge/services/bootstrap.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 import 'package:go_router/go_router.dart';
@@ -79,7 +80,10 @@ class _LoginState extends State<Login> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              height: MediaQuery.of(context).size.height,
+              // On 3-btn Android, main.dart Padding(bottom: vp.bottom) shrinks
+              // the Scaffold body; match that so the bottom-aligned content
+              // is not clipped behind the system nav bar.
+              height: MediaQuery.of(context).size.height - (isThreeButtonAndroidNavigation(context) ? MediaQuery.of(context).viewPadding.bottom : 0.0),
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
