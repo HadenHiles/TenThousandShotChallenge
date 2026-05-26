@@ -953,19 +953,29 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         body: SlidingUpPanel(
           backdropEnabled: true,
           controller: sessionPanelController,
-          maxHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+          maxHeight: () {
+            final H = MediaQuery.of(context).size.height;
+            final padTop = MediaQuery.of(context).padding.top;
+            if (isThreeButtonAndroidNavigation(context)) {
+              // On 3-btn Android, main.dart Padding(bottom: vp.bottom) shrinks
+              // the available height by vp.bottom.  When the panel is fully open
+              // the BottomNavigationBar's SizedOverflowBox reports 0 height, so
+              // the Scaffold body grows to H - vp.top - vp.bottom.  maxHeight
+              // must equal that grown body height so the panel top lands exactly
+              // at the status-bar bottom when expanded.
+              final vp = MediaQuery.of(context).viewPadding;
+              return H - vp.top - vp.bottom;
+            }
+            return H - padTop;
+          }(),
           minHeight: () {
-            // minHeight must match the actual rendered header height so the
-            // header sits fully in the visible panel area with its bottom edge
-            // flush with the nav bar's top.  Using a value smaller than the
-            // header causes the header to sink into the nav bar.
-            //   • Challenge session header: explicit SizedBox(height: 74)
-            //   • Regular session header: ListTile with vertical:5 padding ≈ 66dp
-            // Three-button Android nav is shifted at the app level in main.dart;
-            // a small nudge keeps the header clear of the system bar there.
-            final threeButtonNudge = isThreeButtonAndroidNavigation(context) ? 12.0 : 0.0;
-            if (activeChallengeSession.value != null) return 74 + threeButtonNudge;
-            if (sessionService.isRunning) return 74 + threeButtonNudge;
+            // Header height is 74dp (SizedBox(74)).  On 3-btn Android the panel
+            // needs to sit 8dp lower to visually align with the top of the
+            // BottomNavigationBar; the bottom 8dp of header padding is clipped
+            // behind the nav bar but all visible content remains intact.
+            final minH = isThreeButtonAndroidNavigation(context) ? 66.0 : 74.0;
+            if (activeChallengeSession.value != null) return minH;
+            if (sessionService.isRunning) return minH;
             return 0.0;
           }(),
           borderRadius: const BorderRadius.only(

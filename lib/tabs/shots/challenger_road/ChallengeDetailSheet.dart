@@ -311,8 +311,9 @@ class ChallengeDetailSheet extends StatelessWidget {
   // ── Try history link ──────────────────────────────────────────────────────
 
   Widget _buildHistoryLink(BuildContext context) {
-    final tryCount = progress!.totalAttempts;
-    final passCount = progress!.totalPassed;
+    // progress is nullable — use 0 when no attempts have been recorded yet.
+    final tryCount = progress?.totalAttempts ?? 0;
+    final passCount = progress?.totalPassed ?? 0;
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () {
