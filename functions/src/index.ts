@@ -187,6 +187,16 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
     // Update the according iteration timestamp (updated_at)
     await db.collection(`iterations/${context.params.userId}/iterations`).doc(context.params.iterationId).update({ 'updated_at': new Date(Date.now()) });
 
+    // Clear the practice-reminder cooldown so the user can receive a fresh
+    // reminder the next time they go 2+ days without practising.
+    try {
+        await db.collection('users').doc(context.params.userId).update({
+            last_practice_reminder: admin.firestore.FieldValue.delete(),
+        });
+    } catch (_) {
+        // Non-fatal - don't block session processing if this update fails.
+    }
+
     // --- Recalculate and write summary stats to /users/{userId}/stats/weekly ---
     try {
         const weekStart = getWeekStartEST();
@@ -2441,12 +2451,18 @@ export const sendPracticeReminders = onSchedule(
 
         logger.info(`Practice reminders: checking ${usersSnap.size} opted-in users`);
 
+        const reminderCooloff = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+
         const tasks = usersSnap.docs.map(async (userDoc) => {
             const data = userDoc.data();
             const token: string | undefined = data['fcm_token'];
             if (!token) return;
 
             const uid = userDoc.id;
+
+            // Skip if a reminder was already sent within the past 7 days
+            const lastReminder: Timestamp | undefined = data['last_practice_reminder'];
+            if (lastReminder && lastReminder.toMillis() >= reminderCooloff.toMillis()) return;
 
             // Check if the user has any session newer than 48h
             const itersSnap = await db.collection('iterations')
@@ -2476,6 +2492,10 @@ export const sendPracticeReminders = onSchedule(
                     data: { type: 'practice_reminder' },
                     apns: { payload: { aps: { badge: 1, sound: 'default' } } },
                     android: { priority: 'normal' },
+                });
+                // Record the time this reminder was sent so we don't send again for 7 days
+                await db.collection('users').doc(uid).update({
+                    last_practice_reminder: Timestamp.now(),
                 });
                 logger.info(`Practice reminder sent to user ${uid}`);
             } catch (err: any) {
