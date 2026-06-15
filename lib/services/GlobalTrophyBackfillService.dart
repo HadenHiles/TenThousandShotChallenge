@@ -221,11 +221,13 @@ class GlobalTrophyBackfillService {
           }
           if (slap >= 10) bestSlapAcc10 = max(bestSlapAcc10, slapHit / slap);
           if (slap >= 15) bestSlapAcc15 = max(bestSlapAcc15, slapHit / slap);
-          if (slap >= 20) bestSlapAcc20 = max(bestSlapAcc20, slapHit / slap);
-          if (slap >= 25) {
-            bestSlapAcc25 = max(bestSlapAcc25, slapHit / slap);
+          if (slap >= 20) {
+            bestSlapAcc20 = max(bestSlapAcc20, slapHit / slap);
+            // Slap perfect requires only 20+ shots (half the wrist/snap minimum
+            // reflects that slap shots are ~2x harder to be accurate with).
             if (slapHit == slap) hasSlapPerfect = true;
           }
+          if (slap >= 25) bestSlapAcc25 = max(bestSlapAcc25, slapHit / slap);
           if (backhand >= 10) bestBackhandAcc10 = max(bestBackhandAcc10, backhandHit / backhand);
           if (backhand >= 15) bestBackhandAcc15 = max(bestBackhandAcc15, backhandHit / backhand);
           if (backhand >= 20) bestBackhandAcc20 = max(bestBackhandAcc20, backhandHit / backhand);
@@ -490,15 +492,15 @@ class GlobalTrophyBackfillService {
       if (bestSnapAcc25 >= 0.95) award('g_snap_accuracy_95');
       if (hasSnapPerfect) award('g_snap_perfect');
 
-      // Slap accuracy.
-      if (bestSlapAcc10 >= 0.50) award('g_slap_accuracy_50');
-      if (bestSlapAcc15 >= 0.60) award('g_slap_accuracy_60');
-      if (bestSlapAcc20 >= 0.70) award('g_slap_accuracy_70');
-      if (bestSlapAcc20 >= 0.75) award('g_slap_accuracy_75');
-      if (bestSlapAcc25 >= 0.80) award('g_slap_accuracy_80');
-      if (bestSlapAcc25 >= 0.85) award('g_slap_accuracy_85');
-      if (bestSlapAcc25 >= 0.90) award('g_slap_accuracy_90');
-      if (bestSlapAcc25 >= 0.95) award('g_slap_accuracy_95');
+      // Slap accuracy (thresholds scaled ~15pp lower — slap shots are ~2x harder to be accurate).
+      if (bestSlapAcc10 >= 0.35) award('g_slap_accuracy_50');
+      if (bestSlapAcc15 >= 0.45) award('g_slap_accuracy_60');
+      if (bestSlapAcc15 >= 0.55) award('g_slap_accuracy_70');
+      if (bestSlapAcc15 >= 0.60) award('g_slap_accuracy_75');
+      if (bestSlapAcc20 >= 0.65) award('g_slap_accuracy_80');
+      if (bestSlapAcc20 >= 0.70) award('g_slap_accuracy_85');
+      if (bestSlapAcc20 >= 0.75) award('g_slap_accuracy_90');
+      if (bestSlapAcc20 >= 0.80) award('g_slap_accuracy_95');
       if (hasSlapPerfect) award('g_slap_perfect');
 
       // Backhand accuracy.

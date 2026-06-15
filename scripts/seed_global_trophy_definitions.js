@@ -143,12 +143,12 @@ const TROPHIES = [
     // ── Accuracy (pro) ────────────────────────────────────────────────────────
     { id: 'g_wrist_accuracy_80', name: 'Laser Wrist', description: '80%+ wrist accuracy in a single session (25+ wrist shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_snap_accuracy_80', name: 'Snap Sniper', description: '80%+ snap accuracy in a single session (25+ snap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
-    { id: 'g_slap_accuracy_80', name: 'Precision Bomb', description: '80%+ slap accuracy in a single session (25+ slap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
+    { id: 'g_slap_accuracy_80', name: 'Precision Bomb', description: '65%+ slap accuracy in a single session (20+ slap shots). Elite-level power and precision.', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_backhand_accuracy_80', name: 'Silky Backhand', description: '80%+ backhand accuracy in a single session (25+ backhand shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_overall_accuracy_75', name: 'On Target', description: '75%+ overall accuracy in a session with 50+ total shots.', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_wrist_accuracy_90', name: 'Surgical Wrist', description: '90%+ wrist accuracy in a single session (25+ wrist shots).', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_snap_accuracy_90', name: 'Pinpoint', description: '90%+ snap accuracy in a single session (25+ snap shots).', category: 'accuracy', tier: 'epic', proOnly: true },
-    { id: 'g_slap_accuracy_90', name: 'Heat Seeking', description: '90%+ slap accuracy in a single session (25+ slap shots).', category: 'accuracy', tier: 'epic', proOnly: true },
+    { id: 'g_slap_accuracy_90', name: 'Heat Seeking', description: '75%+ slap accuracy in a single session (20+ slap shots). That bomb locks on.', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_backhand_accuracy_90', name: 'Ghost Hand', description: '90%+ backhand accuracy in a single session (25+ backhand shots).', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_all_types_accuracy_80', name: 'Dead Eye', description: '80%+ accuracy on every shot type in a single session (25+ each).', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_perfect_session', name: 'Perfect Pull', description: '100% accuracy in a session with 25+ total shots. Nothing missed.', category: 'accuracy', tier: 'epic', proOnly: true },
@@ -162,11 +162,11 @@ const TROPHIES = [
     { id: 'g_overall_accuracy_60', name: 'Above Average', description: '60%+ overall accuracy in a session with 25+ shots. You\'re finding it.', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_wrist_accuracy_50', name: 'Wrist in Check', description: '50%+ wrist accuracy in a session (10+ wrist shots).', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_snap_accuracy_50', name: 'Snap Study', description: '50%+ snap accuracy in a session (10+ snap shots).', category: 'accuracy', tier: 'common', proOnly: true },
-    { id: 'g_slap_accuracy_50', name: 'Slap Starter', description: '50%+ slap accuracy in a session (10+ slap shots). Aim, then bomb.', category: 'accuracy', tier: 'common', proOnly: true },
+    { id: 'g_slap_accuracy_50', name: 'Slap Starter', description: "35%+ slap accuracy in a session (10+ slap shots). Slap shots are twice as hard \u2014 getting a third on target is real.", category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_backhand_accuracy_50', name: 'Backhand Basics', description: '50%+ backhand accuracy in a session (10+ backhand shots). Off-hand, on target.', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_wrist_accuracy_60', name: 'Wrist Warm', description: '60%+ wrist accuracy in a session (15+ wrist shots).', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_snap_accuracy_60', name: 'Finding the Snap', description: '60%+ snap accuracy in a session (15+ snap shots).', category: 'accuracy', tier: 'common', proOnly: true },
-    { id: 'g_slap_accuracy_60', name: 'Controlled Chaos', description: '60%+ slap accuracy in a session (15+ slap shots). Not all bombs are wild.', category: 'accuracy', tier: 'common', proOnly: true },
+    { id: 'g_slap_accuracy_60', name: 'Controlled Chaos', description: '45%+ slap accuracy in a session (15+ slap shots). Not all bombs are wild.', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_backhand_accuracy_60', name: 'Off-Hand Progress', description: '60%+ backhand accuracy in a session (15+ backhand shots).', category: 'accuracy', tier: 'common', proOnly: true },
     { id: 'g_all_types_accuracy_50', name: 'Dabbler', description: '50%+ accuracy on every shot type in a session (10+ each). No glaring weakness.', category: 'accuracy', tier: 'common', proOnly: true },
 
@@ -174,7 +174,7 @@ const TROPHIES = [
     { id: 'g_overall_accuracy_65', name: 'Dialed', description: '65%+ overall accuracy in a session with 30+ shots. Getting there.', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_wrist_accuracy_70', name: 'Wrist Work', description: '70%+ wrist accuracy in a session (20+ wrist shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_snap_accuracy_70', name: 'Snap Sharp', description: '70%+ snap accuracy in a session (20+ snap shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
-    { id: 'g_slap_accuracy_70', name: 'Locked In', description: '70%+ slap accuracy in a session (20+ slap shots). That bomb has a target.', category: 'accuracy', tier: 'uncommon', proOnly: true },
+    { id: 'g_slap_accuracy_70', name: 'Locked In', description: '55%+ slap accuracy in a session (15+ slap shots). That bomb has a target.', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_backhand_accuracy_70', name: 'Wrong Side Right', description: '70%+ backhand accuracy in a session (20+ backhand shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_accuracy_streak_2', name: 'Back-to-Back Accuracy', description: '65%+ overall accuracy in 2 consecutive sessions.', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_accuracy_streak_3', name: 'Hat Trick Accuracy', description: '70%+ overall accuracy in 3 consecutive sessions.', category: 'accuracy', tier: 'uncommon', proOnly: true },
@@ -182,7 +182,7 @@ const TROPHIES = [
     { id: 'g_all_types_accuracy_70', name: 'No Weak Angle', description: '70%+ accuracy on every shot type in a session (15+ each). Defenders have no read.', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_wrist_accuracy_75', name: 'Wrist Precision', description: '75%+ wrist accuracy in a session (20+ wrist shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_snap_accuracy_75', name: 'Snap Precision', description: '75%+ snap accuracy in a session (20+ snap shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
-    { id: 'g_slap_accuracy_75', name: 'Slap Precision', description: '75%+ slap accuracy in a session (20+ slap shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
+    { id: 'g_slap_accuracy_75', name: 'Slap Precision', description: '60%+ slap accuracy in a session (15+ slap shots). Rare power and precision.', category: 'accuracy', tier: 'uncommon', proOnly: true },
     { id: 'g_backhand_accuracy_75', name: 'Backhand Precision', description: '75%+ backhand accuracy in a session (20+ backhand shots).', category: 'accuracy', tier: 'uncommon', proOnly: true },
 
     // ── Accuracy (rare - additions) ───────────────────────────────────────────
@@ -190,7 +190,7 @@ const TROPHIES = [
     { id: 'g_accuracy_streak_4', name: 'On a Roll', description: '70%+ overall accuracy in 4 consecutive sessions.', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_wrist_accuracy_85', name: 'Wrist Expert', description: '85%+ wrist accuracy in a session (25+ wrist shots).', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_snap_accuracy_85', name: 'Snap Expert', description: '85%+ snap accuracy in a session (25+ snap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
-    { id: 'g_slap_accuracy_85', name: 'Slap Expert', description: '85%+ slap accuracy in a session (25+ slap shots).', category: 'accuracy', tier: 'rare', proOnly: true },
+    { id: 'g_slap_accuracy_85', name: 'Slap Expert', description: '70%+ slap accuracy in a session (20+ slap shots). Pinpoint power.', category: 'accuracy', tier: 'rare', proOnly: true },
     { id: 'g_backhand_accuracy_85', name: 'Backhand Expert', description: '85%+ backhand accuracy in a session (25+ backhand shots).', category: 'accuracy', tier: 'rare', proOnly: true },
 
     // ── Accuracy (epic - additions) ───────────────────────────────────────────
@@ -200,7 +200,7 @@ const TROPHIES = [
     { id: 'g_all_types_accuracy_90', name: 'Complete Control', description: '90%+ accuracy on every shot type in a session (25+ each). All cylinders, all accurate.', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_wrist_accuracy_95', name: 'Wrist Surgeon', description: '95%+ wrist accuracy in a session (25+ wrist shots). That release is a weapon.', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_snap_accuracy_95', name: 'Snap Surgeon', description: '95%+ snap accuracy in a session (25+ snap shots).', category: 'accuracy', tier: 'epic', proOnly: true },
-    { id: 'g_slap_accuracy_95', name: 'Slap Surgeon', description: '95%+ slap accuracy in a session (25+ slap shots). The bomb is now guided.', category: 'accuracy', tier: 'epic', proOnly: true },
+    { id: 'g_slap_accuracy_95', name: 'Slap Surgeon', description: '80%+ slap accuracy in a session (20+ slap shots). The bomb is now guided.', category: 'accuracy', tier: 'epic', proOnly: true },
     { id: 'g_backhand_accuracy_95', name: 'Backhand Surgeon', description: '95%+ backhand accuracy in a session (25+ backhand shots). Two hands, one killer instinct.', category: 'accuracy', tier: 'epic', proOnly: true },
 
     // ── Accuracy (legendary - additions) ─────────────────────────────────────
@@ -211,7 +211,7 @@ const TROPHIES = [
     { id: 'g_perfect_session_100', name: 'Perfect Century', description: '100% accuracy in a session with 100+ total shots. Nothing touched the post.', category: 'accuracy', tier: 'legendary', proOnly: true },
     { id: 'g_wrist_perfect', name: 'Wrist of God', description: '100% wrist accuracy in a session with 25+ wrist shots. Zero misses. Actual zero.', category: 'accuracy', tier: 'legendary', proOnly: true },
     { id: 'g_snap_perfect', name: 'Snap of God', description: '100% snap accuracy in a session with 25+ snap shots.', category: 'accuracy', tier: 'legendary', proOnly: true },
-    { id: 'g_slap_perfect', name: 'Bomb Perfect', description: '100% slap accuracy in a session with 25+ slap shots. Full power. Full precision.', category: 'accuracy', tier: 'legendary', proOnly: true },
+    { id: 'g_slap_perfect', name: 'Bomb Perfect', description: '100% slap accuracy in a session with 20+ slap shots. Full power. Full precision. Nothing missed.', category: 'accuracy', tier: 'legendary', proOnly: true },
     { id: 'g_backhand_perfect', name: 'Backhand of God', description: '100% backhand accuracy in a session with 25+ backhand shots. Two hands, zero misses.', category: 'accuracy', tier: 'legendary', proOnly: true },
     { id: 'g_all_types_accuracy_95', name: 'Zero Margin', description: '95%+ accuracy on every shot type in a session (25+ each). Nothing leaks.', category: 'accuracy', tier: 'legendary', proOnly: true },
     { id: 'g_all_types_perfect', name: 'Total Control', description: '100% accuracy on every shot type in a single session (25+ each). The game doesn\'t stand a chance.', category: 'accuracy', tier: 'legendary', proOnly: true },

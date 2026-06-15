@@ -1004,21 +1004,21 @@ void main() {
         expect(await eval(total: 25, snap: 25, snapH: 24, pro: true), isNot(contains('g_snap_perfect')));
       });
 
-      // Slap
-      perTypeTest('g_slap_accuracy_50', 'slap', 10, 5, 4);
-      perTypeTest('g_slap_accuracy_60', 'slap', 15, 9, 8);
-      perTypeTest('g_slap_accuracy_70', 'slap', 20, 14, 13);
-      perTypeTest('g_slap_accuracy_75', 'slap', 20, 15, 14);
-      perTypeTest('g_slap_accuracy_80', 'slap', 25, 20, 19);
-      perTypeTest('g_slap_accuracy_85', 'slap', 25, 22, 21);
-      perTypeTest('g_slap_accuracy_90', 'slap', 25, 23, 22);
-      perTypeTest('g_slap_accuracy_95', 'slap', 25, 24, 23);
+      // Slap (thresholds scaled ~15pp lower — slap shots are ~2x harder to be accurate)
+      perTypeTest('g_slap_accuracy_50', 'slap', 10, 4, 3); // 40% ≥ 35% ✓, 30% < 35% ✗
+      perTypeTest('g_slap_accuracy_60', 'slap', 15, 7, 6); // 46.7% ≥ 45% ✓, 40% < 45% ✗
+      perTypeTest('g_slap_accuracy_70', 'slap', 15, 9, 8); // 60% ≥ 55% ✓, 53% < 55% ✗
+      perTypeTest('g_slap_accuracy_75', 'slap', 15, 9, 8); // 60% ≥ 60% ✓, 53% < 60% ✗
+      perTypeTest('g_slap_accuracy_80', 'slap', 20, 13, 12); // 65% ≥ 65% ✓, 60% < 65% ✗
+      perTypeTest('g_slap_accuracy_85', 'slap', 20, 14, 13); // 70% ≥ 70% ✓, 65% < 70% ✗
+      perTypeTest('g_slap_accuracy_90', 'slap', 20, 15, 14); // 75% ≥ 75% ✓, 70% < 75% ✗
+      perTypeTest('g_slap_accuracy_95', 'slap', 20, 16, 15); // 80% ≥ 80% ✓, 75% < 80% ✗
 
-      test('g_slap_perfect: awarded with 25/25 slap shots (pro)', () async {
-        expect(await eval(total: 25, slap: 25, slapH: 25, pro: true), contains('g_slap_perfect'));
+      test('g_slap_perfect: awarded with 20/20 slap shots (pro)', () async {
+        expect(await eval(total: 20, slap: 20, slapH: 20, pro: true), contains('g_slap_perfect'));
       });
-      test('g_slap_perfect: NOT awarded with 24/25 slap shots', () async {
-        expect(await eval(total: 25, slap: 25, slapH: 24, pro: true), isNot(contains('g_slap_perfect')));
+      test('g_slap_perfect: NOT awarded with 19/20 slap shots', () async {
+        expect(await eval(total: 20, slap: 20, slapH: 19, pro: true), isNot(contains('g_slap_perfect')));
       });
 
       // Backhand

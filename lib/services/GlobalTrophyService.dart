@@ -770,7 +770,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_80',
       name: 'Precision Bomb',
-      description: '80%+ slap shot accuracy in a single session (25+ slap shots).',
+      description: '65%+ slap shot accuracy in a single session (20+ slap shots). Elite-level power and precision.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -810,7 +810,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_90',
       name: 'Heat Seeking',
-      description: '90%+ slap shot accuracy in a single session (25+ slap shots).',
+      description: '75%+ slap shot accuracy in a single session (20+ slap shots). That bomb locks on.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -908,7 +908,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_50',
       name: 'Slap Starter',
-      description: '50%+ slap shot accuracy in a session (10+ slap shots). Aim, then bomb.',
+      description: '35%+ slap shot accuracy in a session (10+ slap shots). Slap shots are twice as hard — getting a third on target is real.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -940,7 +940,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_60',
       name: 'Controlled Chaos',
-      description: '60%+ slap shot accuracy in a session (15+ slap shots). Not all bombs are wild.',
+      description: '45%+ slap shot accuracy in a session (15+ slap shots). Not all bombs are wild.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -990,7 +990,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_70',
       name: 'Locked In',
-      description: '70%+ slap shot accuracy in a session (20+ slap shots). That bomb has a target.',
+      description: '55%+ slap shot accuracy in a session (15+ slap shots). That bomb has a target.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1054,7 +1054,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_75',
       name: 'Slap Precision',
-      description: '75%+ slap shot accuracy in a session (20+ slap shots).',
+      description: '60%+ slap shot accuracy in a session (15+ slap shots). Rare power and precision.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.uncommon,
       proOnly: true,
@@ -1104,7 +1104,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_85',
       name: 'Slap Expert',
-      description: '85%+ slap shot accuracy in a session (25+ slap shots).',
+      description: '70%+ slap shot accuracy in a session (20+ slap shots). Pinpoint power.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.rare,
       proOnly: true,
@@ -1170,7 +1170,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_95',
       name: 'Slap Surgeon',
-      description: '95%+ slap shot accuracy in a session (25+ slap shots). The bomb is now guided.',
+      description: '80%+ slap shot accuracy in a session (20+ slap shots). The bomb is now guided.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.epic,
       proOnly: true,
@@ -1244,7 +1244,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_perfect',
       name: 'Bomb Perfect',
-      description: '100% slap shot accuracy in a session with 25+ slap shots. Full power. Full precision.',
+      description: '100% slap shot accuracy in a session with 20+ slap shots. Full power. Full precision. Nothing missed.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.legendary,
       proOnly: true,
@@ -1677,16 +1677,16 @@ class GlobalTrophyService {
       if (session.snap >= 25 && snapAcc >= 0.95) check('g_snap_accuracy_95');
       if (session.snap >= 25 && session.snapTargetsHit == session.snap) check('g_snap_perfect');
 
-      // ── Slap accuracy ─────────────────────────────────────────────────────
-      if (session.slap >= 10 && slapAcc >= 0.50) check('g_slap_accuracy_50');
-      if (session.slap >= 15 && slapAcc >= 0.60) check('g_slap_accuracy_60');
-      if (session.slap >= 20 && slapAcc >= 0.70) check('g_slap_accuracy_70');
-      if (session.slap >= 20 && slapAcc >= 0.75) check('g_slap_accuracy_75');
-      if (session.slap >= 25 && slapAcc >= 0.80) check('g_slap_accuracy_80');
-      if (session.slap >= 25 && slapAcc >= 0.85) check('g_slap_accuracy_85');
-      if (session.slap >= 25 && slapAcc >= 0.90) check('g_slap_accuracy_90');
-      if (session.slap >= 25 && slapAcc >= 0.95) check('g_slap_accuracy_95');
-      if (session.slap >= 25 && session.slapTargetsHit == session.slap) check('g_slap_perfect');
+      // ── Slap accuracy (thresholds scaled down ~15pp — slap shots are ~2x harder to be accurate) ─────
+      if (session.slap >= 10 && slapAcc >= 0.35) check('g_slap_accuracy_50');
+      if (session.slap >= 15 && slapAcc >= 0.45) check('g_slap_accuracy_60');
+      if (session.slap >= 15 && slapAcc >= 0.55) check('g_slap_accuracy_70');
+      if (session.slap >= 15 && slapAcc >= 0.60) check('g_slap_accuracy_75');
+      if (session.slap >= 20 && slapAcc >= 0.65) check('g_slap_accuracy_80');
+      if (session.slap >= 20 && slapAcc >= 0.70) check('g_slap_accuracy_85');
+      if (session.slap >= 20 && slapAcc >= 0.75) check('g_slap_accuracy_90');
+      if (session.slap >= 20 && slapAcc >= 0.80) check('g_slap_accuracy_95');
+      if (session.slap >= 20 && session.slapTargetsHit == session.slap) check('g_slap_perfect');
 
       // ── Backhand accuracy ─────────────────────────────────────────────────
       if (session.backhand >= 10 && backhandAcc >= 0.50) check('g_backhand_accuracy_50');
