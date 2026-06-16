@@ -1,6 +1,5 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
 import 'package:video_player/video_player.dart';
 import 'ChallengeStepsFullScreenViewer.dart';
@@ -163,16 +162,9 @@ class _StepPageState extends State<_StepPage> {
         videoPlayerController: _videoController!,
         autoPlay: false,
         looping: false,
+        allowFullScreen: false,
         aspectRatio: _videoController!.value.aspectRatio,
         errorBuilder: (context, msg) => _buildMediaError(context),
-        deviceOrientationsOnEnterFullScreen: [
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ],
-        deviceOrientationsAfterFullScreen: [
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ],
       );
       setState(() => _videoReady = true);
     } catch (_) {
