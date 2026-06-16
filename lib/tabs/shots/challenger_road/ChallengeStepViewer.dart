@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
 import 'package:video_player/video_player.dart';
+import 'ChallengeStepsFullScreenViewer.dart';
 
 /// Horizontal PageView showing each [ChallengeStep] with its media, title,
 /// and summary text.
@@ -47,19 +48,61 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 340,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: widget.steps.length,
-            onPageChanged: (idx) => setState(() => _currentPage = idx),
-            itemBuilder: (context, index) {
-              return _StepPage(step: widget.steps[index]);
-            },
-          ),
+        Stack(
+          children: [
+            SizedBox(
+              height: 340,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.steps.length,
+                onPageChanged: (idx) => setState(() => _currentPage = idx),
+                itemBuilder: (context, index) {
+                  return _StepPage(
+                    step: widget.steps[index],
+                    onMediaTap: () => ChallengeStepsFullScreenViewer.show(
+                      context,
+                      steps: widget.steps,
+                      initialIndex: index,
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Expand icon – overlaid in the top-right corner of the step area.
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Material(
+                color: Colors.transparent,
+                child: Tooltip(
+                  message: 'View full screen',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => ChallengeStepsFullScreenViewer.show(
+                      context,
+                      steps: widget.steps,
+                      initialIndex: _currentPage,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.75),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.open_in_full_rounded,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         if (widget.steps.length > 1) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(widget.steps.length, (i) {
@@ -86,7 +129,11 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
 
 class _StepPage extends StatefulWidget {
   final ChallengeStep step;
-  const _StepPage({required this.step});
+
+  /// Called when the user taps the image/gif media. Not fired for videos
+  /// (Chewie handles its own tap interactions).
+  final VoidCallback? onMediaTap;
+  const _StepPage({required this.step, this.onMediaTap});
 
   @override
   State<_StepPage> createState() => _StepPageState();
@@ -212,21 +259,24 @@ class _StepPageState extends State<_StepPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // image / gif
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildMediaError(context),
-        loadingBuilder: (_, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
-            ),
-          );
-        },
+    // image / gif – tappable to open full-screen viewer.
+    return GestureDetector(
+      onTap: widget.onMediaTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildMediaError(context),
+          loadingBuilder: (_, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
