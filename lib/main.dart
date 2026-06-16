@@ -231,11 +231,14 @@ void _showBannerWhenReady({
 Future<void> initRevenueCat(String? appUserID) async {
   await Purchases.setLogLevel(LogLevel.debug);
 
-  // Guard against calling configure() more than once — calling it a second time
-  // corrupts the SDK state on iOS and produces Error 23 (configurationError)
-  // during a subsequent purchase attempt. Log the user in instead.
-  if (RevenueCatConfig.configured) {
-    if (appUserID != null) {
+  // After resuming from setLogLevel we have exclusive access until the next
+  // await, so the flag checks and the configuring=true assignment are atomic.
+  //
+  // Guard against calling configure() more than once — calling it a second
+  // time corrupts the SDK state on iOS and produces Error 23
+  // (configurationError) during a subsequent purchase attempt.
+  if (RevenueCatConfig.configured || RevenueCatConfig.configuring) {
+    if (RevenueCatConfig.configured && appUserID != null) {
       try {
         await Purchases.logIn(appUserID);
         print('RevenueCat: Logged in user: $appUserID');
@@ -245,6 +248,7 @@ Future<void> initRevenueCat(String? appUserID) async {
     }
     return;
   }
+  RevenueCatConfig.configuring = true; // Set before the next await to prevent concurrent configure calls.
 
   PurchasesConfiguration? configuration;
 
@@ -261,6 +265,7 @@ Future<void> initRevenueCat(String? appUserID) async {
     try {
       await Purchases.configure(configuration);
       RevenueCatConfig.configured = true;
+      RevenueCatConfig.configuring = false;
       print('RevenueCat: Successfully configured');
 
       // Check if offerings are available
@@ -279,6 +284,7 @@ Future<void> initRevenueCat(String? appUserID) async {
     } catch (e) {
       print('RevenueCat: Configuration failed: $e');
       RevenueCatConfig.configured = false;
+      RevenueCatConfig.configuring = false;
     }
   } else {
     print('RevenueCat: Platform not supported or configuration is null');
@@ -329,6 +335,9 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     _authListener = () async {
       final user = _authNotifier.user;
       if (user != null && user.uid != _lastUser?.uid) {
+        // Set _lastUser immediately (before any await) so re-entrant calls
+        // from a second auth-state emission see the updated value and skip.
+        _lastUser = user;
         await initRevenueCat(user.uid);
         if (RevenueCatConfig.configured) {
           try {
@@ -349,7 +358,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
             }
           } catch (_) {}
         }
-        _lastUser = user;
         // Set user's timezone in Firestore
         try {
           final String timezone = await FlutterTimezone.getLocalTimezone();
