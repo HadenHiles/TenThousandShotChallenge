@@ -231,6 +231,21 @@ void _showBannerWhenReady({
 Future<void> initRevenueCat(String? appUserID) async {
   await Purchases.setLogLevel(LogLevel.debug);
 
+  // Guard against calling configure() more than once — calling it a second time
+  // corrupts the SDK state on iOS and produces Error 23 (configurationError)
+  // during a subsequent purchase attempt. Log the user in instead.
+  if (RevenueCatConfig.configured) {
+    if (appUserID != null) {
+      try {
+        await Purchases.logIn(appUserID);
+        print('RevenueCat: Logged in user: $appUserID');
+      } catch (e) {
+        print('RevenueCat: logIn failed: $e');
+      }
+    }
+    return;
+  }
+
   PurchasesConfiguration? configuration;
 
   if (Platform.isAndroid) {
