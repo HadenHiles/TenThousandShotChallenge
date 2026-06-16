@@ -66,7 +66,7 @@ class _IntroScreenState extends State<IntroScreen> {
     await LocalNotificationService.scheduleDailyReminder(hour: h, minute: m);
     // Routing to main app after intro (ensure navigation happens after UI updates)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.go(AppRoutePaths.app);
+      if (mounted) context.go(AppRoutePaths.app);
     });
   }
 
