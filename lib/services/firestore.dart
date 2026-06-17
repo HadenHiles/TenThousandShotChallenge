@@ -363,8 +363,11 @@ Future<bool> acceptInvite(Invite invite, FirebaseAuth auth, FirebaseFirestore fi
       // Get the current user
       return await firestore.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
-        // Save the current user as a teammate of the invitee teammate
-        return await firestore.collection('teammates').doc(invite.fromUid).collection('teammates').doc(auth.currentUser!.uid).set(user.toMap()).then((_) async {
+        // Save the current user as a teammate of the invitee teammate.
+        // _skip_invite_notification tells the Cloud Function not to send a
+        // notification to the original inviter for this mirrored write.
+        final mirroredData = {...user.toMap(), '_skip_invite_notification': true};
+        return await firestore.collection('teammates').doc(invite.fromUid).collection('teammates').doc(auth.currentUser!.uid).set(mirroredData).then((_) async {
           // Delete the invite
           return await firestore.collection('invites').doc(auth.currentUser!.uid).collection('invites').doc(invite.fromUid).delete().then((value) => true).onError((error, stackTrace) => false);
         });

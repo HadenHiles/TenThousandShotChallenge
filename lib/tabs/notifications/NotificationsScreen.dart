@@ -283,8 +283,8 @@ class _NotificationTile extends StatelessWidget {
       avatarBg = Colors.green.withValues(alpha: 0.15);
       avatarFg = Colors.green[700]!;
       avatarIcon = Icons.handshake_rounded;
-      headline = '${n.fromName} accepted your invite';
-      subtitleLine = "You're now teammates!";
+      headline = 'You and ${n.fromName} are now friends!';
+      subtitleLine = null;
     } else if (n.isWeeklyAvailable) {
       avatarBg = Colors.purple.withValues(alpha: 0.15);
       avatarFg = Colors.purple[600]!;
