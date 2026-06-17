@@ -122,6 +122,10 @@ export const inviteSent = onDocumentCreated({ document: "invites/{userId}/invite
 });
 
 export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/teammates/{teammateId}" }, async (event) => {
+    // The mirrored write (adding the acceptee to the inviter's teammates) carries
+    // this sentinel field so we can skip the duplicate notification.
+    if (event.data?.data()?._skip_invite_notification === true) return null;
+
     const context = event;
     let user;
     let teammate;
@@ -148,7 +152,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
                 // Get the teammates name
                 teammate = tDoc.data();
                 teammateName = getNotifName(teammate);
-                data.message.notification.body = `${teammateName} has accepted your invite.`;
+                data.message.notification.body = `You and ${teammateName} are now friends!`;
 
                 logger.log("Sending notification with data: " + JSON.stringify(data));
 
@@ -161,7 +165,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
                         from_uid: context.params.userId,
                         from_name: teammateName,
                         shots: 0,
-                        message: `${teammateName} accepted your teammate invite!`,
+                        message: `You and ${teammateName} are now friends!`,
                         created_at: admin.firestore.FieldValue.serverTimestamp(),
                         read: false,
                     });
