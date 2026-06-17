@@ -133,7 +133,7 @@ export const inviteAccepted = onDocumentCreated({ document: "teammates/{userId}/
     let fcmToken: string | null;
 
     // Retrieve the user who will be receiving the notification
-    await db.collection("users").doc(context.params.teammateId).get().then(async (doc) => {
+    return await db.collection("users").doc(context.params.teammateId).get().then(async (doc) => {
         user = doc.data();
         fcmToken = user != undefined ? user.fcm_token : null;
         let data = {
