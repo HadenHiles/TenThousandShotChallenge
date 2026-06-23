@@ -12,6 +12,8 @@ import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
@@ -41,6 +43,13 @@ class _CreateTeamState extends State<CreateTeam> {
   DateTime _targetDate = DateTime.now().add(const Duration(days: 100));
   bool _public = true;
   bool _saving = false;
+
+  /// True while we’re checking whether the user already owns a team.
+  bool _checkingProGate = true;
+
+  /// True when the user owns ≥1 team AND is not a Pro subscriber.
+  /// In that case the form is replaced by an upgrade prompt.
+  bool _requiresProUpgrade = false;
   Team? _team;
   // Team identity
   String? _logoAsset;
@@ -61,6 +70,62 @@ class _CreateTeamState extends State<CreateTeam> {
       true,
       [],
     );
+    _checkOwnershipGate();
+  }
+
+  /// Checks whether the user actively owns a team. All three conditions must
+  /// be true - this prevents stale/orphaned Firestore data from gating users
+  /// who only joined (not created) teams:
+  ///   1. The team document has `owner_id == uid`
+  ///   2. uid is in the team's `players` array
+  ///   3. The team ID is in the user's own `team_ids` profile field
+  Future<void> _checkOwnershipGate() async {
+    final uid = user?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _checkingProGate = false);
+      return;
+    }
+    try {
+      // Load the user's profile first - this is the source of truth for team membership.
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final List<String> profileTeamIds = userDoc.exists ? _parseProfileTeamIds(userDoc.data()!) : [];
+
+      if (profileTeamIds.isEmpty) {
+        // User has no teams in their profile - definitely not an owner.
+        if (mounted) setState(() => _checkingProGate = false);
+        return;
+      }
+
+      final ownedSnap = await FirebaseFirestore.instance.collection('teams').where('owner_id', isEqualTo: uid).get();
+
+      // All three conditions must hold to count as actively owning a team.
+      final confirmedOwned = ownedSnap.docs.where((doc) {
+        final players = List<String>.from(doc.data()['players'] ?? []);
+        return players.contains(uid) && profileTeamIds.contains(doc.id);
+      }).toList();
+
+      if (confirmedOwned.isNotEmpty && mounted) {
+        final isPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
+        setState(() {
+          _requiresProUpgrade = !isPro;
+          _checkingProGate = false;
+        });
+      } else if (mounted) {
+        setState(() => _checkingProGate = false);
+      }
+    } catch (_) {
+      // On error, don't gate the user - let them proceed.
+      if (mounted) setState(() => _checkingProGate = false);
+    }
+  }
+
+  /// Parses team IDs from a raw Firestore user document map, handling both
+  /// the new `team_ids` list and the legacy `team_id` string field.
+  static List<String> _parseProfileTeamIds(Map<String, dynamic> data) {
+    final raw = data['team_ids'];
+    if (raw != null) return List<String>.from(raw);
+    final legacy = data['team_id'] as String?;
+    return legacy != null && legacy.isNotEmpty ? [legacy] : [];
   }
 
   Future<DateTime> _pickDate(TextEditingController ctrl, DateTime current, DateTime min, DateTime max) async {
@@ -82,6 +147,35 @@ class _CreateTeamState extends State<CreateTeam> {
   }
 
   Future<void> _saveTeam() async {
+    // Re-check the pro gate at save time (subscription may have changed
+    // between screen open and save tap). Apply the same active-membership
+    // guard as _checkOwnershipGate to avoid stale owner_id false-positives.
+    try {
+      final uid = user!.uid;
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final List<String> profileTeamIds = userDoc.exists ? _parseProfileTeamIds(userDoc.data()!) : [];
+
+      if (profileTeamIds.isNotEmpty) {
+        final ownedSnap = await FirebaseFirestore.instance.collection('teams').where('owner_id', isEqualTo: uid).get();
+        final confirmedOwned = ownedSnap.docs.where((doc) {
+          final players = List<String>.from(doc.data()['players'] ?? []);
+          return players.contains(uid) && profileTeamIds.contains(doc.id);
+        }).toList();
+        if (confirmedOwned.isNotEmpty) {
+          final isPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
+          if (!isPro) {
+            await presentPaywallIfNeeded(context);
+            if (mounted) {
+              final nowPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
+              setState(() => _requiresProUpgrade = !nowPro);
+            }
+            return;
+          }
+        }
+      }
+    } catch (_) {
+      // On error, allow save to proceed.
+    }
     if (_nameController.text.trim().isEmpty) {
       _formKey.currentState?.validate();
       return;
@@ -119,7 +213,9 @@ class _CreateTeamState extends State<CreateTeam> {
       final uDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
       final userProfile = UserProfile.fromSnapshot(uDoc);
       userProfile.id = user!.uid;
-      userProfile.teamId = _team!.id;
+      if (!userProfile.teamIds.contains(_team!.id)) {
+        userProfile.teamIds.add(_team!.id!);
+      }
       await uDoc.reference.set(userProfile.toMap());
       await FirebaseFirestore.instance.collection('teams').doc(_team!.id).update({
         'players': [user!.uid]
@@ -250,183 +346,236 @@ class _CreateTeamState extends State<CreateTeam> {
               body: GestureDetector(
                 onTap: () => FocusScope.of(context).unfocus(),
                 behavior: HitTestBehavior.translucent,
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                    children: [
-                      // ── Team Name ──────────────────────────────────────
-                      _card(children: [
-                        _sectionLabel('Team Name'),
-                        TextFormField(
-                          controller: _nameController,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.words,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
-                          cursorColor: Theme.of(context).colorScheme.onPrimary,
-                          inputFormatters: [LengthLimitingTextInputFormatter(52)],
-                          decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
-                        ),
-                      ]),
+                child: _checkingProGate
+                    ? const Center(child: CircularProgressIndicator())
+                    : _requiresProUpgrade
+                        ? _buildProGateBody()
+                        : Form(
+                            key: _formKey,
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                              children: [
+                                // ── Team Name ──────────────────────────────────────
+                                _card(children: [
+                                  _sectionLabel('Team Name'),
+                                  TextFormField(
+                                    controller: _nameController,
+                                    keyboardType: TextInputType.text,
+                                    textCapitalization: TextCapitalization.words,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                                    cursorColor: Theme.of(context).colorScheme.onPrimary,
+                                    inputFormatters: [LengthLimitingTextInputFormatter(52)],
+                                    decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
+                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
+                                  ),
+                                ]),
 
-                      const SizedBox(height: 12),
+                                const SizedBox(height: 12),
 
-                      // ── Shot Goal ──────────────────────────────────────
-                      _card(children: [
-                        _sectionLabel('Team Shot Goal'),
-                        Text(
-                          'Combined shots the whole team aims to reach.',
-                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
-                        ),
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _goalController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
-                          cursorColor: Theme.of(context).colorScheme.onPrimary,
-                          decoration: _fieldDecoration(hint: '100000'),
-                          onChanged: (v) {
-                            final parsed = int.tryParse(v);
-                            if (parsed != null) setState(() => _goalTotal = parsed);
-                          },
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Please enter a shot goal';
-                            if (int.tryParse(v) == null) return 'Enter a valid number';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: _goalTotal > 0
-                              ? Text(
-                                  '${_nf.format(_goalTotal)} shots',
-                                  key: ValueKey(_goalTotal),
-                                  style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).primaryColor),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ]),
-
-                      const SizedBox(height: 12),
-
-                      // ── Dates ──────────────────────────────────────────
-                      _card(children: [
-                        _sectionLabel('Challenge Window'),
-                        Text(
-                          'Set when the team challenge starts and ends.',
-                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
-                        ),
-                        const SizedBox(height: 12),
-                        _sectionLabel('Start Date'),
-                        AutoSizeTextField(
-                          controller: _startDateController,
-                          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
-                          maxLines: 1,
-                          maxFontSize: 18,
-                          decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await _pickDate(
-                              _startDateController,
-                              _startDate,
-                              DateTime(DateTime.now().year - 5),
-                              DateTime.now(),
-                            );
-                            setState(() => _startDate = date);
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _sectionLabel('Target Completion Date'),
-                        AutoSizeTextField(
-                          controller: _targetDateController,
-                          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
-                          maxLines: 1,
-                          maxFontSize: 18,
-                          decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
-                          readOnly: true,
-                          onTap: () async {
-                            final date = await _pickDate(
-                              _targetDateController,
-                              _targetDate,
-                              _startDate,
-                              DateTime(DateTime.now().year + 5),
-                            );
-                            setState(() => _targetDate = date);
-                          },
-                        ),
-                      ]),
-
-                      const SizedBox(height: 12),
-
-                      // ── Visibility ─────────────────────────────────────
-                      _card(children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Public Team', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                                  const SizedBox(height: 2),
+                                // ── Shot Goal ──────────────────────────────────────
+                                _card(children: [
+                                  _sectionLabel('Team Shot Goal'),
                                   Text(
-                                    _public ? 'Anyone can search for and join your team.' : 'Only players with your team code can join.',
+                                    'Combined shots the whole team aims to reach.',
                                     style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
                                   ),
-                                ],
-                              ),
+                                  const SizedBox(height: 10),
+                                  TextFormField(
+                                    controller: _goalController,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                    style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
+                                    cursorColor: Theme.of(context).colorScheme.onPrimary,
+                                    decoration: _fieldDecoration(hint: '100000'),
+                                    onChanged: (v) {
+                                      final parsed = int.tryParse(v);
+                                      if (parsed != null) setState(() => _goalTotal = parsed);
+                                    },
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) return 'Please enter a shot goal';
+                                      if (int.tryParse(v) == null) return 'Enter a valid number';
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: _goalTotal > 0
+                                        ? Text(
+                                            '${_nf.format(_goalTotal)} shots',
+                                            key: ValueKey(_goalTotal),
+                                            style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Theme.of(context).primaryColor),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ]),
+
+                                const SizedBox(height: 12),
+
+                                // ── Dates ──────────────────────────────────────────
+                                _card(children: [
+                                  _sectionLabel('Challenge Window'),
+                                  Text(
+                                    'Set when the team challenge starts and ends.',
+                                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _sectionLabel('Start Date'),
+                                  AutoSizeTextField(
+                                    controller: _startDateController,
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                    maxLines: 1,
+                                    maxFontSize: 18,
+                                    decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
+                                    readOnly: true,
+                                    onTap: () async {
+                                      final date = await _pickDate(
+                                        _startDateController,
+                                        _startDate,
+                                        DateTime(DateTime.now().year - 5),
+                                        DateTime.now(),
+                                      );
+                                      setState(() => _startDate = date);
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _sectionLabel('Target Completion Date'),
+                                  AutoSizeTextField(
+                                    controller: _targetDateController,
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                    maxLines: 1,
+                                    maxFontSize: 18,
+                                    decoration: _fieldDecoration(suffix: Icon(Icons.calendar_today_outlined, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45))),
+                                    readOnly: true,
+                                    onTap: () async {
+                                      final date = await _pickDate(
+                                        _targetDateController,
+                                        _targetDate,
+                                        _startDate,
+                                        DateTime(DateTime.now().year + 5),
+                                      );
+                                      setState(() => _targetDate = date);
+                                    },
+                                  ),
+                                ]),
+
+                                const SizedBox(height: 12),
+
+                                // ── Visibility ─────────────────────────────────────
+                                _card(children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Public Team', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              _public ? 'Anyone can search for and join your team.' : 'Only players with your team code can join.',
+                                              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: _public,
+                                        onChanged: (v) => setState(() => _public = v),
+                                      ),
+                                    ],
+                                  ),
+                                ]),
+
+                                const SizedBox(height: 12),
+
+                                // ── Team Identity ──────────────────────────────────
+                                TeamIdentityPicker(
+                                  initialLogoAsset: _logoAsset,
+                                  initialPrimaryColor: _primaryColor,
+                                  initialDarkAccent: _darkAccent,
+                                  initialLightAccent: _lightAccent,
+                                  onLogoChanged: (v) => setState(() => _logoAsset = v),
+                                  onPrimaryColorChanged: (v) => setState(() => _primaryColor = v),
+                                  onDarkAccentChanged: (v) => setState(() => _darkAccent = v),
+                                  onLightAccentChanged: (v) => setState(() => _lightAccent = v),
+                                ),
+
+                                const SizedBox(height: 28),
+
+                                // ── Create button ──────────────────────────────────
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _saving ? null : _saveTeam,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      foregroundColor: Colors.white,
+                                      disabledBackgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      elevation: 0,
+                                    ),
+                                    child: _saving ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) : const Text('Create Team', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Colors.white)),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Switch(
-                              value: _public,
-                              onChanged: (v) => setState(() => _public = v),
-                            ),
-                          ],
-                        ),
-                      ]),
-
-                      const SizedBox(height: 12),
-
-                      // ── Team Identity ──────────────────────────────────
-                      TeamIdentityPicker(
-                        initialLogoAsset: _logoAsset,
-                        initialPrimaryColor: _primaryColor,
-                        initialDarkAccent: _darkAccent,
-                        initialLightAccent: _lightAccent,
-                        onLogoChanged: (v) => setState(() => _logoAsset = v),
-                        onPrimaryColorChanged: (v) => setState(() => _primaryColor = v),
-                        onDarkAccentChanged: (v) => setState(() => _darkAccent = v),
-                        onLightAccentChanged: (v) => setState(() => _lightAccent = v),
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ── Create button ──────────────────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _saving ? null : _saveTeam,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
                           ),
-                          child: _saving ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) : const Text('Create Team', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Colors.white)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),
         ),
       );
     });
+  }
+
+  /// Shown when the user already owns a team and hasn't subscribed to Pro.
+  Widget _buildProGateBody() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.workspace_premium_rounded, size: 64, color: Theme.of(context).primaryColor.withValues(alpha: 0.85)),
+            const SizedBox(height: 20),
+            Text(
+              'Pro Required'.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: Theme.of(context).colorScheme.onPrimary),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'You already own a team. Managing more than one team is a Pro feature - upgrade to create and run multiple teams simultaneously.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.65)),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () async {
+                  await presentPaywallIfNeeded(context);
+                  // After paywall closes, re-check status and update the gate flag
+                  if (mounted) {
+                    final nowPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
+                    setState(() => _requiresProUpgrade = !nowPro);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Upgrade to Pro', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

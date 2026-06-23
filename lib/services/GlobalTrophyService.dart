@@ -908,7 +908,7 @@ class GlobalTrophyService {
     GlobalTrophyDefinition(
       id: 'g_slap_accuracy_50',
       name: 'Slap Starter',
-      description: '35%+ slap shot accuracy in a session (10+ slap shots). Slap shots are twice as hard — getting a third on target is real.',
+      description: '35%+ slap shot accuracy in a session (10+ slap shots). Slap shots are twice as hard - getting a third on target is real.',
       category: GlobalTrophyCategory.accuracy,
       tier: GlobalTrophyTier.common,
       proOnly: true,
@@ -1677,7 +1677,7 @@ class GlobalTrophyService {
       if (session.snap >= 25 && snapAcc >= 0.95) check('g_snap_accuracy_95');
       if (session.snap >= 25 && session.snapTargetsHit == session.snap) check('g_snap_perfect');
 
-      // ── Slap accuracy (thresholds scaled down ~15pp — slap shots are ~2x harder to be accurate) ─────
+      // ── Slap accuracy (thresholds scaled down ~15pp - slap shots are ~2x harder to be accurate) ─────
       if (session.slap >= 10 && slapAcc >= 0.35) check('g_slap_accuracy_50');
       if (session.slap >= 15 && slapAcc >= 0.45) check('g_slap_accuracy_60');
       if (session.slap >= 15 && slapAcc >= 0.55) check('g_slap_accuracy_70');

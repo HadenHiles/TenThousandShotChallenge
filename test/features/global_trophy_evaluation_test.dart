@@ -1004,7 +1004,7 @@ void main() {
         expect(await eval(total: 25, snap: 25, snapH: 24, pro: true), isNot(contains('g_snap_perfect')));
       });
 
-      // Slap (thresholds scaled ~15pp lower — slap shots are ~2x harder to be accurate)
+      // Slap (thresholds scaled ~15pp lower - slap shots are ~2x harder to be accurate)
       perTypeTest('g_slap_accuracy_50', 'slap', 10, 4, 3); // 40% ≥ 35% ✓, 30% < 35% ✗
       perTypeTest('g_slap_accuracy_60', 'slap', 15, 7, 6); // 46.7% ≥ 45% ✓, 40% < 45% ✗
       perTypeTest('g_slap_accuracy_70', 'slap', 15, 9, 8); // 60% ≥ 55% ✓, 53% < 55% ✗

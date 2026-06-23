@@ -276,7 +276,7 @@ List<RouteBase> _buildCommunityRoutes() {
     GoRoute(
       path: AppRoutePaths.editTeam,
       name: AppRouteNames.editTeam,
-      builder: (context, state) => const EditTeam(),
+      builder: (context, state) => EditTeam(teamId: state.extra as String? ?? ''),
     ),
     GoRoute(
       path: AppRoutePaths.joinTeam,

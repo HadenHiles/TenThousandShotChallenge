@@ -21,7 +21,9 @@ import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
 class EditTeam extends StatefulWidget {
-  const EditTeam({super.key});
+  const EditTeam({super.key, required this.teamId});
+
+  final String teamId;
 
   @override
   State<EditTeam> createState() => _EditTeamState();
@@ -58,9 +60,7 @@ class _EditTeamState extends State<EditTeam> {
   }
 
   Future<void> _loadTeam() async {
-    final uDoc = await FirebaseFirestore.instance.collection('users').doc(_user!.uid).get();
-    final userProfile = UserProfile.fromSnapshot(uDoc);
-    final tDoc = await FirebaseFirestore.instance.collection('teams').doc(userProfile.teamId).get();
+    final tDoc = await FirebaseFirestore.instance.collection('teams').doc(widget.teamId).get();
     if (!mounted) return;
     final t = Team.fromSnapshot(tDoc);
     setState(() {
@@ -182,6 +182,142 @@ class _EditTeamState extends State<EditTeam> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
       ),
+    );
+  }
+
+  void _showTransferOwnershipSheet() {
+    final otherMembers = (_team?.players ?? []).where((uid) => uid != (_user?.uid ?? '')).toList();
+    if (otherMembers.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(sheetCtx).size.height * 0.65),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(sheetCtx).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(sheetCtx).colorScheme.onSurface.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                  child: Row(children: [
+                    Text(
+                      'Choose New Owner'.toUpperCase(),
+                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(sheetCtx).colorScheme.onPrimary),
+                    ),
+                  ]),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  child: Text(
+                    'You will remain a member of the team.',
+                    style: TextStyle(fontSize: 13, color: Theme.of(sheetCtx).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                  ),
+                ),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    itemCount: otherMembers.length,
+                    itemBuilder: (_, i) {
+                      final memberUid = otherMembers[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance.collection('users').doc(memberUid).get(),
+                          builder: (_, snap) {
+                            String displayName = '…';
+                            if (snap.hasData && snap.data!.exists) {
+                              final profile = UserProfile.fromSnapshot(snap.data! as DocumentSnapshot<Map<String, dynamic>>);
+                              displayName = profile.displayName ?? profile.notifName;
+                            }
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () {
+                                Navigator.of(sheetCtx).pop();
+                                dialog(
+                                  context,
+                                  ConfirmDialog(
+                                    'transfer ownership?',
+                                    Text(
+                                      'Make $displayName the new owner of ${_team!.name}? You will remain a member.',
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                    ),
+                                    'Cancel',
+                                    () => Navigator.of(context).pop(),
+                                    'Transfer',
+                                    () async {
+                                      Navigator.of(context).pop();
+                                      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+                                      final ok = await transferTeamOwnership(_team!.id!, memberUid, firestore);
+                                      Fluttertoast.showToast(
+                                        msg: ok ? 'ownership transferred to $displayName.' : 'transfer failed. please try again.',
+                                      );
+                                      if (ok && mounted) {
+                                        goToAppSection(context, AppSection.community, communitySection: CommunitySection.team);
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(sheetCtx).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(sheetCtx).colorScheme.onPrimary.withValues(alpha: 0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(sheetCtx).colorScheme.onPrimary.withValues(alpha: 0.07),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(Icons.person_rounded, color: Theme.of(sheetCtx).colorScheme.onPrimary.withValues(alpha: 0.5), size: 20),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(displayName, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 17, color: Theme.of(sheetCtx).colorScheme.onPrimary)),
+                                    ),
+                                    Icon(Icons.chevron_right_rounded, color: Theme.of(sheetCtx).colorScheme.onPrimary.withValues(alpha: 0.35), size: 20),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: MediaQuery.of(sheetCtx).padding.bottom + 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -406,6 +542,20 @@ class _EditTeamState extends State<EditTeam> {
                               ),
 
                               const SizedBox(height: 28),
+
+                              // ── Transfer Ownership ───────────────────────
+                              if ((_team?.players ?? []).where((uid) => uid != (_user?.uid ?? '')).isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: _showTransferOwnershipSheet,
+                                  icon: Icon(Icons.swap_horiz_rounded, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6)),
+                                  label: Text(
+                                    'Transfer Ownership'.toUpperCase(),
+                                    style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6)),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                ),
 
                               // ── Delete Team ─────────────────────────────
                               TextButton.icon(

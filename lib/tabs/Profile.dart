@@ -1242,7 +1242,7 @@ class _ProfileTrophySwapSheetState extends State<_ProfileTrophySwapSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // CHALLENGER ROAD trophies (first — hardest to easiest)
+                    // CHALLENGER ROAD trophies (first - hardest to easiest)
                     if (earnedCrDefs.isNotEmpty) ...[
                       _SwapSectionHeader(label: 'CHALLENGER ROAD', scheme: scheme),
                       const SizedBox(height: 6),

@@ -234,7 +234,7 @@ Future<void> initRevenueCat(String? appUserID) async {
   // After resuming from setLogLevel we have exclusive access until the next
   // await, so the flag checks and the configuring=true assignment are atomic.
   //
-  // Guard against calling configure() more than once — calling it a second
+  // Guard against calling configure() more than once - calling it a second
   // time corrupts the SDK state on iOS and produces Error 23
   // (configurationError) during a subsequent purchase attempt.
   if (RevenueCatConfig.configured || RevenueCatConfig.configuring) {

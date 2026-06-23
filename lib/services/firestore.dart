@@ -406,7 +406,11 @@ Future<bool> removePlayerFromFriends(String uid, FirebaseAuth auth, FirebaseFire
   });
 }
 
-Future<bool> joinTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firestore) async {
+/// Free users can be a member of at most this many teams.
+/// Pro users have no limit.
+const int kFreeTeamJoinLimit = 5;
+
+Future<bool> joinTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firestore, {bool isProUser = false}) async {
   // Make sure the user's iterations have an updated_at field prior to joining - need this for Caching the team player data
   await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').get().then((i) async {
     if (i.docs.isNotEmpty) {
@@ -421,7 +425,7 @@ Future<bool> joinTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firest
     }
   });
 
-  // Get the teammate
+  // Get the team
   return await firestore.collection('teams').doc(teamId).get().then((t) async {
     Team team = Team.fromSnapshot(t);
     if (!team.players!.contains(auth.currentUser!.uid)) {
@@ -430,12 +434,18 @@ Future<bool> joinTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firest
 
     // Add the current user to the team players list
     return await t.reference.update({'players': team.players}).then((value) async {
-      // Set the current user's team
+      // Add the team to the user's teamIds list (multi-team support).
+      // fromSnapshot transparently migrates legacy users that only have team_id.
       return await firestore.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
         UserProfile user = UserProfile.fromSnapshot(u);
-        user.id = auth.currentUser!.uid;
-        user.teamId = team.id;
-        // Save the updated user doc with the new team id
+        user.id = auth.currentUser!.uid; // Enforce free-tier join limit before adding the new team.
+        if (!isProUser && !user.teamIds.contains(team.id) && user.teamIds.length >= kFreeTeamJoinLimit) {
+          return false; // cap reached
+        }
+        if (!user.teamIds.contains(team.id)) {
+          user.teamIds.add(team.id!);
+        }
+        // toMap() writes both team_ids (new) and team_id (legacy compat)
         return await u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
       });
     }).onError((error, stackTrace) => false);
@@ -447,19 +457,75 @@ Future<bool> removePlayerFromTeam(String teamId, String uid, FirebaseFirestore f
     Team team = Team.fromSnapshot(t);
     team.players!.remove(uid);
 
-    // Remove the provided user/player from the team players list
-    return await t.reference.update({'players': team.players}).then((value) => true).onError((error, stackTrace) => false);
+    // Remove the player from the team's players list
+    final teamUpdated = await t.reference.update({'players': team.players}).then((_) => true).onError((_, __) => false);
+    if (!teamUpdated) return false;
+
+    // Also remove this team from the player's own teamIds list so their profile
+    // stays consistent (both new team_ids list and legacy team_id field).
+    await firestore.collection('users').doc(uid).get().then((u) async {
+      if (!u.exists) return;
+      UserProfile userProfile = UserProfile.fromSnapshot(u);
+      userProfile.teamIds.remove(teamId);
+      await u.reference.update({
+        'team_ids': userProfile.teamIds,
+        'team_id': userProfile.teamIds.isNotEmpty ? userProfile.teamIds.first : null,
+      });
+    }).onError((_, __) {}); // best-effort - don't fail the remove if this errors
+
+    return true;
   });
 }
 
 Future<bool> deleteTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firestore) async {
-  return await firestore.collection('teams').doc(teamId).delete().then((_) async {
-    return await firestore.collection('users').doc(auth.currentUser!.uid).get().then((u) async {
+  // Load the team first so we know all members to clean up.
+  final teamDoc = await firestore.collection('teams').doc(teamId).get().onError((_, __) => throw Exception('load failed'));
+  if (!teamDoc.exists) return false;
+  final team = Team.fromSnapshot(teamDoc);
+  final allPlayerUids = List<String>.from(team.players ?? []);
+
+  // Delete the team document
+  try {
+    await teamDoc.reference.delete();
+  } catch (_) {
+    return false;
+  }
+
+  // Clean up teamIds on every member's profile (best-effort - don't fail the
+  // overall delete if individual user updates encounter transient errors).
+  for (final uid in allPlayerUids) {
+    try {
+      final u = await firestore.collection('users').doc(uid).get();
+      if (!u.exists) continue;
       UserProfile user = UserProfile.fromSnapshot(u);
-      user.id = auth.currentUser!.uid;
-      user.teamId = null; // remove the user's teamId
-      // Save the updated user doc
-      return await u.reference.set(user.toMap()).then((_) => true).onError((error, stackTrace) => false);
-    });
-  }).onError((error, stackTrace) => false);
+      user.teamIds.remove(teamId);
+      await u.reference.update({
+        'team_ids': user.teamIds,
+        'team_id': user.teamIds.isNotEmpty ? user.teamIds.first : null,
+      });
+    } catch (_) {
+      // Ignore per-user errors - member will see the "team removed" fallback UI
+    }
+  }
+  return true;
+}
+
+/// Transfers ownership of [teamId] from the current owner to [newOwnerUid].
+/// [newOwnerUid] must already be a member of the team.
+/// Returns true on success, false on failure.
+Future<bool> transferTeamOwnership(
+  String teamId,
+  String newOwnerUid,
+  FirebaseFirestore firestore,
+) async {
+  try {
+    final teamDoc = await firestore.collection('teams').doc(teamId).get();
+    if (!teamDoc.exists) return false;
+    final players = List<String>.from(teamDoc.data()?['players'] ?? []);
+    if (!players.contains(newOwnerUid)) return false; // new owner must be a member
+    await teamDoc.reference.update({'owner_id': newOwnerUid});
+    return true;
+  } catch (_) {
+    return false;
+  }
 }

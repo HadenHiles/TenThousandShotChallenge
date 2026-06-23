@@ -441,7 +441,7 @@ class _ChallengerRoadTabState extends State<_ChallengerRoadTab> {
             final crSummary = crSnap.data ?? ChallengerRoadUserSummary.empty();
             final earnedCr = crSummary.trophies.toSet();
 
-            // Group by tier, legendary first — same order as standard tab.
+            // Group by tier, legendary first - same order as standard tab.
             var groups = ChallengerRoadService.groupDisplayTrophiesByTier(
               trophies: catalog,
               earnedTrophyIds: crSummary.trophies,
@@ -1055,7 +1055,7 @@ class _TrophyCaseSectionBody extends StatelessWidget {
 
 /// Detail sheet for any trophy. When the trophy is earned, a mini trophy-case
 /// row is shown at the bottom so the user can tap a slot to place (or swap)
-/// this trophy directly onto the shelf — without opening the full picker.
+/// this trophy directly onto the shelf - without opening the full picker.
 class _TrophyDetailSwapSheet extends StatefulWidget {
   const _TrophyDetailSwapSheet({
     required this.userId,

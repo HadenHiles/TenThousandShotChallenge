@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart'
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/widgets/GlobalTrophyBackfillSheet.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -73,6 +74,11 @@ final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotif
 /// the Challenger Road map view (without resetting it). Notifications that
 /// link to the road should increment this instead of pushing a standalone route.
 final ValueNotifier<int> openChallengerRoadSignal = ValueNotifier<int>(0);
+
+/// The Firestore document ID of the team currently displayed in the Team tab.
+/// Updated by [_TeamPageState] whenever the active team changes. The nav bar
+/// reads this so its Edit button always reflects the team the user is viewing.
+final ValueNotifier<String?> activeTeamIdNotifier = ValueNotifier<String?>(null);
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
@@ -157,6 +163,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           barcodeScanRes,
           Provider.of<FirebaseAuth>(context, listen: false),
           Provider.of<FirebaseFirestore>(context, listen: false),
+          isProUser: Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false,
         ).then((success) {
           if (success == true && mounted) {
             _communitySectionNotifier.value = CommunitySection.team;
@@ -869,69 +876,96 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
               if (!userSnap.hasData || !userSnap.data!.exists) {
                 return const SizedBox();
               }
-              final data = userSnap.data!.data();
-              final teamId = data != null ? data['team_id'] as String? : null;
+              final userProfile = UserProfile.fromSnapshot(userSnap.data!);
+              final teamId = userProfile.teamId; // handles both team_ids and legacy team_id
               if (teamId == null || teamId.isEmpty) {
-                // No team: show QR code join action only
-                return Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.qr_code_2_rounded,
-                      color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                      size: 28,
-                    ),
-                    onPressed: () => _handleJoinTeamQRCode(context),
-                  ),
-                );
-              }
-              final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
-              return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                stream: teamStream,
-                builder: (context, teamSnap) {
-                  if (!teamSnap.hasData || !teamSnap.data!.exists) {
-                    return Container(
+                // No team: QR to scan/join + ‘+’ to browse teams
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
-                        icon: Icon(
-                          Icons.qr_code_2_rounded,
-                          color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                          size: 28,
-                        ),
+                        icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
+                        tooltip: 'Join a team',
+                        onPressed: () => context.push(AppRoutePaths.joinTeam),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      child: IconButton(
+                        icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
                         onPressed: () => _handleJoinTeamQRCode(context),
                       ),
-                    );
-                  }
-                  final teamData = teamSnap.data!.data();
-                  final ownerId = teamData != null ? teamData['owner_id'] as String? : null;
-                  final isOwner = ownerId == user.uid;
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isOwner)
-                        Container(
-                          margin: const EdgeInsets.only(top: 10),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.edit,
-                              color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                              size: 28,
+                    ),
+                  ],
+                );
+              }
+              // Wrap in ValueListenableBuilder so the edit button updates whenever
+              // Team.dart publishes a new active team (e.g. user switches teams).
+              return ValueListenableBuilder<String?>(
+                valueListenable: activeTeamIdNotifier,
+                builder: (context, activeId, _) {
+                  // Prefer the actively viewed team; fall back to the profile's primary team.
+                  final resolvedTeamId = (activeId != null && activeId.isNotEmpty) ? activeId : teamId;
+                  final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(resolvedTeamId).snapshots();
+                  return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: teamStream,
+                    builder: (context, teamSnap) {
+                      if (!teamSnap.hasData || !teamSnap.data!.exists) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              child: IconButton(
+                                icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
+                                tooltip: 'Join a team',
+                                onPressed: () => context.push(AppRoutePaths.joinTeam),
+                              ),
                             ),
-                            onPressed: () => context.push(AppRoutePaths.editTeam),
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              child: IconButton(
+                                icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
+                                onPressed: () => _handleJoinTeamQRCode(context),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      final teamData = teamSnap.data!.data();
+                      final ownerId = teamData != null ? teamData['owner_id'] as String? : null;
+                      final isOwner = ownerId == user.uid;
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isOwner)
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              child: IconButton(
+                                icon: Icon(Icons.edit, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
+                                onPressed: () => context.push(AppRoutePaths.editTeam, extra: teamSnap.data!.id),
+                              ),
+                            ),
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            child: IconButton(
+                              icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
+                              tooltip: 'Join a team',
+                              onPressed: () => context.push(AppRoutePaths.joinTeam),
+                            ),
                           ),
-                        ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.qr_code_2_rounded,
-                            color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                            size: 28,
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            child: IconButton(
+                              icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
+                              onPressed: () => _handleJoinTeamQRCode(context),
+                            ),
                           ),
-                          onPressed: () => _handleJoinTeamQRCode(context),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   );
                 },
               );
