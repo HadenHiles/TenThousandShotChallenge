@@ -10,7 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 ///   'friend_challenge'             - a friend passed a Challenger Road challenge
 ///   'invite_received'              - someone sent you a teammate invite
 ///   'invite_accepted'              - a teammate accepted your invite
-///   'weekly_achievements_available'- new weekly challenges have been assigned
+///   'weekly_achievements_available'- new weekly achievements have been assigned
 ///   'achievement_completed'        - you completed a weekly achievement
 ///   'cr_badge_earned'              - you earned a Challenger Road trophy
 ///   'cr_level_completed'           - you completed a Challenger Road level
