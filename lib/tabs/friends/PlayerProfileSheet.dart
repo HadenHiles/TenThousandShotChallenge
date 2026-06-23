@@ -25,6 +25,7 @@ import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
+import 'package:tenthousandshotchallenge/widgets/TeamChipsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 
 // ── Public helper ─────────────────────────────────────────────────────────────
@@ -350,6 +351,10 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _buildPlayerHeader(context),
+                            if (_userPlayer != null && _userPlayer!.teamIds.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              TeamChipsRow(teamIds: _userPlayer!.teamIds),
+                            ],
                             const SizedBox(height: 8),
                             _buildProgressCard(context),
                             const SizedBox(height: 12),

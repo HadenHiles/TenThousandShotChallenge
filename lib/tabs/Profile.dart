@@ -15,6 +15,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/profile/QR.dart';
+import 'package:tenthousandshotchallenge/widgets/TeamChipsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/UserStatsChipsRow.dart';
 import 'package:tenthousandshotchallenge/widgets/ActivityCalendar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
@@ -202,6 +203,7 @@ class _ProfileState extends State<Profile> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _offlineWrap(isOffline, _buildHeader(context, currentUser)),
+            _offlineWrap(isOffline, _buildTeamChipsSection(context, currentUser)),
             const SizedBox(height: 8),
             _offlineWrap(isOffline, _buildProgressCard(context, currentUser)),
             const SizedBox(height: 12),
@@ -222,6 +224,23 @@ class _ProfileState extends State<Profile> {
           ],
         ),
       ),
+    );
+  }
+
+  // ── Team chips (below header) ─────────────────────────────────────────────
+
+  Widget _buildTeamChipsSection(BuildContext context, User currentUser) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final teamIds = UserProfile.fromSnapshot(snapshot.data!).teamIds;
+        if (teamIds.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: TeamChipsRow(teamIds: teamIds),
+        );
+      },
     );
   }
 
