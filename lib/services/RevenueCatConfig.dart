@@ -3,7 +3,7 @@
 class RevenueCatConfig {
   static bool configured = false;
 
-  /// True while configure() is in progress — prevents concurrent calls from
+  /// True while configure() is in progress - prevents concurrent calls from
   /// both passing the `configured == false` check before either completes.
   static bool configuring = false;
 

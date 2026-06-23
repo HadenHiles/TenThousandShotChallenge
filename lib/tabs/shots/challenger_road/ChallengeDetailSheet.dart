@@ -311,7 +311,7 @@ class ChallengeDetailSheet extends StatelessWidget {
   // ── Try history link ──────────────────────────────────────────────────────
 
   Widget _buildHistoryLink(BuildContext context) {
-    // progress is nullable — use 0 when no attempts have been recorded yet.
+    // progress is nullable - use 0 when no attempts have been recorded yet.
     final tryCount = progress?.totalAttempts ?? 0;
     final passCount = progress?.totalPassed ?? 0;
     return InkWell(

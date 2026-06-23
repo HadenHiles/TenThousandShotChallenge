@@ -72,7 +72,7 @@ class ChallengerRoadProfileSection extends StatelessWidget {
           // Stats row
           _StatsRow(summary: summary),
           const SizedBox(height: 20),
-          // Badge catalog — shown for all users; earned-only filter for other players.
+          // Badge catalog - shown for all users; earned-only filter for other players.
           _TrophyCatalogSection(
             userId: userId,
             summary: summary,
@@ -361,7 +361,7 @@ class _StatsRow extends StatelessWidget {
         _statChip(
           context,
           label: 'BEST LEVEL',
-          value: summary.allTimeBestLevel > 0 ? '${summary.allTimeBestLevel}' : '—',
+          value: summary.allTimeBestLevel > 0 ? '${summary.allTimeBestLevel}' : '-',
           icon: Icons.route_rounded,
         ),
       ],

@@ -92,7 +92,7 @@ class _CompareStatsState extends State<CompareStats> {
       });
     }
 
-    // Fetch completed challenge counts — requires attemptId from summaries.
+    // Fetch completed challenge counts - requires attemptId from summaries.
     final myAttemptId = _myCrSummary?.currentAttemptId;
     final frAttemptId = _friendCrSummary?.currentAttemptId;
     final completedResults = await Future.wait([

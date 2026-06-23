@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/MobileScanner/barcode_scanner_simple.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -59,16 +60,33 @@ class _JoinTeamState extends State<JoinTeam> {
   }
 
   Future<void> _joinTeam(BuildContext ctx, String teamId, String teamName) async {
+    final isPro = Provider.of<CustomerInfoNotifier?>(ctx, listen: false)?.isPro ?? false;
     final success = await joinTeam(
       teamId,
       Provider.of<FirebaseAuth>(ctx, listen: false),
       Provider.of<FirebaseFirestore>(ctx, listen: false),
+      isProUser: isPro,
     );
     if (!mounted) return;
+    // Determine whether a failure was due to the free-tier cap so we can
+    // show an actionable message rather than a generic error.
+    String failMessage = 'Failed to join $teamName :(';
+    if (!success && !isPro) {
+      final uid = Provider.of<FirebaseAuth>(ctx, listen: false).currentUser?.uid;
+      if (uid != null) {
+        try {
+          final uDoc = await Provider.of<FirebaseFirestore>(ctx, listen: false).collection('users').doc(uid).get();
+          final profile = UserProfile.fromSnapshot(uDoc);
+          if (profile.teamIds.length >= kFreeTeamJoinLimit) {
+            failMessage = "you've reached the $kFreeTeamJoinLimit team limit on the free plan. upgrade to pro to join more teams.";
+          }
+        } catch (_) {}
+      }
+    }
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
       backgroundColor: Theme.of(ctx).cardTheme.color,
       content: Text(
-        success ? 'Joined team $teamName!' : 'Failed to join $teamName :(',
+        success ? 'Joined team $teamName!' : failMessage,
         style: TextStyle(color: Theme.of(ctx).colorScheme.onPrimary),
       ),
       duration: const Duration(seconds: 4),

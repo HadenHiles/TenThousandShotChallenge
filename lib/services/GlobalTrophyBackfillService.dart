@@ -492,7 +492,7 @@ class GlobalTrophyBackfillService {
       if (bestSnapAcc25 >= 0.95) award('g_snap_accuracy_95');
       if (hasSnapPerfect) award('g_snap_perfect');
 
-      // Slap accuracy (thresholds scaled ~15pp lower — slap shots are ~2x harder to be accurate).
+      // Slap accuracy (thresholds scaled ~15pp lower - slap shots are ~2x harder to be accurate).
       if (bestSlapAcc10 >= 0.35) award('g_slap_accuracy_50');
       if (bestSlapAcc15 >= 0.45) award('g_slap_accuracy_60');
       if (bestSlapAcc15 >= 0.55) award('g_slap_accuracy_70');
