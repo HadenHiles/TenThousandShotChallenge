@@ -289,7 +289,7 @@ class _NotificationTile extends StatelessWidget {
       avatarBg = Colors.purple.withValues(alpha: 0.15);
       avatarFg = Colors.purple[600]!;
       avatarIcon = Icons.calendar_today_rounded;
-      headline = 'New weekly challenges available';
+      headline = 'New weekly achievements available';
       subtitleLine = null;
     } else if (n.isAchievementCompleted) {
       avatarBg = Colors.green.withValues(alpha: 0.15);

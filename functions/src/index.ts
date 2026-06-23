@@ -1989,7 +1989,7 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                 await db.collection('users').doc(userId).collection('achievements').add(achievement);
             }
 
-            // Notify the user that their new weekly challenges are ready.
+            // Notify the user that their new weekly achievements are ready.
             if (!test && achievements.length > 0) {
                 const msg = `Your ${achievements.length} new weekly achievement${achievements.length > 1 ? 's are' : ' is'} ready. Tap to check them out!`;
                 try {
