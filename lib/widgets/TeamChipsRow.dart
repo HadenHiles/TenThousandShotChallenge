@@ -43,11 +43,12 @@ class _TeamChipsRowState extends State<TeamChipsRow> {
 
   Future<void> _fetchTeams(List<String> ids) async {
     if (ids.isEmpty) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _teams = [];
           _loading = false;
         });
+      }
       return;
     }
     if (mounted) setState(() => _loading = true);
