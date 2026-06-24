@@ -1,5 +1,6 @@
 import 'package:the_apple_sign_in/scope.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
@@ -878,6 +879,12 @@ class _LoginState extends State<Login> {
           firestore,
         );
       }).catchError((e) async {
+        // GoogleSignInException.canceled is a normal user-initiated cancel –
+        // don't surface an error message for it.
+        if (e is GoogleSignInException &&
+            e.code == GoogleSignInExceptionCode.canceled) {
+          return;
+        }
         var message = "There was an error signing in with Google";
         print(e);
         await error(message);
