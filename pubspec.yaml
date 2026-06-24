@@ -55,6 +55,7 @@ dependencies:
   rxdart: ^0.28.0
   settings_ui: ^2.0.2
   share_plus: ^11.0.0
+  flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.2.3
   sign_in_button: ^4.0.1
   sliding_up_panel: ^2.0.0+1

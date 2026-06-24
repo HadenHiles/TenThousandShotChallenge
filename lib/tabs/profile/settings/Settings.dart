@@ -21,6 +21,7 @@ import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/widgets/AccountSwitcherSheet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -1074,6 +1075,26 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                               });
                                             });
                                           },
+                                        )))),
+                            CustomSettingsTile(
+                                child: Opacity(
+                                    opacity: isOffline ? 0.4 : 1.0,
+                                    child: IgnorePointer(
+                                        ignoring: isOffline,
+                                        child: SettingsTile(
+                                          title: Text(
+                                            'Switch Account',
+                                            style: Theme.of(context).textTheme.bodyLarge,
+                                          ),
+                                          description: Text(
+                                            'Quickly switch between saved accounts. You can also double tap or long press the Me tab at any time.',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                          leading: Icon(
+                                            Icons.swap_horiz_rounded,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                          onPressed: (ctx) => showAccountSwitcherSheet(ctx),
                                         )))),
                             CustomSettingsTile(
                                 child: Opacity(

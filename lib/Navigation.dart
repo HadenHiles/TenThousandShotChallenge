@@ -38,6 +38,7 @@ import 'package:tenthousandshotchallenge/widgets/NavigationTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NotificationBell.dart';
 
 import 'models/Preferences.dart';
+import 'package:tenthousandshotchallenge/widgets/AccountSwitcherSheet.dart';
 
 final PanelController sessionPanelController = PanelController();
 
@@ -146,8 +147,123 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   /// Challenger Road session (normal sessions are ticked via sessionService).
   Timer? _crSessionTimer;
 
+  /// Tracks the timestamp of the last tap on the "Me" tab for manual
+  /// double-tap detection (avoids the 300 ms delay that [GestureDetector.onDoubleTap] imposes).
+  DateTime? _lastMeTapTime;
+
   // Remove the field initializer for _tabs
   late List<NavigationTab> _tabs;
+
+  /// The UID that [_tabs] was most recently built for.  When the active user
+  /// changes (account switch) we rebuild [_tabs] with new keys so every tab's
+  /// StatefulWidget element is replaced and re-reads data for the new user.
+  String? _tabsUid;
+
+  /// Auth-state subscription used to trigger tab rebuilds on account switch.
+  StreamSubscription<User?>? _authTabSub;
+
+  /// Builds the list of [NavigationTab]s.  Each tab receives a key that
+  /// incorporates [_tabsUid] so that changing the UID (account switch) causes
+  /// Flutter to replace every tab's element and state from scratch.
+  List<NavigationTab> _buildTabs() {
+    final uid = _tabsUid ?? '';
+    return [
+      NavigationTab(
+        key: ValueKey('train-$uid'),
+        id: 'train',
+        title: Container(
+          height: 40,
+          padding: const EdgeInsets.only(top: 6),
+          child: Image.asset('assets/images/logo-text-only.png'),
+        ),
+        actions: const [],
+        body: ValueListenableBuilder<int>(
+          valueListenable: _trainResetSignal,
+          builder: (context, resetSignal, _) => Shots(
+            sessionPanelController: sessionPanelController,
+            resetSignal: resetSignal,
+            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
+          ),
+        ),
+      ),
+      NavigationTab(
+        key: ValueKey('community-$uid'),
+        id: 'community',
+        title: Builder(
+          builder: (context) => ValueListenableBuilder<CommunitySection>(
+            valueListenable: _communitySectionNotifier,
+            builder: (context, _, __) => _buildCommunityTitle(context),
+          ),
+        ),
+        actions: const [],
+        body: ValueListenableBuilder<CommunitySection>(
+          valueListenable: _communitySectionNotifier,
+          builder: (context, section, _) => Community(
+            selectedSection: section,
+            onSectionChanged: _onCommunitySectionChanged,
+          ),
+        ),
+      ),
+      NavigationTab(
+        key: ValueKey('learn-$uid'),
+        id: 'learn',
+        title: null,
+        body: const Explore(),
+      ),
+      NavigationTab(
+        key: ValueKey('me-$uid'),
+        id: 'me',
+        title: NavigationTitle(title: 'Me'.toUpperCase()),
+        leading: Container(
+          margin: const EdgeInsets.only(top: 10),
+          child: Builder(
+            builder: (context) => IconButton(
+              icon: Icon(
+                Icons.qr_code_2_rounded,
+                color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                size: 28,
+              ),
+              onPressed: () {
+                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+                showQRCode(context, user);
+              },
+            ),
+          ),
+        ),
+        actions: [
+          NotificationBell(color: HomeTheme.darkTheme.colorScheme.onPrimary),
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            child: Builder(
+              builder: (context) => IconButton(
+                icon: Icon(
+                  Icons.settings,
+                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
+                  size: 28,
+                ),
+                onPressed: () {
+                  context.push(AppRoutePaths.settings);
+                },
+              ),
+            ),
+          ),
+        ],
+        body: const Profile(),
+      ),
+    ];
+  }
+
+  /// Rebuilds [_tabs] when the active Firebase user changes so every mounted
+  /// tab widget is replaced with a fresh instance keyed to the new user.
+  void _onAuthUserChangedForTabs(User? newUser) {
+    if (!mounted) return;
+    final newUid = newUser?.uid;
+    if (newUid == _tabsUid) return; // Same user – nothing to do.
+    setState(() {
+      _tabsUid = newUid;
+      _tabs = _buildTabs();
+    });
+  }
 
   // Add this method to handle the Team QR code join logic
   Future<void> _handleJoinTeamQRCode(BuildContext context) async {
@@ -301,86 +417,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     _loadPreferences();
 
-    _tabs = [
-      NavigationTab(
-        id: 'train',
-        title: Container(
-          height: 40,
-          padding: const EdgeInsets.only(top: 6),
-          child: Image.asset('assets/images/logo-text-only.png'), // Use the correct logo asset
-        ),
-        actions: const [],
-        body: ValueListenableBuilder<int>(
-          valueListenable: _trainResetSignal,
-          builder: (context, resetSignal, _) => Shots(
-            sessionPanelController: sessionPanelController,
-            resetSignal: resetSignal,
-            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
-          ),
-        ),
-      ),
-      NavigationTab(
-        id: 'community',
-        title: Builder(
-          builder: (context) => ValueListenableBuilder<CommunitySection>(
-            valueListenable: _communitySectionNotifier,
-            builder: (context, _, __) => _buildCommunityTitle(context),
-          ),
-        ),
-        actions: const [],
-        body: ValueListenableBuilder<CommunitySection>(
-          valueListenable: _communitySectionNotifier,
-          builder: (context, section, _) => Community(
-            selectedSection: section,
-            onSectionChanged: _onCommunitySectionChanged,
-          ),
-        ),
-      ),
-      NavigationTab(
-        id: 'learn',
-        title: null,
-        body: const Explore(),
-      ),
-      NavigationTab(
-        id: 'me',
-        title: NavigationTitle(title: "Me".toUpperCase()),
-        leading: Container(
-          margin: const EdgeInsets.only(top: 10),
-          child: Builder(
-            builder: (context) => IconButton(
-              icon: Icon(
-                Icons.qr_code_2_rounded,
-                color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                size: 28,
-              ),
-              onPressed: () {
-                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-                showQRCode(context, user);
-              },
-            ),
-          ),
-        ),
-        actions: [
-          NotificationBell(color: HomeTheme.darkTheme.colorScheme.onPrimary),
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: Icon(
-                  Icons.settings,
-                  color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                  size: 28,
-                ),
-                onPressed: () {
-                  context.push(AppRoutePaths.settings);
-                },
-              ),
-            ),
-          ),
-        ],
-        body: const Profile(),
-      ),
-    ];
+    _tabsUid = FirebaseAuth.instance.currentUser?.uid;
+    _tabs = _buildTabs();
+    _authTabSub = FirebaseAuth.instance.authStateChanges().listen(_onAuthUserChangedForTabs);
 
     int initialIndex = 0;
     if (widget.tabId != null) {
@@ -419,6 +458,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _authTabSub?.cancel();
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
     openChallengerRoadSignal.removeListener(_onOpenChallengerRoadSignal);
@@ -976,6 +1016,87 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     ];
   }
 
+  // ── Custom bottom nav bar ─────────────────────────────────────────────────
+
+  /// Builds a custom bottom nav bar that is visually identical to Flutter's
+  /// [BottomNavigationBar] but adds long-press support on the "Me" tab so the
+  /// account switcher sheet can be triggered without requiring a full log-out.
+  Widget _buildCustomNavBar(BuildContext context) {
+    final selectedColor = Theme.of(context).primaryColor;
+    final unselectedColor = Theme.of(context).colorScheme.onPrimary;
+    final bgColor = Theme.of(context).colorScheme.primary;
+
+    Widget navItem(
+      int index,
+      IconData icon,
+      String label, {
+      VoidCallback? onLongPress,
+      VoidCallback? onDoubleTap,
+    }) {
+      final isSelected = _selectedIndex == index;
+      final color = isSelected ? selectedColor : unselectedColor;
+
+      // When a double-tap handler is provided we detect it manually so that
+      // single taps remain instant (GestureDetector.onDoubleTap adds ~300 ms).
+      final tapHandler = onDoubleTap != null
+          ? () {
+              final now = DateTime.now();
+              if (_lastMeTapTime != null && now.difference(_lastMeTapTime!) < const Duration(milliseconds: 350)) {
+                _lastMeTapTime = null;
+                onDoubleTap();
+              } else {
+                _lastMeTapTime = now;
+                _onItemTapped(index);
+              }
+            }
+          : () => _onItemTapped(index);
+
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: tapHandler,
+          onLongPress: onLongPress,
+          child: SizedBox(
+            height: kBottomNavigationBarHeight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      color: bgColor,
+      child: Row(
+        children: [
+          navItem(0, Icons.play_arrow_rounded, 'Train'),
+          navItem(1, Icons.groups_rounded, 'Community'),
+          navItem(2, Icons.dashboard_rounded, 'Learn'),
+          navItem(
+            3,
+            Icons.person,
+            'Me',
+            onLongPress: () => showAccountSwitcherSheet(context),
+            onDoubleTap: () => showAccountSwitcherSheet(context),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Require NetworkStatusService to be provided via Provider (no fallback)
@@ -1238,32 +1359,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
               child: Container(
                 color: Theme.of(context).colorScheme.primary,
                 padding: EdgeInsets.only(bottom: bottomPadding),
-                child: BottomNavigationBar(
-                  type: BottomNavigationBarType.fixed,
-                  items: const <BottomNavigationBarItem>[
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.play_arrow_rounded),
-                      label: 'Train',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.groups_rounded),
-                      label: 'Community',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.dashboard_rounded),
-                      label: 'Learn',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.person),
-                      label: 'Me',
-                    ),
-                  ],
-                  currentIndex: _selectedIndex,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  selectedItemColor: Theme.of(context).primaryColor,
-                  unselectedItemColor: Theme.of(context).colorScheme.onPrimary,
-                  onTap: _onItemTapped,
-                ),
+                child: _buildCustomNavBar(context),
               ),
             );
           },

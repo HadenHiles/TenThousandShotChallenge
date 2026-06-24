@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'Navigation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/services/AccountSwitcherService.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -730,6 +731,11 @@ class _LoginState extends State<Login> {
           'fcm_token': prefs.getString('fcm_token'),
         }).then((value) => () {});
 
+        if (auth.currentUser != null) {
+          AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
+          AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
+        }
+
         if (context.mounted) {
           Navigator.of(context, rootNavigator: true).pop('dialog');
         }
@@ -784,6 +790,11 @@ class _LoginState extends State<Login> {
             }).then((value) => null);
           }
         });
+
+        if (auth.currentUser != null) {
+          AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
+          AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
+        }
 
         // Use context directly here, do not wrap in Builder
         await bootstrap(
@@ -857,6 +868,10 @@ class _LoginState extends State<Login> {
           }
         });
 
+        if (auth.currentUser != null) {
+          AccountSwitcherService.saveAccount(auth.currentUser!, 'google');
+        }
+
         // Use context directly here, do not wrap in Builder
         bootstrap(
           auth,
@@ -889,6 +904,10 @@ class _LoginState extends State<Login> {
             }).then((value) => () {});
           }
         });
+
+        if (auth.currentUser != null) {
+          AccountSwitcherService.saveAccount(auth.currentUser!, 'apple');
+        }
 
         // Use context directly here, do not wrap in Builder
         bootstrap(

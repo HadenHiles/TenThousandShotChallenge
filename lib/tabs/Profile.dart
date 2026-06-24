@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
@@ -51,6 +53,11 @@ class _ProfileState extends State<Profile> {
 
   CustomerInfoNotifier? _customerInfoNotifier;
 
+  /// Auth-state listener that resets stale per-user state when the active
+  /// Firebase user changes (e.g. after an account switch).
+  late final StreamSubscription<User?> _authSub;
+  String? _lastSeenUid;
+
   // Progress card state
   DateTime? _progressTargetDate;
   final TextEditingController _progressTargetDateController = TextEditingController();
@@ -63,6 +70,8 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
+    _lastSeenUid = FirebaseAuth.instance.currentUser?.uid;
+    _authSub = FirebaseAuth.instance.authStateChanges().listen(_onAuthUserChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _setInitialIterationId());
     _loadSubscriptionLevel();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -70,6 +79,22 @@ class _ProfileState extends State<Profile> {
       _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
       _customerInfoNotifier?.addListener(_onEntitlementsChanged);
     });
+  }
+
+  void _onAuthUserChanged(User? newUser) {
+    final newUid = newUser?.uid;
+    if (!mounted || newUid == _lastSeenUid) return;
+    _lastSeenUid = newUid;
+    if (newUser == null) return;
+    setState(() {
+      _selectedIterationId = null;
+      firstSessionDate = null;
+      latestSessionDate = null;
+      _progressTargetDate = null;
+      _subscriptionLevel = 'free';
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setInitialIterationId());
+    _loadSubscriptionLevel();
   }
 
   void _onEntitlementsChanged() {
@@ -167,6 +192,7 @@ class _ProfileState extends State<Profile> {
 
   @override
   void dispose() {
+    _authSub.cancel();
     try {
       _customerInfoNotifier?.removeListener(_onEntitlementsChanged);
     } catch (_) {}
@@ -379,6 +405,22 @@ class _ProfileState extends State<Profile> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) setState(() => _selectedIterationId = docs.last.reference.id);
               });
+            }
+
+            // Guard: if the stored ID belongs to a different user's iterations
+            // (stale state after an account switch), return a blank placeholder
+            // until _onAuthUserChanged resets and _setInitialIterationId picks
+            // the correct ID for the new user.
+            final docIds = docs.map((d) => d.reference.id).toSet();
+            final isValidSelection = _selectedIterationId != null && docIds.contains(_selectedIterationId);
+            if (!isValidSelection) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() => _selectedIterationId = docs.last.reference.id);
+                  _loadFirstLastSession(docs.last.reference.id);
+                }
+              });
+              return const SizedBox.shrink();
             }
 
             return DropdownButton<String>(
