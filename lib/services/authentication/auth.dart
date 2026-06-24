@@ -10,6 +10,13 @@ Future<UserCredential> signInWithGoogle() async {
   // Use the singleton instance
   final GoogleSignIn signIn = GoogleSignIn.instance;
   await signIn.initialize();
+
+  // authenticate() uses the platform Credential Manager on Android and the
+  // Google Sign-In sheet on iOS.  There is no silent/zero-UI path available
+  // through the google_sign_in v7 SDK for account switching — attemptLightweight
+  // Authentication() is also non-silent on Android (it shows its own Credential
+  // Manager sheet), so using both at once produces two overlapping dialogs.
+  // One Credential Manager confirmation tap is the minimum UX for Google accounts.
   final GoogleSignInAccount googleUser = await signIn.authenticate();
   // Request authorization for basic profile and email scopes
   final authorization = await googleUser.authorizationClient.authorizationForScopes([
@@ -48,9 +55,18 @@ Future<UserCredential> signInWithApple({List<Scope> scopes = const []}) async {
       );
       return await auth.signInWithCredential(credential).then((authResult) async {
         if (scopes.contains(Scope.fullName)) {
-          final displayName = '${appleIdCredential?.fullName?.givenName} ${appleIdCredential?.fullName?.familyName}';
-          await authResult.user?.updateDisplayName(displayName);
-          authResult.user?.reload();
+          final given = appleIdCredential?.fullName?.givenName;
+          final family = appleIdCredential?.fullName?.familyName;
+          // Apple only returns the full name on the very first sign-in.
+          // Guard against null so we never overwrite the display name with
+          // the literal string "null null".
+          if (given != null || family != null) {
+            final displayName = '${given ?? ''} ${family ?? ''}'.trim();
+            if (displayName.isNotEmpty) {
+              await authResult.user?.updateDisplayName(displayName);
+              authResult.user?.reload();
+            }
+          }
         }
 
         return authResult;
