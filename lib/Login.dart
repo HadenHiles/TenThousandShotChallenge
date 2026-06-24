@@ -881,8 +881,7 @@ class _LoginState extends State<Login> {
       }).catchError((e) async {
         // GoogleSignInException.canceled is a normal user-initiated cancel –
         // don't surface an error message for it.
-        if (e is GoogleSignInException &&
-            e.code == GoogleSignInExceptionCode.canceled) {
+        if (e is GoogleSignInException && e.code == GoogleSignInExceptionCode.canceled) {
           return;
         }
         var message = "There was an error signing in with Google";
