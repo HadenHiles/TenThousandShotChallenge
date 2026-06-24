@@ -385,7 +385,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _getUserProfileStream() {
-    return Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).snapshots();
+    final uid = Provider.of<FirebaseAuth>(context, listen: false).currentUser?.uid;
+    if (uid == null) return const Stream.empty();
+    return Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(uid).snapshots();
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _getTeamStream(String teamId) {

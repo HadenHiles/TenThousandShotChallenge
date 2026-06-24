@@ -256,8 +256,11 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   /// Rebuilds [_tabs] when the active Firebase user changes so every mounted
   /// tab widget is replaced with a fresh instance keyed to the new user.
   void _onAuthUserChangedForTabs(User? newUser) {
-    if (!mounted) return;
-    final newUid = newUser?.uid;
+    // When the user signs out (newUser == null) the router will navigate away
+    // from the main app automatically.  Rebuilding tabs with a null user would
+    // cause Community/Team widgets to crash on user!.uid, so skip it.
+    if (!mounted || newUser == null) return;
+    final newUid = newUser.uid;
     if (newUid == _tabsUid) return; // Same user – nothing to do.
     setState(() {
       _tabsUid = newUid;
