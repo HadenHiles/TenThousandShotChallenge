@@ -50,10 +50,10 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            // Media is always a 4:3 crop of the available width (minus 24px
+            // Media is always a 3:4 crop of the available width (minus 24px
             // of horizontal padding inside each _StepPage). Add 160px for the
             // step chip, title, summary text, and vertical spacing.
-            final double mediaHeight = (constraints.maxWidth - 24) * (3 / 4);
+            final double mediaHeight = (constraints.maxWidth - 24) * (4 / 3);
             return SizedBox(
               height: mediaHeight + 160,
               child: PageView.builder(
@@ -134,7 +134,7 @@ class _StepPageState extends State<_StepPage> {
       );
       await _videoController!.initialize();
       if (!mounted) return;
-      // No aspectRatio set: let the parent AspectRatio(4/3) widget determine
+      // No aspectRatio set: let the parent AspectRatio(3/4) widget determine
       // the player size; the video renders contained within that 4:3 box.
       _chewieController = ChewieController(
         videoPlayerController: _videoController!,
@@ -218,8 +218,10 @@ class _StepPageState extends State<_StepPage> {
 
           // ── Summary ───────────────────────────────────────────────────
           Text(
-            widget.step.summary,            maxLines: 4,
-            overflow: TextOverflow.ellipsis,            style: TextStyle(
+            widget.step.summary,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
               fontFamily: 'NovecentoSans',
               fontSize: 15,
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
@@ -285,7 +287,7 @@ class _StepPageState extends State<_StepPage> {
     // Tapping anywhere on non-Chewie media opens the full-screen viewer;
     // Chewie handles its own touch so only the expand button is wired there.
     final Widget mediaBox = AspectRatio(
-      aspectRatio: 4 / 3,
+      aspectRatio: 3 / 4,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: mediaType == 'video' ? content : GestureDetector(onTap: widget.onMediaTap, child: content),

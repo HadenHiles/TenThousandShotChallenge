@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_player/video_player.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -806,6 +807,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       );
     }
 
+    if (media.mediaType == 'webm') {
+      return _WebmGifPreview(url: media.url!);
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.network(
@@ -1348,7 +1353,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   final challengeTap = interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked) ? () => _handleNodeTap(challenge, level, attempt, data, isSubscriptionLocked: isSubscriptionLocked) : null;
                   final previewMedia = _resolvePreviewMedia(challenge);
                   const thumbWidth = 156.0;
-                  const thumbHeight = 96.0;
+                  const thumbHeight = 156.0;
                   const sideGap = 40.0;
                   const verticalUpOffset = -14.0;
                   const minLeft = 8.0;
@@ -2199,6 +2204,84 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
           gaplessPlayback: true,
         ),
       ),
+    );
+  }
+}
+// ── Webm gif-like preview ──────────────────────────────────────────────────
+
+/// Silent, auto-looping [VideoPlayer] used for webm challenge previews on
+/// the Challenger Road map. Fills its parent with [BoxFit.cover] so the
+/// 1:1 preview card always looks fully populated regardless of the video's
+/// native aspect ratio.
+class _WebmGifPreview extends StatefulWidget {
+  final String url;
+
+  const _WebmGifPreview({required this.url});
+
+  @override
+  State<_WebmGifPreview> createState() => _WebmGifPreviewState();
+}
+
+class _WebmGifPreviewState extends State<_WebmGifPreview> {
+  VideoPlayerController? _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      await _controller!.initialize();
+      if (!mounted) return;
+      await _controller!.setLooping(true);
+      await _controller!.setVolume(0);
+      await _controller!.play();
+      if (mounted) setState(() => _ready = true);
+    } catch (_) {
+      // _ready stays false; loading indicator shows.
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready || _controller == null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+        ),
+      );
+    }
+
+    final size = _controller!.value.size;
+    Widget videoWidget;
+    if (size.width > 0 && size.height > 0) {
+      videoWidget = FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: size.width,
+          height: size.height,
+          child: VideoPlayer(_controller!),
+        ),
+      );
+    } else {
+      videoWidget = VideoPlayer(_controller!);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox.expand(child: videoWidget),
     );
   }
 }
