@@ -2,7 +2,7 @@ class ChallengeStep {
   final int stepNumber;
   final String title;
 
-  /// 'video', 'image', or 'gif'
+  /// 'video', 'webm', 'image', or 'gif'
   final String mediaType;
   final String mediaUrl;
   final String summary;

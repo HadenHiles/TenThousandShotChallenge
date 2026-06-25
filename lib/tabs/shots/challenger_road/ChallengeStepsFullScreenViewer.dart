@@ -316,6 +316,8 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
     super.initState();
     if (widget.step.mediaType == 'video' && widget.step.mediaUrl.isNotEmpty) {
       _initVideo();
+    } else if (widget.step.mediaType == 'webm' && widget.step.mediaUrl.isNotEmpty) {
+      _initGifVideo();
     }
   }
 
@@ -335,6 +337,22 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
         errorBuilder: (context, msg) => _buildMediaError(context),
       );
       setState(() => _videoReady = true);
+    } catch (_) {
+      if (mounted) setState(() => _videoReady = false);
+    }
+  }
+
+  Future<void> _initGifVideo() async {
+    try {
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.step.mediaUrl),
+      );
+      await _videoController!.initialize();
+      if (!mounted) return;
+      await _videoController!.setLooping(true);
+      await _videoController!.setVolume(0);
+      await _videoController!.play();
+      if (mounted) setState(() => _videoReady = true);
     } catch (_) {
       if (mounted) setState(() => _videoReady = false);
     }
@@ -462,6 +480,22 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
     if (mediaType == 'video') {
       if (_videoReady && _chewieController != null) {
         return Chewie(controller: _chewieController!);
+      }
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // webm – silent auto-looping gif-like video, no controls even in full-screen.
+    if (mediaType == 'webm') {
+      if (_videoReady && _videoController != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: VideoPlayer(_videoController!),
+            ),
+          ),
+        );
       }
       return const Center(child: CircularProgressIndicator());
     }

@@ -10,6 +10,7 @@ import 'ChallengeStepsFullScreenViewer.dart';
 /// Supported media types:
 ///   - `'image'` / `'gif'`  → [Image.network]
 ///   - `'video'`            → [Chewie] video player (mp4 / Firebase Storage URL)
+///   - `'webm'`             → silent auto-looping [VideoPlayer] (gif-like, no controls)
 class ChallengeStepViewer extends StatefulWidget {
   final List<ChallengeStep> steps;
 
@@ -148,6 +149,8 @@ class _StepPageState extends State<_StepPage> {
     super.initState();
     if (widget.step.mediaType == 'video' && widget.step.mediaUrl.isNotEmpty) {
       _initVideo();
+    } else if (widget.step.mediaType == 'webm' && widget.step.mediaUrl.isNotEmpty) {
+      _initGifVideo();
     }
   }
 
@@ -167,6 +170,22 @@ class _StepPageState extends State<_StepPage> {
         errorBuilder: (context, msg) => _buildMediaError(context),
       );
       setState(() => _videoReady = true);
+    } catch (_) {
+      if (mounted) setState(() => _videoReady = false);
+    }
+  }
+
+  Future<void> _initGifVideo() async {
+    try {
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.step.mediaUrl),
+      );
+      await _videoController!.initialize();
+      if (!mounted) return;
+      await _videoController!.setLooping(true);
+      await _videoController!.setVolume(0);
+      await _videoController!.play();
+      if (mounted) setState(() => _videoReady = true);
     } catch (_) {
       if (mounted) setState(() => _videoReady = false);
     }
@@ -247,6 +266,25 @@ class _StepPageState extends State<_StepPage> {
     if (mediaType == 'video') {
       if (_videoReady && _chewieController != null) {
         return Chewie(controller: _chewieController!);
+      }
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // webm – silent auto-looping gif-like video, tappable to open full-screen viewer.
+    if (mediaType == 'webm') {
+      if (_videoReady && _videoController != null) {
+        return GestureDetector(
+          onTap: widget.onMediaTap,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: VideoPlayer(_videoController!),
+              ),
+            ),
+          ),
+        );
       }
       return const Center(child: CircularProgressIndicator());
     }
