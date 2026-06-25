@@ -48,10 +48,14 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Stack(
-          children: [
-            SizedBox(
-              height: 340,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Media is always a 4:3 crop of the available width (minus 24px
+            // of horizontal padding inside each _StepPage). Add 160px for the
+            // step chip, title, summary text, and vertical spacing.
+            final double mediaHeight = (constraints.maxWidth - 24) * (3 / 4);
+            return SizedBox(
+              height: mediaHeight + 160,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: widget.steps.length,
@@ -67,39 +71,8 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
                   );
                 },
               ),
-            ),
-            // Expand icon – overlaid in the top-right corner of the step area.
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Material(
-                color: Colors.transparent,
-                child: Tooltip(
-                  message: 'View full screen',
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => ChallengeStepsFullScreenViewer.show(
-                      context,
-                      steps: widget.steps,
-                      initialIndex: _currentPage,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.75),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.open_in_full_rounded,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
         if (widget.steps.length > 1) ...[
           const SizedBox(height: 8),
@@ -130,8 +103,8 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
 class _StepPage extends StatefulWidget {
   final ChallengeStep step;
 
-  /// Called when the user taps the image/gif media. Not fired for videos
-  /// (Chewie handles its own tap interactions).
+  /// Called when the user taps the media or the expand button. Opens the
+  /// full-screen step viewer at this step's index.
   final VoidCallback? onMediaTap;
   const _StepPage({required this.step, this.onMediaTap});
 
@@ -161,12 +134,13 @@ class _StepPageState extends State<_StepPage> {
       );
       await _videoController!.initialize();
       if (!mounted) return;
+      // No aspectRatio set: let the parent AspectRatio(4/3) widget determine
+      // the player size; the video renders contained within that 4:3 box.
       _chewieController = ChewieController(
         videoPlayerController: _videoController!,
         autoPlay: false,
         looping: false,
         allowFullScreen: false,
-        aspectRatio: _videoController!.value.aspectRatio,
         errorBuilder: (context, msg) => _buildMediaError(context),
       );
       setState(() => _videoReady = true);
@@ -238,14 +212,14 @@ class _StepPageState extends State<_StepPage> {
           const SizedBox(height: 8),
 
           // ── Media ─────────────────────────────────────────────────────
-          Expanded(child: _buildMedia(context)),
+          _buildMedia(context),
 
           const SizedBox(height: 10),
 
           // ── Summary ───────────────────────────────────────────────────
           Text(
-            widget.step.summary,
-            style: TextStyle(
+            widget.step.summary,            maxLines: 4,
+            overflow: TextOverflow.ellipsis,            style: TextStyle(
               fontFamily: 'NovecentoSans',
               fontSize: 15,
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
@@ -261,53 +235,94 @@ class _StepPageState extends State<_StepPage> {
     final mediaType = widget.step.mediaType;
     final url = widget.step.mediaUrl;
 
-    if (url.isEmpty) return const SizedBox.shrink();
-
-    if (mediaType == 'video') {
-      if (_videoReady && _chewieController != null) {
-        return Chewie(controller: _chewieController!);
+    // ── Raw media content ───────────────────────────────────────────────
+    Widget content;
+    if (url.isEmpty) {
+      content = _buildMediaError(context);
+    } else if (mediaType == 'video') {
+      // Chewie fills the 4:3 parent box; video is contain-fitted inside it.
+      content = (_videoReady && _chewieController != null) ? Chewie(controller: _chewieController!) : const Center(child: CircularProgressIndicator());
+    } else if (mediaType == 'webm') {
+      // FittedBox.cover scales the native-sized video to fill the 4:3 box.
+      // If the controller hasn't reported dimensions yet, fall back to letting
+      // VideoPlayer fill the container directly (contained, not cropped).
+      if (_videoReady && _videoController != null) {
+        final size = _videoController!.value.size;
+        if (size.width > 0 && size.height > 0) {
+          content = FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: VideoPlayer(_videoController!),
+            ),
+          );
+        } else {
+          // Dimensions unavailable — fill the 4:3 container as-is.
+          content = VideoPlayer(_videoController!);
+        }
+      } else {
+        content = const Center(child: CircularProgressIndicator());
       }
-      return const Center(child: CircularProgressIndicator());
+    } else {
+      // image / gif — BoxFit.cover crops to fill the 4:3 box.
+      content = Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildMediaError(context),
+        loadingBuilder: (_, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+            ),
+          );
+        },
+      );
     }
 
-    // webm – silent auto-looping gif-like video, tappable to open full-screen viewer.
-    if (mediaType == 'webm') {
-      if (_videoReady && _videoController != null) {
-        return GestureDetector(
-          onTap: widget.onMediaTap,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: _videoController!.value.aspectRatio,
-                child: VideoPlayer(_videoController!),
+    // ── 4:3 cover container with expand-button overlay ───────────────────
+    // Tapping anywhere on non-Chewie media opens the full-screen viewer;
+    // Chewie handles its own touch so only the expand button is wired there.
+    final Widget mediaBox = AspectRatio(
+      aspectRatio: 4 / 3,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: mediaType == 'video' ? content : GestureDetector(onTap: widget.onMediaTap, child: content),
+      ),
+    );
+
+    return Stack(
+      children: [
+        mediaBox,
+        if (widget.onMediaTap != null)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: Material(
+              color: Colors.transparent,
+              child: Tooltip(
+                message: 'View full screen',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: widget.onMediaTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.75),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.open_in_full_rounded,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        );
-      }
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // image / gif – tappable to open full-screen viewer.
-    return GestureDetector(
-      onTap: widget.onMediaTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildMediaError(context),
-          loadingBuilder: (_, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
-              ),
-            );
-          },
-        ),
-      ),
+      ],
     );
   }
 
