@@ -26,16 +26,28 @@ class ChallengeStepsFullScreenViewer extends StatefulWidget {
   final List<ChallengeStep> steps;
   final int initialIndex;
 
+  /// An already-initialized [VideoPlayerController] transferred from the
+  /// inline step viewer. If supplied, the full-screen viewer uses it for
+  /// [initialIndex] without allocating a second hardware VP9 decoder.
+  final VideoPlayerController? transferredVideoController;
+
+  /// An already-built [ChewieController] transferred from the inline viewer.
+  final ChewieController? transferredChewieController;
+
   const ChallengeStepsFullScreenViewer({
     super.key,
     required this.steps,
     this.initialIndex = 0,
+    this.transferredVideoController,
+    this.transferredChewieController,
   });
 
   static Future<void> show(
     BuildContext context, {
     required List<ChallengeStep> steps,
     int initialIndex = 0,
+    VideoPlayerController? transferredVideoController,
+    ChewieController? transferredChewieController,
   }) {
     return Navigator.of(context, rootNavigator: true).push<void>(
       PageRouteBuilder<void>(
@@ -44,6 +56,8 @@ class ChallengeStepsFullScreenViewer extends StatefulWidget {
         pageBuilder: (_, __, ___) => ChallengeStepsFullScreenViewer(
           steps: steps,
           initialIndex: initialIndex,
+          transferredVideoController: transferredVideoController,
+          transferredChewieController: transferredChewieController,
         ),
         transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
       ),
@@ -70,7 +84,32 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
     super.initState();
     _currentPage = widget.initialIndex.clamp(0, widget.steps.length - 1);
     _pageController = PageController(initialPage: _currentPage);
-    _initVideoForPage(_currentPage);
+
+    if (widget.transferredVideoController != null) {
+      // Use the already-initialized controller from the inline viewer —
+      // no second decoder allocation, no re-download, displays instantly.
+      _videoController = widget.transferredVideoController;
+      _videoPageIndex = _currentPage;
+      _videoReady = true;
+
+      final step = widget.steps[_currentPage];
+      if (step.mediaType == 'video') {
+        // Reuse the inline Chewie controller if transferred, otherwise build
+        // one with the correct full-screen aspect ratio.
+        _chewieController =
+            widget.transferredChewieController ??
+            ChewieController(
+              videoPlayerController: _videoController!,
+              autoPlay: false,
+              looping: false,
+              allowFullScreen: false,
+              aspectRatio: _videoController!.value.aspectRatio,
+            );
+      }
+      // For 'webm': already looping + muted from the inline viewer.
+    } else {
+      _initVideoForPage(_currentPage);
+    }
   }
 
   @override
@@ -103,9 +142,12 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       return;
     }
 
-    // Wait briefly for the native ExoPlayer to release its graphic buffer
-    // pool (~92 MB each) before we allocate a new decoder.
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Wait for the native ExoPlayer to release its graphic buffer pool
+    // (~92 MB each) before allocating a new decoder. The C2 buffer pool
+    // evictor needs ~500-600 ms to reclaim. Also clear Flutter's image
+    // cache to free Java heap headroom for the incoming decoder.
+    PaintingBinding.instance.imageCache.clear();
+    await Future.delayed(const Duration(milliseconds: 600));
     if (generation != _initGeneration || !mounted) return;
 
     try {
