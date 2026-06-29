@@ -44,6 +44,11 @@ const Color slapShotColor = Color(0xff009688);
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Reduce Flutter's image cache from the 100 MB default to limit heap
+  // pressure on low-memory Android devices.
+  PaintingBinding.instance.imageCache.maximumSize = 50;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
+
   // Lock device orientation to portrait mode
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
