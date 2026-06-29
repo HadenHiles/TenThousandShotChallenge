@@ -96,8 +96,7 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       if (step.mediaType == 'video') {
         // Reuse the inline Chewie controller if transferred, otherwise build
         // one with the correct full-screen aspect ratio.
-        _chewieController =
-            widget.transferredChewieController ??
+        _chewieController = widget.transferredChewieController ??
             ChewieController(
               videoPlayerController: _videoController!,
               autoPlay: false,
