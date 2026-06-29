@@ -45,19 +45,16 @@ class ChallengeStepsFullScreenViewer extends StatefulWidget {
           steps: steps,
           initialIndex: initialIndex,
         ),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
+        transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
       ),
     );
   }
 
   @override
-  State<ChallengeStepsFullScreenViewer> createState() =>
-      _ChallengeStepsFullScreenViewerState();
+  State<ChallengeStepsFullScreenViewer> createState() => _ChallengeStepsFullScreenViewerState();
 }
 
-class _ChallengeStepsFullScreenViewerState
-    extends State<ChallengeStepsFullScreenViewer> {
+class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScreenViewer> {
   late final PageController _pageController;
   late int _currentPage;
 
@@ -102,8 +99,7 @@ class _ChallengeStepsFullScreenViewerState
     _teardownVideo();
     if (mounted) setState(() {});
 
-    if ((step.mediaType != 'video' && step.mediaType != 'webm') ||
-        step.mediaUrl.isEmpty) {
+    if ((step.mediaType != 'video' && step.mediaType != 'webm') || step.mediaUrl.isEmpty) {
       return;
     }
 
@@ -207,10 +203,7 @@ class _ChallengeStepsFullScreenViewerState
               fontFamily: 'NovecentoSans',
               fontSize: 13,
               letterSpacing: 1.2,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.55),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
             ),
           ),
           const Spacer(),
@@ -251,12 +244,7 @@ class _ChallengeStepsFullScreenViewerState
                       width: active ? 18 : 7,
                       height: 7,
                       decoration: BoxDecoration(
-                        color: active
-                            ? Theme.of(context).primaryColor
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                        color: active ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -309,20 +297,14 @@ class _ChallengeStepsFullScreenViewerState
             Icon(
               Icons.broken_image_outlined,
               size: 48,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 8),
             Text(
               'Media unavailable',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -330,15 +312,8 @@ class _ChallengeStepsFullScreenViewerState
       ),
     );
   }
-  Widget _buildLoadingPlaceholder(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }}
+
+}
 
 // ── Prev / Next / Done button ────────────────────────────────────────────────────────────────────────
 
@@ -361,15 +336,9 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isPrimary
-        ? Theme.of(context).primaryColor
-        : Theme.of(context).colorScheme.onSurface;
+    final activeColor = isPrimary ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface;
 
-    final borderColor = enabled
-        ? (isPrimary
-            ? Theme.of(context).primaryColor
-            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))
-        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15);
+    final borderColor = enabled ? (isPrimary ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15);
 
     final content = Row(
       mainAxisSize: MainAxisSize.min,
@@ -406,8 +375,7 @@ class _NavButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: borderColor),
           foregroundColor: activeColor,
-          disabledForegroundColor:
-              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+          disabledForegroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         ),
         child: content,
@@ -545,9 +513,7 @@ class _FullScreenStepPage extends StatelessWidget {
     if (url.isEmpty) return const SizedBox.shrink();
 
     if (mediaType == 'video') {
-      return (videoReady && chewieController != null)
-          ? Chewie(controller: chewieController!)
-          : _buildLoadingPlaceholder(context);
+      return (videoReady && chewieController != null) ? Chewie(controller: chewieController!) : _buildLoadingPlaceholder(context);
     }
 
     if (mediaType == 'webm') {
@@ -576,10 +542,7 @@ class _FullScreenStepPage extends StatelessWidget {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
+              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
             ),
           );
         },
@@ -600,20 +563,14 @@ class _FullScreenStepPage extends StatelessWidget {
             Icon(
               Icons.broken_image_outlined,
               size: 48,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 8),
             Text(
               'Media unavailable',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ),
           ],

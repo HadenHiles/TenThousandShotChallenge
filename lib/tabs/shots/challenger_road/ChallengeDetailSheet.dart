@@ -111,9 +111,7 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
   }
 
   bool get _isLocked {
-    final effectiveLevel = widget.isPreviewMode
-        ? (widget.attempt.currentLevel < widget.previewMaxLevel ? widget.attempt.currentLevel : widget.previewMaxLevel)
-        : widget.attempt.currentLevel;
+    final effectiveLevel = widget.isPreviewMode ? (widget.attempt.currentLevel < widget.previewMaxLevel ? widget.attempt.currentLevel : widget.previewMaxLevel) : widget.attempt.currentLevel;
     return widget.levelDoc.level > effectiveLevel;
   }
 
@@ -178,7 +176,12 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
       _audioPlayer = player;
       if (mounted) setState(() => _audioLoading = false);
     } catch (_) {
-      if (mounted) setState(() { _audioLoading = false; _audioError = true; });
+      if (mounted) {
+        setState(() {
+          _audioLoading = false;
+          _audioError = true;
+        });
+      }
     }
   }
 
@@ -333,8 +336,7 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
               ),
 
               // ── Pinned audio player (always visible, never scrolls away) ────────
-              if (!_audioError && widget.challenge.audioUrl != null)
-                _buildPinnedAudioPlayer(context),
+              if (!_audioError && widget.challenge.audioUrl != null) _buildPinnedAudioPlayer(context),
 
               // ── Pinned CTA footer ─────────────────────────────────────────────────
               if (widget.isSubscriptionLocked || widget.showStartCta) _buildCTA(context),
@@ -349,9 +351,7 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
 
   Widget _buildPinnedAudioPlayer(BuildContext context) {
     final isPlaying = _playerState == PlayerState.playing;
-    final progress = _duration.inMilliseconds > 0
-        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
+    final progress = _duration.inMilliseconds > 0 ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 6, 12, 6),
