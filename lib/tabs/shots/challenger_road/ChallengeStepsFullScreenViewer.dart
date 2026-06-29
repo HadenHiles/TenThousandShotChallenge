@@ -103,8 +103,18 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       return;
     }
 
+    // Wait briefly for the native ExoPlayer to release its graphic buffer
+    // pool (~92 MB each) before we allocate a new decoder.
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (generation != _initGeneration || !mounted) return;
+
     try {
-      final vc = VideoPlayerController.networkUrl(Uri.parse(step.mediaUrl));
+      final vc = VideoPlayerController.networkUrl(
+        Uri.parse(step.mediaUrl),
+        // Prevent ExoPlayer from requesting audio focus so it cannot
+        // interrupt the challenge audio player with AUDIOFOCUS_LOSS.
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
       await vc.initialize();
 
       if (generation != _initGeneration || !mounted) {

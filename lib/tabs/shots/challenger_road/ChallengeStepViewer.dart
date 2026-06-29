@@ -81,8 +81,20 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       return;
     }
 
+    // Wait briefly for the native ExoPlayer to release its graphic buffer
+    // pool (~92 MB each) before we allocate a new decoder. Without this delay
+    // rapid page swipes pile up decoders that haven't freed native memory yet,
+    // exhausting the 512 MB largeHeap limit.
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (generation != _initGeneration || !mounted) return;
+
     try {
-      final vc = VideoPlayerController.networkUrl(Uri.parse(step.mediaUrl));
+      final vc = VideoPlayerController.networkUrl(
+        Uri.parse(step.mediaUrl),
+        // Prevent ExoPlayer from requesting audio focus so it cannot
+        // interrupt the challenge audio player with AUDIOFOCUS_LOSS.
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
       await vc.initialize();
 
       // Stale init: the user already swiped to another page.
@@ -150,11 +162,20 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
                     videoController: isActive ? _videoController : null,
                     chewieController: isActive ? _chewieController : null,
                     videoReady: isActive && _videoReady,
-                    onMediaTap: () => ChallengeStepsFullScreenViewer.show(
-                      context,
-                      steps: widget.steps,
-                      initialIndex: index,
-                    ),
+                    onMediaTap: () async {
+                      // Teardown the inline controller before the full-screen
+                      // viewer opens so only one VP9 decoder is alive at a time.
+                      final savedPage = _currentPage;
+                      _teardownVideo();
+                      if (mounted) setState(() {});
+                      await ChallengeStepsFullScreenViewer.show(
+                        context,
+                        steps: widget.steps,
+                        initialIndex: index,
+                      );
+                      // Re-init for the page the user left on.
+                      if (mounted) _initVideoForPage(savedPage);
+                    },
                   );
                 },
               ),
