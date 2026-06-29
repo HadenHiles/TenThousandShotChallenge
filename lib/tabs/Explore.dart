@@ -648,7 +648,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       });
                                     });
                                   },
-                                  icon: Icon(
+                                  icon: FaIcon(
                                     FontAwesomeIcons.bagShopping,
                                     color: Theme.of(context).colorScheme.onPrimary,
                                   ),
@@ -983,7 +983,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                                 });
                                               });
                                             },
-                                            icon: Icon(
+                                            icon: FaIcon(
                                               FontAwesomeIcons.youtube,
                                               color: Colors.red.shade600,
                                             ),
@@ -1121,7 +1121,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                             });
                                           });
                                         },
-                                        icon: Icon(
+                                        icon: FaIcon(
                                           FontAwesomeIcons.youtube,
                                           color: Colors.red.shade600,
                                         ),

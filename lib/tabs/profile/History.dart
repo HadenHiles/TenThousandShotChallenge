@@ -449,11 +449,11 @@ class _HistoryState extends State<History> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary),
-                  Positioned(left: -6, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(left: -5, bottom: -5, child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(right: -4, top: -6, child: Icon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
-                  Positioned(right: -4, bottom: -8, child: Icon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
+                  FaIcon(FontAwesomeIcons.hockeyPuck, size: 14, color: Theme.of(context).colorScheme.onPrimary),
+                  Positioned(left: -6, top: -6, child: FaIcon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(left: -5, bottom: -5, child: FaIcon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(right: -4, top: -6, child: FaIcon(FontAwesomeIcons.hockeyPuck, size: 6, color: Theme.of(context).colorScheme.onPrimary)),
+                  Positioned(right: -4, bottom: -8, child: FaIcon(FontAwesomeIcons.hockeyPuck, size: 8, color: Theme.of(context).colorScheme.onPrimary)),
                 ],
               ),
               const SizedBox(width: 8),
@@ -473,7 +473,7 @@ class _HistoryState extends State<History> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(FontAwesomeIcons.calendarCheck, size: 20),
+              const FaIcon(FontAwesomeIcons.calendarCheck, size: 20),
               const SizedBox(width: 4),
               AutoSizeText(
                 goalDescription.toLowerCase(),

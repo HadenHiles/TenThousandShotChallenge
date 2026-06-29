@@ -1192,7 +1192,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                Icon(
+                                FaIcon(
                                   FontAwesomeIcons.hockeyPuck,
                                   size: 26,
                                   color: theme.colorScheme.onSurface,
@@ -1200,7 +1200,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                                 Positioned(
                                   left: -11,
                                   top: -11,
-                                  child: Icon(
+                                  child: FaIcon(
                                     FontAwesomeIcons.hockeyPuck,
                                     size: 14,
                                     color: theme.colorScheme.onSurface,
@@ -1209,7 +1209,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                                 Positioned(
                                   right: -11,
                                   bottom: -11,
-                                  child: Icon(
+                                  child: FaIcon(
                                     FontAwesomeIcons.hockeyPuck,
                                     size: 14,
                                     color: theme.colorScheme.onSurface,
