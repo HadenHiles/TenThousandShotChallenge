@@ -322,7 +322,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       ),
     );
   }
-
 }
 
 // ── Prev / Next / Done button ────────────────────────────────────────────────────────────────────────
