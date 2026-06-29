@@ -11,6 +11,11 @@ import 'ChallengeStepsFullScreenViewer.dart';
 ///   - `'image'` / `'gif'`  → [Image.network]
 ///   - `'video'`            → [Chewie] video player (mp4 / Firebase Storage URL)
 ///   - `'webm'`             → silent auto-looping [VideoPlayer] (gif-like, no controls)
+///
+/// Video controller ownership lives entirely in [_ChallengeStepViewerState].
+/// Only one [VideoPlayerController] / [ChewieController] is active at a time,
+/// preventing simultaneous hardware MediaCodec allocations that caused OOM
+/// crashes on low-memory Android devices.
 class ChallengeStepViewer extends StatefulWidget {
   final List<ChallengeStep> steps;
 
@@ -24,17 +29,95 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
   late final PageController _pageController;
   int _currentPage = 0;
 
+  // ── Single active video controller ───────────────────────────────────────────────────
+  // These fields represent the video/webm for whichever page is currently
+  // visible. They are disposed before a new page's video is initialised, so
+  // at most one hardware video decoder is running at any given time.
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  bool _videoReady = false;
+  int? _videoPageIndex; // page that currently owns the active controller
+
+  /// Monotonically-increasing counter used to detect stale async inits that
+  /// should be discarded when the user swipes before initialisation finishes.
+  int _initGeneration = 0;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _initVideoForPage(0);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _teardownVideo();
     super.dispose();
   }
+
+  // ── Video lifecycle ───────────────────────────────────────────────────────────────────────
+
+  void _teardownVideo() {
+    _chewieController?.dispose();
+    _chewieController = null;
+    _videoController?.dispose();
+    _videoController = null;
+    _videoPageIndex = null;
+    _videoReady = false;
+  }
+
+  Future<void> _initVideoForPage(int index) async {
+    final generation = ++_initGeneration;
+    if (index >= widget.steps.length) return;
+    final step = widget.steps[index];
+
+    // Always tear down whatever was running before.
+    _teardownVideo();
+    if (mounted) setState(() {});
+
+    // No video content on this page — nothing to do.
+    if ((step.mediaType != 'video' && step.mediaType != 'webm') ||
+        step.mediaUrl.isEmpty) {
+      return;
+    }
+
+    try {
+      final vc = VideoPlayerController.networkUrl(Uri.parse(step.mediaUrl));
+      await vc.initialize();
+
+      // Stale init: the user already swiped to another page.
+      if (generation != _initGeneration || !mounted) {
+        vc.dispose();
+        return;
+      }
+
+      if (step.mediaType == 'webm') {
+        await vc.setLooping(true);
+        await vc.setVolume(0);
+        await vc.play();
+        _videoController = vc;
+      } else {
+        // 'video' — wrap with Chewie for full controls.
+        final cc = ChewieController(
+          videoPlayerController: vc,
+          autoPlay: false,
+          looping: false,
+          allowFullScreen: false,
+          errorBuilder: (ctx, _) => _buildMediaError(ctx),
+        );
+        _videoController = vc;
+        _chewieController = cc;
+      }
+
+      _videoPageIndex = index;
+      if (mounted) setState(() => _videoReady = true);
+    } catch (_) {
+      // Leave _videoReady = false so the step shows an error widget.
+    }
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -50,19 +133,24 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            // Media is always a 3:4 crop of the available width (minus 24px
-            // of horizontal padding inside each _StepPage). Add 160px for the
-            // step chip, title, summary text, and vertical spacing.
             final double mediaHeight = (constraints.maxWidth - 24) * (4 / 3);
             return SizedBox(
               height: mediaHeight + 160,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: widget.steps.length,
-                onPageChanged: (idx) => setState(() => _currentPage = idx),
+                onPageChanged: (idx) {
+                  setState(() => _currentPage = idx);
+                  _initVideoForPage(idx);
+                },
                 itemBuilder: (context, index) {
+                  // Only pass the active controllers to the visible page.
+                  final isActive = _videoPageIndex == index;
                   return _StepPage(
                     step: widget.steps[index],
+                    videoController: isActive ? _videoController : null,
+                    chewieController: isActive ? _chewieController : null,
+                    videoReady: isActive && _videoReady,
                     onMediaTap: () => ChallengeStepsFullScreenViewer.show(
                       context,
                       steps: widget.steps,
@@ -86,7 +174,9 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
                 width: active ? 18 : 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: active ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                  color: active
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -96,81 +186,56 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       ],
     );
   }
+
+  Widget _buildMediaError(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 40,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Media unavailable',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-// ── Single step page ──────────────────────────────────────────────────────────
+// ── Single step page (stateless) ───────────────────────────────────────────────────────────────────
 
-class _StepPage extends StatefulWidget {
+/// Displays a single [ChallengeStep]. Video controllers are owned by the
+/// parent [_ChallengeStepViewerState] and passed in to keep only one decoder
+/// alive at a time.
+class _StepPage extends StatelessWidget {
   final ChallengeStep step;
-
-  /// Called when the user taps the media or the expand button. Opens the
-  /// full-screen step viewer at this step's index.
+  final VideoPlayerController? videoController;
+  final ChewieController? chewieController;
+  final bool videoReady;
   final VoidCallback? onMediaTap;
-  const _StepPage({required this.step, this.onMediaTap});
 
-  @override
-  State<_StepPage> createState() => _StepPageState();
-}
-
-class _StepPageState extends State<_StepPage> {
-  VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
-  bool _videoReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.step.mediaType == 'video' && widget.step.mediaUrl.isNotEmpty) {
-      _initVideo();
-    } else if (widget.step.mediaType == 'webm' && widget.step.mediaUrl.isNotEmpty) {
-      _initGifVideo();
-    }
-  }
-
-  Future<void> _initVideo() async {
-    try {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.step.mediaUrl),
-      );
-      await _videoController!.initialize();
-      if (!mounted) return;
-      // No aspectRatio set: let the parent AspectRatio(3/4) widget determine
-      // the player size; the video renders contained within that 4:3 box.
-      _chewieController = ChewieController(
-        videoPlayerController: _videoController!,
-        autoPlay: false,
-        looping: false,
-        allowFullScreen: false,
-        errorBuilder: (context, msg) => _buildMediaError(context),
-      );
-      setState(() => _videoReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _videoReady = false);
-    }
-  }
-
-  Future<void> _initGifVideo() async {
-    try {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.step.mediaUrl),
-      );
-      await _videoController!.initialize();
-      if (!mounted) return;
-      await _videoController!.setLooping(true);
-      await _videoController!.setVolume(0);
-      await _videoController!.play();
-      if (mounted) setState(() => _videoReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _videoReady = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _chewieController?.dispose();
-    _videoController?.dispose();
-    super.dispose();
-  }
+  const _StepPage({
+    required this.step,
+    this.videoController,
+    this.chewieController,
+    this.videoReady = false,
+    this.onMediaTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +244,7 @@ class _StepPageState extends State<_StepPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Step number chip ──────────────────────────────────────────
+          // ── Step number chip ────────────────────────────────────────────────────────────
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
@@ -189,7 +254,7 @@ class _StepPageState extends State<_StepPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Step ${widget.step.stepNumber}',
+                'Step ${step.stepNumber}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontFamily: 'NovecentoSans',
@@ -200,9 +265,9 @@ class _StepPageState extends State<_StepPage> {
           ),
           const SizedBox(height: 8),
 
-          // ── Title ─────────────────────────────────────────────────────
+          // ── Title ───────────────────────────────────────────────────────────────────────────────────────
           Text(
-            widget.step.title,
+            step.title,
             style: TextStyle(
               fontFamily: 'NovecentoSans',
               fontSize: 22,
@@ -211,14 +276,14 @@ class _StepPageState extends State<_StepPage> {
           ),
           const SizedBox(height: 8),
 
-          // ── Media ─────────────────────────────────────────────────────
+          // ── Media ───────────────────────────────────────────────────────────────────────────────────────
           _buildMedia(context),
 
           const SizedBox(height: 10),
 
-          // ── Summary ───────────────────────────────────────────────────
+          // ── Summary ──────────────────────────────────────────────────────────────────────────────────────
           Text(
-            widget.step.summary,
+            step.summary,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -234,40 +299,36 @@ class _StepPageState extends State<_StepPage> {
   }
 
   Widget _buildMedia(BuildContext context) {
-    final mediaType = widget.step.mediaType;
-    final url = widget.step.mediaUrl;
+    final mediaType = step.mediaType;
+    final url = step.mediaUrl;
 
-    // ── Raw media content ───────────────────────────────────────────────
     Widget content;
     if (url.isEmpty) {
       content = _buildMediaError(context);
     } else if (mediaType == 'video') {
-      // Chewie fills the 4:3 parent box; video is contain-fitted inside it.
-      content = (_videoReady && _chewieController != null) ? Chewie(controller: _chewieController!) : const Center(child: CircularProgressIndicator());
+      content = (videoReady && chewieController != null)
+          ? Chewie(controller: chewieController!)
+          : const Center(child: CircularProgressIndicator());
     } else if (mediaType == 'webm') {
-      // FittedBox.cover scales the native-sized video to fill the 4:3 box.
-      // If the controller hasn't reported dimensions yet, fall back to letting
-      // VideoPlayer fill the container directly (contained, not cropped).
-      if (_videoReady && _videoController != null) {
-        final size = _videoController!.value.size;
+      if (videoReady && videoController != null) {
+        final size = videoController!.value.size;
         if (size.width > 0 && size.height > 0) {
           content = FittedBox(
             fit: BoxFit.cover,
             child: SizedBox(
               width: size.width,
               height: size.height,
-              child: VideoPlayer(_videoController!),
+              child: VideoPlayer(videoController!),
             ),
           );
         } else {
-          // Dimensions unavailable — fill the 4:3 container as-is.
-          content = VideoPlayer(_videoController!);
+          content = VideoPlayer(videoController!);
         }
       } else {
         content = const Center(child: CircularProgressIndicator());
       }
     } else {
-      // image / gif — BoxFit.cover crops to fill the 4:3 box.
+      // image / gif
       content = Image.network(
         url,
         fit: BoxFit.cover,
@@ -276,28 +337,30 @@ class _StepPageState extends State<_StepPage> {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
             ),
           );
         },
       );
     }
 
-    // ── 4:3 cover container with expand-button overlay ───────────────────
-    // Tapping anywhere on non-Chewie media opens the full-screen viewer;
-    // Chewie handles its own touch so only the expand button is wired there.
+    // ── 4:3 cover container with expand-button overlay ──────────────────────────────────
     final Widget mediaBox = AspectRatio(
       aspectRatio: 3 / 4,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: mediaType == 'video' ? content : GestureDetector(onTap: widget.onMediaTap, child: content),
+        child: mediaType == 'video'
+            ? content
+            : GestureDetector(onTap: onMediaTap, child: content),
       ),
     );
 
     return Stack(
       children: [
         mediaBox,
-        if (widget.onMediaTap != null)
+        if (onMediaTap != null)
           Positioned(
             top: 6,
             right: 6,
@@ -307,17 +370,22 @@ class _StepPageState extends State<_StepPage> {
                 message: 'View full screen',
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
-                  onTap: widget.onMediaTap,
+                  onTap: onMediaTap,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.75),
+                      color: Theme.of(context)
+                          .scaffoldBackgroundColor
+                          .withValues(alpha: 0.75),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.open_in_full_rounded,
                       size: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -338,7 +406,11 @@ class _StepPageState extends State<_StepPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.broken_image_outlined, size: 40, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            Icon(
+              Icons.broken_image_outlined,
+              size: 40,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 6),
             Text(
               'Media unavailable',
