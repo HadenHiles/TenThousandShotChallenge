@@ -389,7 +389,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    Icon(
+                                    FaIcon(
                                       FontAwesomeIcons.hockeyPuck,
                                       size: 14,
                                       color: Theme.of(context).colorScheme.onPrimary,
@@ -398,7 +398,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     Positioned(
                                       left: -6,
                                       top: -6,
-                                      child: Icon(
+                                      child: FaIcon(
                                         FontAwesomeIcons.hockeyPuck,
                                         size: 8,
                                         color: Theme.of(context).colorScheme.onPrimary,
@@ -408,7 +408,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     Positioned(
                                       left: -5,
                                       bottom: -5,
-                                      child: Icon(
+                                      child: FaIcon(
                                         FontAwesomeIcons.hockeyPuck,
                                         size: 6,
                                         color: Theme.of(context).colorScheme.onPrimary,
@@ -418,7 +418,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     Positioned(
                                       right: -4,
                                       top: -6,
-                                      child: Icon(
+                                      child: FaIcon(
                                         FontAwesomeIcons.hockeyPuck,
                                         size: 6,
                                         color: Theme.of(context).colorScheme.onPrimary,
@@ -428,7 +428,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     Positioned(
                                       right: -4,
                                       bottom: -8,
-                                      child: Icon(
+                                      child: FaIcon(
                                         FontAwesomeIcons.hockeyPuck,
                                         size: 8,
                                         color: Theme.of(context).colorScheme.onPrimary,
@@ -1285,7 +1285,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(
+                              FaIcon(
                                 FontAwesomeIcons.github,
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 size: 16,
@@ -1322,7 +1322,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(
+                                FaIcon(
                                   FontAwesomeIcons.copyright,
                                   color: Theme.of(context).colorScheme.onPrimary,
                                   size: 10,

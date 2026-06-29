@@ -296,7 +296,7 @@ class _IntroScreenState extends State<IntroScreen> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.hockeyPuck,
                   size: MediaQuery.of(context).size.width * 0.35,
                   color: Colors.white,
@@ -305,7 +305,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 const Positioned(
                   left: -25,
                   top: -25.0,
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.hockeyPuck,
                     size: 30,
                     color: Colors.white,
@@ -315,7 +315,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 const Positioned(
                   left: -35,
                   bottom: -30.0,
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.hockeyPuck,
                     size: 40,
                     color: Colors.white,
@@ -325,7 +325,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 const Positioned(
                   right: -30,
                   top: -35.0,
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.hockeyPuck,
                     size: 40,
                     color: Colors.white,
@@ -335,7 +335,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 const Positioned(
                   right: -30,
                   bottom: -25.0,
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.hockeyPuck,
                     size: 30,
                     color: Colors.white,
