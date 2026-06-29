@@ -77,8 +77,7 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
     if (mounted) setState(() {});
 
     // No video content on this page — nothing to do.
-    if ((step.mediaType != 'video' && step.mediaType != 'webm') ||
-        step.mediaUrl.isEmpty) {
+    if ((step.mediaType != 'video' && step.mediaType != 'webm') || step.mediaUrl.isEmpty) {
       return;
     }
 
@@ -174,9 +173,7 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
                 width: active ? 18 : 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: active
-                      ? Theme.of(context).primaryColor
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                  color: active ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -306,9 +303,7 @@ class _StepPage extends StatelessWidget {
     if (url.isEmpty) {
       content = _buildMediaError(context);
     } else if (mediaType == 'video') {
-      content = (videoReady && chewieController != null)
-          ? Chewie(controller: chewieController!)
-          : _buildLoadingPlaceholder(context);
+      content = (videoReady && chewieController != null) ? Chewie(controller: chewieController!) : _buildLoadingPlaceholder(context);
     } else if (mediaType == 'webm') {
       if (videoReady && videoController != null) {
         final size = videoController!.value.size;
@@ -337,9 +332,7 @@ class _StepPage extends StatelessWidget {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                  : null,
+              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
             ),
           );
         },
@@ -351,9 +344,7 @@ class _StepPage extends StatelessWidget {
       aspectRatio: 3 / 4,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: mediaType == 'video'
-            ? content
-            : GestureDetector(onTap: onMediaTap, child: content),
+        child: mediaType == 'video' ? content : GestureDetector(onTap: onMediaTap, child: content),
       ),
     );
 
@@ -374,18 +365,13 @@ class _StepPage extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .scaffoldBackgroundColor
-                          .withValues(alpha: 0.75),
+                      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.75),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.open_in_full_rounded,
                       size: 16,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
