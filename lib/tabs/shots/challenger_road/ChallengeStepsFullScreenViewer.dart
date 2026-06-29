@@ -9,6 +9,11 @@ import 'package:video_player/video_player.dart';
 /// device rotation. Landscape detection is purely size-based so it works
 /// whether or not the device is physically rotated.
 ///
+/// Video controller ownership lives in [_ChallengeStepsFullScreenViewerState].
+/// Only one [VideoPlayerController] / [ChewieController] is active at a time,
+/// preventing simultaneous hardware MediaCodec allocations that caused OOM
+/// crashes on low-memory Android devices.
+///
 /// Push via [ChallengeStepsFullScreenViewer.show]:
 /// ```dart
 /// ChallengeStepsFullScreenViewer.show(
@@ -27,9 +32,6 @@ class ChallengeStepsFullScreenViewer extends StatefulWidget {
     this.initialIndex = 0,
   });
 
-  /// Pushes the full-screen viewer as a new route, fading in over the current
-  /// screen.  Uses the root navigator so it covers bottom sheets and other
-  /// overlays.
   static Future<void> show(
     BuildContext context, {
     required List<ChallengeStep> steps,
@@ -43,39 +45,103 @@ class ChallengeStepsFullScreenViewer extends StatefulWidget {
           steps: steps,
           initialIndex: initialIndex,
         ),
-        transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
 
   @override
-  State<ChallengeStepsFullScreenViewer> createState() => _ChallengeStepsFullScreenViewerState();
+  State<ChallengeStepsFullScreenViewer> createState() =>
+      _ChallengeStepsFullScreenViewerState();
 }
 
-class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScreenViewer> {
+class _ChallengeStepsFullScreenViewerState
+    extends State<ChallengeStepsFullScreenViewer> {
   late final PageController _pageController;
   late int _currentPage;
+
+  // ── Single active video controller ───────────────────────────────────────────────────
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  bool _videoReady = false;
+  int? _videoPageIndex;
+  int _initGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialIndex.clamp(0, widget.steps.length - 1);
     _pageController = PageController(initialPage: _currentPage);
+    _initVideoForPage(_currentPage);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _teardownVideo();
     super.dispose();
   }
 
-  void _goTo(int page) {
-    _pageController.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  // ── Video lifecycle ───────────────────────────────────────────────────────────────────────
+
+  void _teardownVideo() {
+    _chewieController?.dispose();
+    _chewieController = null;
+    _videoController?.dispose();
+    _videoController = null;
+    _videoPageIndex = null;
+    _videoReady = false;
   }
+
+  Future<void> _initVideoForPage(int index) async {
+    final generation = ++_initGeneration;
+    if (index >= widget.steps.length) return;
+    final step = widget.steps[index];
+
+    _teardownVideo();
+    if (mounted) setState(() {});
+
+    if ((step.mediaType != 'video' && step.mediaType != 'webm') ||
+        step.mediaUrl.isEmpty) {
+      return;
+    }
+
+    try {
+      final vc = VideoPlayerController.networkUrl(Uri.parse(step.mediaUrl));
+      await vc.initialize();
+
+      if (generation != _initGeneration || !mounted) {
+        vc.dispose();
+        return;
+      }
+
+      if (step.mediaType == 'webm') {
+        await vc.setLooping(true);
+        await vc.setVolume(0);
+        await vc.play();
+        _videoController = vc;
+      } else {
+        final cc = ChewieController(
+          videoPlayerController: vc,
+          autoPlay: false,
+          looping: false,
+          allowFullScreen: false,
+          aspectRatio: vc.value.aspectRatio,
+          errorBuilder: (ctx, _) => _buildMediaError(ctx),
+        );
+        _videoController = vc;
+        _chewieController = cc;
+      }
+
+      _videoPageIndex = index;
+      if (mounted) setState(() => _videoReady = true);
+    } catch (_) {
+      // Leave _videoReady = false; the page shows an error widget.
+    }
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -88,27 +154,30 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Size-based orientation: works with or without device rotation.
             final isLandscape = constraints.maxWidth > constraints.maxHeight;
             return Column(
               children: [
-                // ── Top bar ───────────────────────────────────────────────
                 _buildTopBar(context, isLandscape),
-
-                // ── Swipeable step pages ──────────────────────────────────
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: totalSteps,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
-                    itemBuilder: (ctx, index) => _FullScreenStepPage(
-                      step: widget.steps[index],
-                      isLandscape: isLandscape,
-                    ),
+                    onPageChanged: (i) {
+                      setState(() => _currentPage = i);
+                      _initVideoForPage(i);
+                    },
+                    itemBuilder: (ctx, index) {
+                      final isActive = _videoPageIndex == index;
+                      return _FullScreenStepPage(
+                        step: widget.steps[index],
+                        isLandscape: isLandscape,
+                        videoController: isActive ? _videoController : null,
+                        chewieController: isActive ? _chewieController : null,
+                        videoReady: isActive && _videoReady,
+                      );
+                    },
                   ),
                 ),
-
-                // ── Bottom navigation ─────────────────────────────────────
                 _buildBottomNav(context, totalSteps, isFirst, isLast),
               ],
             );
@@ -117,8 +186,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       ),
     );
   }
-
-  // ── Top bar ───────────────────────────────────────────────────────────────
 
   Widget _buildTopBar(BuildContext context, bool isLandscape) {
     return Padding(
@@ -140,18 +207,18 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
               fontFamily: 'NovecentoSans',
               fontSize: 13,
               letterSpacing: 1.2,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.55),
             ),
           ),
           const Spacer(),
-          // Invisible spacer to balance the close button.
           const SizedBox(width: 48),
         ],
       ),
     );
   }
-
-  // ── Bottom navigation bar ─────────────────────────────────────────────────
 
   Widget _buildBottomNav(
     BuildContext context,
@@ -163,7 +230,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
       child: Row(
         children: [
-          // ── Prev ────────────────────────────────────────────────────────
           _NavButton(
             label: 'PREV',
             icon: Icons.chevron_left_rounded,
@@ -171,8 +237,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
             enabled: !isFirst,
             onTap: isFirst ? null : () => _goTo(_currentPage - 1),
           ),
-
-          // ── Dot indicators ───────────────────────────────────────────────
           if (totalSteps > 1)
             Expanded(
               child: Row(
@@ -187,7 +251,12 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
                       width: active ? 18 : 7,
                       height: 7,
                       decoration: BoxDecoration(
-                        color: active ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                        color: active
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -197,8 +266,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
             )
           else
             const Spacer(),
-
-          // ── Next / Done ──────────────────────────────────────────────────
           isLast
               ? _NavButton(
                   label: 'DONE',
@@ -220,9 +287,52 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       ),
     );
   }
+
+  void _goTo(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildMediaError(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 48,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Media unavailable',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-// ── Prev / Next / Done button ─────────────────────────────────────────────────
+// ── Prev / Next / Done button ────────────────────────────────────────────────────────────────────────
 
 class _NavButton extends StatelessWidget {
   final String label;
@@ -243,9 +353,15 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isPrimary ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface;
+    final activeColor = isPrimary
+        ? Theme.of(context).primaryColor
+        : Theme.of(context).colorScheme.onSurface;
 
-    final borderColor = enabled ? (isPrimary ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15);
+    final borderColor = enabled
+        ? (isPrimary
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15);
 
     final content = Row(
       mainAxisSize: MainAxisSize.min,
@@ -282,7 +398,8 @@ class _NavButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: borderColor),
           foregroundColor: activeColor,
-          disabledForegroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+          disabledForegroundColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         ),
         child: content,
@@ -291,86 +408,31 @@ class _NavButton extends StatelessWidget {
   }
 }
 
-// ── Single full-screen step page ──────────────────────────────────────────────
+// ── Single full-screen step page (stateless) ─────────────────────────────────────────────────────────
 
-class _FullScreenStepPage extends StatefulWidget {
+/// Displays a single [ChallengeStep] in full-screen layout. Video controllers
+/// are owned by [_ChallengeStepsFullScreenViewerState] and passed in so only
+/// one hardware decoder runs at a time.
+class _FullScreenStepPage extends StatelessWidget {
   final ChallengeStep step;
   final bool isLandscape;
+  final VideoPlayerController? videoController;
+  final ChewieController? chewieController;
+  final bool videoReady;
 
   const _FullScreenStepPage({
     required this.step,
     required this.isLandscape,
+    this.videoController,
+    this.chewieController,
+    this.videoReady = false,
   });
 
   @override
-  State<_FullScreenStepPage> createState() => _FullScreenStepPageState();
-}
-
-class _FullScreenStepPageState extends State<_FullScreenStepPage> {
-  VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
-  bool _videoReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.step.mediaType == 'video' && widget.step.mediaUrl.isNotEmpty) {
-      _initVideo();
-    } else if (widget.step.mediaType == 'webm' && widget.step.mediaUrl.isNotEmpty) {
-      _initGifVideo();
-    }
-  }
-
-  Future<void> _initVideo() async {
-    try {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.step.mediaUrl),
-      );
-      await _videoController!.initialize();
-      if (!mounted) return;
-      _chewieController = ChewieController(
-        videoPlayerController: _videoController!,
-        autoPlay: false,
-        looping: false,
-        allowFullScreen: false,
-        aspectRatio: _videoController!.value.aspectRatio,
-        errorBuilder: (context, msg) => _buildMediaError(context),
-      );
-      setState(() => _videoReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _videoReady = false);
-    }
-  }
-
-  Future<void> _initGifVideo() async {
-    try {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.step.mediaUrl),
-      );
-      await _videoController!.initialize();
-      if (!mounted) return;
-      await _videoController!.setLooping(true);
-      await _videoController!.setVolume(0);
-      await _videoController!.play();
-      if (mounted) setState(() => _videoReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _videoReady = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _chewieController?.dispose();
-    _videoController?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return widget.isLandscape ? _buildLandscape(context) : _buildPortrait(context);
+    return isLandscape ? _buildLandscape(context) : _buildPortrait(context);
   }
 
-  // Portrait: chip+title → media (expands) → summary
   Widget _buildPortrait(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -388,9 +450,8 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
     );
   }
 
-  // Landscape: left = media, right = chip+title+scrollable summary
   Widget _buildLandscape(BuildContext context) {
-    final hasMedia = widget.step.mediaUrl.isNotEmpty;
+    final hasMedia = step.mediaUrl.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
@@ -425,8 +486,6 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
     );
   }
 
-  // ── Sub-widgets ───────────────────────────────────────────────────────────
-
   Widget _buildChipAndTitle(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +497,7 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            'Step ${widget.step.stepNumber}',
+            'Step ${step.stepNumber}',
             style: const TextStyle(
               color: Colors.white,
               fontFamily: 'NovecentoSans',
@@ -448,7 +507,7 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          widget.step.title,
+          step.title,
           style: TextStyle(
             fontFamily: 'NovecentoSans',
             fontSize: 26,
@@ -461,7 +520,7 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
 
   Widget _buildSummary(BuildContext context) {
     return Text(
-      widget.step.summary,
+      step.summary,
       style: TextStyle(
         fontFamily: 'NovecentoSans',
         fontSize: 16,
@@ -472,27 +531,25 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
   }
 
   Widget _buildMedia(BuildContext context) {
-    final mediaType = widget.step.mediaType;
-    final url = widget.step.mediaUrl;
+    final mediaType = step.mediaType;
+    final url = step.mediaUrl;
 
     if (url.isEmpty) return const SizedBox.shrink();
 
     if (mediaType == 'video') {
-      if (_videoReady && _chewieController != null) {
-        return Chewie(controller: _chewieController!);
-      }
-      return const Center(child: CircularProgressIndicator());
+      return (videoReady && chewieController != null)
+          ? Chewie(controller: chewieController!)
+          : const Center(child: CircularProgressIndicator());
     }
 
-    // webm – silent auto-looping gif-like video, no controls even in full-screen.
     if (mediaType == 'webm') {
-      if (_videoReady && _videoController != null) {
+      if (videoReady && videoController != null) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Center(
             child: AspectRatio(
-              aspectRatio: _videoController!.value.aspectRatio,
-              child: VideoPlayer(_videoController!),
+              aspectRatio: videoController!.value.aspectRatio,
+              child: VideoPlayer(videoController!),
             ),
           ),
         );
@@ -511,7 +568,10 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
             ),
           );
         },
@@ -532,14 +592,20 @@ class _FullScreenStepPageState extends State<_FullScreenStepPage> {
             Icon(
               Icons.broken_image_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.3),
             ),
             const SizedBox(height: 8),
             Text(
               'Media unavailable',
               style: TextStyle(
                 fontFamily: 'NovecentoSans',
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4),
               ),
             ),
           ],
