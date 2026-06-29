@@ -1,21 +1,15 @@
-import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
-import 'package:video_player/video_player.dart';
 import 'ChallengeStepsFullScreenViewer.dart';
 
 /// Horizontal PageView showing each [ChallengeStep] with its media, title,
 /// and summary text.
 ///
-/// Supported media types:
-///   - `'image'` / `'gif'`  → [Image.network]
-///   - `'video'`            → [Chewie] video player (mp4 / Firebase Storage URL)
-///   - `'webm'`             → silent auto-looping [VideoPlayer] (gif-like, no controls)
-///
-/// Video controller ownership lives entirely in [_ChallengeStepViewerState].
-/// Only one [VideoPlayerController] / [ChewieController] is active at a time,
-/// preventing simultaneous hardware MediaCodec allocations that caused OOM
-/// crashes on low-memory Android devices.
+/// Video/webm steps show a static play-icon placeholder here. The actual
+/// hardware VP9 decoder is only allocated inside [ChallengeStepsFullScreenViewer],
+/// keeping at most one decoder alive at a time and preventing the OOM crashes
+/// that occur when multiple decoders accumulate graphic-buffer pools (~92 MB
+/// each) faster than Android's C2 evictor can reclaim them.
 class ChallengeStepViewer extends StatefulWidget {
   final List<ChallengeStep> steps;
 
@@ -29,104 +23,16 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
   late final PageController _pageController;
   int _currentPage = 0;
 
-  // ── Single active video controller ───────────────────────────────────────────────────
-  // These fields represent the video/webm for whichever page is currently
-  // visible. They are disposed before a new page's video is initialised, so
-  // at most one hardware video decoder is running at any given time.
-  VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
-  bool _videoReady = false;
-  int? _videoPageIndex; // page that currently owns the active controller
-
-  /// Monotonically-increasing counter used to detect stale async inits that
-  /// should be discarded when the user swipes before initialisation finishes.
-  int _initGeneration = 0;
-
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _initVideoForPage(0);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _teardownVideo();
     super.dispose();
-  }
-
-  // ── Video lifecycle ───────────────────────────────────────────────────────────────────────
-
-  void _teardownVideo() {
-    _chewieController?.dispose();
-    _chewieController = null;
-    _videoController?.dispose();
-    _videoController = null;
-    _videoPageIndex = null;
-    _videoReady = false;
-  }
-
-  Future<void> _initVideoForPage(int index) async {
-    final generation = ++_initGeneration;
-    if (index >= widget.steps.length) return;
-    final step = widget.steps[index];
-
-    // Always tear down whatever was running before.
-    _teardownVideo();
-    if (mounted) setState(() {});
-
-    // No video content on this page — nothing to do.
-    if ((step.mediaType != 'video' && step.mediaType != 'webm') || step.mediaUrl.isEmpty) {
-      return;
-    }
-
-    // Wait for the native ExoPlayer to release its graphic buffer pool
-    // (~92 MB each) before allocating a new decoder. The C2 buffer pool
-    // evictor needs ~500-600 ms to reclaim. Also clear Flutter's image
-    // cache to free Java heap headroom for the incoming decoder.
-    PaintingBinding.instance.imageCache.clear();
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (generation != _initGeneration || !mounted) return;
-
-    try {
-      final vc = VideoPlayerController.networkUrl(
-        Uri.parse(step.mediaUrl),
-        // Prevent ExoPlayer from requesting audio focus so it cannot
-        // interrupt the challenge audio player with AUDIOFOCUS_LOSS.
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-      );
-      await vc.initialize();
-
-      // Stale init: the user already swiped to another page.
-      if (generation != _initGeneration || !mounted) {
-        vc.dispose();
-        return;
-      }
-
-      if (step.mediaType == 'webm') {
-        await vc.setLooping(true);
-        await vc.setVolume(0);
-        await vc.play();
-        _videoController = vc;
-      } else {
-        // 'video' — wrap with Chewie for full controls.
-        final cc = ChewieController(
-          videoPlayerController: vc,
-          autoPlay: false,
-          looping: false,
-          allowFullScreen: false,
-          errorBuilder: (ctx, _) => _buildMediaError(ctx),
-        );
-        _videoController = vc;
-        _chewieController = cc;
-      }
-
-      _videoPageIndex = index;
-      if (mounted) setState(() => _videoReady = true);
-    } catch (_) {
-      // Leave _videoReady = false so the step shows an error widget.
-    }
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────────────────
@@ -151,40 +57,15 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: widget.steps.length,
-                onPageChanged: (idx) {
-                  setState(() => _currentPage = idx);
-                  _initVideoForPage(idx);
-                },
+                onPageChanged: (idx) => setState(() => _currentPage = idx),
                 itemBuilder: (context, index) {
-                  // Only pass the active controllers to the visible page.
-                  final isActive = _videoPageIndex == index;
                   return _StepPage(
                     step: widget.steps[index],
-                    videoController: isActive ? _videoController : null,
-                    chewieController: isActive ? _chewieController : null,
-                    videoReady: isActive && _videoReady,
-                    onMediaTap: () async {
-                      // Transfer ownership of the current controller to the
-                      // full-screen viewer so it displays immediately without
-                      // re-downloading or allocating a second VP9 decoder.
-                      final savedPage = _currentPage;
-                      final transferredVc = _videoController;
-                      final transferredCc = _chewieController;
-                      _videoController = null;
-                      _chewieController = null;
-                      _videoPageIndex = null;
-                      _videoReady = false;
-                      if (mounted) setState(() {});
-                      await ChallengeStepsFullScreenViewer.show(
-                        context,
-                        steps: widget.steps,
-                        initialIndex: index,
-                        transferredVideoController: transferredVc,
-                        transferredChewieController: transferredCc,
-                      );
-                      // Re-init for the page the user was on.
-                      if (mounted) _initVideoForPage(savedPage);
-                    },
+                    onMediaTap: () => ChallengeStepsFullScreenViewer.show(
+                      context,
+                      steps: widget.steps,
+                      initialIndex: index,
+                    ),
                   );
                 },
               ),
@@ -214,34 +95,6 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
     );
   }
 
-  Widget _buildMediaError(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: 40,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Media unavailable',
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ── Single step page (stateless) ───────────────────────────────────────────────────────────────────
@@ -251,16 +104,10 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
 /// alive at a time.
 class _StepPage extends StatelessWidget {
   final ChallengeStep step;
-  final VideoPlayerController? videoController;
-  final ChewieController? chewieController;
-  final bool videoReady;
   final VoidCallback? onMediaTap;
 
   const _StepPage({
     required this.step,
-    this.videoController,
-    this.chewieController,
-    this.videoReady = false,
     this.onMediaTap,
   });
 
@@ -332,26 +179,10 @@ class _StepPage extends StatelessWidget {
     Widget content;
     if (url.isEmpty) {
       content = _buildMediaError(context);
-    } else if (mediaType == 'video') {
-      content = (videoReady && chewieController != null) ? Chewie(controller: chewieController!) : _buildLoadingPlaceholder(context);
-    } else if (mediaType == 'webm') {
-      if (videoReady && videoController != null) {
-        final size = videoController!.value.size;
-        if (size.width > 0 && size.height > 0) {
-          content = FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: size.width,
-              height: size.height,
-              child: VideoPlayer(videoController!),
-            ),
-          );
-        } else {
-          content = VideoPlayer(videoController!);
-        }
-      } else {
-        content = _buildLoadingPlaceholder(context);
-      }
+    } else if (mediaType == 'video' || mediaType == 'webm') {
+      // Hardware VP9 decoder is only allocated in ChallengeStepsFullScreenViewer.
+      // Show a static placeholder here to avoid accumulating buffer pools.
+      content = _buildVideoPlaceholder(context);
     } else {
       // image / gif
       content = Image.network(
@@ -374,7 +205,7 @@ class _StepPage extends StatelessWidget {
       aspectRatio: 3 / 4,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: mediaType == 'video' ? content : GestureDetector(onTap: onMediaTap, child: content),
+        child: GestureDetector(onTap: onMediaTap, child: content),
       ),
     );
 
@@ -441,13 +272,19 @@ class _StepPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLoadingPlaceholder(BuildContext context) {
+  Widget _buildVideoPlaceholder(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Center(child: CircularProgressIndicator()),
+      child: Center(
+        child: Icon(
+          Icons.play_circle_outline_rounded,
+          size: 56,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+        ),
+      ),
     );
   }
 }
