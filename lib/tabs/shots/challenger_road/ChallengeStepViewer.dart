@@ -308,7 +308,7 @@ class _StepPage extends StatelessWidget {
     } else if (mediaType == 'video') {
       content = (videoReady && chewieController != null)
           ? Chewie(controller: chewieController!)
-          : const Center(child: CircularProgressIndicator());
+          : _buildLoadingPlaceholder(context);
     } else if (mediaType == 'webm') {
       if (videoReady && videoController != null) {
         final size = videoController!.value.size;
@@ -325,7 +325,7 @@ class _StepPage extends StatelessWidget {
           content = VideoPlayer(videoController!);
         }
       } else {
-        content = const Center(child: CircularProgressIndicator());
+        content = _buildLoadingPlaceholder(context);
       }
     } else {
       // image / gif
@@ -422,6 +422,16 @@ class _StepPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }

@@ -288,12 +288,6 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── Audio player (shown when audio_url is present) ──────────────────
-                    if (!_audioError && widget.challenge.audioUrl != null) ...[
-                      _buildAudioPlayer(context),
-                      const SizedBox(height: 12),
-                    ],
-
                     // ── Quota card ───────────────────────────────────────────────────────
                     _buildQuotaCard(context),
                     const SizedBox(height: 12),
@@ -338,6 +332,10 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
                 ),
               ),
 
+              // ── Pinned audio player (always visible, never scrolls away) ────────
+              if (!_audioError && widget.challenge.audioUrl != null)
+                _buildPinnedAudioPlayer(context),
+
               // ── Pinned CTA footer ─────────────────────────────────────────────────
               if (widget.isSubscriptionLocked || widget.showStartCta) _buildCTA(context),
             ],
@@ -347,21 +345,22 @@ class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
     );
   }
 
-  // ── Audio player UI ───────────────────────────────────────────────────────────────────────
+  // ── Pinned audio player UI ─────────────────────────────────────────────────────────────────
 
-  Widget _buildAudioPlayer(BuildContext context) {
+  Widget _buildPinnedAudioPlayer(BuildContext context) {
     final isPlaying = _playerState == PlayerState.playing;
     final progress = _duration.inMilliseconds > 0
         ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      padding: const EdgeInsets.fromLTRB(4, 6, 12, 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+          ),
         ),
       ),
       child: Row(

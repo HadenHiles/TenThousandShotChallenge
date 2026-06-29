@@ -330,7 +330,15 @@ class _ChallengeStepsFullScreenViewerState
       ),
     );
   }
-}
+  Widget _buildLoadingPlaceholder(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }}
 
 // ── Prev / Next / Done button ────────────────────────────────────────────────────────────────────────
 
@@ -539,7 +547,7 @@ class _FullScreenStepPage extends StatelessWidget {
     if (mediaType == 'video') {
       return (videoReady && chewieController != null)
           ? Chewie(controller: chewieController!)
-          : const Center(child: CircularProgressIndicator());
+          : _buildLoadingPlaceholder(context);
     }
 
     if (mediaType == 'webm') {
@@ -554,7 +562,7 @@ class _FullScreenStepPage extends StatelessWidget {
           ),
         );
       }
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingPlaceholder(context);
     }
 
     // image / gif
@@ -611,6 +619,16 @@ class _FullScreenStepPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }
