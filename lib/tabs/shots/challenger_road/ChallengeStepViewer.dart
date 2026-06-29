@@ -81,11 +81,12 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       return;
     }
 
-    // Wait briefly for the native ExoPlayer to release its graphic buffer
-    // pool (~92 MB each) before we allocate a new decoder. Without this delay
-    // rapid page swipes pile up decoders that haven't freed native memory yet,
-    // exhausting the 512 MB largeHeap limit.
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Wait for the native ExoPlayer to release its graphic buffer pool
+    // (~92 MB each) before allocating a new decoder. The C2 buffer pool
+    // evictor needs ~500-600 ms to reclaim. Also clear Flutter's image
+    // cache to free Java heap headroom for the incoming decoder.
+    PaintingBinding.instance.imageCache.clear();
+    await Future.delayed(const Duration(milliseconds: 600));
     if (generation != _initGeneration || !mounted) return;
 
     try {
@@ -163,17 +164,25 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
                     chewieController: isActive ? _chewieController : null,
                     videoReady: isActive && _videoReady,
                     onMediaTap: () async {
-                      // Teardown the inline controller before the full-screen
-                      // viewer opens so only one VP9 decoder is alive at a time.
+                      // Transfer ownership of the current controller to the
+                      // full-screen viewer so it displays immediately without
+                      // re-downloading or allocating a second VP9 decoder.
                       final savedPage = _currentPage;
-                      _teardownVideo();
+                      final transferredVc = _videoController;
+                      final transferredCc = _chewieController;
+                      _videoController = null;
+                      _chewieController = null;
+                      _videoPageIndex = null;
+                      _videoReady = false;
                       if (mounted) setState(() {});
                       await ChallengeStepsFullScreenViewer.show(
                         context,
                         steps: widget.steps,
                         initialIndex: index,
+                        transferredVideoController: transferredVc,
+                        transferredChewieController: transferredCc,
                       );
-                      // Re-init for the page the user left on.
+                      // Re-init for the page the user was on.
                       if (mounted) _initVideoForPage(savedPage);
                     },
                   );
