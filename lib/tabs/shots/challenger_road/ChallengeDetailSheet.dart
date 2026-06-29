@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart' show activeChallengeSession, sessionPanelController, ChallengeSessionConfig;
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeProgressEntry.dart';
@@ -23,7 +24,7 @@ import 'ChallengeTriesHistorySheet.dart';
 ///   onSessionComplete: () => setState(() { /* refresh */ }),
 /// );
 /// ```
-class ChallengeDetailSheet extends StatelessWidget {
+class ChallengeDetailSheet extends StatefulWidget {
   final ChallengerRoadChallenge challenge;
   final ChallengerRoadLevel levelDoc;
   final ChallengerRoadAttempt attempt;
@@ -90,31 +91,125 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
-  // ── State helpers ─────────────────────────────────────────────────────────
+  @override
+  State<ChallengeDetailSheet> createState() => _ChallengeDetailSheetState();
+}
+
+class _ChallengeDetailSheetState extends State<ChallengeDetailSheet> {
+  // ── Audio state ─────────────────────────────────────────────────────────
+  AudioPlayer? _audioPlayer;
+  PlayerState _playerState = PlayerState.stopped;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  bool _audioLoading = false;
+  bool _audioError = false;
+
+  // ── State helpers ───────────────────────────────────────────────────────────────────
 
   bool get _isPassed {
-    return (progress?.bestLevel ?? 0) >= levelDoc.level;
+    return (widget.progress?.bestLevel ?? 0) >= widget.levelDoc.level;
   }
 
   bool get _isLocked {
-    final effectiveLevel = isPreviewMode ? (attempt.currentLevel < previewMaxLevel ? attempt.currentLevel : previewMaxLevel) : attempt.currentLevel;
-    return levelDoc.level > effectiveLevel;
+    final effectiveLevel = widget.isPreviewMode
+        ? (widget.attempt.currentLevel < widget.previewMaxLevel ? widget.attempt.currentLevel : widget.previewMaxLevel)
+        : widget.attempt.currentLevel;
+    return widget.levelDoc.level > effectiveLevel;
   }
 
   /// Steps to show: level-specific override if present, else parent challenge steps.
   List<ChallengeStep> get _steps {
-    final levelSteps = levelDoc.steps;
+    final levelSteps = widget.levelDoc.steps;
     if (levelSteps != null && levelSteps.isNotEmpty) return levelSteps;
-    return challenge.steps;
+    return widget.challenge.steps;
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // ── Lifecycle ───────────────────────────────────────────────────────────────────────
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.challenge.audioUrl != null) _initAudio();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer?.stop();
+    _audioPlayer?.dispose();
+    super.dispose();
+  }
+
+  // ── Audio ──────────────────────────────────────────────────────────────────────────────
+
+  Future<void> _initAudio() async {
+    if (!mounted) return;
+    setState(() {
+      _audioLoading = true;
+      _audioError = false;
+    });
+    try {
+      final player = AudioPlayer();
+      await player.setAudioContext(AudioContext(
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: const {AVAudioSessionOptions.mixWithOthers},
+        ),
+        android: const AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.speech,
+          usageType: AndroidUsageType.media,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+      ));
+      player.onDurationChanged.listen((d) {
+        if (mounted) setState(() => _duration = d);
+      });
+      player.onPositionChanged.listen((p) {
+        if (mounted) setState(() => _position = p);
+      });
+      player.onPlayerStateChanged.listen((s) {
+        if (mounted) setState(() => _playerState = s);
+      });
+      player.onPlayerComplete.listen((_) {
+        if (mounted) setState(() => _position = Duration.zero);
+      });
+      await player.setSourceUrl(widget.challenge.audioUrl!);
+      _audioPlayer = player;
+      if (mounted) setState(() => _audioLoading = false);
+    } catch (_) {
+      if (mounted) setState(() { _audioLoading = false; _audioError = true; });
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    final player = _audioPlayer;
+    if (player == null) return;
+    if (_playerState == PlayerState.playing) {
+      await player.pause();
+    } else {
+      await player.resume();
+    }
+  }
+
+  Future<void> _seekTo(double fraction) async {
+    final player = _audioPlayer;
+    if (player == null || _duration == Duration.zero) return;
+    await player.seek(Duration(milliseconds: (_duration.inMilliseconds * fraction).round()));
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    // Subscription-locked view is shorter (no steps), but still shows history.
-    final initialSize = isSubscriptionLocked ? 0.6 : (showStartCta ? 0.9 : 0.5);
-    final minSize = isSubscriptionLocked ? 0.4 : (showStartCta ? 0.5 : 0.4);
+    final initialSize = widget.isSubscriptionLocked ? 0.6 : (widget.showStartCta ? 0.9 : 0.5);
+    final minSize = widget.isSubscriptionLocked ? 0.4 : (widget.showStartCta ? 0.5 : 0.4);
 
     return DraggableScrollableSheet(
       initialChildSize: initialSize,
@@ -129,7 +224,7 @@ class ChallengeDetailSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ── Drag handle ────────────────────────────────────────────
+              // ── Drag handle ──────────────────────────────────────────────────
               Container(
                 margin: const EdgeInsets.only(top: 10, bottom: 6),
                 width: 40,
@@ -140,17 +235,16 @@ class ChallengeDetailSheet extends StatelessWidget {
                 ),
               ),
 
-              // ── Scrollable content ─────────────────────────────────────
+              // ── Scrollable content ─────────────────────────────────────────────────
               Expanded(
                 child: ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   children: [
-                    // ── Header row ────────────────────────────────────────
+                    // ── Header row ────────────────────────────────────────────────────
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Level badge
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
                           decoration: BoxDecoration(
@@ -158,7 +252,7 @@ class ChallengeDetailSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
-                            'LVL ${levelDoc.level}',
+                            'LVL ${widget.levelDoc.level}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontFamily: 'NovecentoSans',
@@ -169,7 +263,7 @@ class ChallengeDetailSheet extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            challenge.name,
+                            widget.challenge.name,
                             style: TextStyle(
                               fontFamily: 'NovecentoSans',
                               fontSize: 28,
@@ -182,9 +276,9 @@ class ChallengeDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── Description ───────────────────────────────────────
+                    // ── Description ─────────────────────────────────────────────────────
                     Text(
-                      challenge.description,
+                      widget.challenge.description,
                       style: TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 15,
@@ -194,23 +288,25 @@ class ChallengeDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── Quota card ────────────────────────────────────────
+                    // ── Audio player (shown when audio_url is present) ──────────────────
+                    if (!_audioError && widget.challenge.audioUrl != null) ...[
+                      _buildAudioPlayer(context),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── Quota card ───────────────────────────────────────────────────────
                     _buildQuotaCard(context),
                     const SizedBox(height: 12),
 
-                    // ── Try history link ──────────────────────────────────
-                    // Always show the link – the history sheet queries across
-                    // all attempts, so prior-attempt tries are visible even
-                    // when progress for the current attempt is null.
+                    // ── Try history link ────────────────────────────────────────────────
                     _buildHistoryLink(context),
 
                     const SizedBox(height: 20),
 
-                    // ── Steps section (hidden for subscription-locked challenges) ────
-                    if (isSubscriptionLocked) ...[
+                    // ── Steps section ──────────────────────────────────────────────────────
+                    if (widget.isSubscriptionLocked) ...[
                       _buildSubscriptionLockedBanner(context)
                     ] else ...[
-                      // ── Steps header ──────────────────────────────────────
                       Text(
                         'STEPS',
                         style: TextStyle(
@@ -221,8 +317,6 @@ class ChallengeDetailSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-
-                      // ── Step viewer ───────────────────────────────────────
                       if (_steps.isNotEmpty)
                         ChallengeStepViewer(steps: _steps)
                       else
@@ -244,8 +338,8 @@ class ChallengeDetailSheet extends StatelessWidget {
                 ),
               ),
 
-              // ── Pinned CTA footer ──────────────────────────────────────
-              if (isSubscriptionLocked || showStartCta) _buildCTA(context),
+              // ── Pinned CTA footer ─────────────────────────────────────────────────
+              if (widget.isSubscriptionLocked || widget.showStartCta) _buildCTA(context),
             ],
           ),
         );
@@ -253,7 +347,90 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
-  // ── Quota info card ───────────────────────────────────────────────────────
+  // ── Audio player UI ───────────────────────────────────────────────────────────────────────
+
+  Widget _buildAudioPlayer(BuildContext context) {
+    final isPlaying = _playerState == PlayerState.playing;
+    final progress = _duration.inMilliseconds > 0
+        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Play / pause
+          _audioLoading
+              ? const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  onPressed: _togglePlayback,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  icon: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: Theme.of(context).primaryColor,
+                    size: 28,
+                  ),
+                ),
+          // Position
+          Text(
+            _formatDuration(_position),
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+          // Scrubber
+          Expanded(
+            child: SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: Theme.of(context).primaryColor,
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                thumbColor: Theme.of(context).primaryColor,
+                overlayColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+              ),
+              child: Slider(
+                value: progress.toDouble(),
+                onChanged: _audioLoading ? null : _seekTo,
+              ),
+            ),
+          ),
+          // Total duration
+          Text(
+            _formatDuration(_duration),
+            style: TextStyle(
+              fontFamily: 'NovecentoSans',
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Quota info card ───────────────────────────────────────────────────────────────────
 
   Widget _buildQuotaCard(BuildContext context) {
     return Container(
@@ -268,13 +445,13 @@ class ChallengeDetailSheet extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _quotaStat(context, '${levelDoc.shotsRequired}', 'SHOTS / TRY'),
+          _quotaStat(context, '${widget.levelDoc.shotsRequired}', 'SHOTS / TRY'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-          _quotaStat(context, '${levelDoc.shotsToPass}', 'TARGET SCORE'),
+          _quotaStat(context, '${widget.levelDoc.shotsToPass}', 'TARGET SCORE'),
           Container(width: 1, height: 32, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           _quotaStat(
             context,
-            progress != null ? '${progress!.totalAttempts}' : '–',
+            widget.progress != null ? '${widget.progress!.totalAttempts}' : '–',
             'ATTEMPTS',
           ),
         ],
@@ -308,20 +485,19 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
-  // ── Try history link ──────────────────────────────────────────────────────
+  // ── Try history link ───────────────────────────────────────────────────────────────────────────
 
   Widget _buildHistoryLink(BuildContext context) {
-    // progress is nullable - use 0 when no attempts have been recorded yet.
-    final tryCount = progress?.totalAttempts ?? 0;
-    final passCount = progress?.totalPassed ?? 0;
+    final tryCount = widget.progress?.totalAttempts ?? 0;
+    final passCount = widget.progress?.totalPassed ?? 0;
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () {
         ChallengeTriesHistorySheet.show(
           context,
-          challenge: challenge,
-          levelDoc: levelDoc,
-          userId: userId,
+          challenge: widget.challenge,
+          levelDoc: widget.levelDoc,
+          userId: widget.userId,
         );
       },
       child: Container(
@@ -343,7 +519,7 @@ class ChallengeDetailSheet extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '$tryCount ${tryCount == 1 ? 'TRY' : 'TRIES'} LOGGED  ·  $passCount MET TARGET',
+                '$tryCount ${tryCount == 1 ? "TRY" : "TRIES"} LOGGED  ·  $passCount MET TARGET',
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
                   fontSize: 13,
@@ -363,7 +539,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
-  // ── Subscription-locked banner ────────────────────────────────────────────
+  // ── Subscription-locked banner ────────────────────────────────────────────────────────────────
 
   Widget _buildSubscriptionLockedBanner(BuildContext context) {
     return Container(
@@ -400,7 +576,7 @@ class ChallengeDetailSheet extends StatelessWidget {
     );
   }
 
-  // ── CTA button ────────────────────────────────────────────────────────────
+  // ── CTA button ──────────────────────────────────────────────────────────────────────────────────
 
   Widget _buildCTA(BuildContext context) {
     final String label;
@@ -408,19 +584,18 @@ class ChallengeDetailSheet extends StatelessWidget {
     final Color bgColor;
     VoidCallback? onPressed;
 
-    if (isSubscriptionLocked) {
-      // Subscription-locked: show an upgrade prompt instead of start/retry.
+    if (widget.isSubscriptionLocked) {
       label = 'Upgrade to Pro to Play';
-      enabled = onPreviewLevelUnlockAttempted != null;
+      enabled = widget.onPreviewLevelUnlockAttempted != null;
       bgColor = Theme.of(context).primaryColor;
       onPressed = enabled
           ? () {
               Navigator.of(context).pop();
-              onPreviewLevelUnlockAttempted?.call();
+              widget.onPreviewLevelUnlockAttempted?.call();
             }
           : null;
     } else if (_isLocked) {
-      label = 'Complete Level ${attempt.currentLevel} First';
+      label = 'Complete Level ${widget.attempt.currentLevel} First';
       enabled = false;
       bgColor = Colors.grey.shade600;
       onPressed = null;
@@ -466,17 +641,17 @@ class ChallengeDetailSheet extends StatelessWidget {
   }
 
   Future<void> _launchChallenge(BuildContext context) async {
-    Navigator.of(context).pop(); // close the detail sheet
+    Navigator.of(context).pop();
     activeChallengeSession.value = ChallengeSessionConfig(
-      challenge: challenge,
-      levelDoc: levelDoc,
-      attempt: attempt,
-      userId: userId,
+      challenge: widget.challenge,
+      levelDoc: widget.levelDoc,
+      attempt: widget.attempt,
+      userId: widget.userId,
       startedAt: DateTime.now(),
-      onSessionComplete: onSessionComplete,
-      isPreviewMode: isPreviewMode,
-      previewMaxLevel: previewMaxLevel,
-      onPreviewLevelUnlockAttempted: onPreviewLevelUnlockAttempted,
+      onSessionComplete: widget.onSessionComplete,
+      isPreviewMode: widget.isPreviewMode,
+      previewMaxLevel: widget.previewMaxLevel,
+      onPreviewLevelUnlockAttempted: widget.onPreviewLevelUnlockAttempted,
     );
     sessionPanelController.open();
   }

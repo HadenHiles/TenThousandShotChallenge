@@ -24,6 +24,9 @@ class ChallengerRoadChallenge {
   /// 'backhand'. Null means no specific shot type is required.
   final String? shotType;
 
+  /// Optional URL for a coaching audio clip shown in the challenge detail sheet.
+  final String? audioUrl;
+
   final List<ChallengeStep> steps;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -42,6 +45,7 @@ class ChallengerRoadChallenge {
     this.previewThumbnailUrl,
     this.previewThumbnailMediaType,
     this.shotType,
+    this.audioUrl,
     required this.steps,
     this.createdAt,
     this.updatedAt,
@@ -61,6 +65,7 @@ class ChallengerRoadChallenge {
         previewThumbnailUrl = map['preview_thumbnail_url'] as String?,
         previewThumbnailMediaType = map['preview_thumbnail_media_type'] as String?,
         shotType = map['shot_type'] as String?,
+        audioUrl = map['audio_url'] as String?,
         steps = (map['steps'] as List<dynamic>?)?.map((s) => ChallengeStep.fromMap(s as Map<String, dynamic>)).toList() ?? [],
         createdAt = (map['created_at'] as Timestamp?)?.toDate(),
         updatedAt = (map['updated_at'] as Timestamp?)?.toDate();
@@ -79,6 +84,7 @@ class ChallengerRoadChallenge {
       'preview_thumbnail_url': previewThumbnailUrl,
       'preview_thumbnail_media_type': previewThumbnailMediaType,
       'shot_type': shotType,
+      'audio_url': audioUrl,
       'steps': steps.map((s) => s.toMap()).toList(),
       'created_at': createdAt,
       'updated_at': updatedAt,
@@ -98,6 +104,7 @@ class ChallengerRoadChallenge {
     String? previewThumbnailUrl,
     String? previewThumbnailMediaType,
     String? shotType,
+    String? audioUrl,
     List<ChallengeStep>? steps,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -116,6 +123,7 @@ class ChallengerRoadChallenge {
       previewThumbnailUrl: previewThumbnailUrl ?? this.previewThumbnailUrl,
       previewThumbnailMediaType: previewThumbnailMediaType ?? this.previewThumbnailMediaType,
       shotType: shotType ?? this.shotType,
+      audioUrl: audioUrl ?? this.audioUrl,
       steps: steps ?? this.steps,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
