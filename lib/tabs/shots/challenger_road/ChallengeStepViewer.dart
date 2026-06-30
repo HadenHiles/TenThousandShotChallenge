@@ -94,7 +94,6 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       ],
     );
   }
-
 }
 
 // ── Single step page (stateless) ───────────────────────────────────────────────────────────────────
