@@ -1287,11 +1287,13 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
             // vp.bottom, so the map inset must include vp.bottom as an extra overflow term.
             final threeButtonExtra = isThreeButtonAndroidNavigation(context) ? vp.bottom.toDouble() : 0.0;
             final inset = vp.top + kBottomNavigationBarHeight + sessionPanelHeight + safeBottom + threeButtonExtra + 5;
+            final bannerBottom = kBottomNavigationBarHeight + sessionPanelHeight + safeBottom + threeButtonExtra + 8;
             return ChallengerRoadMapView(
               userId: user.uid,
               onCloseTap: _closeChallengerRoad,
               isPreviewMode: _subscriptionLevel != 'pro',
               mapBottomInset: inset,
+              bannerBottomInset: bannerBottom,
               hasActiveSession: sessionPanelHeight > 0,
               onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
             );

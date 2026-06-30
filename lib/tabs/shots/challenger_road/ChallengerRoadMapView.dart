@@ -279,6 +279,11 @@ class ChallengerRoadMapView extends StatefulWidget {
   final VoidCallback? onPreviewLevelUnlockAttempted;
   final double mapBottomInset;
 
+  /// Bottom offset (from the screen/stack bottom edge) at which the free-mode
+  /// "Go Pro" preview banner should be anchored. Should NOT include vp.top.
+  /// Defaults to [kBottomNavigationBarHeight] + 8 when not provided.
+  final double bannerBottomInset;
+
   /// Whether a shooting session panel is currently collapsed at the bottom.
   /// Used to add extra clearance to the badges pill in preview mode.
   final bool hasActiveSession;
@@ -300,6 +305,7 @@ class ChallengerRoadMapView extends StatefulWidget {
     this.previewHeaderAttempt,
     this.onPreviewLevelUnlockAttempted,
     this.mapBottomInset = 16,
+    this.bannerBottomInset = kBottomNavigationBarHeight + 8,
     this.hasActiveSession = false,
   });
 
@@ -1780,7 +1786,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     return Positioned(
       left: 14,
       right: 14,
-      bottom: 16 + widget.mapBottomInset,
+      bottom: widget.bannerBottomInset,
       child: Card(
         color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.95),
         elevation: 8,
@@ -2237,11 +2243,14 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
 
   Future<void> _init() async {
     try {
-      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
       await _controller!.initialize();
       if (!mounted) return;
-      await _controller!.setLooping(true);
       await _controller!.setVolume(0);
+      await _controller!.setLooping(true);
       await _controller!.play();
       if (mounted) setState(() => _ready = true);
     } catch (_) {
