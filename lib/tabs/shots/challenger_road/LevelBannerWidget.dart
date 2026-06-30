@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 class LevelBannerWidget extends StatelessWidget {
   final String levelName;
 
+  /// The level number shown as a small indicator above the banner pill.
+  final int? level;
+
   /// True if this is the level the player is currently on.
   final bool isCurrentLevel;
 
@@ -15,6 +18,7 @@ class LevelBannerWidget extends StatelessWidget {
     required this.levelName,
     required this.isCurrentLevel,
     required this.isLocked,
+    this.level,
   });
 
   Color _bannerColor(BuildContext context) {
@@ -43,43 +47,61 @@ class LevelBannerWidget extends StatelessWidget {
             ),
           ),
 
-          // Banner pill
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 18),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: isCurrentLevel
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.5),
-                        blurRadius: 14,
-                        spreadRadius: 2,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isLocked) ...[
-                  const Icon(Icons.lock, color: Colors.white70, size: 14),
-                  const SizedBox(width: 5),
-                ] else if (!isCurrentLevel) ...[
-                  const Icon(Icons.check_circle, color: Colors.white, size: 14),
-                  const SizedBox(width: 5),
-                ],
-                Text(
-                  levelName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 18,
-                    letterSpacing: 1.5,
+          // Banner pill (with optional level number indicator above)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (level != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'LEVEL $level',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontFamily: 'NovecentoSans',
+                      fontSize: 11,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 18),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: isCurrentLevel
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.5),
+                            blurRadius: 14,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isLocked) ...[
+                      const Icon(Icons.lock, color: Colors.white70, size: 14),
+                      const SizedBox(width: 5),
+                    ] else if (!isCurrentLevel) ...[
+                      const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      levelName.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           // Right connector line

@@ -8,6 +8,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadAttempt.
 class ChallengerRoadHeader extends StatelessWidget {
   final ChallengerRoadAttempt? attempt;
   final String? levelLabel;
+  final int? levelNumber;
   final double topPadding;
   final VoidCallback? onRestartTap;
   final VoidCallback? onCloseTap;
@@ -16,6 +17,7 @@ class ChallengerRoadHeader extends StatelessWidget {
     super.key,
     this.attempt,
     this.levelLabel,
+    this.levelNumber,
     this.topPadding = 0,
     this.onRestartTap,
     this.onCloseTap,
@@ -33,6 +35,7 @@ class ChallengerRoadHeader extends StatelessWidget {
     final numberFormat = NumberFormat('#,###');
     final progress = shotCount / 10000.0;
     final displayLabel = levelLabel ?? 'LVL $level';
+    final displayLevelNumber = levelNumber ?? (levelLabel != null ? level : null);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 360),
@@ -54,28 +57,47 @@ class ChallengerRoadHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 13),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (displayLevelNumber != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        'LEVEL $displayLevelNumber',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontFamily: 'NovecentoSans',
+                          fontSize: 10,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                child: Text(
-                  displayLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 18,
-                    letterSpacing: 1.2,
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 13),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      displayLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 18,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,

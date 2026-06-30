@@ -1256,7 +1256,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         // Uses expanded centres + sectionHeight so the connector stays anchored
         // to the actual node position during focus expansion.
         Widget? connectorPaint;
-        if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0) {
+        if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0 && centres.isNotEmpty) {
           // The exit node of the level below is its index-0 node (top of that section).
           final belowExitX = width * _xFractions[_colForIndex(0)];
           // Compute the Y of the below section's index-0 node using the same
@@ -1320,7 +1320,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked),
+                  child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
                 ),
               ),
 
@@ -1576,12 +1576,14 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     int level,
     String levelName,
     bool isCurrentLevel,
-    bool isLocked,
-  ) {
+    bool isLocked, {
+    int? levelNumber,
+  }) {
     final banner = LevelBannerWidget(
       levelName: levelName,
       isCurrentLevel: isCurrentLevel,
       isLocked: isLocked,
+      level: levelNumber,
     );
 
     if (_justUnlockedLevel == level) {
@@ -1714,6 +1716,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             ChallengerRoadHeader(
               attempt: widget.isPreviewMode ? (widget.previewHeaderAttempt ?? attempt) : attempt,
               levelLabel: levelLabel,
+              levelNumber: _isRoadComplete(data) ? null : (widget.isPreviewMode ? math.min(attempt?.currentLevel ?? 1, widget.previewMaxLevel) : attempt?.currentLevel),
               topPadding: MediaQuery.of(context).padding.top,
               onRestartTap: attempt != null ? () => _confirmRestart(context, attempt) : null,
               onCloseTap: widget.onCloseTap,
