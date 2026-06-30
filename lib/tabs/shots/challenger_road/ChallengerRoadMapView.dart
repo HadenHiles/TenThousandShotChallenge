@@ -2234,6 +2234,7 @@ class _WebmGifPreview extends StatefulWidget {
 class _WebmGifPreviewState extends State<_WebmGifPreview> {
   VideoPlayerController? _controller;
   bool _ready = false;
+  bool _error = false;
 
   @override
   void initState() {
@@ -2253,8 +2254,9 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
       await _controller!.setLooping(true);
       await _controller!.play();
       if (mounted) setState(() => _ready = true);
-    } catch (_) {
-      // _ready stays false; loading indicator shows.
+    } catch (e, st) {
+      debugPrint('_WebmGifPreview: failed to load ${widget.url}\n$e\n$st');
+      if (mounted) setState(() => _error = true);
     }
   }
 
@@ -2266,6 +2268,21 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
 
   @override
   Widget build(BuildContext context) {
+    if (_error) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+          child: Center(
+            child: Icon(
+              Icons.play_circle_outline_rounded,
+              size: 36,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+            ),
+          ),
+        ),
+      );
+    }
     if (!_ready || _controller == null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
