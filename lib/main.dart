@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fvp/fvp.dart' as fvp;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -43,6 +45,9 @@ const Color slapShotColor = Color(0xff009688);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Use fvp as the video_player backend so WebM (VP8/VP9) works on iOS.
+  fvp.registerWith();
 
   // Reduce Flutter's image cache from the 100 MB default to limit heap
   // pressure on low-memory Android devices.
