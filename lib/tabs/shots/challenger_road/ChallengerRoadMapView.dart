@@ -863,8 +863,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
     if (media.mediaType == 'video' || media.mediaType == 'webm') {
       // Extract a single static thumbnail; never cycle frames or use VideoPlayerController.
+      // resolveVideoUrl converts webm Firebase Storage URLs to mp4 on iOS since
+      // AVFoundation does not support WebM thumbnail extraction.
       return _VideoFrameScrubber(
-        url: media.url!,
+        url: resolveVideoUrl(media.url!),
         focused: false,
         placeholderBuilder: (ctx) => _buildPreviewMediaPlaceholder(ctx, icon: Icons.play_circle_fill_rounded, label: 'Video preview'),
       );
@@ -2196,7 +2198,8 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
         _ready = true;
       });
       if (widget.focused) _scheduleRemainingLoad();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[VideoFrameScrubber] thumbnail load failed for ${widget.url}\n$e\n$st');
       if (mounted) setState(() => _error = true);
     }
   }
