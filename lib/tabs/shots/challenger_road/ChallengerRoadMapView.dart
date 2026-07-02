@@ -1419,9 +1419,14 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
         // Outer Stack lets the connector extend below the ClipRect boundary
         // into the next section's visual area without being clipped.
+        // Connector is the FIRST child so ClipRect content (including preview
+        // cards) paints on top of it – preventing the focused card from being
+        // obscured by the connector line near the section bottom.
         return Stack(
           clipBehavior: Clip.none,
           children: [
+            // Connector behind all other content
+            if (connectorPaint != null) connectorPaint,
             ClipRect(
               child: AnimatedSize(
                 duration: const Duration(milliseconds: 340),
@@ -1628,9 +1633,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             ),
           ),
         ),
-        // Connector lives outside ClipRect so it can extend below the
-        // section boundary into the next section's visual area.
-        if (connectorPaint != null) connectorPaint,
       ],
       );
       },
