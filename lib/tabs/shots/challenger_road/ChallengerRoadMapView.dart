@@ -36,7 +36,9 @@ const double _edgeFocusBufferMin = 100.0;
 const double _edgeFocusBufferMax = 200.0;
 const double _edgeFocusBufferFactor = 0.22;
 // Height of a collapsed (non-active) level section – shows only the banner pill.
-const double _collapsedSectionHeight = _levelSectionExtraTop + _bannerHeight + _levelBottomPad + 32.0;
+// Extra headroom accounts for the "LEVEL X" indicator text above the banner pill
+// and the challenge-count row below it.
+const double _collapsedSectionHeight = _levelSectionExtraTop + _bannerHeight + _levelBottomPad + 56.0;
 // Fixed content-height from the top of the top buffer to the centre of the
 // first (highest) challenge node.  Used to ensure the top buffer is always
 // tall enough that the highest challenge can be scrolled into the focus zone
@@ -426,33 +428,47 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   }
 
   Future<_CRMapData> _loadMapData() async {
-    final levels = await _service!.getAllActiveLevels();
-    ChallengerRoadAttempt? attempt;
+    // Start levels and attempt fetch concurrently – they are independent.
+    final levelsFuture = _service!.getAllActiveLevels();
+    final attemptFuture = widget.isPreviewMode ? _service!.getActiveAttempt(widget.userId) : _service!.syncActiveAttemptProgress(widget.userId);
 
-    if (widget.isPreviewMode) {
-      attempt = await _service!.getActiveAttempt(widget.userId);
-    } else {
-      attempt = await _service!.syncActiveAttemptProgress(widget.userId);
-    }
+    final levels = await levelsFuture;
+    ChallengerRoadAttempt? attempt = await attemptFuture;
 
     if (widget.isPreviewMode && attempt == null) {
       // Ensure free preview users can actually try level 1 challenges.
       attempt = await _service!.createAttempt(widget.userId, 1);
     }
 
+    // Fetch all levels' challenges in parallel (was sequential – big win for 12 levels).
+    final challengeLists = await Future.wait(
+      levels.map((lvl) => _service!.getChallengesForLevel(lvl)),
+    );
     final challengesByLevel = <int, List<ChallengerRoadChallenge>>{};
-    for (final lvl in levels) {
+    for (int i = 0; i < levels.length; i++) {
       // Reverse so sequence 1 appears at the bottom of the level section and
       // the highest sequence appears at the top (bottom-up progression).
-      challengesByLevel[lvl] = (await _service!.getChallengesForLevel(lvl)).reversed.toList();
+      challengesByLevel[levels[i]] = challengeLists[i].reversed.toList();
     }
 
+    // Fetch progress only for the CURRENT level's challenges in parallel.
+    // Completed levels show all nodes as completed and locked levels show all
+    // nodes as locked in _nodeState() regardless of individual progress entries,
+    // so fetching 12×14 = 168 documents eagerly was wasted work.
     final progress = <String, ChallengeProgressEntry>{};
     if (attempt != null) {
-      final allIds = challengesByLevel.values.expand((list) => list).map((c) => c.id).whereType<String>().toSet();
-      for (final cid in allIds) {
-        final p = await _service!.getChallengeProgress(widget.userId, attempt.id!, cid);
-        if (p != null) progress[cid] = p;
+      final effectiveCurrentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
+      final currentChallenges = challengesByLevel[effectiveCurrentLevel] ?? const <ChallengerRoadChallenge>[];
+      final currentIds = currentChallenges.map((c) => c.id).whereType<String>().toList();
+
+      if (currentIds.isNotEmpty) {
+        final entries = await Future.wait(
+          currentIds.map((cid) => _service!.getChallengeProgress(widget.userId, attempt!.id!, cid)),
+        );
+        for (int i = 0; i < currentIds.length; i++) {
+          final p = entries[i];
+          if (p != null) progress[currentIds[i]] = p;
+        }
       }
     }
 
@@ -462,20 +478,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       activeAttempt: attempt,
       progress: progress,
     );
-
-    // Lock in completed levels: only show challenges that the user actually
-    // completed (have a progress entry). This prevents newly-added challenges
-    // from appearing as completed for levels the user has already passed.
-    // Levels below startingLevel were inherited/skipped - keep all their
-    // challenges so they render as completed nodes instead of being hidden.
-    if (attempt != null) {
-      final effectiveCurrentLevel = widget.isPreviewMode ? math.min(attempt.currentLevel, widget.previewMaxLevel) : attempt.currentLevel;
-      for (final lvl in challengesByLevel.keys.toList()) {
-        if (lvl < effectiveCurrentLevel && lvl >= attempt.startingLevel) {
-          challengesByLevel[lvl] = challengesByLevel[lvl]!.where((c) => c.id != null && progress.containsKey(c.id)).toList();
-        }
-      }
-    }
 
     _lastData = result;
 
@@ -1249,27 +1251,48 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     // the current level. Tapping the banner expands the section lazily.
     if (interactive && !_isLevelExpanded(level, currentLevel)) {
       final levelName = challenges.isNotEmpty ? challenges.first.levelName : 'Level $level';
+      final challengeCount = challenges.length;
+      final statusColor = isLocked
+          ? Colors.grey.shade500
+          : Colors.green.shade400;
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => _expandedLevels.add(level)),
         child: SizedBox(
           height: _collapsedSectionHeight,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: _levelBottomPad),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildLevelBanner(context, level, levelName, isCurrentLevel, isLocked, levelNumber: level),
-                  const SizedBox(height: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                  ),
-                ],
-              ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLevelBanner(context, level, levelName, isCurrentLevel, isLocked, levelNumber: level),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isLocked ? Icons.lock_outline : Icons.check_circle_outline,
+                      size: 11,
+                      color: statusColor.withValues(alpha: 0.75),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$challengeCount challenge${challengeCount == 1 ? '' : 's'}  ·  tap to expand',
+                      style: TextStyle(
+                        fontFamily: 'NovecentoSans',
+                        fontSize: 11,
+                        letterSpacing: 0.4,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
