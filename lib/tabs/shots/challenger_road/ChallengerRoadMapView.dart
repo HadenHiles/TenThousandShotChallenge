@@ -1275,14 +1275,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final focusedIndex = interactive ? _focusedIndexForLevel(challenges, level) : -1;
         final baseCentres = _computeNodeCentres(challenges.length, width);
         final centres = _expandedNodeCentres(baseCentres, focusedIndex);
-        final fullSectionHeight =
-            _levelSectionHeight(challenges.length) + (focusedIndex >= 0 ? _focusedSectionExtraHeight : 0);
+        final fullSectionHeight = _levelSectionHeight(challenges.length) + (focusedIndex >= 0 ? _focusedSectionExtraHeight : 0);
 
         // ── Collapsed (lazy – no challenge nodes are built) ───────────────────
         if (!isExpanded) {
-          final statusColor = isLocked
-              ? Colors.grey.shade500.withValues(alpha: 0.75)
-              : Colors.green.shade400.withValues(alpha: 0.75);
+          final statusColor = isLocked ? Colors.grey.shade500.withValues(alpha: 0.75) : Colors.green.shade400.withValues(alpha: 0.75);
           return ClipRect(
             child: AnimatedSize(
               duration: const Duration(milliseconds: 340),
@@ -1361,9 +1358,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             : isCompletedLevel
                 ? const Color(0xFF2E7D32).withValues(alpha: 0.70)
                 : const Color(0xFFCC2200).withValues(alpha: 0.75);
-        final connectorColor = isLocked
-            ? const Color(0xFFB0B0B0).withValues(alpha: 0.35)
-            : const Color(0xFF2E7D32).withValues(alpha: 0.70);
+        final connectorColor = isLocked ? const Color(0xFFB0B0B0).withValues(alpha: 0.35) : const Color(0xFF2E7D32).withValues(alpha: 0.70);
 
         Widget? connectorPaint;
         if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0 && centres.isNotEmpty) {
@@ -1371,8 +1366,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           double belowExitLocalY = _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2);
           final int bfi = belowFocusedIndex ?? -1;
           if (bfi >= 0) {
-            final shiftForTopNode =
-                bfi == 0 ? 0.0 : -math.min(_focusMaxNodeShift, bfi * _focusExpandPerStep);
+            final shiftForTopNode = bfi == 0 ? 0.0 : -math.min(_focusMaxNodeShift, bfi * _focusExpandPerStep);
             belowExitLocalY += _focusedSectionExtraHeight / 2 + shiftForTopNode;
           }
           final connStartY = centres.last.dy + (_nodeDiameter / 2);
@@ -1436,9 +1430,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                             const SizedBox(height: 2),
                           ],
                           GestureDetector(
-                            onTap: (interactive && !isCurrentLevel)
-                                ? () => setState(() => _expandedLevels.remove(level))
-                                : null,
+                            onTap: (interactive && !isCurrentLevel) ? () => setState(() => _expandedLevels.remove(level)) : null,
                             child: _buildLevelBanner(
                               context,
                               level,
@@ -1470,13 +1462,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                       );
 
                       final isFocused = interactive && _isChallengeFocused(challengeId, level);
-                      final isSubscriptionLocked =
-                          widget.isPreviewMode && nodeState == ChallengeNodeState.locked;
-                      final challengeTap =
-                          interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked)
-                              ? () => _handleNodeTap(challenge, level, attempt, data,
-                                    isSubscriptionLocked: isSubscriptionLocked)
-                              : null;
+                      final isSubscriptionLocked = widget.isPreviewMode && nodeState == ChallengeNodeState.locked;
+                      final challengeTap = interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked) ? () => _handleNodeTap(challenge, level, attempt, data, isSubscriptionLocked: isSubscriptionLocked) : null;
                       final previewMedia = _resolvePreviewMedia(challenge);
                       const thumbWidth = 156.0;
                       const thumbHeight = 156.0;
@@ -1515,15 +1502,11 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                       final isEdgeColumn = xPct <= 0.34 || xPct >= 0.66;
                       final nonEdgeExtraUpOffset = isEdgeColumn ? 0.0 : -(_nodeDiameter / 2);
 
-                      final rawTop = (nodeCenter.dy - (thumbHeight / 2)) +
-                          (offsetUp ? verticalUpOffset : 0.0) +
-                          nonEdgeExtraUpOffset;
+                      final rawTop = (nodeCenter.dy - (thumbHeight / 2)) + (offsetUp ? verticalUpOffset : 0.0) + nonEdgeExtraUpOffset;
                       final thumbTop = rawTop.clamp(minTop, maxTop);
 
                       double clampedLeftForSide(bool sideRight) {
-                        final rawLeft = sideRight
-                            ? (nodeCenter.dx + sideGap)
-                            : (nodeCenter.dx - thumbWidth - sideGap);
+                        final rawLeft = sideRight ? (nodeCenter.dx + sideGap) : (nodeCenter.dx - thumbWidth - sideGap);
                         return rawLeft.clamp(minLeft, maxLeft);
                       }
 
@@ -1531,8 +1514,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                         final thumbRight = thumbLeft + thumbWidth;
                         final nodeLeft = nodeCenter.dx - (_nodeDiameter / 2);
                         final nodeRight = nodeCenter.dx + (_nodeDiameter / 2);
-                        final overlap =
-                            math.min(thumbRight, nodeRight) - math.max(thumbLeft, nodeLeft);
+                        final overlap = math.min(thumbRight, nodeRight) - math.max(thumbLeft, nodeLeft);
                         return math.max(0, overlap);
                       }
 
@@ -1568,17 +1550,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                                   child: AnimatedSlide(
                                     duration: const Duration(milliseconds: 190),
                                     curve: Curves.easeOutCubic,
-                                    offset: isFocused
-                                        ? Offset.zero
-                                        : (revealOnRight
-                                            ? const Offset(-0.18, 0)
-                                            : const Offset(0.18, 0)),
+                                    offset: isFocused ? Offset.zero : (revealOnRight ? const Offset(-0.18, 0) : const Offset(0.18, 0)),
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color:
-                                              Theme.of(context).primaryColor.withValues(alpha: 0.45),
+                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.45),
                                           width: 1.1,
                                         ),
                                         boxShadow: [
