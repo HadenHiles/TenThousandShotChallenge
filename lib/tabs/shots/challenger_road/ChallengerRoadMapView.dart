@@ -35,6 +35,8 @@ const double _previewBannerHeight = 58.0; // approx height of the free-mode Card
 const double _edgeFocusBufferMin = 100.0;
 const double _edgeFocusBufferMax = 200.0;
 const double _edgeFocusBufferFactor = 0.22;
+// Height of a collapsed (non-active) level section – shows only the banner pill.
+const double _collapsedSectionHeight = _levelSectionExtraTop + _bannerHeight + _levelBottomPad + 32.0;
 // Fixed content-height from the top of the top buffer to the centre of the
 // first (highest) challenge node.  Used to ensure the top buffer is always
 // tall enough that the highest challenge can be scrolled into the focus zone
@@ -349,6 +351,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   /// whether a level-unlock animation should fire.
   int? _previousCurrentLevel;
 
+  /// Levels the user has manually expanded beyond the always-expanded current
+  /// active level. Completed and locked levels start collapsed by default.
+  final Set<int> _expandedLevels = {};
+
   // Confetti fired when the user scrolls past the finish line after completing
   // all available levels. Stores the last resolved data for scroll-listener access.
   late final ConfettiController _confettiController;
@@ -501,6 +507,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       _confettiFired = false;
       _lastData = null;
       _levelTopOffsets.clear();
+      _expandedLevels.clear();
       _focusTargets.clear();
       _focusedTarget = null;
       _dataFuture = _loadMapData().then((data) {
@@ -741,11 +748,20 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     return challenges.indexWhere((c) => c.id == focused.challenge.id);
   }
 
+  /// Returns true when [level] should be fully expanded (nodes visible).
+  /// The current active level is always expanded; others expand only when the
+  /// user taps their collapsed banner.
+  bool _isLevelExpanded(int level, int currentLevel) => level == currentLevel || _expandedLevels.contains(level);
+
   double _effectiveLevelSectionHeight(
     List<ChallengerRoadChallenge> challenges,
     int level, {
     required bool interactive,
+    required int currentLevel,
   }) {
+    if (interactive && !_isLevelExpanded(level, currentLevel)) {
+      return _collapsedSectionHeight;
+    }
     final focusedIndex = interactive ? _focusedIndexForLevel(challenges, level) : -1;
     return _levelSectionHeight(challenges.length) + (focusedIndex >= 0 ? _focusedSectionExtraHeight : 0);
   }
@@ -801,21 +817,19 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     );
   }
 
-  Widget _buildPreviewMedia(BuildContext context, _ChallengePreviewMedia media, {bool focused = false}) {
+  Widget _buildPreviewMedia(BuildContext context, _ChallengePreviewMedia media) {
+    // Map view always shows static frames – no video cycling or live players.
     if (!media.hasMedia) {
       return _buildPreviewMediaPlaceholder(context, icon: Icons.photo_library_outlined, label: 'Preview coming soon');
     }
 
-    if (media.mediaType == 'video') {
+    if (media.mediaType == 'video' || media.mediaType == 'webm') {
+      // Extract a single static thumbnail; never cycle frames or use VideoPlayerController.
       return _VideoFrameScrubber(
         url: media.url!,
-        focused: focused,
+        focused: false,
         placeholderBuilder: (ctx) => _buildPreviewMediaPlaceholder(ctx, icon: Icons.play_circle_fill_rounded, label: 'Video preview'),
       );
-    }
-
-    if (media.mediaType == 'webm') {
-      return _WebmGifPreview(url: media.url!);
     }
 
     return ClipRRect(
@@ -1122,6 +1136,10 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final roadComplete = _isRoadComplete(data);
         final topStaticHeight = topEdgeFocusBuffer + (roadComplete ? _victoryBannerHeight : 0) + _roadBoundaryLineHeight;
 
+        // Compute currentLevel once for the whole layout pass so collapsed/expanded
+        // decisions are consistent across offset calculation and rendering.
+        final currentLevel = widget.isPreviewMode ? math.min(data.activeAttempt?.currentLevel ?? 1, widget.previewMaxLevel) : (data.activeAttempt?.currentLevel ?? 1);
+
         // Compute cumulative offsets for scroll-to-level after top buffer + finish line.
         double cumulativeOffset = topStaticHeight;
         for (final lvl in levels) {
@@ -1131,6 +1149,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             challenges,
             lvl,
             interactive: interactive,
+            currentLevel: currentLevel,
           );
         }
 
@@ -1166,12 +1185,20 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     challenges,
                     lvl,
                     interactive: interactive,
+                    currentLevel: currentLevel,
                   );
                   // Pass info about the section immediately below so this
                   // section can draw an accurate cross-level connector into it.
                   // Rendering downward means the lower section (painted later)
                   // naturally covers the connector with its own nodes. ✓
-                  final List<ChallengerRoadChallenge>? belowChallenges = lvlIdx < levels.length - 1 ? (data.challengesByLevel[levels[lvlIdx + 1]] ?? const <ChallengerRoadChallenge>[]) : null;
+                  // Skip connectors when the adjacent section is collapsed.
+                  List<ChallengerRoadChallenge>? belowChallenges;
+                  if (lvlIdx < levels.length - 1) {
+                    final belowLevel = levels[lvlIdx + 1];
+                    if (!interactive || _isLevelExpanded(belowLevel, currentLevel)) {
+                      belowChallenges = data.challengesByLevel[belowLevel] ?? const <ChallengerRoadChallenge>[];
+                    }
+                  }
                   final int? belowLevelChallengeCount = belowChallenges?.length;
                   // The focused index of the below-level is needed so the
                   // connector endpoint tracks the exit node's expanded position.
@@ -1183,6 +1210,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     sectionTopOffset: sectionTop,
                     focusTargets: focusTargets,
                     interactive: interactive,
+                    currentLevel: currentLevel,
                     belowLevelChallengeCount: belowLevelChallengeCount,
                     belowFocusedIndex: belowFocusedIndex,
                   );
@@ -1207,14 +1235,46 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     required double sectionTopOffset,
     required List<_ChallengeFocusTarget> focusTargets,
     bool interactive = true,
+    required int currentLevel,
     int? belowLevelChallengeCount,
     int? belowFocusedIndex,
   }) {
     final challenges = data.challengesByLevel[level] ?? [];
     final attempt = data.activeAttempt;
-    final currentLevel = widget.isPreviewMode ? math.min(attempt?.currentLevel ?? 1, widget.previewMaxLevel) : (attempt?.currentLevel ?? 1);
     final isCurrentLevel = level == currentLevel;
     final isLocked = level > currentLevel;
+
+    // ── Collapsed section ─────────────────────────────────────────────────────
+    // Non-active levels (completed and locked) start collapsed to keep focus on
+    // the current level. Tapping the banner expands the section lazily.
+    if (interactive && !_isLevelExpanded(level, currentLevel)) {
+      final levelName = challenges.isNotEmpty ? challenges.first.levelName : 'Level $level';
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _expandedLevels.add(level)),
+        child: SizedBox(
+          height: _collapsedSectionHeight,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: _levelBottomPad),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildLevelBanner(context, level, levelName, isCurrentLevel, isLocked, levelNumber: level),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1226,6 +1286,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           challenges,
           level,
           interactive: interactive,
+          currentLevel: currentLevel,
         );
 
         // Determine the next incomplete challenge index for the "current" state.
@@ -1327,7 +1388,21 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
+                  child: GestureDetector(
+                    onTap: (interactive && !isCurrentLevel) ? () => setState(() => _expandedLevels.remove(level)) : null,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (interactive && !isCurrentLevel)
+                          Icon(
+                            Icons.keyboard_arrow_up_rounded,
+                            size: 14,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                          ),
+                        _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -1467,7 +1542,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                                     child: SizedBox(
                                       width: thumbWidth,
                                       height: thumbHeight,
-                                      child: _buildPreviewMedia(context, previewMedia, focused: isFocused),
+                                      child: _buildPreviewMedia(context, previewMedia),
                                     ),
                                   ),
                                 ),
