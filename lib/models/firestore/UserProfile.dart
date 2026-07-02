@@ -9,7 +9,6 @@ class UserProfile {
   final bool? public;
   final bool? friendNotifications;
   final bool? practiceReminders;
-  final bool? healthSync;
   final bool? isPro;
   final String? subscriptionLevel;
 
@@ -50,7 +49,6 @@ class UserProfile {
     this.fcmToken, {
     this.nickname,
     this.practiceReminders,
-    this.healthSync,
     this.isPro,
     this.subscriptionLevel,
     List<String>? teamIds,
@@ -74,7 +72,6 @@ class UserProfile {
         public = map['public'] ?? false,
         friendNotifications = map['friend_notifications'] ?? true,
         practiceReminders = map['practice_reminders'] ?? false,
-        healthSync = map['health_sync'] ?? false,
         isPro = map['is_pro'] ?? false,
         subscriptionLevel = map['subscription_level'] ?? ((map['is_pro'] ?? false) ? 'pro' : 'free'),
         teamIds = _parseTeamIds(map),
@@ -90,7 +87,6 @@ class UserProfile {
       'public': public ?? false,
       'friend_notifications': friendNotifications ?? true,
       'practice_reminders': practiceReminders ?? false,
-      'health_sync': healthSync ?? false,
       'is_pro': isPro ?? false,
       'subscription_level': subscriptionLevel,
       // Write both fields for forward + backward compatibility:

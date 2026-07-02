@@ -14,7 +14,6 @@ import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
-import 'package:tenthousandshotchallenge/services/HealthService.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
@@ -1704,30 +1703,7 @@ class _StartShootingState extends State<StartShooting> {
                             }
                           }
 
-                          // Write workout to Apple Health / Google Fit if user opted in.
-                          // Fire-and-forget with a 10s timeout so a hanging API
-                          // cannot block the UI after the session has been reset.
                           if (success) {
-                            Future(() async {
-                              try {
-                                final sessionEnd = DateTime.now();
-                                final sessionStart = sessionEnd.subtract(sessionService.currentDuration);
-                                final userDoc = await firestore.collection('users').doc(auth.currentUser?.uid).get();
-                                final healthSyncEnabled = (userDoc.data()?['health_sync'] as bool?) ?? false;
-                                if (healthSyncEnabled) {
-                                  await HealthService.instance
-                                      .writeSession(
-                                        start: sessionStart,
-                                        end: sessionEnd,
-                                        shotCount: totalShots,
-                                      )
-                                      .timeout(const Duration(seconds: 10), onTimeout: () => false);
-                                }
-                              } catch (_) {
-                                // Health sync is best-effort; never block the user.
-                              }
-                            });
-
                             // Evaluate global trophies (fire-and-forget).
                             final uid = auth.currentUser?.uid;
                             if (uid != null) {
