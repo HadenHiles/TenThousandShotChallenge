@@ -1362,266 +1362,267 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           }
         }
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 340),
-          curve: Curves.easeInOutCubic,
-          height: targetHeight,
-          clipBehavior: Clip.hardEdge,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              height: fullSectionHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // ── Full-coverage tap target (collapsed sections only) ─────
-                  // Covers the visible clipped strip so tapping anywhere expands.
-                  if (interactive && !isCurrentLevel)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        ignoring: isExpanded,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _expandLevel(level),
+        return ClipRect(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 340),
+            curve: Curves.easeInOutCubic,
+            height: targetHeight,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: fullSectionHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // ── Full-coverage tap target (collapsed sections only) ─────
+                    // Covers the visible clipped strip so tapping anywhere expands.
+                    if (interactive && !isCurrentLevel)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: isExpanded,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _expandLevel(level),
+                          ),
+                        ),
+                      ),
+
+                    // ── Cross-level connector (extends above this section) ─────
+                    if (connectorPaint != null) connectorPaint,
+
+                    // ── Path ───────────────────────────────────────────────────
+                    if (challenges.length > 1)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _LevelPathPainter(centres: centres, color: pathColor),
+                        ),
+                      ),
+
+                    // ── Level banner (at bottom) ───────────────────────────────
+                    Positioned(
+                      bottom: _levelBottomPad,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Expand/collapse indicator (non-current levels only).
+                            // Both states share a fixed-height Stack so the banner
+                            // position never shifts during the opacity cross-fade.
+                            if (interactive && !isCurrentLevel) ...[
+                              SizedBox(
+                                height: 16,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // "N challenges · tap to expand" (collapsed)
+                                    AnimatedOpacity(
+                                      duration: const Duration(milliseconds: 220),
+                                      opacity: isExpanded ? 0.0 : 1.0,
+                                      child: IgnorePointer(
+                                        ignoring: isExpanded,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isLocked ? Icons.lock_outline : Icons.check_circle_outline,
+                                              size: 11,
+                                              color: statusColor,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${challenges.length} challenge${challenges.length == 1 ? '' : 's'}  ·  tap to expand',
+                                              style: TextStyle(
+                                                fontFamily: 'NovecentoSans',
+                                                fontSize: 11,
+                                                letterSpacing: 0.4,
+                                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 14,
+                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // Collapse chevron (expanded)
+                                    AnimatedOpacity(
+                                      duration: const Duration(milliseconds: 220),
+                                      opacity: isExpanded ? 1.0 : 0.0,
+                                      child: IgnorePointer(
+                                        ignoring: !isExpanded,
+                                        child: GestureDetector(
+                                          onTap: () => setState(() => _expandedLevels.remove(level)),
+                                          child: Icon(
+                                            Icons.keyboard_arrow_up_rounded,
+                                            size: 14,
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                            // Level banner pill (tappable to collapse when expanded)
+                            GestureDetector(
+                              onTap: (interactive && !isCurrentLevel && isExpanded) ? () => setState(() => _expandedLevels.remove(level)) : null,
+                              child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
+                            ),
+                          ],
                         ),
                       ),
                     ),
 
-                  // ── Cross-level connector (extends above this section) ─────
-                  if (connectorPaint != null) connectorPaint,
-
-                  // ── Path ───────────────────────────────────────────────────
-                  if (challenges.length > 1)
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _LevelPathPainter(centres: centres, color: pathColor),
-                      ),
-                    ),
-
-                  // ── Level banner (at bottom) ───────────────────────────────
-                  Positioned(
-                    bottom: _levelBottomPad,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Expand/collapse indicator (non-current levels only).
-                          // Both states share a fixed-height Stack so the banner
-                          // position never shifts during the opacity cross-fade.
-                          if (interactive && !isCurrentLevel) ...[
-                            SizedBox(
-                              height: 16,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // "N challenges · tap to expand" (collapsed)
-                                  AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 220),
-                                    opacity: isExpanded ? 0.0 : 1.0,
-                                    child: IgnorePointer(
-                                      ignoring: isExpanded,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            isLocked ? Icons.lock_outline : Icons.check_circle_outline,
-                                            size: 11,
-                                            color: statusColor,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${challenges.length} challenge${challenges.length == 1 ? '' : 's'}  ·  tap to expand',
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 11,
-                                              letterSpacing: 0.4,
-                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            size: 14,
-                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  // Collapse chevron (expanded)
-                                  AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 220),
-                                    opacity: isExpanded ? 1.0 : 0.0,
-                                    child: IgnorePointer(
-                                      ignoring: !isExpanded,
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _expandedLevels.remove(level)),
-                                        child: Icon(
-                                          Icons.keyboard_arrow_up_rounded,
-                                          size: 14,
-                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                          ],
-                          // Level banner pill (tappable to collapse when expanded)
-                          GestureDetector(
-                            onTap: (interactive && !isCurrentLevel && isExpanded) ? () => setState(() => _expandedLevels.remove(level)) : null,
-                            child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── Challenge nodes ─────────────────────────────────────────
-                  for (int i = 0; i < challenges.length; i++)
-                    ...(() {
-                      final challenge = challenges[i];
-                      final challengeId = challenge.id ?? '';
-                      final nodeCenter = centres[i];
-                      final nodeState = _nodeState(
-                        challengeId,
-                        level,
-                        data,
-                        i == firstIncompleteIdx,
-                      );
-
-                      // Only register focus targets for expanded (visible) sections.
-                      // Collapsed nodes are clipped out and should never be focused.
-                      if (isExpanded) {
-                        focusTargets.add(
-                          _ChallengeFocusTarget(
-                            challenge: challenge,
-                            level: level,
-                            centerYInContent: sectionTopOffset + nodeCenter.dy,
-                          ),
+                    // ── Challenge nodes ─────────────────────────────────────────
+                    for (int i = 0; i < challenges.length; i++)
+                      ...(() {
+                        final challenge = challenges[i];
+                        final challengeId = challenge.id ?? '';
+                        final nodeCenter = centres[i];
+                        final nodeState = _nodeState(
+                          challengeId,
+                          level,
+                          data,
+                          i == firstIncompleteIdx,
                         );
-                      }
 
-                      final isFocused = interactive && _isChallengeFocused(challengeId, level);
-                      // In preview mode (subscription expired / non-pro), allow tapping
-                      // locked challenges so users can view their past-try history even
-                      // if they can no longer play those challenges.
-                      final isSubscriptionLocked = widget.isPreviewMode && nodeState == ChallengeNodeState.locked;
-                      final challengeTap = interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked) ? () => _handleNodeTap(challenge, level, attempt, data, isSubscriptionLocked: isSubscriptionLocked) : null;
-                      final previewMedia = _resolvePreviewMedia(challenge);
-                      const thumbWidth = 156.0;
-                      const thumbHeight = 156.0;
-                      const sideGap = 40.0;
-                      const verticalUpOffset = -14.0;
-                      const minLeft = 8.0;
-                      const minTop = 6.0;
-                      final maxLeft = width - thumbWidth - 8.0;
-                      final maxTop = fullSectionHeight - thumbHeight - 6.0;
-                      final leftSpace = nodeCenter.dx;
-                      final rightSpace = width - nodeCenter.dx;
+                        // Only register focus targets for expanded (visible) sections.
+                        // Collapsed nodes are clipped out and should never be focused.
+                        if (isExpanded) {
+                          focusTargets.add(
+                            _ChallengeFocusTarget(
+                              challenge: challenge,
+                              level: level,
+                              centerYInContent: sectionTopOffset + nodeCenter.dy,
+                            ),
+                          );
+                        }
 
-                      // Place preview on the opposite side of path direction.
-                      final prev = i > 0 ? centres[i - 1] : null;
-                      final next = i + 1 < centres.length ? centres[i + 1] : null;
+                        final isFocused = interactive && _isChallengeFocused(challengeId, level);
+                        // In preview mode (subscription expired / non-pro), allow tapping
+                        // locked challenges so users can view their past-try history even
+                        // if they can no longer play those challenges.
+                        final isSubscriptionLocked = widget.isPreviewMode && nodeState == ChallengeNodeState.locked;
+                        final challengeTap = interactive && attempt != null && (nodeState != ChallengeNodeState.locked || isSubscriptionLocked) ? () => _handleNodeTap(challenge, level, attempt, data, isSubscriptionLocked: isSubscriptionLocked) : null;
+                        final previewMedia = _resolvePreviewMedia(challenge);
+                        const thumbWidth = 156.0;
+                        const thumbHeight = 156.0;
+                        const sideGap = 40.0;
+                        const verticalUpOffset = -14.0;
+                        const minLeft = 8.0;
+                        const minTop = 6.0;
+                        final maxLeft = width - thumbWidth - 8.0;
+                        final maxTop = fullSectionHeight - thumbHeight - 6.0;
+                        final leftSpace = nodeCenter.dx;
+                        final rightSpace = width - nodeCenter.dx;
 
-                      double directionDx;
-                      if (prev != null && next != null) {
-                        directionDx = next.dx - prev.dx;
-                      } else if (next != null) {
-                        directionDx = next.dx - nodeCenter.dx;
-                      } else if (prev != null) {
-                        directionDx = nodeCenter.dx - prev.dx;
-                      } else {
-                        directionDx = 0;
-                      }
+                        // Place preview on the opposite side of path direction.
+                        final prev = i > 0 ? centres[i - 1] : null;
+                        final next = i + 1 < centres.length ? centres[i + 1] : null;
 
-                      bool revealOnRight;
-                      if (directionDx.abs() < 2.0) {
-                        revealOnRight = rightSpace >= leftSpace;
-                      } else {
-                        revealOnRight = directionDx > 0;
-                      }
+                        double directionDx;
+                        if (prev != null && next != null) {
+                          directionDx = next.dx - prev.dx;
+                        } else if (next != null) {
+                          directionDx = next.dx - nodeCenter.dx;
+                        } else if (prev != null) {
+                          directionDx = nodeCenter.dx - prev.dx;
+                        } else {
+                          directionDx = 0;
+                        }
 
-                      final offsetUp = prev != null && next != null;
-                      final xPct = width <= 0 ? 0.5 : (nodeCenter.dx / width);
-                      final isEdgeColumn = xPct <= 0.34 || xPct >= 0.66;
-                      final nonEdgeExtraUpOffset = isEdgeColumn ? 0.0 : -(_nodeDiameter / 2);
+                        bool revealOnRight;
+                        if (directionDx.abs() < 2.0) {
+                          revealOnRight = rightSpace >= leftSpace;
+                        } else {
+                          revealOnRight = directionDx > 0;
+                        }
 
-                      final rawTop = (nodeCenter.dy - (thumbHeight / 2)) + (offsetUp ? verticalUpOffset : 0.0) + nonEdgeExtraUpOffset;
-                      final thumbTop = rawTop.clamp(minTop, maxTop);
+                        final offsetUp = prev != null && next != null;
+                        final xPct = width <= 0 ? 0.5 : (nodeCenter.dx / width);
+                        final isEdgeColumn = xPct <= 0.34 || xPct >= 0.66;
+                        final nonEdgeExtraUpOffset = isEdgeColumn ? 0.0 : -(_nodeDiameter / 2);
 
-                      double clampedLeftForSide(bool sideRight) {
-                        final rawLeft = sideRight ? (nodeCenter.dx + sideGap) : (nodeCenter.dx - thumbWidth - sideGap);
-                        return rawLeft.clamp(minLeft, maxLeft);
-                      }
+                        final rawTop = (nodeCenter.dy - (thumbHeight / 2)) + (offsetUp ? verticalUpOffset : 0.0) + nonEdgeExtraUpOffset;
+                        final thumbTop = rawTop.clamp(minTop, maxTop);
 
-                      double horizontalOverlap(double thumbLeft) {
-                        final thumbRight = thumbLeft + thumbWidth;
-                        final nodeLeft = nodeCenter.dx - (_nodeDiameter / 2);
-                        final nodeRight = nodeCenter.dx + (_nodeDiameter / 2);
-                        final overlap = math.min(thumbRight, nodeRight) - math.max(thumbLeft, nodeLeft);
-                        return math.max(0, overlap);
-                      }
+                        double clampedLeftForSide(bool sideRight) {
+                          final rawLeft = sideRight ? (nodeCenter.dx + sideGap) : (nodeCenter.dx - thumbWidth - sideGap);
+                          return rawLeft.clamp(minLeft, maxLeft);
+                        }
 
-                      final preferredLeft = clampedLeftForSide(revealOnRight);
-                      final oppositeLeft = clampedLeftForSide(!revealOnRight);
-                      final preferredOverlap = horizontalOverlap(preferredLeft);
-                      final oppositeOverlap = horizontalOverlap(oppositeLeft);
+                        double horizontalOverlap(double thumbLeft) {
+                          final thumbRight = thumbLeft + thumbWidth;
+                          final nodeLeft = nodeCenter.dx - (_nodeDiameter / 2);
+                          final nodeRight = nodeCenter.dx + (_nodeDiameter / 2);
+                          final overlap = math.min(thumbRight, nodeRight) - math.max(thumbLeft, nodeLeft);
+                          return math.max(0, overlap);
+                        }
 
-                      // If the preferred side tucks under the node, flip sides.
-                      if (preferredOverlap > 8 && oppositeOverlap + 2 < preferredOverlap) {
-                        revealOnRight = !revealOnRight;
-                      }
+                        final preferredLeft = clampedLeftForSide(revealOnRight);
+                        final oppositeLeft = clampedLeftForSide(!revealOnRight);
+                        final preferredOverlap = horizontalOverlap(preferredLeft);
+                        final oppositeOverlap = horizontalOverlap(oppositeLeft);
 
-                      final thumbLeft = clampedLeftForSide(revealOnRight);
+                        // If the preferred side tucks under the node, flip sides.
+                        if (preferredOverlap > 8 && oppositeOverlap + 2 < preferredOverlap) {
+                          revealOnRight = !revealOnRight;
+                        }
 
-                      return [
-                        Positioned(
-                          left: thumbLeft,
-                          top: thumbTop,
-                          width: thumbWidth,
-                          height: thumbHeight,
-                          child: IgnorePointer(
-                            ignoring: !isFocused || challengeTap == null,
-                            child: GestureDetector(
-                              onTap: challengeTap,
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 180),
-                                curve: Curves.easeOut,
-                                opacity: isFocused ? 1 : 0,
-                                child: AnimatedScale(
-                                  duration: const Duration(milliseconds: 160),
-                                  curve: Curves.easeOutCubic,
-                                  scale: isFocused ? 1 : 0.96,
-                                  child: AnimatedSlide(
-                                    duration: const Duration(milliseconds: 190),
+                        final thumbLeft = clampedLeftForSide(revealOnRight);
+
+                        return [
+                          Positioned(
+                            left: thumbLeft,
+                            top: thumbTop,
+                            width: thumbWidth,
+                            height: thumbHeight,
+                            child: IgnorePointer(
+                              ignoring: !isFocused || challengeTap == null,
+                              child: GestureDetector(
+                                onTap: challengeTap,
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOut,
+                                  opacity: isFocused ? 1 : 0,
+                                  child: AnimatedScale(
+                                    duration: const Duration(milliseconds: 160),
                                     curve: Curves.easeOutCubic,
-                                    offset: isFocused ? Offset.zero : (revealOnRight ? const Offset(-0.18, 0) : const Offset(0.18, 0)),
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.45),
-                                          width: 1.1,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.24),
-                                            blurRadius: 14,
-                                            offset: const Offset(0, 7),
+                                    scale: isFocused ? 1 : 0.96,
+                                    child: AnimatedSlide(
+                                      duration: const Duration(milliseconds: 190),
+                                      curve: Curves.easeOutCubic,
+                                      offset: isFocused ? Offset.zero : (revealOnRight ? const Offset(-0.18, 0) : const Offset(0.18, 0)),
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: Theme.of(context).primaryColor.withValues(alpha: 0.45),
+                                            width: 1.1,
                                           ),
-                                        ],
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: SizedBox(
-                                          width: thumbWidth,
-                                          height: thumbHeight,
-                                          child: _buildPreviewMedia(context, previewMedia),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.24),
+                                              blurRadius: 14,
+                                              offset: const Offset(0, 7),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: SizedBox(
+                                            width: thumbWidth,
+                                            height: thumbHeight,
+                                            child: _buildPreviewMedia(context, previewMedia),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1630,21 +1631,21 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          // Centre the node widget horizontally around the computed x.
-                          left: nodeCenter.dx - 41, // 41 = (82 node widget width) / 2
-                          // Centre the circle (top portion of node widget) around y.
-                          top: nodeCenter.dy - (_nodeDiameter / 2),
-                          child: ChallengeMapNode(
-                            challengeName: challenge.name,
-                            state: nodeState,
-                            onTap: challengeTap,
+                          Positioned(
+                            // Centre the node widget horizontally around the computed x.
+                            left: nodeCenter.dx - 41, // 41 = (82 node widget width) / 2
+                            // Centre the circle (top portion of node widget) around y.
+                            top: nodeCenter.dy - (_nodeDiameter / 2),
+                            child: ChallengeMapNode(
+                              challengeName: challenge.name,
+                              state: nodeState,
+                              onTap: challengeTap,
+                            ),
                           ),
-                        ),
-                      ];
-                    })(),
-                ],
+                        ];
+                      })(),
+                  ],
+                ),
               ),
             ),
           ),
