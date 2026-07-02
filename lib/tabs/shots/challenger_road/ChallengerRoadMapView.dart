@@ -1294,14 +1294,20 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final fullSectionHeight = _levelSectionHeight(challenges.length) + (focusedIndex >= 0 ? _focusedSectionExtraHeight : 0);
 
         // ── Collapsed (lazy – no challenge nodes are built) ───────────────────
+        // Both the collapsed and expanded branches share the same root widget type
+        // (Stack > ClipRect > AnimatedSize) so AnimatedSize retains its state and
+        // animates smoothly when the section expands/collapses.
         if (!isExpanded) {
           final statusColor = isLocked ? Colors.grey.shade500.withValues(alpha: 0.75) : Colors.green.shade400.withValues(alpha: 0.75);
-          return ClipRect(
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 340),
-              curve: Curves.easeInOutCubic,
-              alignment: Alignment.bottomCenter,
-              child: GestureDetector(
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRect(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 340),
+                  curve: Curves.easeInOutCubic,
+                  alignment: Alignment.bottomCenter,
+                  child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => _expandLevel(level),
                 child: SizedBox(
@@ -1351,7 +1357,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 ),
               ),
             ),
-          );
+          ),
+        ],
+        );
         }
 
         // ── Expanded ──────────────────────────────────────────────────────────
@@ -1389,8 +1397,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           final connEndY = fullSectionHeight + belowExitLocalY;
           final connHeight = connEndY - connStartY;
           if (connHeight > 0) {
+            // Position the connector relative to the section BOTTOM so it
+            // tracks correctly at all animation heights:
+            //   bottom: -belowExitLocalY  → connector end is belowExitLocalY
+            //     below the section boundary (into the next section's area)
+            //   height: connHeight        → connector start is ~126px above bottom
             connectorPaint = Positioned(
-              top: connStartY,
+              bottom: -belowExitLocalY,
               left: 0,
               right: 0,
               height: connHeight,
@@ -1404,20 +1417,22 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           }
         }
 
-        return ClipRect(
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 340),
-            curve: Curves.easeInOutCubic,
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              height: fullSectionHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // ── Cross-level connector ─────────────────────────────────
-                  if (connectorPaint != null) connectorPaint,
-
-                  // ── Path ─────────────────────────────────────────────────
+        // Outer Stack lets the connector extend below the ClipRect boundary
+        // into the next section's visual area without being clipped.
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 340),
+                curve: Curves.easeInOutCubic,
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  height: fullSectionHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // ── Path ───────────────────────────────────────────────
                   if (challenges.length > 1)
                     Positioned.fill(
                       child: CustomPaint(
@@ -1612,7 +1627,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
               ),
             ),
           ),
-        );
+        ),
+        // Connector lives outside ClipRect so it can extend below the
+        // section boundary into the next section's visual area.
+        if (connectorPaint != null) connectorPaint,
+      ],
+      );
       },
     );
   }
