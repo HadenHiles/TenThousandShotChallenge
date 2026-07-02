@@ -755,6 +755,28 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   /// user taps their collapsed banner.
   bool _isLevelExpanded(int level, int currentLevel) => level == currentLevel || _expandedLevels.contains(level);
 
+  /// Expands [level] and scrolls so the section is visible near the upper
+  /// portion of the viewport. The scroll runs concurrently with the expand
+  /// animation so both complete at around the same time.
+  void _expandLevel(int level) {
+    setState(() => _expandedLevels.add(level));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final levelTop = _levelTopOffsets[level];
+      if (levelTop == null) return;
+      final viewport = _scrollController.position.viewportDimension;
+      final target = (levelTop - viewport * 0.2).clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      );
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
   double _effectiveLevelSectionHeight(
     List<ChallengerRoadChallenge> challenges,
     int level, {
@@ -1246,58 +1268,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
     final isCurrentLevel = level == currentLevel;
     final isLocked = level > currentLevel;
 
-    // ── Collapsed section ─────────────────────────────────────────────────────
-    // Non-active levels (completed and locked) start collapsed to keep focus on
-    // the current level. Tapping the banner expands the section lazily.
-    if (interactive && !_isLevelExpanded(level, currentLevel)) {
-      final levelName = challenges.isNotEmpty ? challenges.first.levelName : 'Level $level';
-      final challengeCount = challenges.length;
-      final statusColor = isLocked
-          ? Colors.grey.shade500
-          : Colors.green.shade400;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _expandedLevels.add(level)),
-        child: SizedBox(
-          height: _collapsedSectionHeight,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildLevelBanner(context, level, levelName, isCurrentLevel, isLocked, levelNumber: level),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isLocked ? Icons.lock_outline : Icons.check_circle_outline,
-                      size: 11,
-                      color: statusColor.withValues(alpha: 0.75),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$challengeCount challenge${challengeCount == 1 ? '' : 's'}  ·  tap to expand',
-                      style: TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 11,
-                        letterSpacing: 0.4,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    // ── Collapsed / expanded with animated height ─────────────────────────────
+    // Rather than two separate widget trees, we always render the full section
+    // content at [fullSectionHeight] and clip it via AnimatedContainer.
+    // [Align(bottomCenter)] keeps the banner fixed at the bottom so it stays
+    // visible in the collapsed strip while nodes slide in from above on expand.
+    final isExpanded = !interactive || _isLevelExpanded(level, currentLevel);
+    final statusColor = isLocked ? Colors.grey.shade500.withValues(alpha: 0.75) : Colors.green.shade400.withValues(alpha: 0.75);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1305,12 +1282,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         final focusedIndex = interactive ? _focusedIndexForLevel(challenges, level) : -1;
         final baseCentres = _computeNodeCentres(challenges.length, width);
         final centres = _expandedNodeCentres(baseCentres, focusedIndex);
-        final sectionHeight = _effectiveLevelSectionHeight(
-          challenges,
-          level,
-          interactive: interactive,
-          currentLevel: currentLevel,
-        );
+        // Always compute the full expanded height for geometry/clip target.
+        final fullSectionHeight = _levelSectionHeight(challenges.length) + (focusedIndex >= 0 ? _focusedSectionExtraHeight : 0);
+        final targetHeight = isExpanded ? fullSectionHeight : _collapsedSectionHeight;
 
         // Determine the next incomplete challenge index for the "current" state.
         // We advance from the bottom-most node upward within a level.
@@ -1344,7 +1318,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
         // painted at the TOP; last index = seq 1 = painted at the BOTTOM.
         // Entry into this level  → centres.last (bottom of this section, expanded)
         // Exit from below level  → index 0 of the below section (their top node)
-        // Uses expanded centres + sectionHeight so the connector stays anchored
+        // Uses expanded centres + fullSectionHeight so the connector stays anchored
         // to the actual node position during focus expansion.
         Widget? connectorPaint;
         if (belowLevelChallengeCount != null && belowLevelChallengeCount > 0 && centres.isNotEmpty) {
@@ -1365,9 +1339,9 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           // the connector stays glued to the node during focus expansion.
           // Offset down by node radius so the circle fully hides the path start.
           final connStartY = centres.last.dy + (_nodeDiameter / 2);
-          // End at the below section's top node. Use expanded sectionHeight so
+          // End at the below section's top node. Use fullSectionHeight so
           // the connector length adapts when this section grows with focus.
-          final connEndY = sectionHeight + belowExitLocalY;
+          final connEndY = fullSectionHeight + belowExitLocalY;
           final connHeight = connEndY - connStartY;
           if (connHeight > 0) {
             connectorPaint = Positioned(
@@ -1388,49 +1362,129 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
           }
         }
 
-        return SizedBox(
-          height: sectionHeight,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // ── Cross-level connector (extends above this section) ────────
-              if (connectorPaint != null) connectorPaint,
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 340),
+          curve: Curves.easeInOutCubic,
+          height: targetHeight,
+          clipBehavior: Clip.hardEdge,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              height: fullSectionHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // ── Full-coverage tap target (collapsed sections only) ─────
+                  // Covers the visible clipped strip so tapping anywhere expands.
+                  if (interactive && !isCurrentLevel)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: isExpanded,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _expandLevel(level),
+                        ),
+                      ),
+                    ),
 
-              // ── Path ────────────────────────────────────────────────────
-              if (challenges.length > 1)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _LevelPathPainter(centres: centres, color: pathColor),
-                  ),
-                ),
+                  // ── Cross-level connector (extends above this section) ─────
+                  if (connectorPaint != null) connectorPaint,
 
-              // ── Level banner (at bottom - acts as threshold into this level
-              // when scrolling upward through the map) ──────────────────────
-              Positioned(
-                bottom: _levelBottomPad,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: GestureDetector(
-                    onTap: (interactive && !isCurrentLevel) ? () => setState(() => _expandedLevels.remove(level)) : null,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (interactive && !isCurrentLevel)
-                          Icon(
-                            Icons.keyboard_arrow_up_rounded,
-                            size: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                  // ── Path ───────────────────────────────────────────────────
+                  if (challenges.length > 1)
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _LevelPathPainter(centres: centres, color: pathColor),
+                      ),
+                    ),
+
+                  // ── Level banner (at bottom) ───────────────────────────────
+                  Positioned(
+                    bottom: _levelBottomPad,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Expand/collapse indicator (non-current levels only).
+                          // Both states share a fixed-height Stack so the banner
+                          // position never shifts during the opacity cross-fade.
+                          if (interactive && !isCurrentLevel) ...[
+                            SizedBox(
+                              height: 16,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // "N challenges · tap to expand" (collapsed)
+                                  AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 220),
+                                    opacity: isExpanded ? 0.0 : 1.0,
+                                    child: IgnorePointer(
+                                      ignoring: isExpanded,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isLocked ? Icons.lock_outline : Icons.check_circle_outline,
+                                            size: 11,
+                                            color: statusColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${challenges.length} challenge${challenges.length == 1 ? '' : 's'}  ·  tap to expand',
+                                            style: TextStyle(
+                                              fontFamily: 'NovecentoSans',
+                                              fontSize: 11,
+                                              letterSpacing: 0.4,
+                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.keyboard_arrow_down_rounded,
+                                            size: 14,
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // Collapse chevron (expanded)
+                                  AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 220),
+                                    opacity: isExpanded ? 1.0 : 0.0,
+                                    child: IgnorePointer(
+                                      ignoring: !isExpanded,
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _expandedLevels.remove(level)),
+                                        child: Icon(
+                                          Icons.keyboard_arrow_up_rounded,
+                                          size: 14,
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          // Level banner pill (tappable to collapse when expanded)
+                          GestureDetector(
+                            onTap: (interactive && !isCurrentLevel && isExpanded)
+                                ? () => setState(() => _expandedLevels.remove(level))
+                                : null,
+                            child: _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
                           ),
-                        _buildLevelBanner(context, level, challenges.isNotEmpty ? challenges.first.levelName : 'Level $level', isCurrentLevel, isLocked, levelNumber: level),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-              // ── Challenge nodes ─────────────────────────────────────────
-              for (int i = 0; i < challenges.length; i++)
+                  // ── Challenge nodes ─────────────────────────────────────────
+                  for (int i = 0; i < challenges.length; i++)
                 ...(() {
                   final challenge = challenges[i];
                   final challengeId = challenge.id ?? '';
@@ -1442,13 +1496,17 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                     i == firstIncompleteIdx,
                   );
 
-                  focusTargets.add(
-                    _ChallengeFocusTarget(
-                      challenge: challenge,
-                      level: level,
-                      centerYInContent: sectionTopOffset + nodeCenter.dy,
-                    ),
-                  );
+                  // Only register focus targets for expanded (visible) sections.
+                  // Collapsed nodes are clipped out and should never be focused.
+                  if (isExpanded) {
+                    focusTargets.add(
+                      _ChallengeFocusTarget(
+                        challenge: challenge,
+                        level: level,
+                        centerYInContent: sectionTopOffset + nodeCenter.dy,
+                      ),
+                    );
+                  }
 
                   final isFocused = interactive && _isChallengeFocused(challengeId, level);
                   // In preview mode (subscription expired / non-pro), allow tapping
@@ -1464,7 +1522,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   const minLeft = 8.0;
                   const minTop = 6.0;
                   final maxLeft = width - thumbWidth - 8.0;
-                  final maxTop = sectionHeight - thumbHeight - 6.0;
+                  final maxTop = fullSectionHeight - thumbHeight - 6.0;
                   final leftSpace = nodeCenter.dx;
                   final rightSpace = width - nodeCenter.dx;
 
@@ -1589,6 +1647,8 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                   ];
                 })(),
             ],
+          ),
+        ),
           ),
         );
       },
