@@ -779,7 +779,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
 
       // Centre the first challenge node vertically in the viewport.
       final viewport = _scrollController.position.viewportDimension;
-      final target = (firstChallengeNodeY - viewport * 0.5).clamp(
+      final target = (firstChallengeNodeY - viewport * 0.5 + 50.0).clamp(
         _scrollController.position.minScrollExtent,
         _scrollController.position.maxScrollExtent,
       );
