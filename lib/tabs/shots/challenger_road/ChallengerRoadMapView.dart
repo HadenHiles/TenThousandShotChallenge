@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_player/video_player.dart';
 import 'package:confetti/confetti.dart';
@@ -2232,6 +2233,13 @@ class _WebmGifPreview extends StatefulWidget {
 }
 
 class _WebmGifPreviewState extends State<_WebmGifPreview> {
+  // Limit simultaneous VP9/WebM software decoders app-wide. All nodes on the
+  // map are built at once (non-recycling scroll), so without a cap every
+  // visible challenge card starts its own decoder, exhausting the CPU and
+  // causing thermal throttling on iOS.
+  static int _activeDecoders = 0;
+  static const int _maxConcurrentDecoders = 2;
+
   VideoPlayerController? _controller;
   bool _ready = false;
   bool _error = false;
@@ -2243,9 +2251,15 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
   }
 
   Future<void> _init() async {
+    // Wait for a decoder slot to free up.
+    while (_activeDecoders >= _maxConcurrentDecoders) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+    }
+    _activeDecoders++;
     try {
       _controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.url),
+        Uri.parse(resolveVideoUrl(widget.url)),
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
       await _controller!.initialize();
@@ -2262,6 +2276,7 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
 
   @override
   void dispose() {
+    if (_ready) _activeDecoders--; // only decrement if we successfully acquired a slot
     _controller?.dispose();
     super.dispose();
   }
