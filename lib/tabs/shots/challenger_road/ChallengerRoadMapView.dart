@@ -1367,22 +1367,22 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
             duration: const Duration(milliseconds: 340),
             curve: Curves.easeInOutCubic,
             height: targetHeight,
-            child: Align(
+            child: OverflowBox(
               alignment: Alignment.bottomCenter,
-              child: SizedBox(
-                height: fullSectionHeight,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // ── Full-coverage tap target (collapsed sections only) ─────
-                    // Covers the visible clipped strip so tapping anywhere expands.
-                    if (interactive && !isCurrentLevel)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          ignoring: isExpanded,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _expandLevel(level),
+              minHeight: fullSectionHeight,
+              maxHeight: fullSectionHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // ── Full-coverage tap target (collapsed sections only) ─────
+                  // Covers the visible clipped strip so tapping anywhere expands.
+                  if (interactive && !isCurrentLevel)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: isExpanded,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _expandLevel(level),
                           ),
                         ),
                       ),
@@ -1648,7 +1648,6 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
                 ),
               ),
             ),
-          ),
         );
       },
     );
