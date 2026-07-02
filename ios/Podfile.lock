@@ -13,8 +13,6 @@ PODS:
     - Flutter
   - fluttertoast (0.0.2):
     - Flutter
-  - health (12.2.1):
-    - Flutter
   - libwebp (1.5.0):
     - libwebp/demux (= 1.5.0)
     - libwebp/mux (= 1.5.0)
@@ -42,7 +40,6 @@ DEPENDENCIES:
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
-  - health (from `.symlinks/plugins/health/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - the_apple_sign_in (from `.symlinks/plugins/the_apple_sign_in/ios`)
   - video_thumbnail (from `.symlinks/plugins/video_thumbnail/ios`)
@@ -63,8 +60,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
-  health:
-    :path: ".symlinks/plugins/health/ios"
   printing:
     :path: ".symlinks/plugins/printing/ios"
   the_apple_sign_in:
@@ -78,7 +73,6 @@ SPEC CHECKSUMS:
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   fluttertoast: 2c67e14dce98bbdb200df9e1acf610d7a6264ea1
-  health: fe206e65f13a9b88623605fbd8af8f029e23dc35
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
