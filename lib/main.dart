@@ -47,7 +47,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Use fvp as the video_player backend so WebM (VP8/VP9) works on iOS.
-  fvp.registerWith();
+  //
+  // Decoder priority on iOS:
+  //   1. VT       – libmdk's own VideoToolbox decoder (hardware H.264/HEVC)
+  //   2. VideoToolbox – FFmpeg's VideoToolbox decoder, which maps directly to
+  //                     the iOS VP9 hardware decode path (A9+ / iOS 11+).
+  //                     The libmdk VT decoder only activates VP9 hardware on
+  //                     macOS 11+, so this explicit entry is needed for iOS.
+  //   3. FFmpeg   – software fallback for any codec not covered above.
+  fvp.registerWith(options: {
+    'video.decoders': ['VT', 'VideoToolbox', 'FFmpeg'],
+  });
 
   // Reduce Flutter's image cache from the 100 MB default to limit heap
   // pressure on low-memory Android devices.

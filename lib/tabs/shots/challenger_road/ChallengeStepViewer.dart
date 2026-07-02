@@ -1,15 +1,18 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'ChallengeStepsFullScreenViewer.dart';
 
 /// Horizontal PageView showing each [ChallengeStep] with its media, title,
 /// and summary text.
 ///
-/// Video/webm steps show a static play-icon placeholder here. The actual
-/// hardware VP9 decoder is only allocated inside [ChallengeStepsFullScreenViewer],
-/// keeping at most one decoder alive at a time and preventing the OOM crashes
-/// that occur when multiple decoders accumulate graphic-buffer pools (~92 MB
-/// each) faster than Android's C2 evictor can reclaim them.
+/// WebM steps autoplay muted and looping inline. Regular video steps show a
+/// play-icon placeholder — tapping them opens the full-screen viewer.
+/// Only the currently visible page keeps a live [VideoPlayerController];
+/// the controller is torn down and replaced when the user swipes to a new step.
 class ChallengeStepViewer extends StatefulWidget {
   final List<ChallengeStep> steps;
 
@@ -23,16 +26,69 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
   late final PageController _pageController;
   int _currentPage = 0;
 
+  // ── Single active video controller ───────────────────────────────────────
+  VideoPlayerController? _videoController;
+  bool _videoReady = false;
+  int? _videoPageIndex;
+  int _initGeneration = 0;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _initVideoForPage(0);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _teardownVideo();
     super.dispose();
+  }
+
+  // ── Video lifecycle ───────────────────────────────────────────────────────
+
+  Future<void> _initVideoForPage(int index) async {
+    final generation = ++_initGeneration;
+    if (index >= widget.steps.length) return;
+    final step = widget.steps[index];
+
+    _teardownVideo();
+    if (mounted) setState(() {});
+
+    // Only webm steps autoplay inline; regular video steps show a placeholder.
+    if (step.mediaType != 'webm' || step.mediaUrl.isEmpty) {
+      return;
+    }
+
+    try {
+      final vc = VideoPlayerController.networkUrl(
+        Uri.parse(resolveVideoUrl(step.mediaUrl)),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      await vc.initialize();
+
+      if (generation != _initGeneration || !mounted) {
+        vc.dispose();
+        return;
+      }
+
+      await vc.setLooping(true);
+      await vc.setVolume(0);
+      await vc.play();
+      _videoController = vc;
+      _videoPageIndex = index;
+      if (mounted) setState(() => _videoReady = true);
+    } catch (_) {
+      // Leave _videoReady = false; the page shows a loading placeholder.
+    }
+  }
+
+  void _teardownVideo() {
+    _videoController?.dispose();
+    _videoController = null;
+    _videoPageIndex = null;
+    _videoReady = false;
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────────────────
@@ -57,10 +113,16 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: widget.steps.length,
-                onPageChanged: (idx) => setState(() => _currentPage = idx),
+                onPageChanged: (idx) {
+                  setState(() => _currentPage = idx);
+                  _initVideoForPage(idx);
+                },
                 itemBuilder: (context, index) {
+                  final isActive = _videoPageIndex == index;
                   return _StepPage(
                     step: widget.steps[index],
+                    videoController: isActive ? _videoController : null,
+                    videoReady: isActive && _videoReady,
                     onMediaTap: () => ChallengeStepsFullScreenViewer.show(
                       context,
                       steps: widget.steps,
@@ -104,10 +166,14 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
 class _StepPage extends StatelessWidget {
   final ChallengeStep step;
   final VoidCallback? onMediaTap;
+  final VideoPlayerController? videoController;
+  final bool videoReady;
 
   const _StepPage({
     required this.step,
     this.onMediaTap,
+    this.videoController,
+    this.videoReady = false,
   });
 
   @override
@@ -178,10 +244,26 @@ class _StepPage extends StatelessWidget {
     Widget content;
     if (url.isEmpty) {
       content = _buildMediaError(context);
-    } else if (mediaType == 'video' || mediaType == 'webm') {
-      // Hardware VP9 decoder is only allocated in ChallengeStepsFullScreenViewer.
-      // Show a static placeholder here to avoid accumulating buffer pools.
-      content = _buildVideoPlaceholder(context);
+    } else if (mediaType == 'webm') {
+      if (videoReady && videoController != null) {
+        final size = videoController!.value.size;
+        content = size.width > 0 && size.height > 0
+            ? FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: size.width,
+                  height: size.height,
+                  child: VideoPlayer(videoController!),
+                ),
+              )
+            : VideoPlayer(videoController!);
+      } else {
+        content = _buildVideoLoading(context);
+      }
+    } else if (mediaType == 'video') {
+      // Regular video: show first-frame thumbnail with play overlay.
+      // Tapping opens the full-screen viewer with Chewie controls.
+      content = _VideoThumbWidget(url: url);
     } else {
       // image / gif
       content = Image.network(
@@ -271,19 +353,94 @@ class _StepPage extends StatelessWidget {
     );
   }
 
-  Widget _buildVideoPlaceholder(BuildContext context) {
+  Widget _buildVideoLoading(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Center(
-        child: Icon(
-          Icons.play_circle_outline_rounded,
-          size: 56,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+    );
+  }
+}
+
+// ── First-frame thumbnail for video steps ────────────────────────────────────
+
+/// Loads the first frame of an MP4 video via [VideoThumbnail] and renders it
+/// with a semi-transparent play-circle overlay. Falls back to a play-icon
+/// placeholder while loading or on error.
+class _VideoThumbWidget extends StatefulWidget {
+  final String url;
+
+  const _VideoThumbWidget({required this.url});
+
+  @override
+  State<_VideoThumbWidget> createState() => _VideoThumbWidgetState();
+}
+
+class _VideoThumbWidgetState extends State<_VideoThumbWidget> {
+  Uint8List? _thumb;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await VideoThumbnail.thumbnailData(
+        video: widget.url,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 480,
+        quality: 70,
+        timeMs: 0,
+      );
+      if (!mounted) return;
+      if (data == null || data.isEmpty) {
+        setState(() => _error = true);
+        return;
+      }
+      setState(() => _thumb = data);
+    } catch (_) {
+      if (mounted) setState(() => _error = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error || _thumb == null) {
+      // Loading or error state: play-icon placeholder
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
         ),
-      ),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline_rounded,
+            size: 56,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _error ? 0.35 : 0.15),
+          ),
+        ),
+      );
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.memory(_thumb!, fit: BoxFit.cover),
+        Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              shape: BoxShape.circle,
+            ),
+            padding: const EdgeInsets.all(8),
+            child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
+          ),
+        ),
+      ],
     );
   }
 }

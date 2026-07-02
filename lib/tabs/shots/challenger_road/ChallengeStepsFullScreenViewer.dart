@@ -1,6 +1,7 @@
-import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:chewie/chewie.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_player/video_player.dart';
 
 /// Full-screen, swipeable step viewer for Challenger Road challenges.
@@ -113,7 +114,7 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
 
     try {
       final vc = VideoPlayerController.networkUrl(
-        Uri.parse(step.mediaUrl),
+        Uri.parse(resolveVideoUrl(step.mediaUrl)),
         // Prevent ExoPlayer from requesting audio focus so it cannot
         // interrupt the challenge audio player with AUDIOFOCUS_LOSS.
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
@@ -126,23 +127,21 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       }
 
       if (step.mediaType == 'webm') {
+        // WebM: autoplay muted looping, no controls
         await vc.setLooping(true);
         await vc.setVolume(0);
         await vc.play();
-        _videoController = vc;
       } else {
-        final cc = ChewieController(
+        // Regular video: Chewie with full controls (play button, audio, seek)
+        _chewieController = ChewieController(
           videoPlayerController: vc,
           autoPlay: false,
           looping: false,
-          allowFullScreen: false,
-          aspectRatio: vc.value.aspectRatio,
-          errorBuilder: (ctx, _) => _buildMediaError(ctx),
+          showControls: true,
         );
-        _videoController = vc;
-        _chewieController = cc;
       }
 
+      _videoController = vc;
       _videoPageIndex = index;
       if (mounted) setState(() => _videoReady = true);
     } catch (_) {
@@ -294,35 +293,6 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
       page,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-    );
-  }
-
-  Widget _buildMediaError(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Media unavailable',
-              style: TextStyle(
-                fontFamily: 'NovecentoSans',
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -525,10 +495,18 @@ class _FullScreenStepPage extends StatelessWidget {
     if (url.isEmpty) return const SizedBox.shrink();
 
     if (mediaType == 'video') {
-      return (videoReady && chewieController != null) ? Chewie(controller: chewieController!) : _buildLoadingPlaceholder(context);
+      // Regular video: show Chewie player with full controls
+      if (videoReady && chewieController != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Chewie(controller: chewieController!),
+        );
+      }
+      return _buildLoadingPlaceholder(context);
     }
 
     if (mediaType == 'webm') {
+      // WebM: autoplay muted looping, no controls
       if (videoReady && videoController != null) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),

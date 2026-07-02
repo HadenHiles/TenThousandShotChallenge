@@ -6,6 +6,48 @@ import 'package:device_info_plus/device_info_plus.dart'; // For Android version
 
 final NumberFormat numberFormat = NumberFormat('###,###,###');
 
+// ── WebM → MP4 URL resolution for iOS ────────────────────────────────────────
+//
+// The Cloud Function (transcodeWebmToMp4) transcodes every uploaded .webm file
+// to H.264 MP4 and stores it at the same Storage path with a .mp4 extension,
+// made publicly readable so no auth token is needed.
+//
+// On iOS, fvp's VT decoder only hardware-accelerates VP9 on macOS 11+; on iOS
+// it falls back to CPU software decoding (heat + choppiness).  Switching to
+// H.264 MP4 lets iOS use its native VideoToolbox hardware decoder.
+//
+// Firebase Storage download URL format:
+//   https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded_path}?alt=media&token={t}
+// Public GCS URL for the transcoded MP4 (no token required):
+//   https://storage.googleapis.com/{bucket}/{decoded_path with .mp4}
+
+/// On iOS, converts a Firebase Storage WebM download URL to the public MP4 URL
+/// that the [transcodeWebmToMp4] Cloud Function produces.  On all other
+/// platforms the original [url] is returned unchanged.
+String resolveVideoUrl(String url) {
+  if (!Platform.isIOS) return url;
+  if (!url.contains('.webm')) return url;
+
+  try {
+    // Parse: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded_path}?…
+    final uri = Uri.parse(url);
+    if (!uri.host.contains('firebasestorage.googleapis.com') && !uri.host.contains('storage.googleapis.com')) return url;
+
+    // Path looks like /v0/b/{bucket}/o/{encoded_file_path}
+    final parts = uri.path.split('/o/');
+    if (parts.length != 2) return url;
+
+    final bucket = parts[0].replaceFirst('/v0/b/', '');
+    final filePath = Uri.decodeComponent(parts[1]).replaceAll('.webm', '.mp4');
+
+    // Re-encode each path segment individually (preserve slashes)
+    final encodedPath = filePath.split('/').map(Uri.encodeComponent).join('/');
+    return 'https://storage.googleapis.com/$bucket/$encodedPath';
+  } catch (_) {
+    return url; // Fallback: use original URL as-is
+  }
+}
+
 String printDuration(Duration duration, bool showSeconds) {
   String twoDigits(int n) => n.toString().padLeft(2, "0");
   final String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));

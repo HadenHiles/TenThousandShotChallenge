@@ -1,11 +1,20 @@
 import * as admin from "firebase-admin";
 import { onRequest, onCall } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import * as path from "path";
+import * as os from "os";
+import * as fs from "fs";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ffmpegStatic = require("ffmpeg-static") as string;
+const execFileAsync = promisify(execFile);
 
 /**
  * Send an FCM message using the Firebase Admin SDK.
@@ -21,7 +30,7 @@ async function sendFcmMessage(fcmMessage: any): Promise<void> {
     logger.log('FCM message sent successfully, messageId:', response);
 }
 
-initializeApp({ credential: applicationDefault() });
+initializeApp({ credential: applicationDefault(), storageBucket: 'ten-thousand-puck-challenge.appspot.com' });
 const db = getFirestore();
 
 // Secure admin key via Firebase Secrets Manager.
@@ -2509,5 +2518,165 @@ export const sendPracticeReminders = onSchedule(
 
         await Promise.allSettled(tasks);
         logger.info('Practice reminders complete.');
+    }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WebM → MP4 transcoding
+//
+// iOS's VideoToolbox hardware VP9 decoder (required for smooth WebM) is only
+// reliable on macOS 11+. On iOS the fvp library falls back to FFmpeg software
+// decoding, causing choppy playback and thermal throttling.  By storing an
+// H.264 MP4 alongside each WebM we let iOS use its native hardware decoder
+// while Android/web continue to use the efficient WebM.
+//
+// Storage layout:
+//   original : gs://…/challenges/step_1/video.webm
+//   transcoded: gs://…/challenges/step_1/video.mp4  (made publicly readable)
+//
+// The Flutter app (utility.dart: resolveVideoUrl) swaps .webm → the public
+// MP4 URL on iOS only.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Shared helper – downloads a WebM from Storage, transcodes to H.264 MP4,
+ * uploads the result, and makes it publicly readable.
+ * Returns the public MP4 URL, or null if the MP4 already existed.
+ */
+async function transcodeWebmFile(
+    bucketName: string,
+    webmPath: string
+): Promise<string | null> {
+    const bucket = admin.storage().bucket(bucketName);
+    const mp4Path = webmPath.replace(/\.webm$/i, '.mp4');
+
+    // Idempotency: skip if MP4 already exists
+    const [mp4Exists] = await bucket.file(mp4Path).exists();
+    if (mp4Exists) {
+        logger.info(`MP4 already exists, skipping: ${mp4Path}`);
+        return null;
+    }
+
+    const baseName = path.basename(webmPath, '.webm');
+    const tempWebm = path.join(os.tmpdir(), `${baseName}_${Date.now()}.webm`);
+    const tempMp4 = path.join(os.tmpdir(), `${baseName}_${Date.now()}.mp4`);
+
+    try {
+        // Download
+        logger.info(`Downloading ${webmPath}`);
+        await bucket.file(webmPath).download({ destination: tempWebm });
+
+        // Transcode: libx264 fast preset, CRF 22, AAC audio, faststart for
+        // progressive streaming, copy subtitles/data streams if present.
+        logger.info(`Transcoding to MP4…`);
+        await execFileAsync(ffmpegStatic, [
+            '-y',
+            '-i', tempWebm,
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '22',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',
+            tempMp4,
+        ]);
+
+        // Upload MP4
+        logger.info(`Uploading ${mp4Path}`);
+        await bucket.upload(tempMp4, {
+            destination: mp4Path,
+            metadata: {
+                contentType: 'video/mp4',
+                cacheControl: 'public, max-age=31536000',
+            },
+        });
+
+        // Make publicly readable – this lets the Flutter app build a
+        // deterministic URL without needing a signed-URL or Firestore lookup.
+        await bucket.file(mp4Path).makePublic();
+
+        const publicUrl =
+            `https://storage.googleapis.com/${bucketName}/${mp4Path.split('/').map(encodeURIComponent).join('/')}`;
+        logger.info(`Transcoded successfully → ${publicUrl}`);
+        return publicUrl;
+    } finally {
+        // Clean up temp files regardless of success/failure
+        for (const f of [tempWebm, tempMp4]) {
+            if (fs.existsSync(f)) fs.unlinkSync(f);
+        }
+    }
+}
+
+/**
+ * Storage trigger: automatically transcodes every newly uploaded .webm file
+ * to H.264 MP4. Runs with generous memory/CPU to handle large video files.
+ */
+export const transcodeWebmToMp4 = onObjectFinalized(
+    {
+        memory: '4GiB',
+        cpu: 2,
+        timeoutSeconds: 540,
+    },
+    async (event) => {
+        const filePath = event.data.name ?? '';
+        const contentType = event.data.contentType ?? '';
+        const bucketName = event.data.bucket;
+
+        if (!filePath.endsWith('.webm') && !contentType.includes('webm')) return;
+
+        await transcodeWebmFile(bucketName, filePath);
+    }
+);
+
+/**
+ * HTTP endpoint (admin-key protected) that iterates all existing .webm files
+ * in the default storage bucket and transcodes any that don't yet have an MP4
+ * counterpart.  Call this once after deploying to backfill existing content.
+ *
+ * Optional query param: ?limit=N (default 20) to process N files per call.
+ * Re-call until the response shows { remaining: 0 }.
+ */
+export const migrateWebmFiles = onRequest(
+    {
+        memory: '4GiB',
+        cpu: 2,
+        timeoutSeconds: 540,
+        secrets: [ADMIN_KEY_SECRET],
+    },
+    async (req, res) => {
+        if (!requireAdminKey(req, res)) return;
+
+        const limit = Math.min(parseInt((req.query.limit as string) ?? '20', 10), 50);
+        const bucket = admin.storage().bucket('ten-thousand-puck-challenge.appspot.com');
+        const bucketName = bucket.name;
+
+        const [allFiles] = await bucket.getFiles();
+        const webmFiles = allFiles.filter((f) => f.name.endsWith('.webm'));
+
+        // Determine which still need transcoding
+        const todo: string[] = [];
+        for (const f of webmFiles) {
+            const mp4Path = f.name.replace(/\.webm$/i, '.mp4');
+            const [exists] = await bucket.file(mp4Path).exists();
+            if (!exists) todo.push(f.name);
+        }
+
+        const batch = todo.slice(0, limit);
+        const results: Record<string, string> = {};
+
+        for (const webmPath of batch) {
+            try {
+                const url = await transcodeWebmFile(bucketName, webmPath);
+                results[webmPath] = url ?? 'already_existed';
+            } catch (err: any) {
+                results[webmPath] = `error: ${err?.message ?? err}`;
+                logger.error(`Failed to transcode ${webmPath}:`, err);
+            }
+        }
+
+        res.json({
+            processed: batch.length,
+            remaining: todo.length - batch.length,
+            results,
+        });
     }
 );
