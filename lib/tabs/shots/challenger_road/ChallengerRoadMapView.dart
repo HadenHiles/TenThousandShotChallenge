@@ -759,7 +759,13 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   /// portion of the viewport. The scroll runs concurrently with the expand
   /// animation so both complete at around the same time.
   void _expandLevel(int level) {
-    setState(() => _expandedLevels.add(level));
+    // Collapse all other manually-expanded levels first. The active/current
+    // level is unaffected because _isLevelExpanded checks level == currentLevel
+    // independently of _expandedLevels.
+    setState(() {
+      _expandedLevels.clear();
+      _expandedLevels.add(level);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
       final levelTop = _levelTopOffsets[level];
@@ -768,18 +774,12 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
       // Scroll to the entry-point challenge – the bottom-most node in the
       // section (lowest sequence number = first challenge to attempt).
       // Challenges are stored reversed so index [last] = lowest sequence.
-      final challengeCount =
-          (_lastData?.challengesByLevel[level]?.length ?? 1).clamp(1, 999);
-      final firstChallengeNodeY = levelTop +
-          _levelSectionExtraTop +
-          _levelTopPad +
-          (_nodeDiameter / 2) +
-          (challengeCount - 1) * _nodeSpacing;
+      final challengeCount = (_lastData?.challengesByLevel[level]?.length ?? 1).clamp(1, 999);
+      final firstChallengeNodeY = levelTop + _levelSectionExtraTop + _levelTopPad + (_nodeDiameter / 2) + (challengeCount - 1) * _nodeSpacing;
 
-      // Place the first challenge at ~65% down the viewport so both the
-      // node and the level banner below it are comfortably visible.
+      // Centre the first challenge node vertically in the viewport.
       final viewport = _scrollController.position.viewportDimension;
-      final target = (firstChallengeNodeY - viewport * 0.65).clamp(
+      final target = (firstChallengeNodeY - viewport * 0.5).clamp(
         _scrollController.position.minScrollExtent,
         _scrollController.position.maxScrollExtent,
       );
