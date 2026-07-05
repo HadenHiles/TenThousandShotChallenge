@@ -48,6 +48,11 @@ Future<void> main() async {
 
   // Use fvp as the video_player backend so WebM (VP8/VP9) works on iOS.
   //
+  // Restricted to iOS only – on Android the default ExoPlayer backend already
+  // supports WebM/VP9 natively and handles Firebase Storage URLs correctly.
+  // fvp's libmdk network stack on Android does not handle the Firebase Storage
+  // auth-token URL format reliably, which caused WebM videos to silently fail.
+  //
   // Decoder priority on iOS:
   //   1. VT       – libmdk's own VideoToolbox decoder (hardware H.264/HEVC)
   //   2. VideoToolbox – FFmpeg's VideoToolbox decoder, which maps directly to
@@ -56,6 +61,7 @@ Future<void> main() async {
   //                     macOS 11+, so this explicit entry is needed for iOS.
   //   3. FFmpeg   – software fallback for any codec not covered above.
   fvp.registerWith(options: {
+    'platforms': ['ios'],
     'video.decoders': ['VT', 'VideoToolbox', 'FFmpeg'],
   });
 
