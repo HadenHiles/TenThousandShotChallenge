@@ -22,7 +22,15 @@ service firebase.storage {
     match /public/{allPaths=**} {
       allow read;
     }
-    
+
+    // Challenge coaching media (videos, images used in Challenger Road steps).
+    // Authenticated users can read; tokens in the stored URLs also grant access
+    // independently, but this rule ensures playback works even if a client's
+    // HTTP stack drops query parameters (e.g. token= on redirect).
+    match /media/{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+
     // Deny all other access
     match /{allPaths=**} {
       allow read, write: if false;
