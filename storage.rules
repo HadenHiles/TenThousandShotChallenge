@@ -24,11 +24,16 @@ service firebase.storage {
     }
 
     // Challenge coaching media (videos, images used in Challenger Road steps).
-    // Authenticated users can read; tokens in the stored URLs also grant access
-    // independently, but this rule ensures playback works even if a client's
-    // HTTP stack drops query parameters (e.g. token= on redirect).
+    // These are non-sensitive coaching assets that all users need to play back.
+    // Public read is required because the video_player HTTP client (fvp/libmdk
+    // on Android) sends plain HTTPS requests with no Firebase auth header, so
+    // request.auth is always null for video playback requests.
+    // Files are stored under two top-level paths depending on upload batch.
     match /media/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read;
+    }
+    match /challenges/{allPaths=**} {
+      allow read;
     }
 
     // Deny all other access
