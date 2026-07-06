@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const APP_URL_HOST = 'hyperurl.co';
-const APP_URL_PATH = "tenthousandshots";
+const APP_URL_HOST = 'howtohockey.com';
+const APP_URL_PATH = "10000shots";
 
 versionCheck(context) async {
   //Get Current installed version of app
