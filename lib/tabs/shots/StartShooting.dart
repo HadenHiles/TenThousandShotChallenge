@@ -263,7 +263,7 @@ class _StartShootingState extends State<StartShooting> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Accuracy tracking applies to every shot set in this session — you can\'t change it mid-session.',
+                  'Accuracy tracking applies to every shot set in this session.',
                   style: TextStyle(fontSize: 14),
                 ),
                 const SizedBox(height: 12),
@@ -1714,6 +1714,8 @@ class _StartShootingState extends State<StartShooting> {
                             _shots = [];
                             _currentShotCount = preferences!.puckCount!;
                             _chartCollapsed = true;
+                            _trackAccuracy = null;
+                            _accuracyDialogShown = false;
                           });
                         }
                       },
@@ -1799,6 +1801,8 @@ class _StartShootingState extends State<StartShooting> {
                               _shots = [];
                               _currentShotCount = preferences!.puckCount!;
                               _chartCollapsed = true;
+                              _trackAccuracy = null;
+                              _accuracyDialogShown = false;
                             });
                             Fluttertoast.showToast(
                               msg: 'No connection - session saved offline ($pending pending).',
@@ -1836,6 +1840,8 @@ class _StartShootingState extends State<StartShooting> {
                                 _shots = [];
                                 _currentShotCount = preferences!.puckCount!;
                                 _chartCollapsed = true;
+                                _trackAccuracy = null;
+                                _accuracyDialogShown = false;
                               });
                             }
                           } finally {
