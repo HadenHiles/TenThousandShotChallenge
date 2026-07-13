@@ -32,10 +32,13 @@ import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 
 class StartShooting extends StatefulWidget {
-  const StartShooting({super.key, required this.sessionPanelController, this.shots});
+  const StartShooting({super.key, required this.sessionPanelController, this.shots, this.panelOpenSignal});
 
   final PanelController sessionPanelController;
   final List<Shots>? shots;
+  /// Incremented by Navigation each time the session panel is opened.
+  /// StartShooting listens to this to show the accuracy dialog at the right time.
+  final ValueNotifier<int>? panelOpenSignal;
 
   @override
   State<StartShooting> createState() => _StartShootingState();
@@ -82,6 +85,7 @@ class _StartShootingState extends State<StartShooting> {
       if (!mounted) return;
       _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
       _customerInfoNotifier?.addListener(_onEntitlementsChanged);
+      widget.panelOpenSignal?.addListener(_onPanelOpenSignal);
     });
   }
 
@@ -92,6 +96,7 @@ class _StartShootingState extends State<StartShooting> {
     } catch (_) {
       // ignore
     }
+    widget.panelOpenSignal?.removeListener(_onPanelOpenSignal);
     _shots = [];
     _currentShotCount = preferences!.puckCount!;
     super.dispose();
@@ -120,10 +125,20 @@ class _StartShootingState extends State<StartShooting> {
       setState(() {
         _subscriptionLevel = level;
       });
-      _maybeShowAccuracyDialog();
+      // Fallback: if the panel was already open when subscription resolved
+      // (rare race condition), trigger the dialog now.
+      if (widget.sessionPanelController.isAttached && widget.sessionPanelController.isPanelOpen) {
+        _maybeShowAccuracyDialog();
+      }
     }).catchError((error) {
       print("Error loading subscription level: $error");
     });
+  }
+
+  /// Called each time the session panel opens. Primary trigger for the
+  /// accuracy tracking dialog at the start of a new session.
+  void _onPanelOpenSignal() {
+    _maybeShowAccuracyDialog();
   }
 
   /// Shows the accuracy tracking dialog once at the start of a new pro session.
