@@ -136,6 +136,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   List<Widget>? _actions;
   int _selectedIndex = 0;
   final ValueNotifier<int> _trainResetSignal = ValueNotifier<int>(0);
+  /// Incremented each time the session panel is opened; StartShooting listens
+  /// to this to show the accuracy-tracking dialog at the right moment.
+  final ValueNotifier<int> _sessionPanelOpenSignal = ValueNotifier<int>(0);
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
   double _bottomNavOffsetPercentage = 0;
@@ -469,6 +472,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _communitySectionNotifier.dispose();
     _trainResetSignal.dispose();
+    _sessionPanelOpenSignal.dispose();
     super.dispose();
   }
 
@@ -1145,6 +1149,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             setState(() {
               _sessionPanelState = PanelState.OPEN;
             });
+            _sessionPanelOpenSignal.value++;
           },
           onPanelClosed: () {
             sessionService.pause();
@@ -1320,7 +1325,10 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                     ),
                   )
                 else
-                  StartShooting(sessionPanelController: sessionPanelController),
+                  StartShooting(
+                    sessionPanelController: sessionPanelController,
+                    panelOpenSignal: _sessionPanelOpenSignal,
+                  ),
               ],
             ),
           ),
