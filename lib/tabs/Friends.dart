@@ -34,6 +34,9 @@ class _FriendsState extends State<Friends> {
   final TextEditingController _friendSearchController = TextEditingController();
   String _friendSearchQuery = '';
 
+  bool _isSelectMode = false;
+  final Set<String> _selectedFriendIds = {};
+
   bool _isLoadingInvites = false;
   List<DocumentSnapshot> _invites = [];
   List<Invite> _inviteDates = [];
@@ -150,6 +153,57 @@ class _FriendsState extends State<Friends> {
     }
   }
 
+  Future<void> _unfriendSelected() async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    final selectedIds = _selectedFriendIds.toList();
+    setState(() {
+      _isSelectMode = false;
+      _selectedFriendIds.clear();
+    });
+    for (final uid in selectedIds) {
+      await removePlayerFromFriends(uid, auth, firestore);
+      if (!mounted) return;
+    }
+    if (!mounted) return;
+    friendsRefreshSignal.value++;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).cardTheme.color,
+        content: Text(
+          selectedIds.length == 1 ? 'Friend removed.' : '${selectedIds.length} friends removed.',
+          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+        ),
+        duration: const Duration(milliseconds: 2000),
+      ),
+    );
+  }
+
+  Future<void> _deleteAllInvites() async {
+    final auth = Provider.of<FirebaseAuth>(context, listen: false);
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
+    final currentUser = user;
+    if (currentUser == null) return;
+    final invitesToDelete = List<DocumentSnapshot>.from(_invites);
+    for (final inviteDoc in invitesToDelete) {
+      final UserProfile friend = UserProfile.fromSnapshot(inviteDoc);
+      final ref = friend.reference;
+      if (ref == null) continue;
+      await deleteInvite(ref.id, currentUser.uid, auth, firestore);
+      if (!mounted) return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).cardTheme.color,
+        content: const Text('All invites deleted', style: TextStyle(color: Colors.white)),
+        duration: const Duration(milliseconds: 2000),
+      ),
+    );
+    _invites.clear();
+    _loadInvites();
+  }
+
   void _resetInviteSwipeTracking() {
     _inviteSwipePointer = null;
     _inviteSwipeStartPosition = null;
@@ -245,86 +299,134 @@ class _FriendsState extends State<Friends> {
                       ),
                     ],
                   ),
-                  // Accept All button for Invites tab
+                  // Action bar: bulk-select (Friends tab) or Delete All / Accept All (Invites tab) + search
                   Builder(
                     builder: (context) {
                       final tabController = DefaultTabController.of(context);
                       return AnimatedBuilder(
                         animation: tabController,
                         builder: (context, child) {
-                          if (tabController.index == 1 && _invites.isNotEmpty) {
-                            return Container(
-                              width: double.infinity,
+                          final isInvitesTab = tabController.index == 1;
+
+                          // ── Invites tab: Delete All (grey) + Accept All (blue) ──────────
+                          if (isInvitesTab && _invites.isNotEmpty) {
+                            return Padding(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color.alphaBlend(
-                                    Colors.white.withOpacity(0.06),
-                                    HomeTheme.darkTheme.colorScheme.primaryContainer,
-                                  ),
-                                  foregroundColor: const Color(0xFFF1EEE6),
-                                  elevation: 0,
-                                  shadowColor: Colors.transparent,
-                                  surfaceTintColor: Colors.transparent,
-                                  minimumSize: const Size.fromHeight(48),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  side: BorderSide(
-                                    color: Colors.white.withOpacity(0.05),
-                                    width: 1,
-                                  ),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                ),
-                                onPressed: () async {
-                                  for (int i = 0; i < _invites.length; i++) {
-                                    final UserProfile friend = UserProfile.fromSnapshot(_invites[i]);
-                                    final ref = friend.reference;
-                                    if (ref == null) continue;
-                                    await acceptInvite(
-                                      Invite(ref.id, DateTime.now()),
-                                      Provider.of<FirebaseAuth>(context, listen: false),
-                                      Provider.of<FirebaseFirestore>(context, listen: false),
-                                    );
-                                    if (!mounted) return; // stop if disposed mid-loop
-                                  }
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: Theme.of(context).cardTheme.color,
-                                      content: const Text(
-                                        "All invites accepted!",
-                                        style: TextStyle(color: Colors.white),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.alphaBlend(
+                                          Colors.white.withOpacity(0.06),
+                                          HomeTheme.darkTheme.colorScheme.primaryContainer,
+                                        ),
+                                        elevation: 0,
+                                        shadowColor: Colors.transparent,
+                                        surfaceTintColor: Colors.transparent,
+                                        minimumSize: const Size.fromHeight(48),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        side: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                       ),
-                                      duration: const Duration(milliseconds: 2000),
+                                      onPressed: _deleteAllInvites,
+                                      child: const Text(
+                                        "Delete All",
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Color(0xFFF1EEE6)),
+                                      ),
                                     ),
-                                  );
-                                  _loadFriends();
-                                  _loadInvites();
-                                },
-                                child: const Text(
-                                  "Accept All",
-                                  style: TextStyle(
-                                    fontFamily: 'NovecentoSans',
-                                    fontSize: 16,
-                                    color: Color(0xFFF1EEE6),
                                   ),
-                                ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue.shade600,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shadowColor: Colors.transparent,
+                                        surfaceTintColor: Colors.transparent,
+                                        minimumSize: const Size.fromHeight(48),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                      ),
+                                      onPressed: () async {
+                                        for (int i = 0; i < _invites.length; i++) {
+                                          final UserProfile friend = UserProfile.fromSnapshot(_invites[i]);
+                                          final ref = friend.reference;
+                                          if (ref == null) continue;
+                                          await acceptInvite(
+                                            Invite(ref.id, DateTime.now()),
+                                            Provider.of<FirebaseAuth>(context, listen: false),
+                                            Provider.of<FirebaseFirestore>(context, listen: false),
+                                          );
+                                          if (!mounted) return;
+                                        }
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Theme.of(context).cardTheme.color,
+                                            content: const Text("All invites accepted!", style: TextStyle(color: Colors.white)),
+                                            duration: const Duration(milliseconds: 2000),
+                                          ),
+                                        );
+                                        _loadFriends();
+                                        _loadInvites();
+                                      },
+                                      child: const Text(
+                                        "Accept All",
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
-                          } else {
-                            return const SizedBox.shrink();
                           }
-                        },
-                      );
-                    },
-                  ),
-                  // Friend search (only on Friends tab)
-                  Builder(
-                    builder: (context) {
-                      final tabController = DefaultTabController.of(context);
-                      return AnimatedBuilder(
-                        animation: tabController,
-                        builder: (context, child) {
-                          if (tabController.index == 0) {
+
+                          // ── Friends tab ───────────────────────────────────────────────────
+                          if (!isInvitesTab) {
+                            // Select mode: Unfriend Selected + Cancel
+                            if (_isSelectMode) {
+                              return Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: _selectedFriendIds.isEmpty ? Color.alphaBlend(Colors.white.withOpacity(0.06), HomeTheme.darkTheme.colorScheme.primaryContainer) : Theme.of(context).primaryColor,
+                                          elevation: 0,
+                                          shadowColor: Colors.transparent,
+                                          surfaceTintColor: Colors.transparent,
+                                          minimumSize: const Size.fromHeight(48),
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                          side: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                        onPressed: _selectedFriendIds.isEmpty ? null : _unfriendSelected,
+                                        child: Text(
+                                          _selectedFriendIds.isEmpty ? "Select Friends to Remove" : "Unfriend Selected (${_selectedFriendIds.length})",
+                                          style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Color(0xFFF1EEE6)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    TextButton(
+                                      onPressed: () => setState(() {
+                                        _isSelectMode = false;
+                                        _selectedFriendIds.clear();
+                                      }),
+                                      child: const Text(
+                                        "Cancel",
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Color(0xFFF1EEE6)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            // Normal: search field
                             return Container(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                               child: TextField(
@@ -352,29 +454,21 @@ class _FriendsState extends State<Friends> {
                                       : null,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: Colors.white.withOpacity(0.05),
-                                      width: 1,
-                                    ),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: Colors.white.withOpacity(0.05),
-                                      width: 1,
-                                    ),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: Colors.white.withOpacity(0.12),
-                                      width: 1,
-                                    ),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.12), width: 1),
                                   ),
                                 ),
                               ),
                             );
                           }
+
                           return const SizedBox.shrink();
                         },
                       );
@@ -566,8 +660,21 @@ class _FriendsState extends State<Friends> {
 
   Widget _buildFriendItem(UserProfile friend, bool bg) {
     final bool isProForDisplay = friend.isPro == true;
+    final String friendUid = friend.reference?.id ?? '';
+    final bool isSelected = _selectedFriendIds.contains(friendUid);
     return GestureDetector(
       onTap: () {
+        if (_isSelectMode) {
+          if (friendUid.isEmpty) return;
+          setState(() {
+            if (isSelected) {
+              _selectedFriendIds.remove(friendUid);
+            } else {
+              _selectedFriendIds.add(friendUid);
+            }
+          });
+          return;
+        }
         Feedback.forTap(context);
 
         final ref = friend.reference;
@@ -575,9 +682,21 @@ class _FriendsState extends State<Friends> {
           context.push(AppRoutePaths.playerPathFor(ref.id));
         }
       },
+      onLongPress: () {
+        if (friendUid.isEmpty) return;
+        Feedback.forLongPress(context);
+        setState(() {
+          _isSelectMode = true;
+          _selectedFriendIds.add(friendUid);
+        });
+      },
       child: Container(
         decoration: BoxDecoration(
-          color: bg ? Theme.of(context).cardTheme.color : Colors.transparent,
+          color: _isSelectMode && isSelected
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.18)
+              : bg
+                  ? Theme.of(context).cardTheme.color
+                  : Colors.transparent,
         ),
         padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
@@ -587,66 +706,83 @@ class _FriendsState extends State<Friends> {
               child: SizedBox(
                 width: 60,
                 height: 60,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(60),
-                        child: UserAvatarCrPopover(
-                          userId: friend.reference?.id ?? '',
-                          menuColor: Theme.of(context).colorScheme.primary,
-                          showAccomplishment: isProForDisplay,
-                          showProFallback: isProForDisplay,
-                          extraActions: friend.reference == null
-                              ? const <UserAvatarPopoverAction>[]
-                              : [
-                                  UserAvatarPopoverAction(
-                                    label: 'Compare Stats',
-                                    icon: Icons.compare_arrows_rounded,
-                                    onTap: () {
-                                      Feedback.forTap(context);
-                                      context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
-                                    },
-                                  ),
-                                ],
-                          onViewProfile: friend.reference == null
-                              ? null
-                              : () {
-                                  Feedback.forTap(context);
-                                  context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
-                                },
-                          onViewCrProgress: friend.reference == null
-                              ? null
-                              : () {
-                                  Feedback.forTap(context);
-                                  context.push(AppRoutePaths.playerChallengerRoadPathFor(friend.reference!.id));
-                                },
-                          onUnlockChallengerRoad: () {
-                            Feedback.forTap(context);
-                            context.go(AppRoutePaths.app);
-                            openChallengerRoadSignal.value++;
-                          },
-                          child: UserAvatar(
-                            user: friend,
-                            radius: 30,
-                            backgroundColor: Colors.transparent,
+                child: _isSelectMode
+                    ? Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+                            border: Border.all(
+                              color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                              width: 2,
+                            ),
                           ),
+                          child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
                         ),
+                      )
+                    : Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(60),
+                              child: UserAvatarCrPopover(
+                                userId: friend.reference?.id ?? '',
+                                menuColor: Theme.of(context).colorScheme.primary,
+                                showAccomplishment: isProForDisplay,
+                                showProFallback: isProForDisplay,
+                                extraActions: friend.reference == null
+                                    ? const <UserAvatarPopoverAction>[]
+                                    : [
+                                        UserAvatarPopoverAction(
+                                          label: 'Compare Stats',
+                                          icon: Icons.compare_arrows_rounded,
+                                          onTap: () {
+                                            Feedback.forTap(context);
+                                            context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
+                                          },
+                                        ),
+                                      ],
+                                onViewProfile: friend.reference == null
+                                    ? null
+                                    : () {
+                                        Feedback.forTap(context);
+                                        context.push(AppRoutePaths.playerPathFor(friend.reference!.id));
+                                      },
+                                onViewCrProgress: friend.reference == null
+                                    ? null
+                                    : () {
+                                        Feedback.forTap(context);
+                                        context.push(AppRoutePaths.playerChallengerRoadPathFor(friend.reference!.id));
+                                      },
+                                onUnlockChallengerRoad: () {
+                                  Feedback.forTap(context);
+                                  context.go(AppRoutePaths.app);
+                                  openChallengerRoadSignal.value++;
+                                },
+                                child: UserAvatar(
+                                  user: friend,
+                                  radius: 30,
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (friend.reference != null)
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: CrAvatarTrophyStream(
+                                userId: friend.reference!.id,
+                                size: 20,
+                                showProFallback: isProForDisplay,
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                    if (friend.reference != null)
-                      Positioned(
-                        right: -2,
-                        bottom: -2,
-                        child: CrAvatarTrophyStream(
-                          userId: friend.reference!.id,
-                          size: 20,
-                          showProFallback: isProForDisplay,
-                        ),
-                      ),
-                  ],
-                ),
               ),
             ),
             Expanded(
@@ -746,7 +882,7 @@ class _FriendsState extends State<Friends> {
                 ],
               ),
             ),
-            if (friend.reference != null)
+            if (!_isSelectMode && friend.reference != null)
               IconButton(
                 tooltip: 'Compare stats',
                 icon: Icon(
