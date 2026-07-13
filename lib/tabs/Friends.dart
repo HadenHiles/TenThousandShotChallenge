@@ -15,7 +15,7 @@ import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/CrAvatarTrophy.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatar.dart';
 import 'package:tenthousandshotchallenge/widgets/UserAvatarCrPopover.dart';
-import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal;
+import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal, friendsRefreshSignal;
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -45,12 +45,16 @@ class _FriendsState extends State<Friends> {
   void initState() {
     _loadFriends();
     _loadInvites();
+    friendsRefreshSignal.addListener(_onFriendsRefreshSignal);
 
     super.initState();
   }
 
+  void _onFriendsRefreshSignal() => _loadFriends();
+
   @override
   void dispose() {
+    friendsRefreshSignal.removeListener(_onFriendsRefreshSignal);
     _friendSearchController.dispose();
     super.dispose();
   }
