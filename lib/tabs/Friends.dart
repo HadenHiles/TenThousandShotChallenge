@@ -880,17 +880,19 @@ class _FriendsState extends State<Friends> {
                 ],
               ),
             ),
-            if (!_isSelectMode && friend.reference != null)
-              IconButton(
-                tooltip: 'Compare stats',
-                icon: Icon(
-                  Icons.compare_arrows_rounded,
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
-                ),
-                onPressed: () {
-                  context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
-                },
-              ),
+            if (friend.reference != null)
+              _isSelectMode
+                  ? const SizedBox(width: 48, height: 48)
+                  : IconButton(
+                      tooltip: 'Compare stats',
+                      icon: Icon(
+                        Icons.compare_arrows_rounded,
+                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                      ),
+                      onPressed: () {
+                        context.push(AppRoutePaths.compareStatsPathFor(friend.reference!.id));
+                      },
+                    ),
           ],
         ),
       ),
