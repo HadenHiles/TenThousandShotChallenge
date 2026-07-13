@@ -136,6 +136,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   List<Widget>? _actions;
   int _selectedIndex = 0;
   final ValueNotifier<int> _trainResetSignal = ValueNotifier<int>(0);
+
   /// Incremented each time the session panel is opened; StartShooting listens
   /// to this to show the accuracy-tracking dialog at the right moment.
   final ValueNotifier<int> _sessionPanelOpenSignal = ValueNotifier<int>(0);
