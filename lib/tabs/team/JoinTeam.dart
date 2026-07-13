@@ -42,13 +42,44 @@ class _JoinTeamState extends State<JoinTeam> {
     }
     setState(() => _isSearching = true);
     List<DocumentSnapshot> teams = [];
-    await FirebaseFirestore.instance.collection('teams').orderBy('name_lowercase', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((snap) {
+    final query = value.toLowerCase().trim();
+
+    // Primary search: prefix match on name_lowercase (set on all teams created
+    // via the app). Using isGreaterThanOrEqualTo/isLessThanOrEqualTo is more
+    // reliable than orderBy+startAt/endAt for catching silent query failures.
+    await FirebaseFirestore.instance
+        .collection('teams')
+        .where('public', isEqualTo: true)
+        .where('name_lowercase', isGreaterThanOrEqualTo: query)
+        .where('name_lowercase', isLessThanOrEqualTo: '$query\uf8ff')
+        .get()
+        .then((snap) {
           for (var doc in snap.docs) {
             if (doc.id != user?.uid) teams.add(doc);
           }
-        });
+        })
+        .catchError((_) {});
+
+    // Fallback 1: prefix match on original name field for legacy teams that
+    // predate the name_lowercase field (uses the [public, name] composite index).
     if (teams.isEmpty) {
-      await FirebaseFirestore.instance.collection('teams').where('code', isEqualTo: value.toUpperCase()).get().then((snap) => teams.addAll(snap.docs));
+      await FirebaseFirestore.instance
+          .collection('teams')
+          .where('public', isEqualTo: true)
+          .where('name', isGreaterThanOrEqualTo: value.trim())
+          .where('name', isLessThanOrEqualTo: '${value.trim()}\uf8ff')
+          .get()
+          .then((snap) {
+            for (var doc in snap.docs) {
+              if (doc.id != user?.uid) teams.add(doc);
+            }
+          })
+          .catchError((_) {});
+    }
+
+    // Fallback 2: exact team code match.
+    if (teams.isEmpty) {
+      await FirebaseFirestore.instance.collection('teams').where('code', isEqualTo: value.toUpperCase()).get().then((snap) => teams.addAll(snap.docs)).catchError((_) {});
     }
     await Future.delayed(const Duration(milliseconds: 250));
     if (mounted) {

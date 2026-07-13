@@ -1526,29 +1526,27 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
         ),
         trailing: SizedBox(
           height: 60,
-          child: Stack(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                numberFormat.format(plyr.shots ?? 0), // Format with commas
+                numberFormat.format(plyr.shots ?? 0),
                 style: TextStyle(
                   fontFamily: 'NovecentoSans',
-                  fontSize: 26, // Large shot count
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: isDeletedUser ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4) : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              Positioned(
-                top: 30,
-                right: 0,
-                child: Text(
-                  'Shots'.toLowerCase(),
-                  style: TextStyle(
-                    fontFamily: 'NovecentoSans',
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
-                  ),
+              Text(
+                'Shots'.toLowerCase(),
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
