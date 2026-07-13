@@ -36,6 +36,7 @@ class StartShooting extends StatefulWidget {
 
   final PanelController sessionPanelController;
   final List<Shots>? shots;
+
   /// Incremented by Navigation each time the session panel is opened.
   /// StartShooting listens to this to show the accuracy dialog at the right time.
   final ValueNotifier<int>? panelOpenSignal;
