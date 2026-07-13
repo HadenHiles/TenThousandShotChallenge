@@ -157,15 +157,18 @@ class _FriendsState extends State<Friends> {
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     final selectedIds = _selectedFriendIds.toList();
+    // Optimistically remove from the visible list so they disappear immediately.
     setState(() {
       _isSelectMode = false;
       _selectedFriendIds.clear();
+      _friends.removeWhere((doc) => selectedIds.contains(doc.id));
     });
     for (final uid in selectedIds) {
       await removePlayerFromFriends(uid, auth, firestore);
       if (!mounted) return;
     }
     if (!mounted) return;
+    // Final refresh to ensure the list matches Firestore after all writes.
     friendsRefreshSignal.value++;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
