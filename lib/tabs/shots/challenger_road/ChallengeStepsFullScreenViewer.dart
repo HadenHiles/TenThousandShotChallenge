@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
+import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_player/video_player.dart';
 
@@ -113,12 +114,26 @@ class _ChallengeStepsFullScreenViewerState extends State<ChallengeStepsFullScree
     if (generation != _initGeneration || !mounted) return;
 
     try {
-      final vc = VideoPlayerController.networkUrl(
-        Uri.parse(resolveVideoUrl(step.mediaUrl)),
-        // Prevent ExoPlayer from requesting audio focus so it cannot
-        // interrupt the challenge audio player with AUDIOFOCUS_LOSS.
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-      );
+      final resolvedUrl = resolveVideoUrl(step.mediaUrl);
+
+      // For the full-screen viewer, try to load from the local cache first for
+      // an instant start.  If the file is not yet cached, stream from the
+      // network and kick off a background download so the next visit is instant.
+      VideoPlayerController vc;
+      final cached = await ChallengerRoadVideoCache.instance.getFileFromCache(resolvedUrl);
+      if (cached != null && await cached.file.exists()) {
+        vc = VideoPlayerController.file(
+          cached.file,
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        );
+      } else {
+        // Not yet cached — stream from network and populate cache in background.
+        ChallengerRoadVideoCache.instance.downloadFile(resolvedUrl).ignore();
+        vc = VideoPlayerController.networkUrl(
+          Uri.parse(resolvedUrl),
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        );
+      }
       await vc.initialize();
 
       if (generation != _initGeneration || !mounted) {

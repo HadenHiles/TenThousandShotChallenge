@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengeStep.dart';
+import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
+import 'package:tenthousandshotchallenge/services/ThumbnailCache.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -62,8 +65,13 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
     }
 
     try {
-      final vc = VideoPlayerController.networkUrl(
-        Uri.parse(resolveVideoUrl(step.mediaUrl)),
+      final resolvedUrl = resolveVideoUrl(step.mediaUrl);
+      // Use the cache manager so repeat visits load from disk instead of
+      // re-downloading the clip every time.
+      final File cachedFile = await ChallengerRoadVideoCache.instance.getSingleFile(resolvedUrl);
+      if (generation != _initGeneration || !mounted) return;
+      final vc = VideoPlayerController.file(
+        cachedFile,
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
       await vc.initialize();
@@ -79,8 +87,25 @@ class _ChallengeStepViewerState extends State<ChallengeStepViewer> {
       _videoController = vc;
       _videoPageIndex = index;
       if (mounted) setState(() => _videoReady = true);
+
+      // Pre-fetch the adjacent steps' video files in the background so
+      // the next swipe finds the file already cached and starts instantly.
+      _prefetchAdjacentWebm(index);
     } catch (_) {
       // Leave _videoReady = false; the page shows a loading placeholder.
+    }
+  }
+
+  /// Downloads and caches the WebM/MP4 file for steps immediately before and
+  /// after [currentIndex] so the next swipe never waits on a network fetch.
+  void _prefetchAdjacentWebm(int currentIndex) {
+    for (final offset in [-1, 1]) {
+      final i = currentIndex + offset;
+      if (i < 0 || i >= widget.steps.length) continue;
+      final step = widget.steps[i];
+      if (step.mediaType != 'webm' || step.mediaUrl.isEmpty) continue;
+      // Fire-and-forget: getSingleFile is a no-op if already cached.
+      ChallengerRoadVideoCache.instance.getSingleFile(resolveVideoUrl(step.mediaUrl)).ignore();
     }
   }
 
@@ -389,6 +414,16 @@ class _VideoThumbWidgetState extends State<_VideoThumbWidget> {
   }
 
   Future<void> _load() async {
+    // Check the shared thumbnail cache before hitting the network.  A cache
+    // hit avoids calling VideoThumbnail.thumbnailData() which requires
+    // downloading part of the video from Firebase Storage.
+    final cached = await ThumbnailDiskCache.instance.getFrame(widget.url, 0);
+    if (cached != null) {
+      if (!mounted) return;
+      setState(() => _thumb = cached);
+      return;
+    }
+
     try {
       final data = await VideoThumbnail.thumbnailData(
         video: widget.url,
@@ -402,6 +437,7 @@ class _VideoThumbWidgetState extends State<_VideoThumbWidget> {
         setState(() => _error = true);
         return;
       }
+      ThumbnailDiskCache.instance.putFrame(widget.url, 0, data);
       setState(() => _thumb = data);
     } catch (_) {
       if (mounted) setState(() => _error = true);
