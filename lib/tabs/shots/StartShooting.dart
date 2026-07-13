@@ -177,6 +177,11 @@ class _StartShootingState extends State<StartShooting> {
                       : 'Accuracy tracking will be turned off for this session.',
               style: const TextStyle(fontSize: 14),
             ),
+            const SizedBox(height: 10),
+            Text(
+              'This only affects the current session. Your default accuracy setting is unchanged.',
+              style: TextStyle(fontSize: 12, color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.5)),
+            ),
           ],
         ),
         actions: [
