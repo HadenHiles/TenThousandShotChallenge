@@ -585,14 +585,10 @@ class _StartShootingState extends State<StartShooting> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: _trackAccuracy!
-                                ? Colors.green.withValues(alpha: 0.1)
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                            color: _trackAccuracy! ? Colors.green.withValues(alpha: 0.1) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: _trackAccuracy!
-                                  ? Colors.green.withValues(alpha: 0.4)
-                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                              color: _trackAccuracy! ? Colors.green.withValues(alpha: 0.4) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                               width: 1,
                             ),
                           ),
@@ -602,18 +598,14 @@ class _StartShootingState extends State<StartShooting> {
                               Icon(
                                 _trackAccuracy! ? Icons.track_changes : Icons.track_changes_outlined,
                                 size: 13,
-                                color: _trackAccuracy!
-                                    ? Colors.green
-                                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                                color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
                               ),
                               const SizedBox(width: 5),
                               Text(
                                 _trackAccuracy! ? 'Tracking accuracy' : 'Not tracking accuracy',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: _trackAccuracy!
-                                      ? Colors.green
-                                      : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                                  color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
                                   fontFamily: 'NovecentoSans',
                                 ),
                               ),
@@ -621,9 +613,7 @@ class _StartShootingState extends State<StartShooting> {
                               Icon(
                                 Icons.swap_horiz,
                                 size: 13,
-                                color: _trackAccuracy!
-                                    ? Colors.green.withValues(alpha: 0.7)
-                                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.3),
+                                color: _trackAccuracy! ? Colors.green.withValues(alpha: 0.7) : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.3),
                               ),
                             ],
                           ),
