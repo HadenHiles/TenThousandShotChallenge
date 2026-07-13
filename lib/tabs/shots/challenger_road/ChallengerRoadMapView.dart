@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tenthousandshotchallenge/services/ThumbnailCache.dart';
+import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_player/video_player.dart';
@@ -2202,6 +2205,19 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
   // ── Phase 1: load frame 0 eagerly in background ───────────────────────────
 
   Future<void> _loadFirstFrame() async {
+    // Check disk cache before touching the network. On a cache hit the whole
+    // function completes without a single Firebase Storage request.
+    final cached = await ThumbnailDiskCache.instance.getFrame(widget.url, 0);
+    if (cached != null) {
+      if (!mounted) return;
+      setState(() {
+        _frames = [cached];
+        _ready = true;
+      });
+      if (widget.focused) _scheduleRemainingLoad();
+      return;
+    }
+
     try {
       final data = await VideoThumbnail.thumbnailData(
         video: widget.url,
@@ -2215,6 +2231,8 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
         setState(() => _error = true);
         return;
       }
+      // Persist to disk so the next visit skips the network entirely.
+      ThumbnailDiskCache.instance.putFrame(widget.url, 0, data);
       setState(() {
         _frames = [data];
         _ready = true;
@@ -2238,77 +2256,102 @@ class _VideoFrameScrubberState extends State<_VideoFrameScrubber> {
     try {
       const totalFrames = 6;
 
-      // ── Duration detection ───────────────────────────────────────────────
-      // On Android, MediaMetadataRetriever does NOT return null for timestamps
-      // past the video end - it clamps and returns the last frame. So we cannot
-      // use null as a past-end sentinel. Instead:
-      //   1. Fetch a guaranteed-past-end sentinel (24 h) at tiny quality.
-      //   2. Run all probe candidates in parallel at the same tiny quality.
-      //   3. The last frame for every out-of-bounds timestamp equals the sentinel
-      //      byte-for-byte; the first probe that DIFFERS from the sentinel is
-      //      within the video - that gives us the approximate duration.
-      const sentinelMs = 24 * 60 * 60 * 1000; // 24 h - always past any video
-      const probeCandidatesMs = [300000, 120000, 60000, 30000, 10000, 5000, 3000, 1000];
-
+      // ── Duration detection (with caching) ────────────────────────────────
+      // On a cache hit we skip the 9-request sentinel+probe dance entirely.
+      int? cachedStepMs = await ThumbnailDiskCache.instance.getStepMs(widget.url);
       if (!mounted) return;
 
-      // One parallel round-trip for sentinel + all probes.
-      final allResults = await Future.wait([
-        VideoThumbnail.thumbnailData(
-          video: widget.url,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 32,
-          quality: 1,
-          timeMs: sentinelMs,
-        ),
-        ...probeCandidatesMs.map(
-          (t) => VideoThumbnail.thumbnailData(
+      final int stepMs;
+      if (cachedStepMs != null) {
+        stepMs = cachedStepMs;
+      } else {
+        // On Android, MediaMetadataRetriever does NOT return null for timestamps
+        // past the video end - it clamps and returns the last frame. So we cannot
+        // use null as a past-end sentinel. Instead:
+        //   1. Fetch a guaranteed-past-end sentinel (24 h) at tiny quality.
+        //   2. Run all probe candidates in parallel at the same tiny quality.
+        //   3. The last frame for every out-of-bounds timestamp equals the sentinel
+        //      byte-for-byte; the first probe that DIFFERS from the sentinel is
+        //      within the video - that gives us the approximate duration.
+        const sentinelMs = 24 * 60 * 60 * 1000; // 24 h - always past any video
+        const probeCandidatesMs = [300000, 120000, 60000, 30000, 10000, 5000, 3000, 1000];
+
+        // One parallel round-trip for sentinel + all probes.
+        final allResults = await Future.wait([
+          VideoThumbnail.thumbnailData(
             video: widget.url,
             imageFormat: ImageFormat.JPEG,
             maxWidth: 32,
             quality: 1,
-            timeMs: t,
+            timeMs: sentinelMs,
           ),
-        ),
-      ]);
+          ...probeCandidatesMs.map(
+            (t) => VideoThumbnail.thumbnailData(
+              video: widget.url,
+              imageFormat: ImageFormat.JPEG,
+              maxWidth: 32,
+              quality: 1,
+              timeMs: t,
+            ),
+          ),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      final sentinel = allResults[0];
+        final sentinel = allResults[0];
 
-      // Walk candidates descending; first one whose bytes differ from the
-      // sentinel is inside the video.
-      int detectedDurationMs = 0;
-      for (int i = 0; i < probeCandidatesMs.length; i++) {
-        final probe = allResults[i + 1];
-        if (probe != null && probe.isNotEmpty) {
-          final pastEnd = sentinel != null && _bytesEqual(probe, sentinel);
-          if (!pastEnd) {
-            detectedDurationMs = probeCandidatesMs[i];
-            break;
+        // Walk candidates descending; first one whose bytes differ from the
+        // sentinel is inside the video.
+        int detectedDurationMs = 0;
+        for (int i = 0; i < probeCandidatesMs.length; i++) {
+          final probe = allResults[i + 1];
+          if (probe != null && probe.isNotEmpty) {
+            final pastEnd = sentinel != null && _bytesEqual(probe, sentinel);
+            if (!pastEnd) {
+              detectedDurationMs = probeCandidatesMs[i];
+              break;
+            }
           }
         }
+
+        stepMs = detectedDurationMs > 0 ? (detectedDurationMs / (totalFrames - 1)).round() : 1000; // fallback: 1 s steps
+
+        // Persist so future visits skip the 9-request probe round-trip.
+        ThumbnailDiskCache.instance.putStepMs(widget.url, stepMs);
       }
 
-      final int stepMs = detectedDurationMs > 0 ? (detectedDurationMs / (totalFrames - 1)).round() : 1000; // fallback: 1 s steps
-
-      // ── Frame extraction ─────────────────────────────────────────────────
+      // ── Frame extraction (with per-frame caching) ─────────────────────────
       // Sequential fetching is more reliable than parallel for network videos:
       // concurrent MediaMetadataRetriever requests on Android frequently fail
       // or return empty, which was causing only 1-2 frames to load.
       // Add frames progressively so cycling starts as soon as 2 are ready.
       for (int i = 1; i < totalFrames; i++) {
         if (!mounted) return;
-        final data = await VideoThumbnail.thumbnailData(
-          video: widget.url,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 480,
-          quality: 70,
-          timeMs: i * stepMs,
-        );
+        final timeMs = i * stepMs;
+
+        // Check disk cache before issuing a network request.
+        final cachedFrame = await ThumbnailDiskCache.instance.getFrame(widget.url, timeMs);
+        if (!mounted) return;
+
+        Uint8List? data;
+        if (cachedFrame != null) {
+          data = cachedFrame;
+        } else {
+          data = await VideoThumbnail.thumbnailData(
+            video: widget.url,
+            imageFormat: ImageFormat.JPEG,
+            maxWidth: 480,
+            quality: 70,
+            timeMs: timeMs,
+          );
+          if (data != null && data.isNotEmpty) {
+            ThumbnailDiskCache.instance.putFrame(widget.url, timeMs, data);
+          }
+        }
+
         if (data == null || data.isEmpty) continue;
         if (!mounted) return;
-        setState(() => _frames = [..._frames, data]);
+        setState(() => _frames = [..._frames, data!]);
         // Start cycling as soon as we have 2 frames and are in focus.
         if (_frames.length == 2 && widget.focused && _timer == null) {
           _startTimer();
@@ -2401,8 +2444,13 @@ class _WebmGifPreviewState extends State<_WebmGifPreview> {
     }
     _activeDecoders++;
     try {
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(resolveVideoUrl(widget.url)),
+      final resolvedUrl = resolveVideoUrl(widget.url);
+      // Use the cache manager so repeated navigation reuses the locally-stored
+      // file instead of re-downloading the video every time.
+      final File cachedFile = await ChallengerRoadVideoCache.instance.getSingleFile(resolvedUrl);
+      if (!mounted) return;
+      _controller = VideoPlayerController.file(
+        cachedFile,
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
       await _controller!.initialize();
