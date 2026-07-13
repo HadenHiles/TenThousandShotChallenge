@@ -169,26 +169,14 @@ class _StartShootingState extends State<StartShooting> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (turningOn && hasShots)
-              const Text(
-                'The shots you\'ve already logged this session won\'t have accuracy data — only shots from this point forward will be tracked.',
-                style: TextStyle(fontSize: 14),
-              ),
-            if (turningOn && !hasShots)
-              const Text(
-                'Accuracy will be tracked for all shots in this session.',
-                style: TextStyle(fontSize: 14),
-              ),
-            if (!turningOn && hasShots)
-              const Text(
-                'Accuracy data for shots already logged will be kept. Shots logged from this point on won\'t track accuracy.',
-                style: TextStyle(fontSize: 14),
-              ),
-            if (!turningOn && !hasShots)
-              const Text(
-                'Accuracy tracking will be turned off for this session.',
-                style: TextStyle(fontSize: 14),
-              ),
+            Text(
+              hasShots
+                  ? 'All shots logged so far will be discarded so the session starts fresh with ${turningOn ? 'accuracy tracking on' : 'accuracy tracking off'}.'
+                  : turningOn
+                      ? 'Accuracy will be tracked for all shots in this session.'
+                      : 'Accuracy tracking will be turned off for this session.',
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
         actions: [
@@ -212,7 +200,10 @@ class _StartShootingState extends State<StartShooting> {
     );
 
     if (confirmed == true && mounted) {
-      setState(() => _trackAccuracy = !_trackAccuracy!);
+      setState(() {
+        _trackAccuracy = !_trackAccuracy!;
+        _shots = [];
+      });
     }
   }
 
@@ -1905,34 +1896,26 @@ class _StartShootingState extends State<StartShooting> {
                           auth,
                           firestore,
                         ).then((success) async {
-                          // Always reset the session and cancel the notification
-                          // first, then close the panel. Resetting first ensures
-                          // sessionService.isRunning = false so Navigation rebuilds
-                          // with minHeight = 0 before the close animation runs.
-                          // Using try-finally guarantees reset() is called even if
-                          // close() throws (e.g., controller not yet attached after
-                          // app re-open), which was the root cause of the panel
-                          // staying visible after re-opening the app.
-                          try {
-                            await LocalNotificationService.cancelActiveSession();
-                            sessionService.reset();
-                            if (mounted) {
-                              setState(() {
-                                _shots = [];
-                                _currentShotCount = preferences!.puckCount!;
-                                _chartCollapsed = true;
-                                _trackAccuracy = null;
-                                _accuracyDialogShown = false;
-                              });
-                            }
-                          } finally {
-                            // Close the panel after the reset so Navigation has
-                            // rebuilt with minHeight = 0, guaranteeing the panel
-                            // animates all the way to 0 instead of stopping at
-                            // the previous minHeight (65).
-                            if (widget.sessionPanelController.isAttached) {
-                              await widget.sessionPanelController.close();
-                            }
+                          // Reset service and clear widget state first so that
+                          // Navigation rebuilds with minHeight = 0 before the
+                          // close animation runs.
+                          await LocalNotificationService.cancelActiveSession();
+                          sessionService.reset();
+                          if (mounted) {
+                            setState(() {
+                              _shots = [];
+                              _currentShotCount = preferences!.puckCount!;
+                              _chartCollapsed = true;
+                              _trackAccuracy = null;
+                              _accuracyDialogShown = false;
+                            });
+                          }
+                          // Yield one frame so Navigation can rebuild with
+                          // minHeight = 0 before the close animation starts.
+                          // Without this the panel may not animate to 0.
+                          await WidgetsBinding.instance.endOfFrame;
+                          if (widget.sessionPanelController.isAttached) {
+                            await widget.sessionPanelController.close();
                           }
 
                           if (success) {
