@@ -47,34 +47,20 @@ class _JoinTeamState extends State<JoinTeam> {
     // Primary search: prefix match on name_lowercase (set on all teams created
     // via the app). Using isGreaterThanOrEqualTo/isLessThanOrEqualTo is more
     // reliable than orderBy+startAt/endAt for catching silent query failures.
-    await FirebaseFirestore.instance
-        .collection('teams')
-        .where('public', isEqualTo: true)
-        .where('name_lowercase', isGreaterThanOrEqualTo: query)
-        .where('name_lowercase', isLessThanOrEqualTo: '$query\uf8ff')
-        .get()
-        .then((snap) {
-          for (var doc in snap.docs) {
-            if (doc.id != user?.uid) teams.add(doc);
-          }
-        })
-        .catchError((_) {});
+    await FirebaseFirestore.instance.collection('teams').where('public', isEqualTo: true).where('name_lowercase', isGreaterThanOrEqualTo: query).where('name_lowercase', isLessThanOrEqualTo: '$query\uf8ff').get().then((snap) {
+      for (var doc in snap.docs) {
+        if (doc.id != user?.uid) teams.add(doc);
+      }
+    }).catchError((_) {});
 
     // Fallback 1: prefix match on original name field for legacy teams that
     // predate the name_lowercase field (uses the [public, name] composite index).
     if (teams.isEmpty) {
-      await FirebaseFirestore.instance
-          .collection('teams')
-          .where('public', isEqualTo: true)
-          .where('name', isGreaterThanOrEqualTo: value.trim())
-          .where('name', isLessThanOrEqualTo: '${value.trim()}\uf8ff')
-          .get()
-          .then((snap) {
-            for (var doc in snap.docs) {
-              if (doc.id != user?.uid) teams.add(doc);
-            }
-          })
-          .catchError((_) {});
+      await FirebaseFirestore.instance.collection('teams').where('public', isEqualTo: true).where('name', isGreaterThanOrEqualTo: value.trim()).where('name', isLessThanOrEqualTo: '${value.trim()}\uf8ff').get().then((snap) {
+        for (var doc in snap.docs) {
+          if (doc.id != user?.uid) teams.add(doc);
+        }
+      }).catchError((_) {});
     }
 
     // Fallback 2: exact team code match.
