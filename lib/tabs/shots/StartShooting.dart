@@ -155,6 +155,67 @@ class _StartShootingState extends State<StartShooting> {
     setState(() => _trackAccuracy = decision ?? false);
   }
 
+  /// Shows a confirmation dialog when the user wants to toggle accuracy
+  /// tracking mid-session, explaining what will happen to existing shots.
+  Future<void> _showAccuracyToggleDialog() async {
+    final turningOn = _trackAccuracy == false;
+    final hasShots = _shots.isNotEmpty;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(turningOn ? 'Start tracking accuracy?' : 'Stop tracking accuracy?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (turningOn && hasShots)
+              const Text(
+                'The shots you\'ve already logged this session won\'t have accuracy data — only shots from this point forward will be tracked.',
+                style: TextStyle(fontSize: 14),
+              ),
+            if (turningOn && !hasShots)
+              const Text(
+                'Accuracy will be tracked for all shots in this session.',
+                style: TextStyle(fontSize: 14),
+              ),
+            if (!turningOn && hasShots)
+              const Text(
+                'Accuracy data for shots already logged will be kept. Shots logged from this point on won\'t track accuracy.',
+                style: TextStyle(fontSize: 14),
+              ),
+            if (!turningOn && !hasShots)
+              const Text(
+                'Accuracy tracking will be turned off for this session.',
+                style: TextStyle(fontSize: 14),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: turningOn ? Colors.green : Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.3),
+              foregroundColor: Colors.white,
+            ),
+            child: Text(turningOn ? 'Start Tracking' : 'Stop Tracking'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _trackAccuracy = !_trackAccuracy!);
+    }
+  }
+
   Future<void> _showGoalPickerDialog(BuildContext context) async {
     int value = _sessionGoal ?? 100;
     final controller = TextEditingController(text: value.toString());
@@ -515,28 +576,58 @@ class _StartShootingState extends State<StartShooting> {
                         },
                       ),
                     ),
-                  // Accuracy tracking status badge (pro users only, once decided)
+                  // Accuracy tracking status badge (pro users only, once decided) — tappable to toggle
                   if (showAccuracyFeature && _subscriptionLevel == 'pro' && _trackAccuracy != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 6, bottom: 2),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _trackAccuracy! ? Icons.track_changes : Icons.track_changes_outlined,
-                            size: 14,
-                            color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _trackAccuracy! ? 'Tracking accuracy this session' : 'Not tracking accuracy',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
-                              fontFamily: 'NovecentoSans',
+                      padding: const EdgeInsets.only(top: 4, bottom: 2),
+                      child: GestureDetector(
+                        onTap: _showAccuracyToggleDialog,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _trackAccuracy!
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _trackAccuracy!
+                                  ? Colors.green.withValues(alpha: 0.4)
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                              width: 1,
                             ),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _trackAccuracy! ? Icons.track_changes : Icons.track_changes_outlined,
+                                size: 13,
+                                color: _trackAccuracy!
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _trackAccuracy! ? 'Tracking accuracy' : 'Not tracking accuracy',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _trackAccuracy!
+                                      ? Colors.green
+                                      : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                                  fontFamily: 'NovecentoSans',
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Icon(
+                                Icons.swap_horiz,
+                                size: 13,
+                                color: _trackAccuracy!
+                                    ? Colors.green.withValues(alpha: 0.7)
+                                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.3),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   // Expand/collapse chart button
