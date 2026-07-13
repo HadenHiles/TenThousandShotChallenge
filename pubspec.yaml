@@ -1,6 +1,6 @@
 # PROJECT_ROOT
 name: tenthousandshotchallenge
-version: 3.0.1+33
+version: 3.0.2+34
 environment:
   sdk: ">=3.0.0 <4.0.0"
 description: A flutter project for the Ten Thousand Shot Challenge app
