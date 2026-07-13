@@ -632,19 +632,17 @@ class _TeamPreviewSheetState extends State<_TeamPreviewSheet> {
       ),
       trailing: SizedBox(
         height: 60,
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               _nf.format(p.totalShots),
               style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 26, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
             ),
-            Positioned(
-              top: 30,
-              right: 0,
-              child: Text(
-                'shots',
-                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85), fontWeight: FontWeight.w400, letterSpacing: 0.5),
-              ),
+            Text(
+              'shots',
+              style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85), fontWeight: FontWeight.w400, letterSpacing: 0.5),
             ),
           ],
         ),
