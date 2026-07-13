@@ -657,17 +657,17 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
         final Color paceTextColor;
         switch (paceStatus) {
           case _CRPaceStatus.ahead:
-            paceBarColor = Colors.green.shade400;
+            paceBarColor = wristShotColor;
             paceText = '↑ AHEAD OF BEST';
-            paceTextColor = Colors.green.shade400;
+            paceTextColor = wristShotColor;
           case _CRPaceStatus.onPace:
-            paceBarColor = Colors.amber.shade300;
+            paceBarColor = snapShotColor;
             paceText = '= ON BEST PACE';
-            paceTextColor = Colors.amber.shade300;
+            paceTextColor = snapShotColor;
           case _CRPaceStatus.behind:
-            paceBarColor = Colors.deepOrange.shade400;
+            paceBarColor = backhandShotColor;
             paceText = '↓ BEHIND BEST';
-            paceTextColor = Colors.deepOrange.shade400;
+            paceTextColor = backhandShotColor;
           case _CRPaceStatus.none:
             paceBarColor = accent.withValues(alpha: 0.75);
             paceText = '';
