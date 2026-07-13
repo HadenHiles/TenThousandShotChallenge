@@ -13,6 +13,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show friendsRefreshSignal;
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
@@ -211,6 +212,7 @@ class _PlayerProfileSheetState extends State<PlayerProfileSheet> {
             Provider.of<FirebaseFirestore>(context, listen: false),
           ).then((success) {
             if (!mounted) return;
+            if (success) friendsRefreshSignal.value++;
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               backgroundColor: Theme.of(context).cardTheme.color,
               duration: Duration(milliseconds: success ? 2500 : 4000),

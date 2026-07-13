@@ -76,6 +76,10 @@ final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotif
 /// link to the road should increment this instead of pushing a standalone route.
 final ValueNotifier<int> openChallengerRoadSignal = ValueNotifier<int>(0);
 
+/// Incrementing this signal tells the Friends tab to reload its friend list.
+/// Increment it after a successful unfriend so the list refreshes immediately.
+final ValueNotifier<int> friendsRefreshSignal = ValueNotifier<int>(0);
+
 /// The Firestore document ID of the team currently displayed in the Team tab.
 /// Updated by [_TeamPageState] whenever the active team changes. The nav bar
 /// reads this so its Edit button always reflects the team the user is viewing.

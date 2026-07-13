@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
+import 'package:tenthousandshotchallenge/Navigation.dart' show friendsRefreshSignal;
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadUserSummary.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
@@ -321,6 +322,7 @@ class _PlayerState extends State<Player> {
           ).then((success) {
             if (!mounted) return;
             if (success) {
+              friendsRefreshSignal.value++;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Theme.of(context).cardTheme.color,
@@ -659,6 +661,7 @@ class _PlayerState extends State<Player> {
                                             Provider.of<FirebaseFirestore>(context, listen: false),
                                           ).then((success) {
                                             if (success) {
+                                              friendsRefreshSignal.value++;
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                   backgroundColor: Theme.of(context).cardTheme.color,
