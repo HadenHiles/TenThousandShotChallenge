@@ -707,21 +707,19 @@ class _FriendsState extends State<Friends> {
                 width: 60,
                 height: 60,
                 child: _isSelectMode
-                    ? Center(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
-                            border: Border.all(
-                              color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
-                              width: 2,
-                            ),
+                    ? AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                            width: 2,
                           ),
-                          child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
                         ),
+                        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 24) : null,
                       )
                     : Stack(
                         clipBehavior: Clip.none,
