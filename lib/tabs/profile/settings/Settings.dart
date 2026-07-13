@@ -48,6 +48,9 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   bool _activeSessionNotification = true;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 17, minute: 0); // 5 PM default
 
+  // Accuracy tracking default (pro only)
+  String _accuracyDefault = 'ask'; // 'ask' | 'always' | 'never'
+
   // Simulated subscription level (replace with RevenueCat or your backend)
   String _subscriptionLevel = "free"; // Can be "Free", "Premium", or "Pro"
   CustomerInfoNotifier? _customerInfoNotifier; // cache notifier to avoid lookups after dispose
@@ -100,6 +103,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       final h = prefs.getInt('reminder_hour') ?? 17;
       final m = prefs.getInt('reminder_minute') ?? 0;
       _reminderTime = TimeOfDay(hour: h, minute: m);
+      _accuracyDefault = prefs.getString('accuracy_default') ?? 'ask';
     });
 
     Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).get().then((snapshot) {
@@ -472,6 +476,101 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                 }
                               },
                             ),
+                            if (_subscriptionLevel == 'pro')
+                              SettingsTile(
+                                title: Text(
+                                  'Accuracy Tracking Default',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                description: Text(
+                                  _accuracyDefault == 'always'
+                                      ? 'Always track accuracy'
+                                      : _accuracyDefault == 'never'
+                                          ? 'Never track accuracy'
+                                          : 'Ask at the start of each session',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                leading: Icon(
+                                  Icons.track_changes,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                                onPressed: (ctx) async {
+                                  final String? picked = await showDialog<String>(
+                                    context: ctx,
+                                    builder: (dialogCtx) {
+                                      String current = _accuracyDefault;
+                                      return StatefulBuilder(
+                                        builder: (dialogCtx, setDialogState) {
+                                          return AlertDialog(
+                                            title: const Text('Accuracy Tracking Default'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                RadioListTile<String>(
+                                                  title: Text(
+                                                    'Ask every time',
+                                                    style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                  ),
+                                                  subtitle: Text(
+                                                    'You\'ll be asked at the start of each session',
+                                                    style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                                  ),
+                                                  value: 'ask',
+                                                  groupValue: current,
+                                                  activeColor: Theme.of(dialogCtx).primaryColor,
+                                                  onChanged: (v) => setDialogState(() => current = v!),
+                                                ),
+                                                RadioListTile<String>(
+                                                  title: Text(
+                                                    'Always track accuracy',
+                                                    style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                  ),
+                                                  value: 'always',
+                                                  groupValue: current,
+                                                  activeColor: Theme.of(dialogCtx).primaryColor,
+                                                  onChanged: (v) => setDialogState(() => current = v!),
+                                                ),
+                                                RadioListTile<String>(
+                                                  title: Text(
+                                                    'Never track accuracy',
+                                                    style: TextStyle(color: Theme.of(dialogCtx).colorScheme.onSurface),
+                                                  ),
+                                                  value: 'never',
+                                                  groupValue: current,
+                                                  activeColor: Theme.of(dialogCtx).primaryColor,
+                                                  onChanged: (v) => setDialogState(() => current = v!),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(dialogCtx).pop(),
+                                                style: TextButton.styleFrom(
+                                                  foregroundColor: Theme.of(dialogCtx).colorScheme.onSurface,
+                                                ),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () => Navigator.of(dialogCtx).pop(current),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Theme.of(dialogCtx).primaryColor,
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                                child: const Text('Save'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                  if (picked != null && picked != _accuracyDefault) {
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('accuracy_default', picked);
+                                    if (mounted) setState(() => _accuracyDefault = picked);
+                                  }
+                                },
+                              ),
                           ],
                         ),
                         SettingsSection(

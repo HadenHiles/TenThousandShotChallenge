@@ -60,11 +60,22 @@ class _StartShootingState extends State<StartShooting> {
   // Hands-free mode
   bool _handsfreeActive = false;
 
+  // Accuracy tracking — decided once per session at session start, then locked.
+  // null = not yet decided; true = tracking; false = not tracking.
+  bool? _trackAccuracy;
+  bool _accuracyDialogShown = false;
+
   @override
   void initState() {
     _shots = widget.shots ?? [];
     _currentShotCount = preferences!.puckCount!;
     _chartCollapsed = true; // Default to collapsed when starting a new session
+    // Pre-determine accuracy tracking for resumed sessions.
+    if (_shots.any((s) => s.targetsHit != null)) {
+      _trackAccuracy = true;
+    } else if (_shots.isNotEmpty) {
+      _trackAccuracy = false;
+    }
     super.initState();
     _loadSubscriptionLevel();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -99,6 +110,8 @@ class _StartShootingState extends State<StartShooting> {
     _currentShotCount = preferences!.puckCount!;
     _sessionGoal = null;
     _handsfreeActive = false;
+    _trackAccuracy = null;
+    _accuracyDialogShown = false;
   }
 
   _loadSubscriptionLevel() async {
@@ -107,9 +120,23 @@ class _StartShootingState extends State<StartShooting> {
       setState(() {
         _subscriptionLevel = level;
       });
+      _maybeShowAccuracyDialog();
     }).catchError((error) {
       print("Error loading subscription level: $error");
     });
+  }
+
+  /// Shows the accuracy tracking dialog once at the start of a new pro session.
+  Future<void> _maybeShowAccuracyDialog() async {
+    if (!showAccuracyFeature) return;
+    if (_subscriptionLevel != 'pro') return;
+    if (_trackAccuracy != null) return; // already decided (e.g. resumed session)
+    if (_accuracyDialogShown) return; // guard against double invocation
+    if (_shots.isNotEmpty) return; // resumed session — already pre-determined in initState
+    _accuracyDialogShown = true;
+    final decision = await _resolveAccuracyTracking();
+    if (!mounted) return;
+    setState(() => _trackAccuracy = decision ?? false);
   }
 
   Future<void> _showGoalPickerDialog(BuildContext context) async {
@@ -194,6 +221,77 @@ class _StartShootingState extends State<StartShooting> {
     if (result != null) {
       setState(() => _sessionGoal = result == 0 ? null : result);
     }
+  }
+
+  /// Resolves whether accuracy should be tracked for this session.
+  /// Returns true (track) or false (skip). Returns null only if the widget
+  /// is no longer mounted — caller should treat null as false.
+  Future<bool?> _resolveAccuracyTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = prefs.getString('accuracy_default') ?? 'ask';
+    if (mode == 'always') return true;
+    if (mode == 'never') return false;
+    // 'ask' — show a non-dismissible dialog with a "remember" checkbox.
+    if (!mounted) return null;
+    bool? decision;
+    bool rememberChoice = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        bool localRemember = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('Track accuracy this session?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Accuracy tracking applies to every shot set in this session — you can\'t change it mid-session.',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  value: localRemember,
+                  onChanged: (v) => setDialogState(() => localRemember = v ?? false),
+                  title: const Text('Remember my choice', style: TextStyle(fontSize: 14)),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  rememberChoice = localRemember;
+                  decision = false;
+                  Navigator.of(ctx).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                child: const Text('Skip'),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.track_changes, color: Colors.white, size: 18),
+                label: const Text('Track Accuracy', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: () {
+                  rememberChoice = localRemember;
+                  decision = true;
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (decision != null && rememberChoice) {
+      await prefs.setString('accuracy_default', decision! ? 'always' : 'never');
+    }
+    return decision;
   }
 
   Future<int?> showAccuracyInputDialog(BuildContext context, int shotCount) async {
@@ -399,6 +497,30 @@ class _StartShootingState extends State<StartShooting> {
                         onTap: () {
                           context.push(AppRoutePaths.settings);
                         },
+                      ),
+                    ),
+                  // Accuracy tracking status badge (pro users only, once decided)
+                  if (showAccuracyFeature && _subscriptionLevel == 'pro' && _trackAccuracy != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _trackAccuracy! ? Icons.track_changes : Icons.track_changes_outlined,
+                            size: 14,
+                            color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _trackAccuracy! ? 'Tracking accuracy this session' : 'Not tracking accuracy',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _trackAccuracy! ? Colors.green : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
+                              fontFamily: 'NovecentoSans',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   // Expand/collapse chart button
@@ -1419,11 +1541,18 @@ class _StartShootingState extends State<StartShooting> {
 
               int? targetsHit;
               if (showAccuracyFeature && _subscriptionLevel == 'pro') {
-                targetsHit = await showAccuracyInputDialog(context, _currentShotCount); // Only show dialog for pro users
-                if (targetsHit == null && _subscriptionLevel == 'pro') return;
-                setState(() {
-                  _lastTargetsHit = targetsHit;
-                });
+                // Decision is made at session start; if still null here (subscription
+                // loaded late), default to not tracking for this shot.
+                if (_trackAccuracy == null) {
+                  setState(() => _trackAccuracy = false);
+                }
+                if (_trackAccuracy == true) {
+                  targetsHit = await showAccuracyInputDialog(context, _currentShotCount);
+                  if (targetsHit == null) return; // user backed out — cancel shot log
+                  setState(() {
+                    _lastTargetsHit = targetsHit;
+                  });
+                }
               }
 
               Shots shots = Shots(
