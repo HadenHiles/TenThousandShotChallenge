@@ -77,6 +77,8 @@ build/
 assets/cfg/youtube_settings.json
 assets/cfg/youtube_settings.json
 functions/service-account.json
+**/google-services.json
+lib/firebase_options.dart
 *.aab
 
 # Ignore any generated test files and folders (recursively)
