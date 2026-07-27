@@ -1122,7 +1122,7 @@ async function checkAchievementCompletion(userId: string, achievement: any, stat
             // Must have at least goalValue days with 2+ sessions
             let dayCounts: { [key: string]: number } = {};
             for (const s of relevantSessions) {
-                const dt = getSessionTime(s);
+                const dt = toUserTimezone(getSessionTime(s));
                 if (dt) {
                     const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
                     dayCounts[key] = (dayCounts[key] || 0) + 1;
@@ -1556,6 +1556,7 @@ async function assignAchievements(
     const weekStart = getWeekStartEST();
     const weekId = getAchievementWeekId(weekStart);
     try {
+        const failedUserIds: string[] = [];
         const now = new Date();
         const RECENT_ACTIVITY_DAYS = 3;
         const MAX_SCHEDULED_USERS = 5000;
@@ -1612,6 +1613,7 @@ async function assignAchievements(
                         status: 'complete',
                         assignedAt: Timestamp.fromDate(weekStart),
                         updatedAt: Timestamp.now(),
+                        achievementCount: allAchievementsSnap.docs.length,
                     }, { merge: true });
                     continue;
                 }
@@ -1643,27 +1645,41 @@ async function assignAchievements(
             const nonBonusThisWeek = allAchievements.filter(a => !(a as any).isBonus);
             // Count non-bonus completed this week
             const nonBonusCompletedThisWeek = nonBonusThisWeek.filter(a => (a as any).completed === true).length;
-            // Fetch previous streak and total from stats/history
-            const historyDoc = await db.collection('users').doc(userId).collection('stats').doc('history').get();
-            let history = historyDoc.exists ? historyDoc.data() || {} : {};
-            let prevStreak = history.weeklyAllCompletedStreak || 0;
-            let prevTotal = history.totalAchievementsCompleted || 0;
-            let weeklyAllCompletedStreak = prevStreak;
-            if (nonBonusThisWeek.length > 0 && nonBonusCompletedThisWeek === nonBonusThisWeek.length) {
-                weeklyAllCompletedStreak = prevStreak + 1;
-            } else {
-                weeklyAllCompletedStreak = 0;
-            }
+            // Roll history forward once per source week. This transaction makes
+            // retries safe if assignment fails after history is updated.
+            const sourceWeekIds = new Set(
+                allAchievementsSnap.docs
+                    .map(doc => timestampWeekId(doc.data().dateAssigned))
+                    .filter((id): id is string => id !== null && id !== weekId),
+            );
+            const sourceWeekId = sourceWeekIds.size === 1 ? Array.from(sourceWeekIds)[0] : null;
+            if (sourceWeekId) {
+                const historyRef = db.collection('users').doc(userId).collection('stats').doc('history');
+                await db.runTransaction(async transaction => {
+                    const historyDoc = await transaction.get(historyRef);
+                    const history = historyDoc.data() || {};
+                    if (history.lastAchievementWeekRolledUp === sourceWeekId) return;
 
-            // totalAchievementsCompleted is a running total (previous + new completions this week)
-            const totalAchievementsCompleted = prevTotal + completedThisWeek;
-            const bestWeeklyAllCompletedStreak = Math.max((history.bestWeeklyAllCompletedStreak as number) || 0, weeklyAllCompletedStreak);
-            const updatedHistory = {
-                totalAchievementsCompleted,
-                weeklyAllCompletedStreak,
-                bestWeeklyAllCompletedStreak,
-            };
-            await db.collection('users').doc(userId).collection('stats').doc('history').set(updatedHistory, { merge: true });
+                    const prevStreak = typeof history.weeklyAllCompletedStreak === 'number'
+                        ? history.weeklyAllCompletedStreak : 0;
+                    const prevTotal = typeof history.totalAchievementsCompleted === 'number'
+                        ? history.totalAchievementsCompleted : 0;
+                    const completedAllRequired = nonBonusThisWeek.length > 0 &&
+                        nonBonusCompletedThisWeek === nonBonusThisWeek.length;
+                    const weeklyAllCompletedStreak = completedAllRequired ? prevStreak + 1 : 0;
+
+                    transaction.set(historyRef, {
+                        totalAchievementsCompleted: prevTotal + completedThisWeek,
+                        weeklyAllCompletedStreak,
+                        bestWeeklyAllCompletedStreak: Math.max(
+                            typeof history.bestWeeklyAllCompletedStreak === 'number'
+                                ? history.bestWeeklyAllCompletedStreak : 0,
+                            weeklyAllCompletedStreak,
+                        ),
+                        lastAchievementWeekRolledUp: sourceWeekId,
+                    }, { merge: true });
+                });
+            }
 
             // --- Move completed achievements to stats/history/completed_achievements before deleting ---
             const movePromises: Promise<any>[] = [];
@@ -2134,6 +2150,7 @@ async function assignAchievements(
                 }
             }
             } catch (userError) {
+                failedUserIds.push(userId);
                 logger.error(`Error assigning weekly achievements for user ${userId}:`, userError);
                 await assignmentMetaRef.set({
                     weekId,
@@ -2142,6 +2159,14 @@ async function assignAchievements(
                     error: userError instanceof Error ? userError.message : String(userError),
                 }, { merge: true }).catch(() => undefined);
             }
+        }
+        if (failedUserIds.length > 0) {
+            return {
+                success: false,
+                status: 500,
+                message: `Weekly achievement assignment failed for ${failedUserIds.length} user(s).`,
+                failedUserIds,
+            };
         }
         logger.info('assignWeeklyAchievements executed successfully.');
         let res = { success: true, status: 200, message: 'Weekly achievements assigned successfully.' };

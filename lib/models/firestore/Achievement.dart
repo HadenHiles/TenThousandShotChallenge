@@ -38,22 +38,32 @@ class Achievement {
 
   factory Achievement.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    T? read<T>(String camelCase, String snakeCase) {
+      final value = data[camelCase] ?? data[snakeCase];
+      return value is T ? value : null;
+    }
+
     return Achievement(
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      shotType: data['shot_type'] ?? '',
-      goalType: data['goal_type'] ?? '',
-      goalValue: data['goal_value'] ?? 0,
+      shotType: read<String>('shotType', 'shot_type') ?? '',
+      goalType: read<String>('goalType', 'goal_type') ?? '',
+      goalValue: read<num>('goalValue', 'goal_value')?.toInt() ?? 0,
       difficulty: data['difficulty'] ?? 'Easy',
       timeFrame: data['time_frame'] ?? 'week',
       completed: data['completed'] ?? false,
-      dateAssigned: data['date_assigned'] ?? Timestamp.now(),
-      dateCompleted: data['date_completed'],
-      userId: data['user_id'] ?? '',
-      proLevel: data['pro_level'] ?? false,
-      isBonus: data['is_bonus'] ?? false,
-      improvement: (data.containsKey('improvement') && data['improvement'] is int) ? data['improvement'] as int : null,
+      dateAssigned:
+          read<Timestamp>('dateAssigned', 'date_assigned') ?? Timestamp.now(),
+      dateCompleted: read<Timestamp>('dateCompleted', 'date_completed') ??
+          read<Timestamp>('completed_at', 'completed_at'),
+      userId: read<String>('userId', 'user_id') ?? '',
+      proLevel: read<bool>('proLevel', 'pro_level') ?? false,
+      isBonus: read<bool>('isBonus', 'is_bonus') ?? false,
+      improvement:
+          (data.containsKey('improvement') && data['improvement'] is int)
+              ? data['improvement'] as int
+              : null,
     );
   }
 
@@ -61,17 +71,18 @@ class Achievement {
     return {
       'title': title,
       'description': description,
-      'shot_type': shotType,
-      'goal_type': goalType,
-      'goal_value': goalValue,
+      'shotType': shotType,
+      'goalType': goalType,
+      'goalValue': goalValue,
       'difficulty': difficulty,
       'time_frame': timeFrame,
       'completed': completed,
-      'date_assigned': dateAssigned,
-      'date_completed': dateCompleted,
-      'user_id': userId,
-      'pro_level': proLevel,
-      'is_bonus': isBonus,
+      'dateAssigned': dateAssigned,
+      'dateCompleted': dateCompleted,
+      'userId': userId,
+      'proLevel': proLevel,
+      'isBonus': isBonus,
+      if (improvement != null) 'improvement': improvement,
     };
   }
 }
