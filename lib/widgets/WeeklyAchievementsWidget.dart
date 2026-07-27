@@ -1239,8 +1239,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           final shots = session['shots'] as Map;
                           if (primaryType.contains('+')) {
                             for (final t in primaryType.split('+')) {
-                              if (shots[t] is num)
+                              if (shots[t] is num) {
                                 primaryCount += (shots[t] as num).toDouble();
+                              }
                             }
                           } else if (shots[primaryType] is num) {
                             primaryCount +=
@@ -1248,8 +1249,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           }
                           if (secondaryType.contains('+')) {
                             for (final t in secondaryType.split('+')) {
-                              if (shots[t] is num)
+                              if (shots[t] is num) {
                                 secondaryCount += (shots[t] as num).toDouble();
+                              }
                             }
                           } else if (shots[secondaryType] is num) {
                             secondaryCount +=
@@ -1578,8 +1580,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           final shots = session['shots'] as Map;
                           int typeCount = 0;
                           for (final t in types) {
-                            if (shots[t] is num && (shots[t] as num) > 0)
+                            if (shots[t] is num && (shots[t] as num) > 0) {
                               typeCount++;
+                            }
                           }
                           if (typeCount == types.length) {
                             metSessions++;
