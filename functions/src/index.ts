@@ -6,7 +6,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { initializeApp, applicationDefault } from "firebase-admin/app";
+import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import * as path from "path";
@@ -30,7 +30,9 @@ async function sendFcmMessage(fcmMessage: any): Promise<void> {
     logger.log('FCM message sent successfully, messageId:', response);
 }
 
-initializeApp({ credential: applicationDefault(), storageBucket: 'ten-thousand-puck-challenge.appspot.com' });
+if (getApps().length === 0) {
+    initializeApp({ credential: applicationDefault(), storageBucket: 'ten-thousand-puck-challenge.appspot.com' });
+}
 const db = getFirestore();
 
 // Secure admin key via Firebase Secrets Manager.
@@ -1379,19 +1381,60 @@ async function updateAchievementsAfterSessionDelete(userId: string) {
     await batch.commit();
 }
 
-// Helper: Get start of current week (Monday 12am EST)
+const ACHIEVEMENT_TIME_ZONE = 'America/New_York';
+
+function getNewYorkDateParts(date: Date): { year: number, month: number, day: number, weekday: string } {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: ACHIEVEMENT_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short',
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return {
+        year: Number(values.year),
+        month: Number(values.month),
+        day: Number(values.day),
+        weekday: values.weekday,
+    };
+}
+
+function getNewYorkOffsetMinutes(date: Date): number {
+    const part = new Intl.DateTimeFormat('en-US', {
+        timeZone: ACHIEVEMENT_TIME_ZONE,
+        timeZoneName: 'longOffset',
+    }).formatToParts(date).find(value => value.type === 'timeZoneName')?.value || 'GMT-05:00';
+    const match = part.match(/GMT([+-])(\d{2}):(\d{2})/);
+    if (!match) return -5 * 60;
+    const minutes = Number(match[2]) * 60 + Number(match[3]);
+    return match[1] === '-' ? -minutes : minutes;
+}
+
+function newYorkMidnightUtc(year: number, month: number, day: number): Date {
+    const middayUtc = new Date(Date.UTC(year, month - 1, day, 12));
+    const offsetMinutes = getNewYorkOffsetMinutes(middayUtc);
+    return new Date(Date.UTC(year, month - 1, day) - offsetMinutes * 60 * 1000);
+}
+
+// Helper: Get start of current week (Monday 12am America/New_York).
 function getWeekStartEST(): Date {
     const now = new Date();
-    // Convert to EST
-    const estOffset = -5 * 60; // EST is UTC-5
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const estDate = new Date(utc + (estOffset * 60000));
-    // Find Monday
-    const day = estDate.getDay();
-    const diff = estDate.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    const monday = new Date(estDate.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
+    const parts = getNewYorkDateParts(now);
+    const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday);
+    const localDate = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+    localDate.setUTCDate(localDate.getUTCDate() - ((weekday + 6) % 7));
+    return newYorkMidnightUtc(localDate.getUTCFullYear(), localDate.getUTCMonth() + 1, localDate.getUTCDate());
+}
+
+function getAchievementWeekId(date: Date): string {
+    const parts = getNewYorkDateParts(date);
+    return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+}
+
+function timestampWeekId(value: any): string | null {
+    const date = value?.toDate instanceof Function ? value.toDate() : value instanceof Date ? value : null;
+    return date ? getAchievementWeekId(date) : null;
 }
 
 // Main scheduled function
@@ -1505,12 +1548,18 @@ const templates: any[] = [
     { id: 'progress_target_hits', style: 'progress', title: 'Target Hitter', description: 'Hit 100 targets.', shotType: 'any', goalType: 'target_hits_increase', improvement: 100, difficulty: 'Easy', proLevel: true, isBonus: false },
 ];
 
-async function assignAchievements(test: Boolean, userIds: Array<string>, options?: { forceUsers?: string[] }): Promise<any> {
+async function assignAchievements(
+    test: Boolean,
+    userIds: Array<string>,
+    options?: { forceUsers?: string[], suppressNotifications?: boolean },
+): Promise<any> {
     const weekStart = getWeekStartEST();
+    const weekId = getAchievementWeekId(weekStart);
     try {
         const now = new Date();
-        const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
-        const fifteenDaysAgo = new Date(now.getTime() - FIFTEEN_DAYS_MS);
+        const RECENT_ACTIVITY_DAYS = 3;
+        const MAX_SCHEDULED_USERS = 5000;
+        const recentActivityCutoff = new Date(now.getTime() - RECENT_ACTIVITY_DAYS * 24 * 60 * 60 * 1000);
         // Determine which users to process
         let userDocs: Array<{ id: string, data: () => any }> = [];
         // Priority 1: explicit forceUsers option
@@ -1529,20 +1578,65 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                 }
             }
         } else {
-            // Fallback: scheduled run processes recently active users
-            const usersSnap = await db.collection('users').where('last_seen', '>=', fifteenDaysAgo).get();
+            // The scheduler is only a proactive fast path. Bound both its
+            // query window and user count; authenticated app startup provides
+            // the complete lazy fallback for everyone else.
+            const usersSnap = await db.collection('users')
+                .where('last_seen', '>=', recentActivityCutoff)
+                .orderBy('last_seen', 'desc')
+                .limit(MAX_SCHEDULED_USERS)
+                .get();
             userDocs = usersSnap.docs.map(d => ({ id: d.id, data: () => d.data() }));
         }
 
         for (const userDoc of userDocs) {
             const userId = userDoc.id;
-            // In test mode, idsToProcess already limits processing; no extra filtering needed
-            const userData = userDoc.data();
-            const playerAge = userData.age || 18;
+            const assignmentMetaRef = db.collection('users').doc(userId).collection('meta').doc('achievementWeek');
+            try {
+                // In test mode, idsToProcess already limits processing; no extra filtering needed
+                const userData = userDoc.data();
+                const playerAge = userData.age || 18;
 
-            // --- Gather all achievements for metrics (before deleting) ---
-            const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
-            const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // --- Gather all achievements for metrics (before deleting) ---
+                const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
+                const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Legacy users do not have achievementWeek metadata. Derive it
+                // from their existing assignments once and backfill the marker.
+                const alreadyCurrent = !test &&
+                    allAchievementsSnap.docs.length === 4 &&
+                    allAchievementsSnap.docs.every(doc => timestampWeekId(doc.data().dateAssigned) === weekId);
+                if (alreadyCurrent) {
+                    await assignmentMetaRef.set({
+                        weekId,
+                        status: 'complete',
+                        assignedAt: Timestamp.fromDate(weekStart),
+                        updatedAt: Timestamp.now(),
+                    }, { merge: true });
+                    continue;
+                }
+
+                // Claim this user's week transactionally so simultaneous app
+                // launches/devices cannot generate duplicate assignments.
+                const claimed = await db.runTransaction(async transaction => {
+                    const meta = await transaction.get(assignmentMetaRef);
+                    const data = meta.data() || {};
+                    if (!test &&
+                        data.weekId === weekId &&
+                        data.status === 'complete' &&
+                        data.achievementCount === 4) return false;
+                    if (!test && data.weekId === weekId && data.status === 'assigning') {
+                        const updatedAt = data.updatedAt?.toDate instanceof Function ? data.updatedAt.toDate() : null;
+                        if (updatedAt && Date.now() - updatedAt.getTime() < 5 * 60 * 1000) return false;
+                    }
+                    transaction.set(assignmentMetaRef, {
+                        weekId,
+                        status: 'assigning',
+                        updatedAt: Timestamp.now(),
+                    }, { merge: true });
+                    return true;
+                });
+                if (!claimed) continue;
             // Count total completed (including bonus) for this week
             const completedThisWeek = allAchievements.filter(a => (a as any).completed === true).length;
             // Count non-bonus achievements assigned this week
@@ -1998,8 +2092,16 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                 await db.collection('users').doc(userId).collection('achievements').add(achievement);
             }
 
+            await assignmentMetaRef.set({
+                weekId,
+                status: 'complete',
+                assignedAt: Timestamp.fromDate(weekStart),
+                updatedAt: Timestamp.now(),
+                achievementCount: achievements.length,
+            }, { merge: true });
+
             // Notify the user that their new weekly achievements are ready.
-            if (!test && achievements.length > 0) {
+            if (!test && !options?.suppressNotifications && achievements.length > 0) {
                 const msg = `Your ${achievements.length} new weekly achievement${achievements.length > 1 ? 's are' : ' is'} ready. Tap to check them out!`;
                 try {
                     await db.collection('users').doc(userId).collection('notifications').add({
@@ -2031,6 +2133,15 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
                     logger.error('Error sending weekly_achievements_available FCM:', fcmErr);
                 }
             }
+            } catch (userError) {
+                logger.error(`Error assigning weekly achievements for user ${userId}:`, userError);
+                await assignmentMetaRef.set({
+                    weekId,
+                    status: 'error',
+                    updatedAt: Timestamp.now(),
+                    error: userError instanceof Error ? userError.message : String(userError),
+                }, { merge: true }).catch(() => undefined);
+            }
         }
         logger.info('assignWeeklyAchievements executed successfully.');
         let res = { success: true, status: 200, message: 'Weekly achievements assigned successfully.' };
@@ -2044,20 +2155,40 @@ async function assignAchievements(test: Boolean, userIds: Array<string>, options
 }
 
 // Callable function: assign weekly achievements for the current authenticated user on demand
-export const assignPlayerAchievements = onCall(async (req) => {
+async function ensureAuthenticatedPlayerAchievements(req: any) {
     const context = req.auth;
     if (!context || !context.uid) {
         throw new Error('Authentication required');
     }
     const userId = context.uid;
     try {
+        // Normal app starts cost one document read after the user's week has
+        // been assigned. Legacy/stale users fall through to the full refresh.
+        const weekId = getAchievementWeekId(getWeekStartEST());
+        const meta = await db.collection('users').doc(userId).collection('meta').doc('achievementWeek').get();
+        if (meta.data()?.weekId === weekId &&
+            meta.data()?.status === 'complete' &&
+            meta.data()?.achievementCount === 4) {
+            return { success: true, refreshed: false, message: 'Weekly achievements are current.' };
+        }
         const result = await assignAchievements(false, [], { forceUsers: [userId] });
-        return { success: result.success, message: result.message };
+        return { success: result.success, refreshed: result.success, message: result.message };
     } catch (e) {
         const msg = typeof e === 'object' && e !== null && 'message' in e ? (e as { message: string }).message : String(e);
         return { success: false, message: msg };
     }
-});
+}
+
+export const ensureCurrentWeeklyAchievements = onCall(ensureAuthenticatedPlayerAchievements);
+
+// Backward-compatible alias used by older app versions.
+export const assignPlayerAchievements = onCall(ensureAuthenticatedPlayerAchievements);
+
+// Used only by the checked-in one-time migration script. This is not a Cloud
+// Function trigger; it keeps migration assignment behavior identical to prod.
+export async function runWeeklyAchievementAssignmentForUsers(userIds: string[]): Promise<any> {
+    return assignAchievements(false, [], { forceUsers: userIds, suppressNotifications: true });
+}
 
 async function assignAchievement({ userId, isBonusSwap = false, assignedTemplateIds = [], hasBonus = false }: {
     userId: string,

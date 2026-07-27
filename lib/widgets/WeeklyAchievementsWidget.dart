@@ -18,7 +18,8 @@ class WeeklyAchievementsWidget extends StatefulWidget {
   });
 
   @override
-  State<WeeklyAchievementsWidget> createState() => _WeeklyAchievementsWidgetState();
+  State<WeeklyAchievementsWidget> createState() =>
+      _WeeklyAchievementsWidgetState();
 }
 
 class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
@@ -26,7 +27,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   bool _hasPrimedCompletionState = false;
   final Set<String> _knownCompletedWeeklyAchievementIds = <String>{};
 
-  void _handleInAppCompletionNotifications(List<QueryDocumentSnapshot> achievements) {
+  void _handleInAppCompletionNotifications(
+      List<QueryDocumentSnapshot> achievements) {
     final completedDocs = achievements.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       return data['completed'] == true;
@@ -42,7 +44,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return;
     }
 
-    final newlyCompleted = completedDocs.where((doc) => !_knownCompletedWeeklyAchievementIds.contains(doc.id)).toList();
+    final newlyCompleted = completedDocs
+        .where((doc) => !_knownCompletedWeeklyAchievementIds.contains(doc.id))
+        .toList();
 
     _knownCompletedWeeklyAchievementIds
       ..clear()
@@ -61,7 +65,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              description != null && description.isNotEmpty ? '🏒  Weekly achievement completed: $description' : '🏒  Weekly achievement completed!',
+              description != null && description.isNotEmpty
+                  ? '🏒  Weekly achievement completed: $description'
+                  : '🏒  Weekly achievement completed!',
               softWrap: true,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -94,7 +100,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       height: 18,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: checked ? Colors.green : Colors.grey[400]!, width: 2),
+        border: Border.all(
+            color: checked ? Colors.green : Colors.grey[400]!, width: 2),
         color: checked ? Colors.green.withOpacity(0.18) : Colors.transparent,
       ),
       child: checked ? Icon(Icons.check, size: 13, color: Colors.green) : null,
@@ -102,7 +109,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   // Helper for UI: get details for checkboxes
-  Map<String, dynamic> getConsistencyDetails(String goalType, List<Map<String, dynamic>> sessions, double goalValue) {
+  Map<String, dynamic> getConsistencyDetails(
+      String goalType, List<Map<String, dynamic>> sessions, double goalValue) {
     DateTime? getSessionTime(Map<String, dynamic> session) {
       final date = session['date'];
       if (date is Timestamp) return date.toDate();
@@ -141,7 +149,10 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         Set<DateTime> uniqueDays = sessions
             .map((s) {
               final dt = getSessionTime(s);
-              return dt != null ? DateTime(toUserTz(dt).year, toUserTz(dt).month, toUserTz(dt).day) : null;
+              return dt != null
+                  ? DateTime(
+                      toUserTz(dt).year, toUserTz(dt).month, toUserTz(dt).day)
+                  : null;
             })
             .where((d) => d != null)
             .cast<DateTime>()
@@ -184,7 +195,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         } else if (goalType == 'lunch_sessions') {
           count = sessions.where((s) {
             final dt = getSessionTime(s);
-            return dt != null && toUserTz(dt).hour >= 12 && toUserTz(dt).hour < 14;
+            return dt != null &&
+                toUserTz(dt).hour >= 12 &&
+                toUserTz(dt).hour < 14;
           }).length;
         } else if (goalType == 'morning_sessions') {
           count = sessions.where((s) {
@@ -205,16 +218,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       final east = tz.getLocation('America/New_York');
       final nowNY = tz.TZDateTime.now(east);
       final daysToSubtract = (nowNY.weekday - DateTime.monday) % 7;
-      final prevMondayLocal = tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day).subtract(Duration(days: daysToSubtract));
+      final prevMondayLocal =
+          tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day)
+              .subtract(Duration(days: daysToSubtract));
       // Midnight local time (America/New_York) converted to UTC
-      final prevMondayMidnightLocal = tz.TZDateTime(east, prevMondayLocal.year, prevMondayLocal.month, prevMondayLocal.day);
+      final prevMondayMidnightLocal = tz.TZDateTime(east, prevMondayLocal.year,
+          prevMondayLocal.month, prevMondayLocal.day);
       return prevMondayMidnightLocal.toUtc();
     } catch (_) {
       // Fallback without tz: use device local time
       final now = DateTime.now();
       final daysToSubtract = (now.weekday - DateTime.monday) % 7;
-      final prevMondayLocal = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
-      return DateTime(prevMondayLocal.year, prevMondayLocal.month, prevMondayLocal.day);
+      final prevMondayLocal = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: daysToSubtract));
+      return DateTime(
+          prevMondayLocal.year, prevMondayLocal.month, prevMondayLocal.day);
     }
   }
 
@@ -243,18 +261,22 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       final nowNY = tz.TZDateTime.now(east);
       int daysToAdd = (DateTime.monday + 7 - nowNY.weekday) % 7;
       if (daysToAdd == 0) daysToAdd = 7; // On Monday, go to next Monday
-      final startOfTodayLocal = tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day);
+      final startOfTodayLocal =
+          tz.TZDateTime(east, nowNY.year, nowNY.month, nowNY.day);
       final nextMondayLocal = startOfTodayLocal.add(Duration(days: daysToAdd));
       // Midnight local time (America/New_York) converted to UTC
-      final nextMondayMidnightLocal = tz.TZDateTime(east, nextMondayLocal.year, nextMondayLocal.month, nextMondayLocal.day);
+      final nextMondayMidnightLocal = tz.TZDateTime(east, nextMondayLocal.year,
+          nextMondayLocal.month, nextMondayLocal.day);
       return nextMondayMidnightLocal.toUtc();
     } catch (_) {
       // Fallback without tz: use device local time and ensure Monday goes to next week
       final now = DateTime.now();
       int daysToAdd = (DateTime.monday + 7 - now.weekday) % 7;
       if (daysToAdd == 0) daysToAdd = 7;
-      final nextMondayLocal = DateTime(now.year, now.month, now.day).add(Duration(days: daysToAdd));
-      return DateTime(nextMondayLocal.year, nextMondayLocal.month, nextMondayLocal.day);
+      final nextMondayLocal =
+          DateTime(now.year, now.month, now.day).add(Duration(days: daysToAdd));
+      return DateTime(
+          nextMondayLocal.year, nextMondayLocal.month, nextMondayLocal.day);
     }
   }
 
@@ -268,7 +290,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   Future<void> _assignPlayerAchievementsIfNeeded() async {
     try {
       final functions = FirebaseFunctions.instance;
-      final callable = functions.httpsCallable('assignPlayerAchievements');
+      final callable =
+          functions.httpsCallable('ensureCurrentWeeklyAchievements');
       final result = await callable();
       final data = result.data;
       if (mounted) {
@@ -278,7 +301,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
             _assigningAchievements = false;
           });
         } else {
-          final msg = (data is Map && data['message'] is String) ? data['message'] as String : 'Failed to assign achievements.';
+          final msg = (data is Map && data['message'] is String)
+              ? data['message'] as String
+              : 'Failed to assign achievements.';
           setState(() {
             _assignmentError = msg;
             _assigningAchievements = false;
@@ -295,7 +320,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 
   // Progress calculation for each style using stats
-  double _getAchievementProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+  double _getAchievementProgress(
+      Map<String, dynamic> data, Map<String, dynamic> stats) {
     final style = data['style'] ?? '';
     switch (style) {
       case 'quantity':
@@ -311,11 +337,14 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     }
   }
 
-  double _quantityProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+  double _quantityProgress(
+      Map<String, dynamic> data, Map<String, dynamic> stats) {
+    final goalValue =
+        (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
     final shotType = data['shotType'] ?? 'any';
     final goalType = data['goalType'] ?? 'count';
-    final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+    final requiredSessions =
+        (data['sessions'] is num) ? data['sessions'].toInt() : 1;
     final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
     DateTime? cutoff;
     if (cutoffDate is Timestamp) {
@@ -334,7 +363,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return dt;
     }
 
-    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    final rawSessions = stats['sessions'] is List
+        ? List<Map<String, dynamic>>.from(stats['sessions'])
+        : <Map<String, dynamic>>[];
     final sessions = rawSessions.where((session) {
       if (session.containsKey('date') && cutoff != null) {
         final date = session['date'];
@@ -344,7 +375,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         if (dt != null) {
           final userTzDt = toUserTz(dt);
           final userTzCutoff = toUserTz(cutoff);
-          return userTzDt.isAfter(userTzCutoff) || userTzDt.isAtSameMomentAs(userTzCutoff);
+          return userTzDt.isAfter(userTzCutoff) ||
+              userTzDt.isAtSameMomentAs(userTzCutoff);
         }
       }
       return false;
@@ -353,7 +385,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     if (goalType == 'count_per_session') {
       List<int> metList = [];
       for (final session in sessions) {
-        if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+        if (session.containsKey('shots') &&
+            session['shots'] is Map &&
+            session['shots'][shotType] is num) {
           double count = (session['shots'][shotType] as num).toDouble();
           metList.add(count >= goalValue ? 1 : 0);
         } else {
@@ -376,7 +410,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return (maxStreak / requiredSessions).clamp(0.0, 1.0);
     } else if (goalType == 'count_evening') {
       for (final session in sessions) {
-        if (session.containsKey('shots') && session['shots'] is Map && session.containsKey('date')) {
+        if (session.containsKey('shots') &&
+            session['shots'] is Map &&
+            session.containsKey('date')) {
           final date = session['date'];
           DateTime? dt;
           if (date is Timestamp) dt = date.toDate();
@@ -398,9 +434,12 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return 0.0;
     } else if (goalType == 'count_time') {
       // Must take goalValue shots in under timeLimit minutes within a single session
-      final timeLimit = (data['timeLimit'] is num) ? (data['timeLimit'] as num).toDouble() : 10.0;
+      final timeLimit = (data['timeLimit'] is num)
+          ? (data['timeLimit'] as num).toDouble()
+          : 10.0;
       for (final session in sessions) {
-        final hasDuration = session.containsKey('duration') && session['duration'] is num;
+        final hasDuration =
+            session.containsKey('duration') && session['duration'] is num;
         if (!hasDuration) continue;
         final durationMinutes = (session['duration'] as num).toDouble();
         if (durationMinutes <= timeLimit) {
@@ -412,7 +451,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
               }
             }
           } else {
-            if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+            if (session.containsKey('shots') &&
+                session['shots'] is Map &&
+                session['shots'][shotType] is num) {
               count = (session['shots'][shotType] as num).toDouble();
             }
           }
@@ -429,7 +470,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       for (final t in types) {
         double count = 0.0;
         for (final session in sessions) {
-          if (session.containsKey('shots') && session['shots'] is Map && session['shots'][t] is num) {
+          if (session.containsKey('shots') &&
+              session['shots'] is Map &&
+              session['shots'][t] is num) {
             count += (session['shots'][t] as num).toDouble();
           }
         }
@@ -450,7 +493,9 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     } else {
       double count = 0.0;
       for (final session in sessions) {
-        if (session.containsKey('shots') && session['shots'] is Map && session['shots'][shotType] is num) {
+        if (session.containsKey('shots') &&
+            session['shots'] is Map &&
+            session['shots'][shotType] is num) {
           count += (session['shots'][shotType] as num).toDouble();
         }
       }
@@ -458,13 +503,19 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     }
   }
 
-  double _accuracyProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    final targetAccuracy = (data['targetAccuracy'] is num) ? data['targetAccuracy'].toDouble() : 100.0;
+  double _accuracyProgress(
+      Map<String, dynamic> data, Map<String, dynamic> stats) {
+    final targetAccuracy = (data['targetAccuracy'] is num)
+        ? data['targetAccuracy'].toDouble()
+        : 100.0;
     final shotType = data['shotType'] ?? 'any';
     final goalType = data['goalType'] ?? 'accuracy';
-    final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+    final requiredSessions =
+        (data['sessions'] is num) ? data['sessions'].toInt() : 1;
     final isStreak = data['isStreak'] == true;
-    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    final rawSessions = stats['sessions'] is List
+        ? List<Map<String, dynamic>>.from(stats['sessions'])
+        : <Map<String, dynamic>>[];
     DateTime? cutoff;
     final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
     if (cutoffDate is Timestamp) {
@@ -476,7 +527,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       if (session.containsKey('date') && cutoff != null) {
         final date = session['date'];
         if (date is Timestamp) {
-          return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+          return date.toDate().isAfter(cutoff) ||
+              date.toDate().isAtSameMomentAs(cutoff);
         } else if (date is DateTime) {
           return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
         }
@@ -523,7 +575,10 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       // Morning session (before 10am) with required accuracy
       for (final session in sessions) {
         final dt = getSessionTime(session);
-        if (dt != null && dt.hour < 10 && session.containsKey('accuracy') && session['accuracy'] is Map) {
+        if (dt != null &&
+            dt.hour < 10 &&
+            session.containsKey('accuracy') &&
+            session['accuracy'] is Map) {
           final accMap = session['accuracy'] as Map;
           double acc = 0.0;
           if (shotType == 'any') {
@@ -551,7 +606,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       for (final session in sessions) {
         if (session.containsKey('accuracy') && session['accuracy'] is Map) {
           final accMap = session['accuracy'] as Map;
-          double acc = (accMap[shotType] is num) ? accMap[shotType].toDouble() : 0.0;
+          double acc =
+              (accMap[shotType] is num) ? accMap[shotType].toDouble() : 0.0;
           sessionAccuracies.add(acc);
         }
       }
@@ -574,18 +630,23 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
         return (maxStreak / requiredSessions).clamp(0.0, 1.0);
       } else {
         // For achievements requiring N sessions (not necessarily in a row)
-        int metCount = sessionAccuracies.where((v) => v >= targetAccuracy).length;
+        int metCount =
+            sessionAccuracies.where((v) => v >= targetAccuracy).length;
         return (metCount / requiredSessions).clamp(0.0, 1.0);
       }
     }
   }
 
-  double _consistencyProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
+  double _consistencyProgress(
+      Map<String, dynamic> data, Map<String, dynamic> stats) {
     // Helper for UI: get details for checkboxes
 
     final goalType = data['goalType'] ?? '';
-    final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
-    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    final goalValue =
+        (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
+    final rawSessions = stats['sessions'] is List
+        ? List<Map<String, dynamic>>.from(stats['sessions'])
+        : <Map<String, dynamic>>[];
     // Only consider sessions after cutoff (week start)
     DateTime? cutoff;
     final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
@@ -598,7 +659,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       if (session.containsKey('date') && cutoff != null) {
         final date = session['date'];
         if (date is Timestamp) {
-          return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+          return date.toDate().isAfter(cutoff) ||
+              date.toDate().isAtSameMomentAs(cutoff);
         } else if (date is DateTime) {
           return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
         }
@@ -644,7 +706,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
             .where((d) => d != null)
             .cast<int>()
             .toSet();
-        int count = (days.contains(DateTime.saturday) ? 1 : 0) + (days.contains(DateTime.sunday) ? 1 : 0);
+        int count = (days.contains(DateTime.saturday) ? 1 : 0) +
+            (days.contains(DateTime.sunday) ? 1 : 0);
         return (count / goalValue).clamp(0.0, 1.0);
       case 'streak':
         // Longest streak of consecutive days with sessions
@@ -685,23 +748,32 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
     }
   }
 
-  double _progressStyleProgress(Map<String, dynamic> data, Map<String, dynamic> stats) {
-    final improvement = (data['improvement'] is num) ? data['improvement'].toDouble() : 1.0;
+  double _progressStyleProgress(
+      Map<String, dynamic> data, Map<String, dynamic> stats) {
+    final improvement =
+        (data['improvement'] is num) ? data['improvement'].toDouble() : 1.0;
     final goalType = data['goalType'] ?? 'improvement';
     final shotType = data['shotType'] ?? 'any';
-    final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
+    final requiredSessions =
+        (data['sessions'] is num) ? data['sessions'].toInt() : 1;
     final days = (data['days'] is num) ? data['days'].toInt() : 0;
-    final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+    final rawSessions = stats['sessions'] is List
+        ? List<Map<String, dynamic>>.from(stats['sessions'])
+        : <Map<String, dynamic>>[];
     // improvement: overall season_accuracy
     if (goalType == 'improvement') {
-      final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
+      final seasonAccuracy = (stats['season_accuracy'] is num)
+          ? stats['season_accuracy'].toDouble()
+          : 0.0;
       return (seasonAccuracy / improvement).clamp(0.0, 1.0);
     } else if (goalType == 'improvement_variety') {
       // Improve accuracy by X% on all shot types
       final types = ['wrist', 'snap', 'slap', 'backhand'];
       double metTypes = 0.0;
       for (final t in types) {
-        final acc = (stats['season_accuracy_$t'] is num) ? stats['season_accuracy_$t'].toDouble() : 0.0;
+        final acc = (stats['season_accuracy_$t'] is num)
+            ? stats['season_accuracy_$t'].toDouble()
+            : 0.0;
         if (acc >= improvement) metTypes += 1.0;
       }
       return (metTypes / types.length).clamp(0.0, 1.0);
@@ -712,7 +784,10 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       for (final session in rawSessions) {
         if (session.containsKey('accuracy') && session['accuracy'] is Map) {
           final accMap = session['accuracy'] as Map;
-          double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+          double acc = shotType == 'any'
+              ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) /
+                  (accMap.isNotEmpty ? accMap.length : 1))
+              : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
           improvements.add(acc >= improvement ? 1.0 : 0.0);
         }
       }
@@ -742,9 +817,15 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
           DateTime? dt;
           if (date is Timestamp) dt = date.toDate();
           if (date is DateTime) dt = date;
-          if (dt != null && dt.hour >= 19 && session.containsKey('accuracy') && session['accuracy'] is Map) {
+          if (dt != null &&
+              dt.hour >= 19 &&
+              session.containsKey('accuracy') &&
+              session['accuracy'] is Map) {
             final accMap = session['accuracy'] as Map;
-            double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+            double acc = shotType == 'any'
+                ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) /
+                    (accMap.isNotEmpty ? accMap.length : 1))
+                : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
             if (acc >= improvement) metCount++;
             total++;
           }
@@ -753,7 +834,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return total > 0 ? (metCount / total).clamp(0.0, 1.0) : 0.0;
     } else if (goalType == 'target_hits_increase') {
       // Hit X targets
-      final hits = (stats['target_hits'] is num) ? stats['target_hits'].toDouble() : 0.0;
+      final hits =
+          (stats['target_hits'] is num) ? stats['target_hits'].toDouble() : 0.0;
       return (hits / improvement).clamp(0.0, 1.0);
     } else if (goalType == 'improvement_sessions') {
       // Improve accuracy in at least N sessions
@@ -761,22 +843,30 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       for (final session in rawSessions) {
         if (session.containsKey('accuracy') && session['accuracy'] is Map) {
           final accMap = session['accuracy'] as Map;
-          double acc = shotType == 'any' ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) / (accMap.isNotEmpty ? accMap.length : 1)) : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
+          double acc = shotType == 'any'
+              ? (accMap.values.whereType<num>().fold(0.0, (a, b) => a + b) /
+                  (accMap.isNotEmpty ? accMap.length : 1))
+              : (accMap[shotType] is num ? accMap[shotType].toDouble() : 0.0);
           if (acc >= improvement) metCount++;
         }
       }
       return (metCount / requiredSessions).clamp(0.0, 1.0);
     } else {
       // Default: overall season_accuracy
-      final seasonAccuracy = (stats['season_accuracy'] is num) ? stats['season_accuracy'].toDouble() : 0.0;
+      final seasonAccuracy = (stats['season_accuracy'] is num)
+          ? stats['season_accuracy'].toDouble()
+          : 0.0;
       return (seasonAccuracy / improvement).clamp(0.0, 1.0);
     }
   }
 
-  String _getRatioFeedback(Map<String, dynamic> data, double ratioValue, double sweetSpot) {
+  String _getRatioFeedback(
+      Map<String, dynamic> data, double ratioValue, double sweetSpot) {
     final primaryType = data['shotType'] ?? data['primaryType'] ?? 'wrist';
-    final secondaryType = data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
-    final isOneToOne = (data['goalValue']?.toDouble() ?? 1.0) == 1.0 && (data['secondaryValue']?.toDouble() ?? 1.0) == 1.0;
+    final secondaryType =
+        data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
+    final isOneToOne = (data['goalValue']?.toDouble() ?? 1.0) == 1.0 &&
+        (data['secondaryValue']?.toDouble() ?? 1.0) == 1.0;
     if (isOneToOne) {
       final diff = (ratioValue - sweetSpot).abs();
       if (diff < 0.09) {
@@ -811,27 +901,42 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
       return _WeeklyResetCountdown(nextMonday: _nextMondayEST());
     }
 
-    final achievementsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').where('time_frame', isEqualTo: 'week');
-    final statsRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('stats').doc('weekly');
+    final achievementsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_user!.uid)
+        .collection('achievements')
+        .where('time_frame', isEqualTo: 'week');
+    final statsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_user!.uid)
+        .collection('stats')
+        .doc('weekly');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        widget.showResetCountdown ? _WeeklyResetCountdown(nextMonday: _nextMondayEST()) : const SizedBox.shrink(),
+        widget.showResetCountdown
+            ? _WeeklyResetCountdown(nextMonday: _nextMondayEST())
+            : const SizedBox.shrink(),
         StreamBuilder<DocumentSnapshot>(
           stream: statsRef.snapshots(),
           builder: (context, statsSnapshot) {
-            final statsRaw = (statsSnapshot.data?.data() as Map<String, dynamic>?) ?? {};
+            final statsRaw =
+                (statsSnapshot.data?.data() as Map<String, dynamic>?) ?? {};
             // Filter sessions to only those after previous Monday 12am EST
             final prevMonday = _previousMondayEST();
-            List<dynamic> sessions = (statsRaw['sessions'] is List) ? List.from(statsRaw['sessions']) : [];
+            List<dynamic> sessions = (statsRaw['sessions'] is List)
+                ? List.from(statsRaw['sessions'])
+                : [];
             sessions = sessions.where((s) {
               if (s is Map && s.containsKey('date')) {
                 final date = s['date'];
                 if (date is Timestamp) {
-                  return date.toDate().isAfter(prevMonday) || date.toDate().isAtSameMomentAs(prevMonday);
+                  return date.toDate().isAfter(prevMonday) ||
+                      date.toDate().isAtSameMomentAs(prevMonday);
                 } else if (date is DateTime) {
-                  return date.isAfter(prevMonday) || date.isAtSameMomentAs(prevMonday);
+                  return date.isAfter(prevMonday) ||
+                      date.isAtSameMomentAs(prevMonday);
                 }
               }
               return false;
@@ -862,7 +967,11 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
                             SizedBox(width: 12),
                             Text('Assigning weekly achievements...'),
                           ],
@@ -887,9 +996,11 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               setState(() {
                                 _assignmentError = null;
                                 _assigningAchievements = true;
-                                _assignmentAttempted = true; // keep as attempted but retry now
+                                _assignmentAttempted =
+                                    true; // keep as attempted but retry now
                               });
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
+                              SchedulerBinding.instance
+                                  .addPostFrameCallback((_) {
                                 _assignPlayerAchievementsIfNeeded();
                               });
                             },
@@ -907,12 +1018,17 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                     ),
                   );
                 }
-                final achievements = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
+                final achievements =
+                    List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
                 achievements.sort((a, b) {
                   final aData = a.data() as Map<String, dynamic>;
                   final bData = b.data() as Map<String, dynamic>;
-                  final aIsBonus = aData['isBonus'] ?? (aData['id'] ?? '').toString().startsWith('fun_') || (aData['id'] ?? '').toString().startsWith('social_');
-                  final bIsBonus = bData['isBonus'] ?? (bData['id'] ?? '').toString().startsWith('fun_') || (bData['id'] ?? '').toString().startsWith('social_');
+                  final aIsBonus = aData['isBonus'] ??
+                      (aData['id'] ?? '').toString().startsWith('fun_') ||
+                          (aData['id'] ?? '').toString().startsWith('social_');
+                  final bIsBonus = bData['isBonus'] ??
+                      (bData['id'] ?? '').toString().startsWith('fun_') ||
+                          (bData['id'] ?? '').toString().startsWith('social_');
                   if (aIsBonus == bIsBonus) return 0;
                   return aIsBonus ? 1 : -1;
                 });
@@ -928,37 +1044,52 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                   itemCount: achievements.length,
                   separatorBuilder: (context, idx) => const SizedBox(height: 8),
                   itemBuilder: (context, idx) {
-                    final data = achievements[idx].data() as Map<String, dynamic>;
+                    final data =
+                        achievements[idx].data() as Map<String, dynamic>;
                     final id = data['id'] ?? '';
                     final completed = data['completed'] == true;
                     final description = data['description'] ?? '';
-                    final isBonus = data['isBonus'] ?? id.startsWith('fun_') || id.startsWith('social_');
+                    final isBonus = data['isBonus'] ??
+                        id.startsWith('fun_') || id.startsWith('social_');
 
                     final style = data['style'] ?? '';
                     if (style == 'ratio') {
                       // Calculate ratio using shotType and shotTypeComparison (with fallback to primaryType/secondaryType)
-                      final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
-                      final secondaryValue = (data['secondaryValue'] is num) ? data['secondaryValue'].toDouble() : 1.0;
-                      final sweetSpot = goalValue / (goalValue + secondaryValue);
-                      final primaryType = data['shotType'] ?? data['primaryType'] ?? 'wrist';
-                      final secondaryType = data['shotTypeComparison'] ?? data['secondaryType'] ?? 'snap';
+                      final goalValue = (data['goalValue'] is num)
+                          ? data['goalValue'].toDouble()
+                          : 1.0;
+                      final secondaryValue = (data['secondaryValue'] is num)
+                          ? data['secondaryValue'].toDouble()
+                          : 1.0;
+                      final sweetSpot =
+                          goalValue / (goalValue + secondaryValue);
+                      final primaryType =
+                          data['shotType'] ?? data['primaryType'] ?? 'wrist';
+                      final secondaryType = data['shotTypeComparison'] ??
+                          data['secondaryType'] ??
+                          'snap';
                       // Use dateAssigned if present, else week_start from stats
-                      final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+                      final cutoffDate =
+                          (data['dateAssigned'] ?? stats['week_start']);
                       DateTime? cutoff;
                       if (cutoffDate is Timestamp) {
                         cutoff = cutoffDate.toDate();
                       } else if (cutoffDate is DateTime) {
                         cutoff = cutoffDate;
                       }
-                      final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      final rawSessions = stats['sessions'] is List
+                          ? List<Map<String, dynamic>>.from(stats['sessions'])
+                          : <Map<String, dynamic>>[];
                       // Filter sessions to only those after cutoff
                       final sessions = rawSessions.where((session) {
                         if (session.containsKey('date') && cutoff != null) {
                           final date = session['date'];
                           if (date is Timestamp) {
-                            return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+                            return date.toDate().isAfter(cutoff) ||
+                                date.toDate().isAtSameMomentAs(cutoff);
                           } else if (date is DateTime) {
-                            return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
+                            return date.isAfter(cutoff) ||
+                                date.isAtSameMomentAs(cutoff);
                           }
                         }
                         return false;
@@ -969,24 +1100,42 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           clipBehavior: Clip.none,
                           children: [
                             Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 0),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                  color: isBonus
+                                      ? (completed
+                                          ? Colors.green
+                                          : const Color(0xFFFFD700))
+                                      : (completed
+                                          ? Colors.green
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(50)),
                                   width: 2.5,
                                 ),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 16),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     isBonus
                                         ? GestureDetector(
                                             onTap: () async {
-                                              await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                              await FirebaseFirestore.instance
+                                                  .collection('users')
+                                                  .doc(_user!.uid)
+                                                  .collection('achievements')
+                                                  .doc(achievements[idx].id)
+                                                  .update({
+                                                'completed': !completed
+                                              });
                                             },
                                             child: Container(
                                               width: 28,
@@ -994,7 +1143,17 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
                                                 border: Border.all(
-                                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                                  color: isBonus
+                                                      ? (completed
+                                                          ? Colors.green
+                                                          : const Color(
+                                                              0xFFFFD700))
+                                                      : (completed
+                                                          ? Colors.green
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurface
+                                                              .withAlpha(50)),
                                                   width: 2.2,
                                                 ),
                                                 color: Colors.transparent,
@@ -1006,13 +1165,16 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             description,
                                             style: TextStyle(
                                               fontSize: 15,
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                               fontFamily: 'NovecentoSans',
                                             ),
                                           ),
@@ -1037,14 +1199,18 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 top: -7,
                                 right: 8,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 1),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFD700),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                    border: Border.all(
+                                        color: const Color(0xFFFFD700),
+                                        width: 2),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.9),
+                                        color: const Color(0xFFFFD700)
+                                            .withOpacity(0.9),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -1068,26 +1234,32 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       double primaryCount = 0.0;
                       double secondaryCount = 0.0;
                       for (final session in sessions) {
-                        if (session.containsKey('shots') && session['shots'] is Map) {
+                        if (session.containsKey('shots') &&
+                            session['shots'] is Map) {
                           final shots = session['shots'] as Map;
                           if (primaryType.contains('+')) {
                             for (final t in primaryType.split('+')) {
-                              if (shots[t] is num) primaryCount += (shots[t] as num).toDouble();
+                              if (shots[t] is num)
+                                primaryCount += (shots[t] as num).toDouble();
                             }
                           } else if (shots[primaryType] is num) {
-                            primaryCount += (shots[primaryType] as num).toDouble();
+                            primaryCount +=
+                                (shots[primaryType] as num).toDouble();
                           }
                           if (secondaryType.contains('+')) {
                             for (final t in secondaryType.split('+')) {
-                              if (shots[t] is num) secondaryCount += (shots[t] as num).toDouble();
+                              if (shots[t] is num)
+                                secondaryCount += (shots[t] as num).toDouble();
                             }
                           } else if (shots[secondaryType] is num) {
-                            secondaryCount += (shots[secondaryType] as num).toDouble();
+                            secondaryCount +=
+                                (shots[secondaryType] as num).toDouble();
                           }
                         }
                       }
                       final total = primaryCount + secondaryCount;
-                      final ratioValue = total > 0 ? (primaryCount / total) : 0.0;
+                      final ratioValue =
+                          total > 0 ? (primaryCount / total) : 0.0;
                       final feedback = _getRatioFeedback(
                         {
                           ...data,
@@ -1105,24 +1277,46 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
-                                color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                                color: completed
+                                    ? Colors.green.withOpacity(0.12)
+                                    : Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                  color: isBonus
+                                      ? (completed
+                                          ? Colors.green
+                                          : const Color(0xFFFFD700))
+                                      : (completed
+                                          ? Colors.green
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(50)),
                                   width: 2.5,
                                 ),
                               ),
                               child: Column(
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         isBonus
                                             ? GestureDetector(
                                                 onTap: () async {
-                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('users')
+                                                      .doc(_user!.uid)
+                                                      .collection(
+                                                          'achievements')
+                                                      .doc(achievements[idx].id)
+                                                      .update({
+                                                    'completed': !completed
+                                                  });
                                                 },
                                                 child: Container(
                                                   width: 28,
@@ -1133,27 +1327,44 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                       color: completed
                                                           ? Colors.green
                                                           : (isBonus)
-                                                              ? const Color(0xFFFFD700)
-                                                              : Theme.of(context).colorScheme.onSurface.withAlpha(50),
+                                                              ? const Color(
+                                                                  0xFFFFD700)
+                                                              : Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onSurface
+                                                                  .withAlpha(
+                                                                      50),
                                                       width: 2.2,
                                                     ),
-                                                    color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                                    color: completed
+                                                        ? Colors.green
+                                                            .withOpacity(0.18)
+                                                        : Colors.transparent,
                                                   ),
-                                                  child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                                  child: completed
+                                                      ? Icon(Icons.check,
+                                                          size: 18,
+                                                          color: Colors.green)
+                                                      : null,
                                                 ),
                                               )
                                             : Container(),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
                                             children: [
                                               Text(
                                                 description,
                                                 style: TextStyle(
                                                   fontSize: 15,
-                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
                                                   fontFamily: 'NovecentoSans',
                                                 ),
                                               ),
@@ -1165,48 +1376,85 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                   Container(
                                                     height: 18,
                                                     decoration: BoxDecoration(
-                                                      color: Colors.green.withOpacity(0.13),
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      color: Colors.green
+                                                          .withOpacity(0.13),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
                                                     ),
                                                   ),
                                                   Positioned(
                                                     left: 0,
                                                     right: 0,
                                                     child: FractionallySizedBox(
-                                                      alignment: Alignment.centerLeft,
+                                                      alignment:
+                                                          Alignment.centerLeft,
                                                       widthFactor: sweetSpot,
                                                       child: Container(
                                                         height: 18,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.green.withOpacity(0.28),
-                                                          borderRadius: BorderRadius.circular(8),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.green
+                                                              .withOpacity(
+                                                                  0.28),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
                                                         ),
                                                       ),
                                                     ),
                                                   ),
                                                   // User's current ratio indicator
                                                   Positioned(
-                                                    left: (ratioValue * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                    left: (ratioValue *
+                                                            MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.7)
+                                                        .clamp(
+                                                            0.0,
+                                                            MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                0.7),
                                                     child: Container(
                                                       width: 18,
                                                       height: 18,
                                                       decoration: BoxDecoration(
                                                         color: Colors.green,
                                                         shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white, width: 2),
+                                                        border: Border.all(
+                                                            color: Colors.white,
+                                                            width: 2),
                                                       ),
                                                     ),
                                                   ),
                                                   // Sweet spot indicator
                                                   Positioned(
-                                                    left: (sweetSpot * MediaQuery.of(context).size.width * 0.7).clamp(0.0, MediaQuery.of(context).size.width * 0.7),
+                                                    left: (sweetSpot *
+                                                            MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.7)
+                                                        .clamp(
+                                                            0.0,
+                                                            MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                0.7),
                                                     child: Container(
                                                       width: 10,
                                                       height: 10,
                                                       decoration: BoxDecoration(
                                                         color: Colors.yellow,
                                                         shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.black, width: 1),
+                                                        border: Border.all(
+                                                            color: Colors.black,
+                                                            width: 1),
                                                       ),
                                                     ),
                                                   ),
@@ -1217,16 +1465,30 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 feedback,
                                                 style: TextStyle(
                                                   fontSize: 11,
-                                                  color: (preferences!.darkMode! || MediaQuery.of(context).platformBrightness == Brightness.dark) ? Theme.of(context).colorScheme.onSurface : Colors.green[900],
+                                                  color: (preferences!
+                                                              .darkMode! ||
+                                                          MediaQuery.of(context)
+                                                                  .platformBrightness ==
+                                                              Brightness.dark)
+                                                      ? Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                      : Colors.green[900],
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                               // Show actual ratio numbers for clarity
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                    top: 2.0),
                                                 child: Text(
                                                   'Your ratio: ${primaryType.toString()} ${(ratioValue * 100).toStringAsFixed(1)}%  |  ${secondaryType.toString()} ${(100 - ratioValue * 100).toStringAsFixed(1)}%',
-                                                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+                                                  style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.8)),
                                                 ),
                                               ),
                                             ],
@@ -1243,14 +1505,18 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 top: -7,
                                 right: 8,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 1),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFD700),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                    border: Border.all(
+                                        color: const Color(0xFFFFD700),
+                                        width: 2),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.9),
+                                        color: const Color(0xFFFFD700)
+                                            .withOpacity(0.9),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -1271,24 +1537,34 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           ],
                         ),
                       );
-                    } else if (style == 'quantity' && (data['goalType'] == 'variety' || data['goalType'] == 'qty_variety' || data['goalType'] == 'qty_mixed_medium')) {
+                    } else if (style == 'quantity' &&
+                        (data['goalType'] == 'variety' ||
+                            data['goalType'] == 'qty_variety' ||
+                            data['goalType'] == 'qty_mixed_medium')) {
                       // Special block for quantity style with goalType variety (or similar)
-                      final qtyRequiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
-                      final qtyCutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+                      final qtyRequiredSessions = (data['sessions'] is num)
+                          ? data['sessions'].toInt()
+                          : 1;
+                      final qtyCutoffDate =
+                          (data['dateAssigned'] ?? stats['week_start']);
                       DateTime? qtyCutoff;
                       if (qtyCutoffDate is Timestamp) {
                         qtyCutoff = qtyCutoffDate.toDate();
                       } else if (qtyCutoffDate is DateTime) {
                         qtyCutoff = qtyCutoffDate;
                       }
-                      final qtyRawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      final qtyRawSessions = stats['sessions'] is List
+                          ? List<Map<String, dynamic>>.from(stats['sessions'])
+                          : <Map<String, dynamic>>[];
                       final qtySessions = qtyRawSessions.where((session) {
                         if (session.containsKey('date') && qtyCutoff != null) {
                           final date = session['date'];
                           if (date is Timestamp) {
-                            return date.toDate().isAfter(qtyCutoff) || date.toDate().isAtSameMomentAs(qtyCutoff);
+                            return date.toDate().isAfter(qtyCutoff) ||
+                                date.toDate().isAtSameMomentAs(qtyCutoff);
                           } else if (date is DateTime) {
-                            return date.isAfter(qtyCutoff) || date.isAtSameMomentAs(qtyCutoff);
+                            return date.isAfter(qtyCutoff) ||
+                                date.isAtSameMomentAs(qtyCutoff);
                           }
                         }
                         return false;
@@ -1297,18 +1573,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       final types = ['wrist', 'snap', 'slap', 'backhand'];
                       int metSessions = 0;
                       for (final session in qtySessions) {
-                        if (session.containsKey('shots') && session['shots'] is Map) {
+                        if (session.containsKey('shots') &&
+                            session['shots'] is Map) {
                           final shots = session['shots'] as Map;
                           int typeCount = 0;
                           for (final t in types) {
-                            if (shots[t] is num && (shots[t] as num) > 0) typeCount++;
+                            if (shots[t] is num && (shots[t] as num) > 0)
+                              typeCount++;
                           }
                           if (typeCount == types.length) {
                             metSessions++;
                           }
                         }
                       }
-                      final progress = (metSessions / qtyRequiredSessions).clamp(0.0, 1.0);
+                      final progress =
+                          (metSessions / qtyRequiredSessions).clamp(0.0, 1.0);
 
                       return _buildAchievementItem(
                         achievements[idx],
@@ -1318,10 +1597,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
-                                color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                                color: completed
+                                    ? Colors.green.withOpacity(0.12)
+                                    : Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                  color: isBonus
+                                      ? (completed
+                                          ? Colors.green
+                                          : const Color(0xFFFFD700))
+                                      : (completed
+                                          ? Colors.green
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(50)),
                                   width: 2.5,
                                 ),
                               ),
@@ -1334,22 +1624,36 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: Colors.green.withOpacity(0.22),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.only(right: 10),
+                                          padding:
+                                              const EdgeInsets.only(right: 10),
                                           child: GestureDetector(
                                             onTap: isBonus
                                                 ? () async {
-                                                    await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                    await FirebaseFirestore
+                                                        .instance
+                                                        .collection('users')
+                                                        .doc(_user!.uid)
+                                                        .collection(
+                                                            'achievements')
+                                                        .doc(achievements[idx]
+                                                            .id)
+                                                        .update({
+                                                      'completed': !completed
+                                                    });
                                                   }
                                                 : null,
                                             child: Container(
@@ -1361,34 +1665,52 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                   color: completed
                                                       ? Colors.green
                                                       : (isBonus)
-                                                          ? const Color(0xFFFFD700)
-                                                          : Theme.of(context).colorScheme.onSurface.withAlpha(50),
+                                                          ? const Color(
+                                                              0xFFFFD700)
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurface
+                                                              .withAlpha(50),
                                                   width: 2.2,
                                                 ),
-                                                color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                                color: completed
+                                                    ? Colors.green
+                                                        .withOpacity(0.18)
+                                                    : Colors.transparent,
                                               ),
-                                              child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                              child: completed
+                                                  ? Icon(Icons.check,
+                                                      size: 18,
+                                                      color: Colors.green)
+                                                  : null,
                                             ),
                                           ),
                                         ),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
                                             children: [
                                               Text(
                                                 description,
                                                 style: TextStyle(
                                                   fontSize: 15,
-                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
                                                   fontFamily: 'NovecentoSans',
                                                 ),
                                               ),
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 4.0),
+                                                padding: const EdgeInsets.only(
+                                                    top: 4.0),
                                                 child: Text(
                                                   'Complete a session with all shot types: ${types.join(", ")}',
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[700]),
                                                 ),
                                               ),
                                             ],
@@ -1405,14 +1727,18 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 top: -7,
                                 right: 8,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 1),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFD700),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                    border: Border.all(
+                                        color: const Color(0xFFFFD700),
+                                        width: 2),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.9),
+                                        color: const Color(0xFFFFD700)
+                                            .withOpacity(0.9),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -1435,14 +1761,27 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       );
                     }
                     // Default: all other styles
-                    final showProgress = ['quantity', 'accuracy', 'consistency', 'progress'].contains(style);
-                    final progress = showProgress ? _getAchievementProgress(data, stats) : 0.0;
+                    final showProgress = [
+                      'quantity',
+                      'accuracy',
+                      'consistency',
+                      'progress'
+                    ].contains(style);
+                    final progress = showProgress
+                        ? _getAchievementProgress(data, stats)
+                        : 0.0;
                     Widget? accuracyIndicators;
                     if (style == 'accuracy') {
-                      final targetAccuracy = (data['targetAccuracy'] is num) ? data['targetAccuracy'].toDouble() : 100.0;
+                      final targetAccuracy = (data['targetAccuracy'] is num)
+                          ? data['targetAccuracy'].toDouble()
+                          : 100.0;
                       final shotType = data['shotType'] ?? 'any';
-                      final requiredSessions = (data['sessions'] is num) ? data['sessions'].toInt() : 1;
-                      final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      final requiredSessions = (data['sessions'] is num)
+                          ? data['sessions'].toInt()
+                          : 1;
+                      final rawSessions = stats['sessions'] is List
+                          ? List<Map<String, dynamic>>.from(stats['sessions'])
+                          : <Map<String, dynamic>>[];
                       DateTime? weekStart;
                       final weekStartRaw = stats['week_start'];
                       if (weekStartRaw is Timestamp) {
@@ -1455,9 +1794,11 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         if (session.containsKey('date') && weekStart != null) {
                           final date = session['date'];
                           if (date is Timestamp) {
-                            return date.toDate().isAfter(weekStart) || date.toDate().isAtSameMomentAs(weekStart);
+                            return date.toDate().isAfter(weekStart) ||
+                                date.toDate().isAtSameMomentAs(weekStart);
                           } else if (date is DateTime) {
-                            return date.isAfter(weekStart) || date.isAtSameMomentAs(weekStart);
+                            return date.isAfter(weekStart) ||
+                                date.isAtSameMomentAs(weekStart);
                           }
                         }
                         return false;
@@ -1471,7 +1812,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       }
 
                       // sessionAccuracies now defined above with sortedSessions
-                      List<Map<String, dynamic>> sortedSessions = List<Map<String, dynamic>>.from(sessions);
+                      List<Map<String, dynamic>> sortedSessions =
+                          List<Map<String, dynamic>>.from(sessions);
                       sortedSessions.sort((a, b) {
                         DateTime? aDate = getSessionTime(a);
                         DateTime? bDate = getSessionTime(b);
@@ -1485,11 +1827,18 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                       for (final session in sortedSessions) {
                         // Calculate accuracy from shots and targets_hit
                         double acc = 0.0;
-                        if (session.containsKey('shots') && session.containsKey('targets_hit')) {
+                        if (session.containsKey('shots') &&
+                            session.containsKey('targets_hit')) {
                           final shotsMap = session['shots'] as Map?;
                           final hitsMap = session['targets_hit'] as Map?;
-                          final shots = (shotsMap != null && shotsMap[shotType] is num) ? (shotsMap[shotType] as num).toDouble() : 0.0;
-                          final hits = (hitsMap != null && hitsMap[shotType] is num) ? (hitsMap[shotType] as num).toDouble() : 0.0;
+                          final shots =
+                              (shotsMap != null && shotsMap[shotType] is num)
+                                  ? (shotsMap[shotType] as num).toDouble()
+                                  : 0.0;
+                          final hits =
+                              (hitsMap != null && hitsMap[shotType] is num)
+                                  ? (hitsMap[shotType] as num).toDouble()
+                                  : 0.0;
                           if (shots > 0) {
                             acc = (hits / shots) * 100.0;
                           }
@@ -1510,7 +1859,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 return List.generate(
                                   requiredSessions,
                                   (i) => Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 5.0),
                                     child: Column(
                                       children: [
                                         _buildCheckboxCircle(true),
@@ -1521,12 +1871,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               } else {
                                 // Show the current (most recent) streak of consecutive sessions with accuracy >= targetAccuracy
                                 int currentStreak = 0;
-                                for (int i = 0; i < sortedSessions.length; i++) {
+                                for (int i = 0;
+                                    i < sortedSessions.length;
+                                    i++) {
                                   final session = sortedSessions[i];
                                   final shotsMap = session['shots'] as Map?;
-                                  final hitsMap = session['targets_hit'] as Map?;
-                                  final shots = (shotsMap != null && shotsMap[shotType] is num) ? (shotsMap[shotType] as num).toDouble() : 0.0;
-                                  final hits = (hitsMap != null && hitsMap[shotType] is num) ? (hitsMap[shotType] as num).toDouble() : 0.0;
+                                  final hitsMap =
+                                      session['targets_hit'] as Map?;
+                                  final shots = (shotsMap != null &&
+                                          shotsMap[shotType] is num)
+                                      ? (shotsMap[shotType] as num).toDouble()
+                                      : 0.0;
+                                  final hits = (hitsMap != null &&
+                                          hitsMap[shotType] is num)
+                                      ? (hitsMap[shotType] as num).toDouble()
+                                      : 0.0;
                                   double acc = 0.0;
                                   if (shots > 0) {
                                     acc = (hits / shots) * 100.0;
@@ -1540,7 +1899,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                 return List.generate(
                                   requiredSessions,
                                   (i) => Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 5.0),
                                     child: Column(
                                       children: [
                                         _buildCheckboxCircle(i < currentStreak),
@@ -1552,8 +1912,12 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                             } else {
                               // Non-streak: show up to requiredSessions checked, then unchecked for the rest
                               int metCount = 0;
-                              List<bool> checkedList = List.filled(requiredSessions, false);
-                              for (int i = 0; i < sessionAccuracies.length && metCount < requiredSessions; i++) {
+                              List<bool> checkedList =
+                                  List.filled(requiredSessions, false);
+                              for (int i = 0;
+                                  i < sessionAccuracies.length &&
+                                      metCount < requiredSessions;
+                                  i++) {
                                 if (sessionAccuracies[i] >= targetAccuracy) {
                                   checkedList[metCount] = true;
                                   metCount++;
@@ -1562,7 +1926,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               return List.generate(
                                 requiredSessions,
                                 (i) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5.0),
                                   child: Column(
                                     children: [
                                       _buildCheckboxCircle(checkedList[i]),
@@ -1580,10 +1945,15 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                     Widget? consistencyIndicators;
                     if (style == 'consistency') {
                       final goalType = data['goalType'] ?? '';
-                      final goalValue = (data['goalValue'] is num) ? data['goalValue'].toDouble() : 1.0;
-                      final rawSessions = stats['sessions'] is List ? List<Map<String, dynamic>>.from(stats['sessions']) : <Map<String, dynamic>>[];
+                      final goalValue = (data['goalValue'] is num)
+                          ? data['goalValue'].toDouble()
+                          : 1.0;
+                      final rawSessions = stats['sessions'] is List
+                          ? List<Map<String, dynamic>>.from(stats['sessions'])
+                          : <Map<String, dynamic>>[];
                       DateTime? cutoff;
-                      final cutoffDate = (data['dateAssigned'] ?? stats['week_start']);
+                      final cutoffDate =
+                          (data['dateAssigned'] ?? stats['week_start']);
                       if (cutoffDate is Timestamp) {
                         cutoff = cutoffDate.toDate();
                       } else if (cutoffDate is DateTime) {
@@ -1593,14 +1963,17 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                         if (session.containsKey('date') && cutoff != null) {
                           final date = session['date'];
                           if (date is Timestamp) {
-                            return date.toDate().isAfter(cutoff) || date.toDate().isAtSameMomentAs(cutoff);
+                            return date.toDate().isAfter(cutoff) ||
+                                date.toDate().isAtSameMomentAs(cutoff);
                           } else if (date is DateTime) {
-                            return date.isAfter(cutoff) || date.isAtSameMomentAs(cutoff);
+                            return date.isAfter(cutoff) ||
+                                date.isAtSameMomentAs(cutoff);
                           }
                         }
                         return false;
                       }).toList();
-                      final details = getConsistencyDetails(goalType, sessions, goalValue);
+                      final details =
+                          getConsistencyDetails(goalType, sessions, goalValue);
                       if (goalType == 'weekend_sessions') {
                         consistencyIndicators = Wrap(
                           spacing: 8,
@@ -1630,7 +2003,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           children: List.generate(
                               goalValue.toInt(),
                               (i) => Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 2.0),
                                     child: _buildCheckboxCircle(i < streak),
                                   )),
                         );
@@ -1642,7 +2016,8 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           children: List.generate(
                               goalValue.toInt(),
                               (i) => Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 2.0),
                                     child: _buildCheckboxCircle(i < count),
                                   )),
                         );
@@ -1656,10 +2031,21 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                           Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
-                              color: completed ? Colors.green.withOpacity(0.12) : Theme.of(context).cardColor,
+                              color: completed
+                                  ? Colors.green.withOpacity(0.12)
+                                  : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isBonus ? (completed ? Colors.green : const Color(0xFFFFD700)) : (completed ? Colors.green : Theme.of(context).colorScheme.onSurface.withAlpha(50)),
+                                color: isBonus
+                                    ? (completed
+                                        ? Colors.green
+                                        : const Color(0xFFFFD700))
+                                    : (completed
+                                        ? Colors.green
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withAlpha(50)),
                                 width: 2.5,
                               ),
                             ),
@@ -1673,22 +2059,35 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: Colors.green.withOpacity(0.22),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                     ),
                                   ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Padding(
-                                        padding: EdgeInsetsGeometry.only(right: 10),
+                                        padding:
+                                            EdgeInsetsGeometry.only(right: 10),
                                         child: GestureDetector(
                                           onTap: isBonus
                                               ? () async {
-                                                  await FirebaseFirestore.instance.collection('users').doc(_user!.uid).collection('achievements').doc(achievements[idx].id).update({'completed': !completed});
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('users')
+                                                      .doc(_user!.uid)
+                                                      .collection(
+                                                          'achievements')
+                                                      .doc(achievements[idx].id)
+                                                      .update({
+                                                    'completed': !completed
+                                                  });
                                                 }
                                               : null,
                                           child: Container(
@@ -1700,40 +2099,62 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                                                 color: completed
                                                     ? Colors.green
                                                     : (isBonus)
-                                                        ? const Color(0xFFFFD700)
-                                                        : Theme.of(context).colorScheme.onSurface.withAlpha(50),
+                                                        ? const Color(
+                                                            0xFFFFD700)
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface
+                                                            .withAlpha(50),
                                                 width: 2.2,
                                               ),
-                                              color: completed ? Colors.green.withOpacity(0.18) : Colors.transparent,
+                                              color: completed
+                                                  ? Colors.green
+                                                      .withOpacity(0.18)
+                                                  : Colors.transparent,
                                             ),
-                                            child: completed ? Icon(Icons.check, size: 18, color: Colors.green) : null,
+                                            child: completed
+                                                ? Icon(Icons.check,
+                                                    size: 18,
+                                                    color: Colors.green)
+                                                : null,
                                           ),
                                         ),
                                       ),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
                                           children: [
                                             Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Padding(
-                                                  padding: isBonus ? const EdgeInsets.only(left: 8) : EdgeInsets.zero,
+                                                  padding: isBonus
+                                                      ? const EdgeInsets.only(
+                                                          left: 8)
+                                                      : EdgeInsets.zero,
                                                   child: Text(
                                                     description,
                                                     style: TextStyle(
                                                       fontSize: 15,
-                                                      color: Theme.of(context).colorScheme.onSurface,
-                                                      fontFamily: 'NovecentoSans',
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface,
+                                                      fontFamily:
+                                                          'NovecentoSans',
                                                     ),
                                                   ),
                                                 ),
-                                                if (consistencyIndicators != null) ...[
+                                                if (consistencyIndicators !=
+                                                    null) ...[
                                                   const SizedBox(height: 8),
                                                   consistencyIndicators,
                                                 ],
-                                                if (accuracyIndicators != null) ...[
+                                                if (accuracyIndicators !=
+                                                    null) ...[
                                                   const SizedBox(height: 8),
                                                   accuracyIndicators,
                                                 ],
@@ -1753,14 +2174,17 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
                               top: -7,
                               right: 8,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFD700),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                                  border: Border.all(
+                                      color: const Color(0xFFFFD700), width: 2),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFFFFD700).withOpacity(0.9),
+                                      color: const Color(0xFFFFD700)
+                                          .withOpacity(0.9),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1792,18 +2216,26 @@ class _WeeklyAchievementsWidgetState extends State<WeeklyAchievementsWidget> {
   }
 }
 
-Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget child) {
+Widget _buildAchievementItem(
+    QueryDocumentSnapshot<Object?> achievement, Widget child) {
   User? user = FirebaseAuth.instance.currentUser;
   final data = achievement.data() as Map<String, dynamic>;
   final id = data['id'] ?? '';
   final completed = data['completed'] == true;
 
   return StreamBuilder<DocumentSnapshot>(
-    stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('meta').doc('achievementSwaps').snapshots(),
+    stream: FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .collection('meta')
+        .doc('achievementSwaps')
+        .snapshots(),
     builder: (context, swapMetaSnap) {
       int swapCount = 0;
       DateTime? lastSwap;
-      if (swapMetaSnap.hasData && swapMetaSnap.data != null && swapMetaSnap.data!.exists) {
+      if (swapMetaSnap.hasData &&
+          swapMetaSnap.data != null &&
+          swapMetaSnap.data!.exists) {
         final meta = swapMetaSnap.data!.data() as Map<String, dynamic>?;
         swapCount = (meta?['swapCount'] is int) ? meta!['swapCount'] : 0;
         final ls = meta?['lastSwap'];
@@ -1813,7 +2245,17 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
           lastSwap = ls;
         }
       }
-      const swapDelays = [0, 0, 0, 60000, 180000, 300000, 600000, 1200000, 86400000];
+      const swapDelays = [
+        0,
+        0,
+        0,
+        60000,
+        180000,
+        300000,
+        600000,
+        1200000,
+        86400000
+      ];
       // Calculate cooldown
       int delayMs = 0;
       if (swapCount >= 0 && swapCount < swapDelays.length) {
@@ -1829,7 +2271,8 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
       }
       return Dismissible(
         key: Key(id ?? 'achievement_${achievement.id}'),
-        direction: completed ? DismissDirection.none : DismissDirection.endToStart,
+        direction:
+            completed ? DismissDirection.none : DismissDirection.endToStart,
         background: Container(
           color: Colors.transparent,
           alignment: Alignment.centerRight,
@@ -1850,11 +2293,15 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Swap Achievement?'),
-                  content: const Text('Are you sure you want to swap this achievement for a new one?'),
+                  content: const Text(
+                      'Are you sure you want to swap this achievement for a new one?'),
                   actions: [
                     TextButton(
                       style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                        foregroundColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withAlpha(179),
                         backgroundColor: Colors.transparent,
                       ),
                       onPressed: () => Navigator.of(ctx).pop(false),
@@ -1895,7 +2342,8 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
           try {
             final functions = FirebaseFunctions.instance;
             final swapAchievement = functions.httpsCallable('swapAchievement');
-            final result = await swapAchievement({'achievementId': achievementId});
+            final result =
+                await swapAchievement({'achievementId': achievementId});
             if (result.data != null && result.data['success'] == true) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -1905,7 +2353,9 @@ Widget _buildAchievementItem(QueryDocumentSnapshot<Object?> achievement, Widget 
                 ),
               );
             } else {
-              final msg = result.data != null && result.data['message'] != null ? result.data['message'] : 'Swap failed.';
+              final msg = result.data != null && result.data['message'] != null
+                  ? result.data['message']
+                  : 'Swap failed.';
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(msg),
@@ -1964,7 +2414,9 @@ class _WeeklyResetCountdownState extends State<_WeeklyResetCountdown> {
 
   @override
   Widget build(BuildContext context) {
-    String text = _remaining.isNegative ? 'Achievements reset soon!' : 'Resets in: ${_formatDuration(_remaining)}';
+    String text = _remaining.isNegative
+        ? 'Achievements reset soon!'
+        : 'Resets in: ${_formatDuration(_remaining)}';
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8, top: 0, bottom: 0),
       child: Center(
@@ -1974,7 +2426,8 @@ class _WeeklyResetCountdownState extends State<_WeeklyResetCountdown> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
             fontFamily: 'NovecentoSans',
           ),
         ),
