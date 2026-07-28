@@ -942,7 +942,10 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool darkMode =
         prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
-    int puckCount = prefs.getInt('puck_count') ?? 25;
+    int puckCount = sanitizePuckCount(prefs.getInt('puck_count'));
+    if (puckCount != prefs.getInt('puck_count')) {
+      await prefs.setInt('puck_count', puckCount);
+    }
     bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
     DateTime targetDate = prefs.getString('target_date') != null
         ? DateTime.parse(prefs.getString('target_date')!)

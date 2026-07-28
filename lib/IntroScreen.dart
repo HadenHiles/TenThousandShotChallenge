@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/main.dart';
+import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
@@ -35,6 +36,12 @@ class _IntroScreenState extends State<IntroScreen> {
   int? _shotsPerDay;
 
   Future<void> _onIntroEnd(BuildContext context) async {
+    final puckCountError = validatePuckCount(_puckCountTextFieldController.text);
+    if (puckCountError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(puckCountError)));
+      return;
+    }
+
     // If the user tapped Done without using the Grant Permissions button, request now.
     if (!_permissionsGranted) {
       await Permission.camera.request();
@@ -51,10 +58,11 @@ class _IntroScreenState extends State<IntroScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // Save all intro preferences at once
     prefs.setBool('dark_mode', _darkMode ?? false);
-    prefs.setInt('puck_count', int.tryParse(_puckCountTextFieldController.text) ?? 25);
+    final puckCount = int.parse(_puckCountTextFieldController.text.trim());
+    prefs.setInt('puck_count', puckCount);
     prefs.setString('target_date', DateFormat('yyyy-MM-dd').format(_targetDate ?? DateTime.now().add(const Duration(days: 100))));
     preferences?.darkMode = _darkMode;
-    preferences?.puckCount = int.tryParse(_puckCountTextFieldController.text) ?? 25;
+    preferences?.puckCount = puckCount;
     preferences?.targetDate = _targetDate;
     Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     // Mark permissions as handled for this session so the router won't redirect
@@ -264,6 +272,7 @@ class _IntroScreenState extends State<IntroScreen> {
                     TextFormField(
                       controller: _puckCountTextFieldController,
                       keyboardType: TextInputType.number,
+                      validator: validatePuckCount,
                       style: const TextStyle(
                         fontFamily: 'NovecentoSans',
                         fontSize: 28,

@@ -179,12 +179,7 @@ class _EditPuckCountState extends State<EditPuckCount> {
                           hintText: '# of Pucks',
                           controller: puckCountTextFieldController,
                           validator: (value) {
-                            if (value.isEmpty) {
-                              return 'Please enter how many pucks you have';
-                            } else if (int.parse(value) <= 0) {
-                              return 'Must have at least 1 puck';
-                            }
-                            return null;
+                            return validatePuckCount(value);
                           },
                         ),
                       ),

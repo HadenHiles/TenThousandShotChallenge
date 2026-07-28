@@ -50,7 +50,7 @@ class _StartShootingState extends State<StartShooting> {
   String _subscriptionLevel = "free";
 
   String _selectedShotType = 'wrist';
-  int _currentShotCount = preferences!.puckCount!;
+  int _currentShotCount = sanitizePuckCount(preferences?.puckCount);
   bool _puckCountUpdating = false;
   bool _isFinishing = false;
   List<Shots> _shots = [];
@@ -73,7 +73,7 @@ class _StartShootingState extends State<StartShooting> {
   @override
   void initState() {
     _shots = widget.shots ?? [];
-    _currentShotCount = preferences!.puckCount!;
+    _currentShotCount = sanitizePuckCount(preferences?.puckCount);
     _chartCollapsed = true; // Default to collapsed when starting a new session
     // Pre-determine accuracy tracking for resumed sessions.
     if (_shots.any((s) => s.targetsHit != null)) {
@@ -100,7 +100,7 @@ class _StartShootingState extends State<StartShooting> {
     }
     widget.panelOpenSignal?.removeListener(_onPanelOpenSignal);
     _shots = [];
-    _currentShotCount = preferences!.puckCount!;
+    _currentShotCount = sanitizePuckCount(preferences?.puckCount);
     super.dispose();
   }
 
@@ -114,7 +114,7 @@ class _StartShootingState extends State<StartShooting> {
 
   void reset() {
     _shots = [];
-    _currentShotCount = preferences!.puckCount!;
+    _currentShotCount = sanitizePuckCount(preferences?.puckCount);
     _sessionGoal = null;
     _handsfreeActive = false;
     _trackAccuracy = null;
@@ -1790,7 +1790,7 @@ class _StartShootingState extends State<StartShooting> {
                         if (mounted) {
                           setState(() {
                             _shots = [];
-                            _currentShotCount = preferences!.puckCount!;
+                            _currentShotCount = sanitizePuckCount(preferences?.puckCount);
                             _chartCollapsed = true;
                             _trackAccuracy = null;
                             _accuracyDialogShown = false;
@@ -1882,7 +1882,7 @@ class _StartShootingState extends State<StartShooting> {
                             setState(() {
                               _isFinishing = false;
                               _shots = [];
-                              _currentShotCount = preferences!.puckCount!;
+                              _currentShotCount = sanitizePuckCount(preferences?.puckCount);
                               _chartCollapsed = true;
                               _trackAccuracy = null;
                               _accuracyDialogShown = false;
@@ -1918,7 +1918,7 @@ class _StartShootingState extends State<StartShooting> {
                             setState(() {
                               _isFinishing = false;
                               _shots = [];
-                              _currentShotCount = preferences!.puckCount!;
+                              _currentShotCount = sanitizePuckCount(preferences?.puckCount);
                               _chartCollapsed = true;
                               _trackAccuracy = null;
                               _accuracyDialogShown = false;

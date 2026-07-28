@@ -89,9 +89,13 @@ Future<void> main() async {
 
   // Load user preferences
   SharedPreferences prefs = await SharedPreferences.getInstance();
+  final puckCount = sanitizePuckCount(prefs.getInt('puck_count'));
+  if (puckCount != prefs.getInt('puck_count')) {
+    await prefs.setInt('puck_count', puckCount);
+  }
   preferences = Preferences(
     prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
-    prefs.getInt('puck_count') ?? 25,
+    puckCount,
     prefs.getBool('friend_notifications') ?? true,
     prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
     prefs.getString('fcm_token'),
