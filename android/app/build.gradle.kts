@@ -40,7 +40,7 @@ android {
         minSdk = 26
         targetSdk = 36
         multiDexEnabled = true
-        versionCode = 35
+        versionCode = 36
         versionName = "3.0.3"
     }
 
