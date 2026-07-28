@@ -168,6 +168,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
   // ── Finish logic ──────────────────────────────────────────────────────────
 
   Future<void> _finishSession() async {
+    if (_saving) return;
     if (_shots.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Log at least one shot before finishing.')),
@@ -196,6 +197,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
     }
 
     setState(() => _saving = true);
+    final sessionId = 'challenge_session_${_startTime.microsecondsSinceEpoch}';
 
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
@@ -211,6 +213,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       final passed = _shots.any((s) => (s.targetsHit ?? 0) >= widget.levelDoc.shotsToPass);
 
       final session = ChallengeSession(
+        id: sessionId,
         challengeId: widget.challenge.id!,
         challengeName: widget.challenge.name,
         level: widget.levelDoc.level,
@@ -293,7 +296,15 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       // updates.  This is best-effort: a missing index or network hiccup
       // should NOT block the user from seeing their challenge result.
       try {
-        await saveShootingSession(_shots, auth, firestore, isChallengerRoad: true, sessionDurationOverride: duration);
+        await saveShootingSession(
+          _shots,
+          auth,
+          firestore,
+          isChallengerRoad: true,
+          sessionId: sessionId,
+          sessionDateOverride: session.date,
+          sessionDurationOverride: duration,
+        );
       } catch (globalSaveError) {
         debugPrint('Global session save failed (non-fatal): $globalSaveError');
       }

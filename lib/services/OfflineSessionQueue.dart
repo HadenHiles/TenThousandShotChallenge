@@ -31,11 +31,12 @@ class OfflineSessionQueue {
   Future<Database> _openDb() async {
     return openDatabase(
       dbPathOverride ?? 'offline_sessions.db',
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE pending_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT,
             shots_json TEXT NOT NULL,
             is_challenger_road INTEGER NOT NULL DEFAULT 0,
             session_started_at INTEGER,
@@ -49,6 +50,9 @@ class OfflineSessionQueue {
           await db.execute('ALTER TABLE pending_sessions ADD COLUMN session_started_at INTEGER');
           await db.execute('ALTER TABLE pending_sessions ADD COLUMN duration_ms INTEGER');
         }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE pending_sessions ADD COLUMN session_id TEXT');
+        }
       },
     );
   }
@@ -56,6 +60,7 @@ class OfflineSessionQueue {
   /// Serialize [shots] and persist them locally for later sync.
   Future<void> enqueue(
     List<Shots> shots, {
+    String? sessionId,
     bool isChallengerRoad = false,
     DateTime? sessionStartedAt,
     Duration? duration,
@@ -70,6 +75,7 @@ class OfflineSessionQueue {
             })
         .toList());
     await db.insert('pending_sessions', {
+      'session_id': sessionId,
       'shots_json': shotsJson,
       'is_challenger_road': isChallengerRoad ? 1 : 0,
       'session_started_at': sessionStartedAt?.millisecondsSinceEpoch,
@@ -120,6 +126,7 @@ class OfflineSessionQueue {
           shots,
           auth,
           firestore,
+          sessionId: row['session_id'] as String? ?? 'offline_session_${row['id']}',
           isChallengerRoad: isChallengerRoad,
           sessionDateOverride: sessionDate,
           sessionDurationOverride: durationMs != null ? Duration(milliseconds: durationMs) : null,

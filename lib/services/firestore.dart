@@ -14,6 +14,7 @@ Future<bool> saveShootingSession(
   FirebaseAuth auth,
   FirebaseFirestore firestore, {
   bool isChallengerRoad = false,
+  String? sessionId,
   DateTime? sessionDateOverride,
   Duration? sessionDurationOverride,
 }) async {
@@ -91,11 +92,11 @@ Future<bool> saveShootingSession(
     DocumentReference? iterationRef;
     if (snapshot.docs.isNotEmpty) {
       iterationRef = snapshot.docs[0].reference;
-      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore, sessionId: sessionId);
     } else {
       final i = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').add(iteration.toMap());
       iterationRef = i;
-      result = await saveSessionData(shootingSession, iterationRef, shots, firestore);
+      result = await saveSessionData(shootingSession, iterationRef, shots, firestore, sessionId: sessionId);
     }
 
     return result;
@@ -115,23 +116,20 @@ DateTime getWeekStart() {
   return DateTime(weekStart.year, weekStart.month, weekStart.day, 0, 0, 0, 0, 0);
 }
 
-Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots, FirebaseFirestore firestore) async {
+Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference ref, List<Shots> shots, FirebaseFirestore firestore, {String? sessionId}) async {
   // Ensure the shots are set on the session object
   shootingSession.shots = shots;
 
-  // Save the session with the embedded shots array
-  return await ref.collection('sessions').add(shootingSession.toMap()).then((s) async {
-    // Get a new write batch
-    var batch = firestore.batch();
+  final sessionRef = sessionId == null ? ref.collection('sessions').doc() : ref.collection('sessions').doc(sessionId);
 
-    // Still save each shot as a subcollection for backward compatibility
-    for (var shot in shots) {
-      var sRef = s.collection('shots').doc();
-      batch.set(sRef, shot.toMap());
-    }
+  try {
+    // Stable IDs plus a transaction make retries safe and increment totals once.
+    await firestore.runTransaction<bool>((transaction) async {
+      final existing = await transaction.get(sessionRef);
+      if (existing.exists) return false;
 
-    await ref.get().then((i) {
-      Iteration iteration = Iteration.fromSnapshot(i);
+      final iterationSnapshot = await transaction.get(ref);
+      Iteration iteration = Iteration.fromSnapshot(iterationSnapshot);
       iteration = Iteration(
         iteration.startDate,
         iteration.targetDate,
@@ -145,11 +143,22 @@ Future<bool> saveSessionData(ShootingSession shootingSession, DocumentReference 
         iteration.complete,
         iteration.udpatedAt,
       );
-      batch.update(ref, iteration.toMap());
+      transaction.set(sessionRef, shootingSession.toMap());
+      transaction.update(ref, iteration.toMap());
+      return true;
     });
 
-    return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
-  });
+    // Deterministic IDs also make legacy shot subcollection writes idempotent.
+    final batch = firestore.batch();
+    for (var index = 0; index < shots.length; index++) {
+      batch.set(sessionRef.collection('shots').doc(index.toString()), shots[index].toMap());
+    }
+    if (shots.isNotEmpty) await batch.commit();
+    return true;
+  } catch (e) {
+    print(e);
+    return false;
+  }
 }
 
 Future<bool> deleteSession(ShootingSession shootingSession, FirebaseAuth auth, FirebaseFirestore firestore) async {

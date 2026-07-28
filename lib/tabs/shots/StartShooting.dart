@@ -52,6 +52,7 @@ class _StartShootingState extends State<StartShooting> {
   String _selectedShotType = 'wrist';
   int _currentShotCount = preferences!.puckCount!;
   bool _puckCountUpdating = false;
+  bool _isFinishing = false;
   List<Shots> _shots = [];
   bool _showAccuracyPrompt = true;
   int? _lastTargetsHit;
@@ -1822,7 +1823,9 @@ class _StartShootingState extends State<StartShooting> {
                       ),
                     )
                   : TextButton(
-                      onPressed: () async {
+                      onPressed: _isFinishing ? null : () async {
+                        if (_isFinishing) return;
+                        setState(() => _isFinishing = true);
                         Feedback.forLongPress(context);
 
                         int totalShots = 0;
@@ -1854,6 +1857,7 @@ class _StartShootingState extends State<StartShooting> {
                           }
                         }
                         final sessionSavedAt = DateTime.now();
+                        final sessionId = 'session_${sessionSavedAt.microsecondsSinceEpoch}';
 
                         final auth = Provider.of<FirebaseAuth>(context, listen: false);
                         final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
@@ -1866,6 +1870,7 @@ class _StartShootingState extends State<StartShooting> {
                           final queuedStartedAt = DateTime.now().subtract(queuedDuration);
                           await OfflineSessionQueue.instance.enqueue(
                             _shots,
+                            sessionId: sessionId,
                             sessionStartedAt: queuedStartedAt,
                             duration: queuedDuration,
                           );
@@ -1875,6 +1880,7 @@ class _StartShootingState extends State<StartShooting> {
                           sessionService.reset();
                           if (mounted) {
                             setState(() {
+                              _isFinishing = false;
                               _shots = [];
                               _currentShotCount = preferences!.puckCount!;
                               _chartCollapsed = true;
@@ -1900,6 +1906,8 @@ class _StartShootingState extends State<StartShooting> {
                           _shots,
                           auth,
                           firestore,
+                          sessionId: sessionId,
+                          sessionDateOverride: sessionSavedAt,
                         ).then((success) async {
                           // Reset service and clear widget state first so that
                           // Navigation rebuilds with minHeight = 0 before the
@@ -1908,6 +1916,7 @@ class _StartShootingState extends State<StartShooting> {
                           sessionService.reset();
                           if (mounted) {
                             setState(() {
+                              _isFinishing = false;
                               _shots = [];
                               _currentShotCount = preferences!.puckCount!;
                               _chartCollapsed = true;
@@ -2233,6 +2242,8 @@ class _StartShootingState extends State<StartShooting> {
                               duration: const Duration(milliseconds: 1500),
                             ),
                           );
+                        }).onError((error, stackTrace) {
+                          if (mounted) setState(() => _isFinishing = false);
                         });
                       },
                       style: TextButton.styleFrom(
@@ -2243,7 +2254,13 @@ class _StartShootingState extends State<StartShooting> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Row(
+                      child: _isFinishing
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.save_alt_rounded, color: Colors.white),

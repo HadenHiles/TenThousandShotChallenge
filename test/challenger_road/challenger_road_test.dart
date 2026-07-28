@@ -123,6 +123,7 @@ Future<void> _seedSummary(
 }
 
 ChallengeSession _makeSession({
+  String? id,
   String challengeId = 'ch_1',
   int level = 1,
   int shotsMade = 8,
@@ -133,6 +134,7 @@ ChallengeSession _makeSession({
 }) {
   final p = passed ?? (shotsMade >= shotsToPass);
   return ChallengeSession(
+    id: id,
     challengeId: challengeId,
     challengeName: '',
     level: level,
@@ -719,6 +721,20 @@ void main() {
 
       final snap = await db.collection('users').doc(uid).collection('challenger_road_attempts').doc(attemptId).collection('challenge_progress').doc('ch_1').get();
       expect(snap.data()!['totalAttempts'], 2);
+    });
+
+    test('retrying the same session ID does not duplicate progress', () async {
+      final attemptId = await _seedAttempt(db, userId: uid);
+      final session = _makeSession(id: 'stable-challenge-session', challengeId: 'ch_1');
+
+      await service.saveChallengeSession(uid, attemptId, session);
+      await service.saveChallengeSession(uid, attemptId, session);
+
+      final sessions = await db.collection('users').doc(uid).collection('challenger_road_attempts').doc(attemptId).collection('challenge_sessions').get();
+      final progress = await db.collection('users').doc(uid).collection('challenger_road_attempts').doc(attemptId).collection('challenge_progress').doc('ch_1').get();
+
+      expect(sessions.docs.length, 1);
+      expect(progress.data()!['totalAttempts'], 1);
     });
 
     test('levelHistory is appended on each session', () async {

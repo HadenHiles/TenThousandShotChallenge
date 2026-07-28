@@ -169,6 +169,21 @@ void main() {
         expect(iteration.totalSnap, 30);
       });
 
+      test('retrying the same session ID does not duplicate it or its totals', () async {
+        await _setupTestIteration(firestore, 'test_user_1');
+        final shots = [Shots(DateTime(2024, 7, 4), 'wrist', 25, 20)];
+
+        expect(await saveShootingSession(shots, auth, firestore, sessionId: 'stable-session-id'), true);
+        expect(await saveShootingSession(shots, auth, firestore, sessionId: 'stable-session-id'), true);
+
+        final iterationsQuery = await firestore.collection('iterations').doc('test_user_1').collection('iterations').get();
+        final iteration = Iteration.fromSnapshot(iterationsQuery.docs.first);
+        final sessionsQuery = await iterationsQuery.docs.first.reference.collection('sessions').get();
+
+        expect(sessionsQuery.docs.length, 1);
+        expect(iteration.total, 25);
+      });
+
       test('should save individual shots in subcollection', () async {
         await _setupTestIteration(firestore, 'test_user_1');
 

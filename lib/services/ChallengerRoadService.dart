@@ -1170,10 +1170,13 @@ class ChallengerRoadService {
   /// Returns the list of [ChallengerRoadTrophyDefinition] that were newly earned
   /// by this session (empty list if none).
   Future<List<ChallengerRoadTrophyDefinition>> saveChallengeSession(String userId, String attemptId, ChallengeSession session) async {
+    final sessionRef = session.id == null ? _sessionsRef(userId, attemptId).doc() : _sessionsRef(userId, attemptId).doc(session.id);
+    // A retry of a completed save must not increment progress/history twice.
+    if ((await sessionRef.get()).exists) return [];
+
     final batch = _firestore.batch();
 
     // 1. New challenge_sessions document.
-    final sessionRef = _sessionsRef(userId, attemptId).doc();
     batch.set(sessionRef, session.toMap());
 
     // 2. Upsert challenge_progress for this attempt.
