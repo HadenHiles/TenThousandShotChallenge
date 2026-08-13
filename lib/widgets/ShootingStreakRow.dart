@@ -110,6 +110,7 @@ class _ShootingStreakRowState extends State<ShootingStreakRow> {
     Map<String, dynamic> iterData,
   ) {
     for (final key in [
+      'date_key', // local calendar date string — no TZ conversion needed
       'date',
       'session_date',
       'sessionDate',

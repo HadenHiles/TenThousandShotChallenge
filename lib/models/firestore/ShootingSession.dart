@@ -63,6 +63,9 @@ class ShootingSession {
     //   mappedShots.add(m.toMap());
     // });
 
+    // Canonical local calendar date — avoids cross-timezone viewer drift.
+    final String? dateKey = date != null ? '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}' : null;
+
     return {
       'id': id,
       'total': total,
@@ -71,6 +74,7 @@ class ShootingSession {
       'total_slap': totalSlap,
       'total_backhand': totalBackhand,
       'date': date,
+      if (dateKey != null) 'date_key': dateKey,
       'duration': duration!.inSeconds,
       'wrist_targets_hit': wristTargetsHit,
       'snap_targets_hit': snapTargetsHit,

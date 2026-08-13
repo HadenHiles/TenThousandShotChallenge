@@ -57,12 +57,19 @@ class _ActivityCalendarState extends State<ActivityCalendar> {
         final sessSnap = await iter.reference.collection('sessions').get();
         for (final sess in sessSnap.docs) {
           final data = sess.data();
-          final dynamic rawDate = data['date'];
+          // Prefer date_key (local date string) to avoid cross-timezone drift.
           DateTime? date;
-          if (rawDate is Timestamp) {
-            date = rawDate.toDate();
-          } else if (rawDate is DateTime) {
-            date = rawDate;
+          final dynamic rawKey = data['date_key'];
+          if (rawKey is String && rawKey.isNotEmpty) {
+            date = DateTime.tryParse(rawKey);
+          }
+          if (date == null) {
+            final dynamic rawDate = data['date'];
+            if (rawDate is Timestamp) {
+              date = rawDate.toDate();
+            } else if (rawDate is DateTime) {
+              date = rawDate;
+            }
           }
           if (date == null) continue;
           final key = DateFormat('yyyy-MM-dd').format(date);

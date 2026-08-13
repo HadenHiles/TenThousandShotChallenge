@@ -347,6 +347,7 @@ class _CompareStatsState extends State<CompareStats> {
 
   DateTime? _extractSessionDate(Map<String, dynamic> data) {
     final keys = [
+      'date_key', // local calendar date string — no TZ conversion needed
       'date',
       'session_date',
       'sessionDate',
