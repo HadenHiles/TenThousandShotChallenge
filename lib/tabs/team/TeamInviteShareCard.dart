@@ -52,12 +52,8 @@ class _TeamInviteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = colorFromHex(team.primaryColor, fallback: const Color(0xFFCC3333));
-    final darkAccent = team.darkAccentColor != null
-        ? colorFromHex(team.darkAccentColor)
-        : const Color(0xFF1A1A1A);
-    final lightAccent = team.lightAccentColor != null
-        ? colorFromHex(team.lightAccentColor)
-        : Colors.white;
+    final darkAccent = team.darkAccentColor != null ? colorFromHex(team.darkAccentColor) : const Color(0xFF1A1A1A);
+    final lightAccent = team.lightAccentColor != null ? colorFromHex(team.lightAccentColor) : Colors.white;
 
     final teamName = team.name ?? 'Our Team';
     final teamCode = team.code ?? '';

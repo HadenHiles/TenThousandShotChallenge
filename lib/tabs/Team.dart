@@ -125,6 +125,12 @@ class QRCodeDialog extends StatelessWidget {
         ],
       ),
       actions: <Widget>[
+        if (team != null)
+          IconButton(
+            tooltip: 'Share invite',
+            icon: Icon(Icons.ios_share_rounded, color: qrColor),
+            onPressed: () => shareTeamInvite(context, team!),
+          ),
         TextButton(
           child: Text(
             "Close".toUpperCase(),
@@ -992,24 +998,6 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                                 .toList(),
                                           );
                                         },
-                                      ),
-                                    ),
-                                  ),
-                                if (isCurrentUserOwner)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 4),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: OutlinedButton.icon(
-                                        icon: Icon(Icons.ios_share_rounded, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45)),
-                                        label: Text(
-                                          'Share Team Invite'.toUpperCase(),
-                                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45)),
-                                        ),
-                                        style: OutlinedButton.styleFrom(
-                                          side: BorderSide(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2)),
-                                        ),
-                                        onPressed: () => shareTeamInvite(context, safeTeam),
                                       ),
                                     ),
                                   ),

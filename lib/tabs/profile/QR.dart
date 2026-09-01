@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamInviteShareCard.dart';
 import 'package:word_generator/word_generator.dart';
 
 void showQRCode(BuildContext context, User? user) {
@@ -241,42 +242,51 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                                 ),
                               ),
                             ),
-                            t.ownerId != user.uid
-                                ? const SizedBox(width: 0)
-                                : RotatingIconButton(
-                                    onTap: () async {
-                                      final wordGenerator = WordGenerator();
-                                      String newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
+                            if (t.ownerId == user.uid)
+                              RotatingIconButton(
+                                onTap: () async {
+                                  final wordGenerator = WordGenerator();
+                                  String newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
 
-                                      await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode}).then((_) {
-                                        setState(() {
-                                          t.code = newCode;
-                                        });
-                                      });
-                                    },
-                                    elevation: 10.0,
-                                    shadowColor: Colors.transparent,
-                                    borderRadius: 20.0,
-                                    rotateType: RotateType.full,
-                                    duration: const Duration(milliseconds: 1000),
-                                    curve: Curves.easeInOut,
-                                    clockwise: true,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 5,
-                                      horizontal: 0,
-                                    ),
-                                    background: Colors.transparent,
-                                    child: Icon(
-                                      Icons.refresh,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ),
+                                  await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode}).then((_) {
+                                    setState(() {
+                                      t.code = newCode;
+                                    });
+                                  });
+                                },
+                                elevation: 10.0,
+                                shadowColor: Colors.transparent,
+                                borderRadius: 20.0,
+                                rotateType: RotateType.full,
+                                duration: const Duration(milliseconds: 1000),
+                                curve: Curves.easeInOut,
+                                clockwise: true,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 5,
+                                  horizontal: 0,
+                                ),
+                                background: Colors.transparent,
+                                child: Icon(
+                                  Icons.refresh,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
                           ],
                         ),
                       ],
                     ),
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     actions: <Widget>[
+                      IconButton(
+                        tooltip: 'Share invite',
+                        icon: Icon(Icons.ios_share_rounded, color: colorFromHex(t.primaryColor)),
+                        onPressed: () => shareTeamInvite(context, t),
+                      ),
+                      IconButton(
+                        tooltip: 'Share invite',
+                        icon: Icon(Icons.ios_share_rounded, color: colorFromHex(t.primaryColor)),
+                        onPressed: () => shareTeamInvite(context, t),
+                      ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
                         child: Text(
