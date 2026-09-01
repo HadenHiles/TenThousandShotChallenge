@@ -180,6 +180,19 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   // Cached team for use in builder helper methods
   Team? _currentTeam;
 
+  // Stable team document stream — keyed on team ID so the StreamBuilder
+  // keeps its subscription across user-profile rebuilds.
+  String? _cachedTeamStreamId;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _cachedTeamStream;
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _stableTeamStream(String teamId) {
+    if (teamId != _cachedTeamStreamId || _cachedTeamStream == null) {
+      _cachedTeamStreamId = teamId;
+      _cachedTeamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(teamId).snapshots();
+    }
+    return _cachedTeamStream!;
+  }
+
   // Multi-team: index of the tab currently shown in the switcher.
   int _selectedTeamIndex = 0;
   // Tracks how many teams the user had on the previous build so we can detect
@@ -612,7 +625,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
           final String activeTeamId = teamIds[safeIndex];
 
           return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: _getTeamStream(activeTeamId),
+            stream: _stableTeamStream(activeTeamId),
             builder: (context, teamSnapshot) {
               if (teamSnapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor));

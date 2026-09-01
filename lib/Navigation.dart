@@ -70,8 +70,7 @@ class ChallengeSessionConfig {
 }
 
 /// Active challenge session; non-null activates challenge mode in the panel.
-final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession =
-    ValueNotifier(null);
+final ValueNotifier<ChallengeSessionConfig?> activeChallengeSession = ValueNotifier(null);
 
 /// Incrementing this signal tells the app to switch to the Train tab and open
 /// the Challenger Road map view (without resetting it). Notifications that
@@ -85,17 +84,11 @@ final ValueNotifier<int> friendsRefreshSignal = ValueNotifier<int>(0);
 /// The Firestore document ID of the team currently displayed in the Team tab.
 /// Updated by [_TeamPageState] whenever the active team changes. The nav bar
 /// reads this so its Edit button always reflects the team the user is viewing.
-final ValueNotifier<String?> activeTeamIdNotifier =
-    ValueNotifier<String?>(null);
+final ValueNotifier<String?> activeTeamIdNotifier = ValueNotifier<String?>(null);
 
 // This is the stateful widget that the main application instantiates.
 class Navigation extends StatefulWidget {
-  const Navigation(
-      {super.key,
-      this.selectedIndex,
-      this.tabId,
-      this.communitySection,
-      this.actions});
+  const Navigation({super.key, this.selectedIndex, this.tabId, this.communitySection, this.actions});
 
   final int? selectedIndex;
   final String? tabId;
@@ -108,8 +101,7 @@ class Navigation extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
-  final ValueNotifier<CommunitySection> _communitySectionNotifier =
-      ValueNotifier(CommunitySection.team);
+  final ValueNotifier<CommunitySection> _communitySectionNotifier = ValueNotifier(CommunitySection.team);
 
   // Update last_seen in Firestore if not already set to today
   Future<void> updateLastSeenIfNeeded(BuildContext context) async {
@@ -130,11 +122,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         } else if (lastSeen is DateTime) {
           lastSeenDate = lastSeen;
         } else {
-          lastSeenDate =
-              DateTime.tryParse(lastSeen.toString()) ?? DateTime(2000);
+          lastSeenDate = DateTime.tryParse(lastSeen.toString()) ?? DateTime(2000);
         }
-        final lastSeenDay =
-            DateTime(lastSeenDate.year, lastSeenDate.month, lastSeenDate.day);
+        final lastSeenDay = DateTime(lastSeenDate.year, lastSeenDate.month, lastSeenDate.day);
         if (lastSeenDay == today) {
           return; // Already updated today
         }
@@ -149,9 +139,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   Future<void> ensureCurrentWeeklyAchievements() async {
     if (FirebaseAuth.instance.currentUser == null) return;
     try {
-      await FirebaseFunctions.instance
-          .httpsCallable('ensureCurrentWeeklyAchievements')
-          .call();
+      await FirebaseFunctions.instance.httpsCallable('ensureCurrentWeeklyAchievements').call();
     } catch (error) {
       // Refresh failures must not block app startup; a later launch retries.
       debugPrint('Weekly achievement refresh deferred: $error');
@@ -213,8 +201,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           builder: (context, resetSignal, _) => Shots(
             sessionPanelController: sessionPanelController,
             resetSignal: resetSignal,
-            onChallengerRoadAvailabilityChanged:
-                _onChallengerRoadAvailabilityChanged,
+            onChallengerRoadAvailabilityChanged: _onChallengerRoadAvailabilityChanged,
           ),
         ),
       ),
@@ -256,8 +243,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 size: 28,
               ),
               onPressed: () {
-                final user = Provider.of<FirebaseAuth>(context, listen: false)
-                    .currentUser;
+                final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
                 showQRCode(context, user);
               },
             ),
@@ -308,8 +294,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       if (!hasTeam) {
         final barcodeScanRes = await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) =>
-                const BarcodeScannerSimple(title: "Scan Team QR Code"),
+            builder: (context) => const BarcodeScannerSimple(title: "Scan Team QR Code"),
           ),
         );
 
@@ -317,9 +302,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           barcodeScanRes,
           Provider.of<FirebaseAuth>(context, listen: false),
           Provider.of<FirebaseFirestore>(context, listen: false),
-          isProUser: Provider.of<CustomerInfoNotifier?>(context, listen: false)
-                  ?.isPro ??
-              false,
+          isProUser: Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false,
         ).then((success) {
           if (success == true && mounted) {
             _communitySectionNotifier.value = CommunitySection.team;
@@ -336,8 +319,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
   void _onSessionChanged() {
     if (sessionService.isRunning) {
-      LocalNotificationService.tickActiveSession(
-          sessionService.currentDuration);
+      LocalNotificationService.tickActiveSession(sessionService.currentDuration);
     }
     if (mounted) setState(() {});
   }
@@ -347,8 +329,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     if (config != null) {
       // Show the notification immediately when a CR session starts.
       final elapsed = DateTime.now().difference(config.startedAt);
-      LocalNotificationService.showActiveSession(
-          shotCount: 0, duration: elapsed);
+      LocalNotificationService.showActiveSession(shotCount: 0, duration: elapsed);
       // Tick the elapsed time every second (shots are tracked inside the panel).
       _crSessionTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         final current = activeChallengeSession.value;
@@ -356,8 +337,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           _cancelCRSessionTimer();
           return;
         }
-        LocalNotificationService.tickActiveSession(
-            DateTime.now().difference(current.startedAt));
+        LocalNotificationService.tickActiveSession(DateTime.now().difference(current.startedAt));
       });
     } else {
       // Session ended - stop timer and dismiss the notification.
@@ -391,17 +371,14 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       _leading = _tabs[trainIndex].leading;
       _actions = widget.actions ?? _tabs[trainIndex].actions;
     });
-    if (sessionPanelController.isAttached &&
-        !sessionPanelController.isPanelClosed) {
+    if (sessionPanelController.isAttached && !sessionPanelController.isPanelClosed) {
       sessionPanelController.close();
       setState(() => _sessionPanelState = PanelState.CLOSED);
     }
   }
 
   CommunitySection _normalizeCommunitySection(String? rawSection) {
-    return rawSection == CommunitySection.friends.name
-        ? CommunitySection.friends
-        : CommunitySection.team;
+    return rawSection == CommunitySection.friends.name ? CommunitySection.friends : CommunitySection.team;
   }
 
   void _onCommunitySectionChanged(CommunitySection section) {
@@ -409,8 +386,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     _communitySectionNotifier.value = section;
     if (mounted) {
       setState(() {
-        _actions =
-            _selectedIndex == 1 ? _buildCommunityActions(context) : _actions;
+        _actions = _selectedIndex == 1 ? _buildCommunityActions(context) : _actions;
       });
     }
   }
@@ -450,8 +426,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     sessionService.addListener(_onSessionChanged);
     activeChallengeSession.addListener(_onChallengeSessionChanged);
     openChallengerRoadSignal.addListener(_onOpenChallengerRoadSignal);
-    _communitySectionNotifier.value =
-        _normalizeCommunitySection(widget.communitySection);
+    _communitySectionNotifier.value = _normalizeCommunitySection(widget.communitySection);
     try {
       versionCheck(context);
     } catch (e) {
@@ -468,9 +443,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     _tabsUid = FirebaseAuth.instance.currentUser?.uid;
     _tabs = _buildTabs();
-    _authTabSub = FirebaseAuth.instance
-        .authStateChanges()
-        .listen(_onAuthUserChangedForTabs);
+    _authTabSub = FirebaseAuth.instance.authStateChanges().listen(_onAuthUserChangedForTabs);
 
     int initialIndex = 0;
     if (widget.tabId != null) {
@@ -530,6 +503,9 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       if (!sessionService.isRunning && activeChallengeSession.value == null) {
         LocalNotificationService.cancelActiveSession();
       }
+      // Force Firestore to re-establish its WebSocket so live streams
+      // receive updates missed while the app was backgrounded.
+      FirebaseFirestore.instance.disableNetwork().then((_) => FirebaseFirestore.instance.enableNetwork()).catchError((_) {});
     }
   }
 
@@ -576,10 +552,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     setState(() {
       _selectedIndex = index;
       _leading = _tabs[index].leading;
-      _actions = widget.actions ??
-          (_tabs[index].id == 'community'
-              ? _buildCommunityActions(context)
-              : _tabs[index].actions);
+      _actions = widget.actions ?? (_tabs[index].id == 'community' ? _buildCommunityActions(context) : _tabs[index].actions);
     });
     if (sessionPanelController.isAttached) {
       if (!sessionPanelController.isPanelClosed) {
@@ -605,10 +578,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 Icon(
                   Icons.wifi_off_rounded,
                   size: 72,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.2),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -624,10 +594,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   'This section requires internet. Tap Train below to log a shooting session offline.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.55),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -653,8 +620,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       _tabs[3],
     ];
     final nonLearnIndex = _selectedIndex == 3 ? 2 : _selectedIndex;
-    final hideMainHeaderForTab =
-        _selectedIndex == 0 && _startTabHasChallengerRoadAccess;
+    final hideMainHeaderForTab = _selectedIndex == 0 && _startTabHasChallengerRoadAccess;
 
     return NestedScrollView(
       headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
@@ -664,8 +630,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 SliverAppBar(
                   collapsedHeight: 65,
                   expandedHeight: 85,
-                  automaticallyImplyLeading:
-                      [3].contains(_selectedIndex) ? true : false,
+                  automaticallyImplyLeading: [3].contains(_selectedIndex) ? true : false,
                   backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
                   iconTheme: Theme.of(context).iconTheme,
                   actionsIconTheme: Theme.of(context).iconTheme,
@@ -692,12 +657,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   ),
                   leading: _leading,
                   actions: [
-                    ...(_tabs[_selectedIndex].id == 'community'
-                        ? _buildCommunityActions(context)
-                        : (_actions ?? [])),
-                    if (_tabs[_selectedIndex].id != 'me')
-                      NotificationBell(
-                          color: HomeTheme.darkTheme.colorScheme.onPrimary),
+                    ...(_tabs[_selectedIndex].id == 'community' ? _buildCommunityActions(context) : (_actions ?? [])),
+                    if (_tabs[_selectedIndex].id != 'me') NotificationBell(color: HomeTheme.darkTheme.colorScheme.onPrimary),
                   ],
                 ),
               ];
@@ -727,18 +688,15 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.onSurface,
-              backgroundColor:
-                  Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
+              backgroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
             ),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Keep session'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('End session',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('End session', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -762,18 +720,15 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.onSurface,
-              backgroundColor:
-                  Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
+              backgroundColor: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.08),
             ),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Keep session'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('End session',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('End session', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -841,8 +796,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   builder: (context, _) {
                     final elapsed = DateTime.now().difference(config.startedAt);
                     return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
@@ -850,8 +804,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.timer_outlined,
-                              color: Colors.white, size: 16),
+                          const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
                           const SizedBox(width: 6),
                           SizedBox(
                             width: 56,
@@ -895,9 +848,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Icon(
-                      _sessionPanelState == PanelState.CLOSED
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
+                      _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       color: Colors.white,
                       size: 24,
                     ),
@@ -912,10 +863,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   }
 
   // Helper to get FirebaseFirestore from Provider
-  FirebaseFirestore getFirestore(BuildContext context) =>
-      Provider.of<FirebaseFirestore>(context, listen: false);
-  FirebaseAuth getAuth(BuildContext context) =>
-      Provider.of<FirebaseAuth>(context, listen: false);
+  FirebaseFirestore getFirestore(BuildContext context) => Provider.of<FirebaseFirestore>(context, listen: false);
+  FirebaseAuth getAuth(BuildContext context) => Provider.of<FirebaseAuth>(context, listen: false);
 
   // ── One-time historical trophy backfill check ─────────────────────────────
   Future<void> _checkTrophyBackfill() async {
@@ -940,57 +889,39 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   // Load shared preferences
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool darkMode =
-        prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
+    bool darkMode = prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark;
     int puckCount = sanitizePuckCount(prefs.getInt('puck_count'));
     if (puckCount != prefs.getInt('puck_count')) {
       await prefs.setInt('puck_count', puckCount);
     }
     bool friendNotifications = prefs.getBool('friend_notifications') ?? true;
-    DateTime targetDate = prefs.getString('target_date') != null
-        ? DateTime.parse(prefs.getString('target_date')!)
-        : DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day + 100);
+    DateTime targetDate = prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100);
     String fcmToken = prefs.getString('fcm_token') ?? '';
 
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (user != null && preferences!.fcmToken != fcmToken) {
-      await getFirestore(context)
-          .collection('users')
-          .doc(user.uid)
-          .update({'fcm_token': fcmToken}).then((_) => null);
+      await getFirestore(context).collection('users').doc(user.uid).update({'fcm_token': fcmToken}).then((_) => null);
     }
 
-    preferences = Preferences(
-        darkMode, puckCount, friendNotifications, targetDate, fcmToken);
+    preferences = Preferences(darkMode, puckCount, friendNotifications, targetDate, fcmToken);
     if (mounted) {
-      Provider.of<PreferencesStateNotifier>(context, listen: false)
-          .updateSettings(preferences);
+      Provider.of<PreferencesStateNotifier>(context, listen: false).updateSettings(preferences);
     }
   }
 
   Future<Null> _loadTeam() async {
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
-    await getFirestore(context)
-        .collection('users')
-        .doc(user?.uid)
-        .get()
-        .then((uDoc) async {
+    await getFirestore(context).collection('users').doc(user?.uid).get().then((uDoc) async {
       if (uDoc.exists) {
         UserProfile userProfile = UserProfile.fromSnapshot(uDoc);
 
         if (userProfile.teamId != null) {
-          await getFirestore(context)
-              .collection('teams')
-              .doc(userProfile.teamId)
-              .get()
-              .then((tSnap) async {
+          await getFirestore(context).collection('teams').doc(userProfile.teamId).get().then((tSnap) async {
             if (tSnap.exists) {
               Team t = Team.fromSnapshot(tSnap);
 
               setState(() {
-                team =
-                    t; // Title handled by existing StreamBuilder; actions now dynamic.
+                team = t; // Title handled by existing StreamBuilder; actions now dynamic.
               });
             }
           });
@@ -1005,10 +936,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     if (user == null) {
       return [];
     }
-    final userDocStream = Provider.of<FirebaseFirestore>(context, listen: false)
-        .collection('users')
-        .doc(user.uid)
-        .snapshots();
+    final userDocStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user.uid).snapshots();
     return [
       // Wrap in Builder so each rebuild scope is isolated
       Builder(
@@ -1020,8 +948,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 return const SizedBox();
               }
               final userProfile = UserProfile.fromSnapshot(userSnap.data!);
-              final teamId = userProfile
-                  .teamId; // handles both team_ids and legacy team_id
+              final teamId = userProfile.teamId; // handles both team_ids and legacy team_id
               if (teamId == null || teamId.isEmpty) {
                 // No team: QR to scan/join + ‘+’ to browse teams
                 return Row(
@@ -1030,9 +957,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                     Container(
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
-                        icon: Icon(Icons.group_add_rounded,
-                            color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                            size: 26),
+                        icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
                         tooltip: 'Join a team',
                         onPressed: () => context.push(AppRoutePaths.joinTeam),
                       ),
@@ -1040,9 +965,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                     Container(
                       margin: const EdgeInsets.only(top: 10),
                       child: IconButton(
-                        icon: Icon(Icons.qr_code_2_rounded,
-                            color: HomeTheme.darkTheme.colorScheme.onPrimary,
-                            size: 28),
+                        icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
                         onPressed: () => _handleJoinTeamQRCode(context),
                       ),
                     ),
@@ -1055,15 +978,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 valueListenable: activeTeamIdNotifier,
                 builder: (context, activeId, _) {
                   // Prefer the actively viewed team; fall back to the profile's primary team.
-                  final resolvedTeamId =
-                      (activeId != null && activeId.isNotEmpty)
-                          ? activeId
-                          : teamId;
-                  final teamStream =
-                      Provider.of<FirebaseFirestore>(context, listen: false)
-                          .collection('teams')
-                          .doc(resolvedTeamId)
-                          .snapshots();
+                  final resolvedTeamId = (activeId != null && activeId.isNotEmpty) ? activeId : teamId;
+                  final teamStream = Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').doc(resolvedTeamId).snapshots();
                   return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                     stream: teamStream,
                     builder: (context, teamSnap) {
@@ -1074,22 +990,15 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                             Container(
                               margin: const EdgeInsets.only(top: 10),
                               child: IconButton(
-                                icon: Icon(Icons.group_add_rounded,
-                                    color: HomeTheme
-                                        .darkTheme.colorScheme.onPrimary,
-                                    size: 26),
+                                icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
                                 tooltip: 'Join a team',
-                                onPressed: () =>
-                                    context.push(AppRoutePaths.joinTeam),
+                                onPressed: () => context.push(AppRoutePaths.joinTeam),
                               ),
                             ),
                             Container(
                               margin: const EdgeInsets.only(top: 10),
                               child: IconButton(
-                                icon: Icon(Icons.qr_code_2_rounded,
-                                    color: HomeTheme
-                                        .darkTheme.colorScheme.onPrimary,
-                                    size: 28),
+                                icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
                                 onPressed: () => _handleJoinTeamQRCode(context),
                               ),
                             ),
@@ -1097,9 +1006,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                         );
                       }
                       final teamData = teamSnap.data!.data();
-                      final ownerId = teamData != null
-                          ? teamData['owner_id'] as String?
-                          : null;
+                      final ownerId = teamData != null ? teamData['owner_id'] as String? : null;
                       final isOwner = ownerId == user.uid;
                       return Row(
                         mainAxisSize: MainAxisSize.min,
@@ -1108,34 +1015,22 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                             Container(
                               margin: const EdgeInsets.only(top: 10),
                               child: IconButton(
-                                icon: Icon(Icons.edit,
-                                    color: HomeTheme
-                                        .darkTheme.colorScheme.onPrimary,
-                                    size: 28),
-                                onPressed: () => context.push(
-                                    AppRoutePaths.editTeam,
-                                    extra: teamSnap.data!.id),
+                                icon: Icon(Icons.edit, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
+                                onPressed: () => context.push(AppRoutePaths.editTeam, extra: teamSnap.data!.id),
                               ),
                             ),
                           Container(
                             margin: const EdgeInsets.only(top: 10),
                             child: IconButton(
-                              icon: Icon(Icons.group_add_rounded,
-                                  color:
-                                      HomeTheme.darkTheme.colorScheme.onPrimary,
-                                  size: 26),
+                              icon: Icon(Icons.group_add_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 26),
                               tooltip: 'Join a team',
-                              onPressed: () =>
-                                  context.push(AppRoutePaths.joinTeam),
+                              onPressed: () => context.push(AppRoutePaths.joinTeam),
                             ),
                           ),
                           Container(
                             margin: const EdgeInsets.only(top: 10),
                             child: IconButton(
-                              icon: Icon(Icons.qr_code_2_rounded,
-                                  color:
-                                      HomeTheme.darkTheme.colorScheme.onPrimary,
-                                  size: 28),
+                              icon: Icon(Icons.qr_code_2_rounded, color: HomeTheme.darkTheme.colorScheme.onPrimary, size: 28),
                               onPressed: () => _handleJoinTeamQRCode(context),
                             ),
                           ),
@@ -1177,9 +1072,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       final tapHandler = onDoubleTap != null
           ? () {
               final now = DateTime.now();
-              if (_lastMeTapTime != null &&
-                  now.difference(_lastMeTapTime!) <
-                      const Duration(milliseconds: 350)) {
+              if (_lastMeTapTime != null && now.difference(_lastMeTapTime!) < const Duration(milliseconds: 350)) {
                 _lastMeTapTime = null;
                 onDoubleTap();
               } else {
@@ -1206,8 +1099,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                   style: TextStyle(
                     color: color,
                     fontSize: 12,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ],
@@ -1239,8 +1131,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     // Require NetworkStatusService to be provided via Provider (no fallback)
-    final networkStatusService =
-        Provider.of<NetworkStatusService>(context, listen: false);
+    final networkStatusService = Provider.of<NetworkStatusService>(context, listen: false);
 
     return SessionServiceProvider(
       service: sessionService,
@@ -1303,8 +1194,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
               children: [
                 // Panel header - switches between challenge mode and normal shooting.
                 activeChallengeSession.value != null
-                    ? _buildChallengeSessionHeader(
-                        activeChallengeSession.value!)
+                    ? _buildChallengeSessionHeader(activeChallengeSession.value!)
                     : AnimatedBuilder(
                         animation: sessionService,
                         builder: (context, child) {
@@ -1314,34 +1204,27 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                               onTap: () {
                                 if (sessionPanelController.isPanelClosed) {
                                   sessionPanelController.open();
-                                  setState(() =>
-                                      _sessionPanelState = PanelState.OPEN);
+                                  setState(() => _sessionPanelState = PanelState.OPEN);
                                 } else {
                                   sessionPanelController.close();
-                                  setState(() =>
-                                      _sessionPanelState = PanelState.CLOSED);
+                                  setState(() => _sessionPanelState = PanelState.CLOSED);
                                 }
                               },
                               child: SizedBox(
                                 height: 74,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.sports_hockey,
-                                          color: Colors.white, size: 20),
+                                      const Icon(Icons.sports_hockey, color: Colors.white, size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              '${printWeekday(DateTime.now())} Session'
-                                                  .toUpperCase(),
+                                              '${printWeekday(DateTime.now())} Session'.toUpperCase(),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
@@ -1357,8 +1240,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.7),
+                                                color: Colors.white.withValues(alpha: 0.7),
                                                 fontFamily: 'NovecentoSans',
                                                 fontSize: 11,
                                               ),
@@ -1377,24 +1259,18 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                             sessionService.resume();
                                           }
                                         },
-                                        borderRadius:
-                                            BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(999),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 6),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                           decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(999),
+                                            color: Colors.white.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(999),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                sessionService.isPaused
-                                                    ? Icons.play_arrow
-                                                    : Icons.pause,
+                                                sessionService.isPaused ? Icons.play_arrow : Icons.pause,
                                                 color: Colors.white,
                                                 size: 16,
                                               ),
@@ -1402,20 +1278,14 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                               SizedBox(
                                                 width: 56,
                                                 child: Text(
-                                                  printDuration(
-                                                      sessionService
-                                                          .currentDuration,
-                                                      true),
+                                                  printDuration(sessionService.currentDuration, true),
                                                   textAlign: TextAlign.left,
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontFamily: 'NovecentoSans',
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.bold,
-                                                    fontFeatures: [
-                                                      FontFeature
-                                                          .tabularFigures()
-                                                    ],
+                                                    fontFeatures: [FontFeature.tabularFigures()],
                                                   ),
                                                 ),
                                               ),
@@ -1430,32 +1300,25 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                         onTap: () => _confirmCloseSession(),
                                         child: const Padding(
                                           padding: EdgeInsets.all(8),
-                                          child: Icon(Icons.close,
-                                              color: Colors.white, size: 22),
+                                          child: Icon(Icons.close, color: Colors.white, size: 22),
                                         ),
                                       ),
                                       // Collapse/expand panel
                                       InkWell(
                                         borderRadius: BorderRadius.circular(20),
                                         onTap: () {
-                                          if (sessionPanelController
-                                              .isPanelClosed) {
+                                          if (sessionPanelController.isPanelClosed) {
                                             sessionPanelController.open();
-                                            setState(() => _sessionPanelState =
-                                                PanelState.OPEN);
+                                            setState(() => _sessionPanelState = PanelState.OPEN);
                                           } else {
                                             sessionPanelController.close();
-                                            setState(() => _sessionPanelState =
-                                                PanelState.CLOSED);
+                                            setState(() => _sessionPanelState = PanelState.CLOSED);
                                           }
                                         },
                                         child: Padding(
                                           padding: const EdgeInsets.all(8),
                                           child: Icon(
-                                            _sessionPanelState ==
-                                                    PanelState.CLOSED
-                                                ? Icons.keyboard_arrow_up
-                                                : Icons.keyboard_arrow_down,
+                                            _sessionPanelState == PanelState.CLOSED ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                             color: Colors.white,
                                             size: 24,
                                           ),
@@ -1478,8 +1341,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                       attempt: activeChallengeSession.value!.attempt,
                       userId: activeChallengeSession.value!.userId,
                       onDismiss: () {
-                        final cb =
-                            activeChallengeSession.value?.onSessionComplete;
+                        final cb = activeChallengeSession.value?.onSessionComplete;
                         activeChallengeSession.value = null;
                         sessionPanelController.close();
                         cb?.call();
@@ -1501,8 +1363,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             initialData: NetworkStatus.Online,
             child: Builder(
               builder: (context) {
-                final isOffline = Provider.of<NetworkStatus>(context) ==
-                    NetworkStatus.Offline;
+                final isOffline = Provider.of<NetworkStatus>(context) == NetworkStatus.Offline;
                 // Train tab (index 0) is offline-capable - sessions are queued locally.
                 // Profile tab (index 3) is also accessible offline so users can reach Settings;
                 // Firestore-dependent sections within the Profile are disabled when offline.
@@ -1522,20 +1383,14 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
             // all iOS/Android device variants and navigation modes.
             // Three-button Android is already shifted up by main.dart so we
             // zero out the bottom safe area there to avoid double-counting.
-            final isGestureNavAndroid =
-                Theme.of(context).platform == TargetPlatform.android &&
-                    !isThreeButtonAndroidNavigation(context);
-            final safeBottom = isThreeButtonAndroidNavigation(context)
-                ? 0.0
-                : MediaQuery.of(context).padding.bottom;
+            final isGestureNavAndroid = Theme.of(context).platform == TargetPlatform.android && !isThreeButtonAndroidNavigation(context);
+            final safeBottom = isThreeButtonAndroidNavigation(context) ? 0.0 : MediaQuery.of(context).padding.bottom;
             final androidGestureExtra = isGestureNavAndroid ? 10.0 : 0.0;
-            final bottomPadding =
-                (safeBottom - 15).clamp(0.0, safeBottom) + androidGestureExtra;
+            final bottomPadding = (safeBottom - 15).clamp(0.0, safeBottom) + androidGestureExtra;
             final fullNavHeight = kBottomNavigationBarHeight + bottomPadding;
             return SizedOverflowBox(
               alignment: AlignmentDirectional.topCenter,
-              size: Size.fromHeight(
-                  fullNavHeight * (1 - _bottomNavOffsetPercentage)),
+              size: Size.fromHeight(fullNavHeight * (1 - _bottomNavOffsetPercentage)),
               child: Container(
                 color: Theme.of(context).colorScheme.primary,
                 padding: EdgeInsets.only(bottom: bottomPadding),

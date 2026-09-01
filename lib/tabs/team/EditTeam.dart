@@ -434,6 +434,7 @@ class _EditTeamState extends State<EditTeam> {
                                   controller: _descriptionController,
                                   keyboardType: TextInputType.multiline,
                                   textCapitalization: TextCapitalization.sentences,
+                                  autovalidateMode: AutovalidateMode.onUserInteraction,
                                   maxLines: 3,
                                   inputFormatters: [LengthLimitingTextInputFormatter(100)],
                                   style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
