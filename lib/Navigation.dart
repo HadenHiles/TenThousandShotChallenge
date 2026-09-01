@@ -290,7 +290,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
   // Add this method to handle the Team QR code join logic
   Future<void> _handleJoinTeamQRCode(BuildContext context) async {
-    await showTeamQRCode(context).then((hasTeam) async {
+    await showTeamQRCode(context, activeTeamId: activeTeamIdNotifier.value).then((hasTeam) async {
       if (!hasTeam) {
         final barcodeScanRes = await Navigator.of(context).push(
           MaterialPageRoute(

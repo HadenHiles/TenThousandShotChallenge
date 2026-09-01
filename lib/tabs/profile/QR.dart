@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:rotating_icon_button/rotating_icon_button.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
@@ -134,64 +133,98 @@ void showQRCode(BuildContext context, User? user) {
   );
 }
 
-Future<bool> showTeamQRCode(BuildContext context) async {
-  User? user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async {
+  final user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
-    return FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((uDoc) async {
-      UserProfile u = UserProfile.fromSnapshot(uDoc);
+    // Resolve which team to show: prefer the actively-viewed team, fall back to
+    // the user's first team from their profile.
+    String? teamId = activeTeamId;
+    if (teamId == null || teamId.isEmpty) {
+      final uDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final u = UserProfile.fromSnapshot(uDoc);
+      teamId = u.teamId;
+    }
+    if (teamId == null || teamId.isEmpty) return false;
 
-      if (u.teamId != null) {
-        FirebaseFirestore.instance.collection("teams").where('id', isEqualTo: u.teamId).limit(1).get().then((tDoc) {
-          Team team = Team.fromSnapshot(tDoc.docs[0]);
+    return FirebaseFirestore.instance.collection('teams').doc(teamId).get().then((tDoc) {
+      Team team = Team.fromSnapshot(tDoc);
 
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              Team t = team;
-              return StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return AlertDialog(
-                    title: Text(
-                      "Scan this QR code from the\n \"Join Team\" screen".toUpperCase(),
-                      style: const TextStyle(
-                        fontFamily: 'NovecentoSans',
-                        fontSize: 20,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    content: Column(
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          Team t = team;
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              final primaryColor = colorFromHex(t.primaryColor);
+              final darkAccent = colorFromHex(t.darkAccentColor, fallback: const Color(0xFF1A1A1A));
+              final lightAccent = colorFromHex(t.lightAccentColor, fallback: Colors.white);
+              final onSurface = Theme.of(context).colorScheme.onSurface;
+              final surface = Theme.of(context).colorScheme.surface;
+              final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surfaceContainerHighest;
+
+              return Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                backgroundColor: surface,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: SingleChildScrollView(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          width: 200,
-                          height: 200,
-                          child: Builder(builder: (context) {
-                            final Color qrColor = colorFromHex(t.primaryColor);
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: colorFromHex(t.darkAccentColor, fallback: const Color(0xFF111111)).withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: qrColor.withValues(alpha: 0.5), width: 1.5),
+                        // ── Dark header with app logo + team identity ────────
+                        Container(
+                          color: darkAccent,
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                          child: Column(
+                            children: [
+                              Image.asset('assets/images/logo-text-only.png', height: 54, fit: BoxFit.contain),
+                              const SizedBox(height: 12),
+                              Text(
+                                (t.name ?? 'Team').toUpperCase(),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 24, color: lightAccent, height: 1.1),
                               ),
-                              padding: const EdgeInsets.all(8),
+                              if (t.description?.trim().isNotEmpty == true) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  t.description!,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: lightAccent.withValues(alpha: 0.6), height: 1.3),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // ── QR code ─────────────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                          child: Center(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [BoxShadow(color: primaryColor.withValues(alpha: 0.2), blurRadius: 14, offset: const Offset(0, 3))],
+                              ),
+                              padding: const EdgeInsets.all(10),
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
                                   QrImageView(
                                     data: team.id!,
+                                    version: QrVersions.auto,
+                                    size: 180,
                                     backgroundColor: Colors.white,
                                     errorCorrectionLevel: QrErrorCorrectLevel.H,
-                                    eyeStyle: QrEyeStyle(
-                                      eyeShape: QrEyeShape.square,
-                                      color: qrColor,
-                                    ),
-                                    dataModuleStyle: QrDataModuleStyle(
-                                      dataModuleShape: QrDataModuleShape.square,
-                                      color: qrColor,
-                                    ),
+                                    eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: primaryColor),
+                                    dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: primaryColor),
                                   ),
                                   if (t.logoAsset != null)
                                     buildTeamLogoWidget(
@@ -205,113 +238,142 @@ Future<bool> showTeamQRCode(BuildContext context) async {
                                     ),
                                 ],
                               ),
-                            );
-                          }),
-                        ),
-                        Divider(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          height: 20,
-                        ),
-                        Text(
-                          "Or use your team code:".toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            fontSize: 20,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 60,
-                              child: Center(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primaryContainer,
-                                  ),
-                                  padding: const EdgeInsets.all(5),
-                                  child: SelectableText(
-                                    t.code!,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontFamily: "NovecentoSans",
-                                      fontSize: 20,
+
+                        // ── Team code ────────────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: Column(
+                            children: [
+                              Text('TEAM CODE', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: onSurface.withValues(alpha: 0.45), letterSpacing: 1.5)),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: primaryColor.withValues(alpha: 0.4), width: 1.5),
+                                    ),
+                                    child: SelectableText(
+                                      t.code ?? '',
+                                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: onSurface, letterSpacing: 2),
                                     ),
                                   ),
-                                ),
+                                  if (t.ownerId == user.uid) ...[
+                                    const SizedBox(width: 4),
+                                    RotatingIconButton(
+                                      onTap: () async {
+                                        final wordGenerator = WordGenerator();
+                                        final newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
+                                        await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode});
+                                        setState(() => t.code = newCode);
+                                      },
+                                      elevation: 0,
+                                      shadowColor: Colors.transparent,
+                                      borderRadius: 20,
+                                      rotateType: RotateType.full,
+                                      duration: const Duration(milliseconds: 1000),
+                                      curve: Curves.easeInOut,
+                                      clockwise: true,
+                                      padding: const EdgeInsets.all(8),
+                                      background: Colors.transparent,
+                                      child: Icon(Icons.refresh_rounded, color: primaryColor),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ),
-                            if (t.ownerId == user.uid)
-                              RotatingIconButton(
-                                onTap: () async {
-                                  final wordGenerator = WordGenerator();
-                                  String newCode = wordGenerator.randomNoun().toUpperCase() + wordGenerator.randomVerb().toUpperCase() + Random().nextInt(9999).toString().padLeft(4, '0');
+                            ],
+                          ),
+                        ),
 
-                                  await FirebaseFirestore.instance.collection('teams').doc(t.id).update({'code': newCode}).then((_) {
-                                    setState(() {
-                                      t.code = newCode;
-                                    });
-                                  });
-                                },
-                                elevation: 10.0,
-                                shadowColor: Colors.transparent,
-                                borderRadius: 20.0,
-                                rotateType: RotateType.full,
-                                duration: const Duration(milliseconds: 1000),
-                                curve: Curves.easeInOut,
-                                clockwise: true,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 5,
-                                  horizontal: 0,
-                                ),
-                                background: Colors.transparent,
-                                child: Icon(
-                                  Icons.refresh,
-                                  color: Theme.of(context).primaryColor,
+                        // ── Join instructions ────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(10)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _DialogInstructionRow(n: '1', text: 'Download "10,000 Shots" on the App Store or Google Play', primaryColor: primaryColor, textColor: onSurface),
+                                const SizedBox(height: 8),
+                                _DialogInstructionRow(n: '2', text: 'Community → Team → Join Team', primaryColor: primaryColor, textColor: onSurface),
+                                const SizedBox(height: 8),
+                                _DialogInstructionRow(n: '3', text: 'Scan the QR code or enter the team code above', primaryColor: primaryColor, textColor: onSurface),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // ── Actions ──────────────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  icon: Icon(Icons.ios_share_rounded, size: 18),
+                                  label: Text('Share'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 15)),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: primaryColor,
+                                    side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
+                                  ),
+                                  onPressed: () => shareTeamInvite(context, t),
                                 ),
                               ),
-                          ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: Text('Close'.toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 15, color: onSurface.withValues(alpha: 0.6))),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    actions: <Widget>[
-                      IconButton(
-                        tooltip: 'Share invite',
-                        icon: Icon(Icons.ios_share_rounded, color: colorFromHex(t.primaryColor)),
-                        onPressed: () => shareTeamInvite(context, t),
-                      ),
-                      IconButton(
-                        tooltip: 'Share invite',
-                        icon: Icon(Icons.ios_share_rounded, color: colorFromHex(t.primaryColor)),
-                        onPressed: () => shareTeamInvite(context, t),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(
-                          "Close".toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'NovecentoSans',
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                  ),
+                ),
               );
             },
           );
-          return true;
-        });
-
-        return true;
-      } else {
-        return false;
-      }
+        },
+      );
+      return true;
     });
   } else {
     return false;
+  }
+}
+
+class _DialogInstructionRow extends StatelessWidget {
+  const _DialogInstructionRow({required this.n, required this.text, required this.primaryColor, required this.textColor});
+
+  final String n;
+  final String text;
+  final Color primaryColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+          child: Center(child: Text(n, style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 12, color: Colors.white, height: 1.0))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.75), height: 1.4))),
+      ],
+    );
   }
 }

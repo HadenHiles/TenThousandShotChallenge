@@ -73,22 +73,11 @@ class _TeamInviteCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // App branding row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.sports_hockey, color: primaryColor, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'TEN THOUSAND SHOT CHALLENGE',
-                    style: TextStyle(
-                      fontFamily: 'NovecentoSans',
-                      fontSize: 11,
-                      color: lightAccent.withValues(alpha: 0.55),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+              // App logo — white on transparent, always legible on the dark card background
+              Image.asset(
+                'assets/images/logo-text-only.png',
+                height: 72,
+                fit: BoxFit.contain,
               ),
 
               const SizedBox(height: 22),
