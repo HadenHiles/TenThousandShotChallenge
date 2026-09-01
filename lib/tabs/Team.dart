@@ -706,7 +706,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                       // button always reflects the team the user is viewing.
                       _currentTeam = safeTeam;
                       if (activeTeamIdNotifier.value != safeTeam.id) {
-                        activeTeamIdNotifier.value = safeTeam.id;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) activeTeamIdNotifier.value = safeTeam.id;
+                        });
                       }
                       final Color teamPrimaryColor = colorFromHex(team.primaryColor);
 
@@ -1464,7 +1466,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
       opacity: isDeletedUser ? 0.5 : 1.0,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        tileColor: bg ? _teamAccentShade(context).withValues(alpha: 0.22) : Colors.transparent,
+        tileColor: bg ? _teamAccentShade(context).withValues(alpha: 0.22) : null,
         leading: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,

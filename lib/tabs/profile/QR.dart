@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -161,7 +162,6 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
               final lightAccent = colorFromHex(t.lightAccentColor, fallback: Colors.white);
               final onSurface = Theme.of(context).colorScheme.onSurface;
               final surface = Theme.of(context).colorScheme.surface;
-              final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surfaceContainerHighest;
 
               return Dialog(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -174,13 +174,21 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ── Dark header with app logo + team identity ────────
+                        // ── Dark header with team identity ───────────────────
                         Container(
                           color: darkAccent,
                           padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                           child: Column(
                             children: [
-                              Image.asset('assets/images/logo-text-only.png', height: 54, fit: BoxFit.contain),
+                              buildTeamLogoWidget(
+                                context: context,
+                                logoAsset: t.logoAsset,
+                                primaryColorHex: t.primaryColor,
+                                darkAccentHex: t.darkAccentColor,
+                                lightAccentHex: t.lightAccentColor,
+                                size: 64,
+                                iconSize: 32,
+                              ),
                               const SizedBox(height: 12),
                               Text(
                                 (t.name ?? 'Team').toUpperCase(),
@@ -205,7 +213,7 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
 
                         // ── QR code ─────────────────────────────────────────
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                           child: Center(
                             child: Container(
                               decoration: BoxDecoration(
@@ -220,7 +228,7 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                                   QrImageView(
                                     data: team.id!,
                                     version: QrVersions.auto,
-                                    size: 180,
+                                    size: 160,
                                     backgroundColor: Colors.white,
                                     errorCorrectionLevel: QrErrorCorrectLevel.H,
                                     eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: primaryColor),
@@ -233,8 +241,8 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                                       primaryColorHex: t.primaryColor,
                                       darkAccentHex: t.darkAccentColor,
                                       lightAccentHex: t.lightAccentColor,
-                                      size: 52,
-                                      iconSize: 26,
+                                      size: 46,
+                                      iconSize: 23,
                                     ),
                                 ],
                               ),
@@ -244,7 +252,7 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
 
                         // ── Team code ────────────────────────────────────────
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                           child: Column(
                             children: [
                               Text('TEAM CODE', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 11, color: onSurface.withValues(alpha: 0.45), letterSpacing: 1.5)),
@@ -252,16 +260,20 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: primaryColor.withValues(alpha: 0.4), width: 1.5),
-                                    ),
-                                    child: SelectableText(
-                                      t.code ?? '',
-                                      style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: onSurface, letterSpacing: 2),
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: primaryColor.withValues(alpha: 0.4), width: 1.5),
+                                      ),
+                                      child: AutoSizeText(
+                                        t.code ?? '',
+                                        maxLines: 1,
+                                        minFontSize: 12,
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 22, color: onSurface, letterSpacing: 2),
+                                      ),
                                     ),
                                   ),
                                   if (t.ownerId == user.uid) ...[
@@ -291,25 +303,6 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                           ),
                         ),
 
-                        // ── Join instructions ────────────────────────────────
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(10)),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _DialogInstructionRow(n: '1', text: 'Download "10,000 Shots" on the App Store or Google Play', primaryColor: primaryColor, textColor: onSurface),
-                                const SizedBox(height: 8),
-                                _DialogInstructionRow(n: '2', text: 'Community → Team → Join Team', primaryColor: primaryColor, textColor: onSurface),
-                                const SizedBox(height: 8),
-                                _DialogInstructionRow(n: '3', text: 'Scan the QR code or enter the team code above', primaryColor: primaryColor, textColor: onSurface),
-                              ],
-                            ),
-                          ),
-                        ),
-
                         // ── Actions ──────────────────────────────────────────
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -318,7 +311,7 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
                               Expanded(
                                 child: OutlinedButton.icon(
                                   icon: Icon(Icons.ios_share_rounded, size: 18),
-                                  label: Text('Share'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 15)),
+                                  label: Text('Share Invite'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 15)),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: primaryColor,
                                     side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
@@ -349,31 +342,5 @@ Future<bool> showTeamQRCode(BuildContext context, {String? activeTeamId}) async 
     });
   } else {
     return false;
-  }
-}
-
-class _DialogInstructionRow extends StatelessWidget {
-  const _DialogInstructionRow({required this.n, required this.text, required this.primaryColor, required this.textColor});
-
-  final String n;
-  final String text;
-  final Color primaryColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
-          child: Center(child: Text(n, style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 12, color: Colors.white, height: 1.0))),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.75), height: 1.4))),
-      ],
-    );
   }
 }
