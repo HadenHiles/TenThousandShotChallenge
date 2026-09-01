@@ -1551,33 +1551,32 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        trailing: SizedBox(
-          height: 60,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                numberFormat.format(plyr.shots ?? 0),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: isDeletedUser ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4) : Theme.of(context).colorScheme.onSurface,
-                ),
+        trailing: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              numberFormat.format(plyr.shots ?? 0),
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                height: 1.0,
+                color: isDeletedUser ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4) : Theme.of(context).colorScheme.onSurface,
               ),
-              Text(
-                'Shots'.toLowerCase(),
-                style: TextStyle(
-                  fontFamily: 'NovecentoSans',
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.5,
-                ),
+            ),
+            Text(
+              'shots',
+              style: TextStyle(
+                fontFamily: 'NovecentoSans',
+                fontSize: 14,
+                height: 1.0,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85),
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

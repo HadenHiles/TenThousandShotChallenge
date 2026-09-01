@@ -40,8 +40,8 @@ android {
         minSdk = 26
         targetSdk = 36
         multiDexEnabled = true
-        versionCode = 36
-        versionName = "3.0.4"
+        versionCode = 37
+        versionName = "3.0.5"
     }
 
     signingConfigs {
