@@ -20,6 +20,7 @@ class Team {
   String? darkAccentColor; // hex e.g. '#111111'
   String? lightAccentColor; // hex e.g. '#FFFFFF'
   String? logoAsset; // key e.g. 'sharks', 'blackhawks' or null
+  String? description; // brief team description / rules / message
   DocumentReference? reference;
 
   Team(this.name, this.startDate, this.targetDate, this.goalTotal, this.ownerId, this.ownerParticipating, this.public, this.players);
@@ -45,7 +46,8 @@ class Team {
         primaryColor = map['primary_color']?.toString(),
         darkAccentColor = map['dark_accent_color']?.toString(),
         lightAccentColor = map['light_accent_color']?.toString(),
-        logoAsset = map['logo_asset']?.toString();
+        logoAsset = map['logo_asset']?.toString(),
+        description = map['description']?.toString();
 
   Map<String, dynamic> toMap() {
     final wordGenerator = WordGenerator();
@@ -73,6 +75,7 @@ class Team {
       if (darkAccentColor != null) 'dark_accent_color': darkAccentColor,
       if (lightAccentColor != null) 'light_accent_color': lightAccentColor,
       if (logoAsset != null) 'logo_asset': logoAsset,
+      if (description != null) 'description': description,
     };
   }
 

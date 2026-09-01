@@ -16,6 +16,7 @@ import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
+import 'package:tenthousandshotchallenge/services/profanity_filter.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
 
@@ -32,6 +33,7 @@ class _CreateTeamState extends State<CreateTeam> {
   final NumberFormat _nf = NumberFormat('###,###,###', 'en_US');
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _goalController = TextEditingController(text: '100000');
+  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _startDateController = TextEditingController(
     text: DateFormat('MMMM d, y').format(DateTime.now()),
   );
@@ -193,7 +195,8 @@ class _CreateTeamState extends State<CreateTeam> {
       ..primaryColor = _primaryColor
       ..darkAccentColor = _darkAccent
       ..lightAccentColor = _lightAccent
-      ..logoAsset = _logoAsset;
+      ..logoAsset = _logoAsset
+      ..description = _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim();
 
     try {
       final ref = await FirebaseFirestore.instance.collection('teams').add(_team!.toMap());
@@ -367,7 +370,39 @@ class _CreateTeamState extends State<CreateTeam> {
                                     cursorColor: Theme.of(context).colorScheme.onPrimary,
                                     inputFormatters: [LengthLimitingTextInputFormatter(52)],
                                     decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
+                                    validator: (v) {
+                                      if (v == null || v.trim().isEmpty) return 'Please enter a team name';
+                                      if (ProfanityFilter.containsProfanity(v)) return 'Please choose an appropriate team name.';
+                                      return null;
+                                    },
+                                  ),
+                                ]),
+
+                                const SizedBox(height: 12),
+
+                                // ── Team Description ───────────────────────────────
+                                _card(children: [
+                                  _sectionLabel('Description (optional)'),
+                                  Text(
+                                    'Rules, goals, or a message for new members. Max 100 characters.',
+                                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  TextFormField(
+                                    controller: _descriptionController,
+                                    keyboardType: TextInputType.multiline,
+                                    textCapitalization: TextCapitalization.sentences,
+                                    maxLines: 3,
+                                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                    cursorColor: Theme.of(context).colorScheme.onPrimary,
+                                    decoration: _fieldDecoration(hint: 'e.g. Weekly tally every Sunday! 🏒'),
+                                    validator: (v) {
+                                      if (v != null && v.trim().isNotEmpty && ProfanityFilter.containsProfanity(v)) {
+                                        return 'Please keep the description appropriate.';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ]),
 

@@ -708,6 +708,17 @@ class _TeamPreviewSheetState extends State<_TeamPreviewSheet> {
               ),
 
               const SizedBox(height: 8),
+
+              // ── Team description ─────────────────────────────────
+              if (team.description != null && team.description!.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                  child: Text(
+                    team.description!,
+                    style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.65)),
+                  ),
+                ),
+
               Divider(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08)),
 
               // ── Scrollable body ──────────────────────────────────────
@@ -846,7 +857,6 @@ class _TeamPreviewSheetState extends State<_TeamPreviewSheet> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 52,
                     child: ElevatedButton(
                       onPressed: _joining
                           ? null
@@ -860,12 +870,16 @@ class _TeamPreviewSheetState extends State<_TeamPreviewSheet> {
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: colorFromHex(team.primaryColor).withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: const Size(double.infinity, 52),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         elevation: 0,
                       ),
                       child: _joining
                           ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                          : Text(
+                          : AutoSizeText(
                               'Join $teamName'.toUpperCase(),
+                              maxLines: 2,
+                              textAlign: TextAlign.center,
                               style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: Colors.white, letterSpacing: 0.5),
                             ),
                     ),

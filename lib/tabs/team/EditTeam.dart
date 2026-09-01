@@ -14,6 +14,7 @@ import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
+import 'package:tenthousandshotchallenge/services/profanity_filter.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
 import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
@@ -35,6 +36,7 @@ class _EditTeamState extends State<EditTeam> {
   final NumberFormat _nf = NumberFormat('###,###,###', 'en_US');
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _targetDateController = TextEditingController();
@@ -77,6 +79,7 @@ class _EditTeamState extends State<EditTeam> {
       _primaryColor = t.primaryColor ?? '#CC3333';
       _darkAccent = t.darkAccentColor ?? '#111111';
       _lightAccent = t.lightAccentColor ?? '#FFFFFF';
+      _descriptionController.text = t.description ?? '';
       _loading = false;
     });
   }
@@ -109,6 +112,7 @@ class _EditTeamState extends State<EditTeam> {
     try {
       await FirebaseFirestore.instance.collection('teams').doc(_team!.id).update({
         'name': _nameController.text.trim().toUpperCase(),
+        'name_lowercase': _nameController.text.trim().toLowerCase(),
         'goal_total': _goalTotal,
         'start_date': _startDate,
         'target_date': _targetDate,
@@ -117,6 +121,7 @@ class _EditTeamState extends State<EditTeam> {
         'dark_accent_color': _darkAccent,
         'light_accent_color': _lightAccent,
         if (_logoAsset != null) 'logo_asset': _logoAsset else 'logo_asset': FieldValue.delete(),
+        if (_descriptionController.text.trim().isNotEmpty) 'description': _descriptionController.text.trim() else 'description': FieldValue.delete(),
       });
       if (!mounted) return;
       Fluttertoast.showToast(
@@ -407,7 +412,39 @@ class _EditTeamState extends State<EditTeam> {
                                   cursorColor: Theme.of(context).colorScheme.onPrimary,
                                   inputFormatters: [LengthLimitingTextInputFormatter(52)],
                                   decoration: _fieldDecoration(hint: 'e.g. Rink Rats'),
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a team name' : null,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) return 'Please enter a team name';
+                                    if (ProfanityFilter.containsProfanity(v)) return 'Please choose an appropriate team name.';
+                                    return null;
+                                  },
+                                ),
+                              ]),
+
+                              const SizedBox(height: 12),
+
+                              // ── Team Description ──────────────────────
+                              _card(children: [
+                                _sectionLabel('Description (optional)'),
+                                Text(
+                                  'Rules, goals, or a message for new members. Max 100 characters.',
+                                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)),
+                                ),
+                                const SizedBox(height: 10),
+                                TextFormField(
+                                  controller: _descriptionController,
+                                  keyboardType: TextInputType.multiline,
+                                  textCapitalization: TextCapitalization.sentences,
+                                  maxLines: 3,
+                                  inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
+                                  cursorColor: Theme.of(context).colorScheme.onPrimary,
+                                  decoration: _fieldDecoration(hint: 'e.g. Weekly tally every Sunday! 🏒'),
+                                  validator: (v) {
+                                    if (v != null && v.trim().isNotEmpty && ProfanityFilter.containsProfanity(v)) {
+                                      return 'Please keep the description appropriate.';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ]),
 

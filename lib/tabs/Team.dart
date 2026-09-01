@@ -840,6 +840,17 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     ),
                                   ),
                                 ),
+                                if (team.description?.trim().isNotEmpty == true)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                                    child: Text(
+                                      team.description!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.only(top: 5, bottom: 0),
@@ -946,10 +957,13 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     child: SizedBox(
                                       width: double.infinity,
                                       child: OutlinedButton.icon(
-                                        icon: const Icon(Icons.picture_as_pdf_outlined),
+                                        icon: Icon(Icons.picture_as_pdf_outlined, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45)),
                                         label: Text(
                                           'Export Leaderboard PDF'.toUpperCase(),
-                                          style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16),
+                                          style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.45)),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2)),
                                         ),
                                         onPressed: () {
                                           final sorted = List<Plyr>.from(currentPlayers)..sort((a, b) => (b.shots ?? 0).compareTo(a.shots ?? 0));

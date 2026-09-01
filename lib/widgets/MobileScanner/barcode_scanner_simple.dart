@@ -14,6 +14,7 @@ class BarcodeScannerSimple extends StatefulWidget {
 
 class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   Barcode? _barcode;
+  bool _hasPopped = false;
 
   Widget _buildBarcode(Barcode? value) {
     if (value == null) {
@@ -32,10 +33,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   }
 
   void _handleBarcode(BarcodeCapture barcodes) {
+    if (_hasPopped || !mounted) return;
     if (barcodes.barcodes.isNotEmpty) {
-      return Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
-    } else {
-      return Navigator.of(context).pop();
+      _hasPopped = true;
+      Navigator.of(context).pop(barcodes.barcodes.first.rawValue);
     }
   }
 

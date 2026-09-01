@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/profanity_filter.dart';
 import 'package:tenthousandshotchallenge/theme/Theme.dart';
 import 'package:tenthousandshotchallenge/widgets/BasicTitle.dart';
 import 'package:tenthousandshotchallenge/widgets/NetworkAwareWidget.dart';
@@ -259,7 +260,11 @@ class _EditProfileState extends State<EditProfile> {
                         style: TextStyle(fontSize: 17, color: Theme.of(context).colorScheme.onPrimary),
                         inputFormatters: [LengthLimitingTextInputFormatter(26)],
                         decoration: _fieldDecoration(hint: 'Enter a display name'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a display name' : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'Please enter a display name';
+                          if (ProfanityFilter.containsProfanity(v)) return 'Please choose an appropriate display name.';
+                          return null;
+                        },
                       ),
                     ]),
 
