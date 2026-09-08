@@ -1558,7 +1558,7 @@ async function assignAchievements(
     try {
         const failedUserIds: string[] = [];
         const now = new Date();
-        const RECENT_ACTIVITY_DAYS = 3;
+        const RECENT_ACTIVITY_DAYS = 7;
         const MAX_SCHEDULED_USERS = 5000;
         const recentActivityCutoff = new Date(now.getTime() - RECENT_ACTIVITY_DAYS * 24 * 60 * 60 * 1000);
         // Determine which users to process
@@ -1601,6 +1601,14 @@ async function assignAchievements(
                 // --- Gather all achievements for metrics (before deleting) ---
                 const allAchievementsSnap = await db.collection('users').doc(userId).collection('achievements').where('time_frame', '==', 'week').get();
                 const allAchievements = allAchievementsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const previousWeeklyAchievementKeys = new Set<string>();
+                for (const doc of allAchievementsSnap.docs) {
+                    const achievement = doc.data();
+                    const assignedWeekId = timestampWeekId(achievement.dateAssigned);
+                    if (assignedWeekId === null || assignedWeekId === weekId) continue;
+                    if (typeof achievement.id === 'string') previousWeeklyAchievementKeys.add(`id:${achievement.id}`);
+                    if (typeof achievement.title === 'string') previousWeeklyAchievementKeys.add(`title:${achievement.title}`);
+                }
 
                 // Legacy users do not have achievementWeek metadata. Derive it
                 // from their existing assignments once and backfill the marker.
@@ -2033,6 +2041,22 @@ async function assignAchievements(
                 return t;
             }
 
+            function isPreviousWeeklyRepeat(achievement: any): boolean {
+                return previousWeeklyAchievementKeys.has(`id:${achievement.id}`) ||
+                    (typeof achievement.title === 'string' && previousWeeklyAchievementKeys.has(`title:${achievement.title}`));
+            }
+
+            function chooseTemplate(pool: any[], avoidPreviousWeek: boolean): any | null {
+                if (pool.length === 0) return null;
+                for (const candidate of pool) {
+                    const achievement = substituteTemplate(candidate);
+                    if (!avoidPreviousWeek || !isPreviousWeeklyRepeat(achievement)) {
+                        return achievement;
+                    }
+                }
+                return avoidPreviousWeek ? null : substituteTemplate(pool[0]);
+            }
+
             let achievements: any[] = [];
             if (test) {
                 // In test mode, assign one achievement for every template (skip eligibility logic)
@@ -2045,8 +2069,16 @@ async function assignAchievements(
                     userId,
                 }));
             } else {
-                // Production: use eligibility logic as before
-                let eligible = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true));
+                // Production: use eligibility logic as before, preferring not
+                // to repeat achievements that were assigned in the prior set.
+                const eligibleIncludingRepeats = templates.filter(t => allowed.includes(mapDifficulty(t)) && (isPro ? true : t.proLevel !== true));
+                let eligible = eligibleIncludingRepeats.filter(t =>
+                    !previousWeeklyAchievementKeys.has(`id:${t.id}`) &&
+                    !previousWeeklyAchievementKeys.has(`title:${t.title}`)
+                );
+                if (eligible.length < 4) {
+                    eligible = eligibleIncludingRepeats;
+                }
                 eligible = eligible.sort(() => Math.random() - 0.5);
 
                 // --- Assign a variety of difficulties if possible ---
@@ -2057,7 +2089,8 @@ async function assignAchievements(
                 // 1. Always include one 'fun' style template if available
                 const funTemplates = eligible.filter(t => t.style === 'fun');
                 if (funTemplates.length > 0) {
-                    const fun = substituteTemplate(funTemplates[Math.floor(Math.random() * funTemplates.length)]);
+                    const fun = chooseTemplate(funTemplates, true) || chooseTemplate(funTemplates, false);
+                    if (!fun) throw new Error('No eligible fun achievement template found');
                     assigned.push(fun);
                     usedTemplates.add(fun.id + '|' + (fun.shotType || 'any'));
                     usedShotTypeCombos.add(fun.style + '|' + (fun.shotType || 'any'));
@@ -2071,7 +2104,8 @@ async function assignAchievements(
                     if (assigned.length >= 4) break;
                     const candidates = nonFunTemplates.filter(t => t.difficulty === diff && !alreadyAssignedDifficulties.has(diff));
                     if (candidates.length > 0) {
-                        const template = substituteTemplate(candidates[Math.floor(Math.random() * candidates.length)]);
+                        const template = chooseTemplate(candidates, true) || chooseTemplate(candidates, false);
+                        if (!template) continue;
                         const comboKey = template.id + '|' + (template.shotType || 'any');
                         if (!usedTemplates.has(comboKey)) {
                             assigned.push(template);
@@ -2085,7 +2119,19 @@ async function assignAchievements(
                 // 3. If not enough, fill with random eligible (excluding fun/social already assigned)
                 let fallbackPool = [...nonFunTemplates];
                 while (assigned.length < 4 && fallbackPool.length) {
-                    const next = substituteTemplate(fallbackPool.pop());
+                    const nextTemplate = fallbackPool.pop();
+                    const next = substituteTemplate(nextTemplate);
+                    const comboKey = next.id + '|' + (next.shotType || 'any');
+                    if (!usedTemplates.has(comboKey) && !isPreviousWeeklyRepeat(next)) {
+                        assigned.push(next);
+                        usedTemplates.add(comboKey);
+                        usedShotTypeCombos.add(next.style + '|' + (next.shotType || 'any'));
+                    }
+                }
+                fallbackPool = [...nonFunTemplates];
+                while (assigned.length < 4 && fallbackPool.length) {
+                    const nextTemplate = fallbackPool.pop();
+                    const next = substituteTemplate(nextTemplate);
                     const comboKey = next.id + '|' + (next.shotType || 'any');
                     if (!usedTemplates.has(comboKey)) {
                         assigned.push(next);
