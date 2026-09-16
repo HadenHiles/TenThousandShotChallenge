@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { onRequest, onCall } from "firebase-functions/v2/https";
+import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
@@ -2722,6 +2722,141 @@ export const sendPracticeReminders = onSchedule(
         logger.info('Practice reminders complete.');
     }
 );
+
+// ── Recalculate Iteration Totals ─────────────────────────────────────────────
+// Callable function: recalculates iteration totals (and shot breakdowns) for the
+// authenticated user from all underlying session documents. Supports sessions
+// with or without granular 'shots' subcollections.
+export const recalculateIterationTotals = onCall(async (req) => {
+    const context = req.auth;
+    if (!context || !context.uid) {
+        throw new HttpsError('unauthenticated', 'Authentication required to recalculate iteration totals.');
+    }
+
+    const userId = context.uid;
+    const itersSnap = await db.collection('iterations').doc(userId).collection('iterations').get();
+
+    if (itersSnap.empty) {
+        return { success: true, updatedIterations: 0 };
+    }
+
+    let batch = db.batch();
+    let opCount = 0;
+    const commitBatchIfFull = async () => {
+        if (opCount >= 450) {
+            await batch.commit();
+            batch = db.batch();
+            opCount = 0;
+        }
+    };
+
+    let updatedCount = 0;
+
+    for (const iterDoc of itersSnap.docs) {
+        const iterData = iterDoc.data() || {};
+        const sessionsSnap = await iterDoc.ref.collection('sessions').get();
+
+        let iTotal = 0;
+        let totalWrist = 0;
+        let totalSnap = 0;
+        let totalSlap = 0;
+        let totalBackhand = 0;
+        let iDuration = 0;
+
+        for (const sDoc of sessionsSnap.docs) {
+            const sData = sDoc.data() || {};
+            iDuration += (typeof sData.duration === 'number' ? sData.duration : 0);
+
+            const shotsSnap = await sDoc.ref.collection('shots').get();
+            if (!shotsSnap.empty) {
+                let sessionTotal = 0;
+                let sessionWrist = 0;
+                let sessionSnap = 0;
+                let sessionSlap = 0;
+                let sessionBackhand = 0;
+
+                for (const shotDoc of shotsSnap.docs) {
+                    const shotData = shotDoc.data() || {};
+                    const count = typeof shotData.count === 'number' ? shotData.count : 0;
+                    const type = shotData.type;
+                    sessionTotal += count;
+
+                    switch (type) {
+                        case 'wrist': sessionWrist += count; break;
+                        case 'snap': sessionSnap += count; break;
+                        case 'slap': sessionSlap += count; break;
+                        case 'backhand': sessionBackhand += count; break;
+                    }
+                }
+
+                if (
+                    sessionTotal !== sData.total ||
+                    sessionWrist !== sData.total_wrist ||
+                    sessionSnap !== sData.total_snap ||
+                    sessionSlap !== sData.total_slap ||
+                    sessionBackhand !== sData.total_backhand
+                ) {
+                    batch.update(sDoc.ref, {
+                        total: sessionTotal,
+                        total_wrist: sessionWrist,
+                        total_snap: sessionSnap,
+                        total_slap: sessionSlap,
+                        total_backhand: sessionBackhand,
+                    });
+                    opCount++;
+                    await commitBatchIfFull();
+                }
+
+                iTotal += sessionTotal;
+                totalWrist += sessionWrist;
+                totalSnap += sessionSnap;
+                totalSlap += sessionSlap;
+                totalBackhand += sessionBackhand;
+            } else {
+                // Fall back to shot totals stored directly on the session doc
+                const sessionTotal = typeof sData.total === 'number' ? sData.total : 0;
+                const sessionWrist = typeof sData.total_wrist === 'number' ? sData.total_wrist : 0;
+                const sessionSnap = typeof sData.total_snap === 'number' ? sData.total_snap : 0;
+                const sessionSlap = typeof sData.total_slap === 'number' ? sData.total_slap : 0;
+                const sessionBackhand = typeof sData.total_backhand === 'number' ? sData.total_backhand : 0;
+
+                iTotal += sessionTotal;
+                totalWrist += sessionWrist;
+                totalSnap += sessionSnap;
+                totalSlap += sessionSlap;
+                totalBackhand += sessionBackhand;
+            }
+        }
+
+        const iterUpdate: Record<string, any> = {
+            total: iTotal,
+            total_wrist: totalWrist,
+            total_snap: totalSnap,
+            total_slap: totalSlap,
+            total_backhand: totalBackhand,
+            total_duration: iDuration,
+            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        if (iTotal >= 10000 && !iterData.complete) {
+            iterUpdate.complete = true;
+            if (!iterData.end_date) {
+                iterUpdate.end_date = admin.firestore.FieldValue.serverTimestamp();
+            }
+        }
+
+        batch.update(iterDoc.ref, iterUpdate);
+        opCount++;
+        updatedCount++;
+        await commitBatchIfFull();
+    }
+
+    if (opCount > 0) {
+        await batch.commit();
+    }
+
+    return { success: true, updatedIterations: updatedCount };
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WebM → MP4 transcoding

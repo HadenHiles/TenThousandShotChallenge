@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tenthousandshotchallenge/main.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Invite.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Iteration.dart';
@@ -193,8 +195,23 @@ Future<bool> deleteSession(ShootingSession shootingSession, FirebaseAuth auth, F
   });
 }
 
-Future<bool> recalculateIterationTotals(FirebaseAuth auth, FirebaseFirestore firestore) async {
+Future<bool> recalculateIterationTotals(
+  FirebaseAuth auth,
+  FirebaseFirestore firestore, {
+  FirebaseFunctions? functions,
+}) async {
   if (auth.currentUser == null) return false;
+
+  // Try calling the Cloud Function first for server-side consistency and speed
+  try {
+    final callable = (functions ?? FirebaseFunctions.instance).httpsCallable('recalculateIterationTotals');
+    final response = await callable.call();
+    if (response.data is Map && (response.data['success'] == true)) {
+      return true;
+    }
+  } catch (e) {
+    debugPrint('Cloud function recalculateIterationTotals failed ($e); falling back to client-side recalculation.');
+  }
 
   try {
     final iSnap = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').get();
@@ -313,7 +330,7 @@ Future<bool> recalculateIterationTotals(FirebaseAuth auth, FirebaseFirestore fir
           totalSnap,
           totalSlap,
           totalBackhand,
-          i.complete,
+          iTotal >= 10000 ? true : i.complete,
           DateTime.now(),
         );
         batch.update(iDoc.reference, updatedIteration.toMap());
@@ -338,7 +355,7 @@ Future<bool> recalculateIterationTotals(FirebaseAuth auth, FirebaseFirestore fir
     await batch.commit();
     return true;
   } catch (e) {
-    print('Error in recalculateIterationTotals: $e');
+    debugPrint('Error in recalculateIterationTotals: $e');
     return false;
   }
 }
