@@ -194,111 +194,153 @@ Future<bool> deleteSession(ShootingSession shootingSession, FirebaseAuth auth, F
 }
 
 Future<bool> recalculateIterationTotals(FirebaseAuth auth, FirebaseFirestore firestore) async {
-  return await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').get().then((iSnap) async {
-    if (iSnap.docs.isNotEmpty) {
-      // Get a new write batch
-      var batch = firestore.batch();
+  if (auth.currentUser == null) return false;
 
-      await Future.forEach(iSnap.docs, (iDoc) async {
-        int iTotal = 0;
-        int totalWrist = 0;
-        int totalSnap = 0;
-        int totalSlap = 0;
-        int totalBackhand = 0;
-        Iteration i = Iteration.fromSnapshot(iDoc as DocumentSnapshot);
+  try {
+    final iSnap = await firestore.collection('iterations').doc(auth.currentUser!.uid).collection('iterations').get();
+    if (iSnap.docs.isEmpty) return false;
 
-        await i.reference!.collection('sessions').get().then((sSnap) async {
-          if (sSnap.docs.isNotEmpty) {
-            int sTotal = 0;
-            int tWrist = 0;
-            int tSnap = 0;
-            int tSlap = 0;
-            int tBackhand = 0;
+    var batch = firestore.batch();
 
-            await Future.forEach(sSnap.docs, (DocumentSnapshot sDoc) async {
-              ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+    for (final iDoc in iSnap.docs) {
+      int iTotal = 0;
+      int totalWrist = 0;
+      int totalSnap = 0;
+      int totalSlap = 0;
+      int totalBackhand = 0;
+      Duration iDuration = Duration.zero;
+      Iteration i = Iteration.fromSnapshot(iDoc);
 
-              await sDoc.reference.collection('shots').get().then((shotsSnapshot) async {
-                if (shotsSnapshot.docs.isNotEmpty) {
-                  int sessionTotal = 0;
-                  int sessionTotalWrist = 0;
-                  int sessionTotalSnap = 0;
-                  int sessionTotalSlap = 0;
-                  int sessionTotalBackhand = 0;
+      final sSnap = await iDoc.reference.collection('sessions').get();
+      if (sSnap.docs.isNotEmpty) {
+        int sTotal = 0;
+        int tWrist = 0;
+        int tSnap = 0;
+        int tSlap = 0;
+        int tBackhand = 0;
 
-                  await Future.forEach(shotsSnapshot.docs, (shotsDoc) {
-                    Shots shots = Shots.fromSnapshot(shotsDoc as DocumentSnapshot);
-                    // Get the total number of shots for the session
-                    sTotal += shots.count!;
-                    sessionTotal += shots.count!;
+        for (final sDoc in sSnap.docs) {
+          ShootingSession s = ShootingSession.fromSnapshot(sDoc);
+          iDuration += s.duration ?? Duration.zero;
 
-                    switch (shots.type) {
-                      case "wrist":
-                        tWrist += shots.count!;
-                        sessionTotalWrist += shots.count!;
-                        break;
-                      case "snap":
-                        tSnap += shots.count!;
-                        sessionTotalSnap += shots.count!;
-                        break;
-                      case "slap":
-                        tSlap += shots.count!;
-                        sessionTotalSlap += shots.count!;
-                        break;
-                      case "backhand":
-                        tBackhand += shots.count!;
-                        sessionTotalBackhand += shots.count!;
-                        break;
-                      default:
-                    }
-                  }).then((_) {
-                    // Update the session shot totals
-                    ShootingSession updatedSession = ShootingSession(
-                      sessionTotal,
-                      sessionTotalWrist,
-                      sessionTotalSnap,
-                      sessionTotalSlap,
-                      sessionTotalBackhand,
-                      s.date,
-                      s.duration,
-                    );
-                    batch.update(s.reference!, updatedSession.toMap());
-                  });
-                }
-              });
-            }).then((_) {
-              iTotal += sTotal;
-              totalWrist += tWrist;
-              totalSnap += tSnap;
-              totalSlap += tSlap;
-              totalBackhand += tBackhand;
+          final shotsSnapshot = await sDoc.reference.collection('shots').get();
+          if (shotsSnapshot.docs.isNotEmpty) {
+            int sessionTotal = 0;
+            int sessionTotalWrist = 0;
+            int sessionTotalSnap = 0;
+            int sessionTotalSlap = 0;
+            int sessionTotalBackhand = 0;
 
-              // Update the iteration total
-              Iteration updatedIteration = Iteration(
-                i.startDate,
-                i.targetDate,
-                i.endDate,
-                i.totalDuration,
-                iTotal,
-                totalWrist,
-                totalSnap,
-                totalSlap,
-                totalBackhand,
-                i.complete,
-                i.udpatedAt,
+            for (final shotsDoc in shotsSnapshot.docs) {
+              final dynamic rawData = shotsDoc.data();
+              final Map<String, dynamic>? shotData = rawData is Map<String, dynamic> ? rawData : null;
+              if (shotData == null) continue;
+
+              final count = (shotData['count'] as num?)?.toInt() ?? 0;
+              final type = shotData['type'] as String?;
+              sTotal += count;
+              sessionTotal += count;
+
+              switch (type) {
+                case "wrist":
+                  tWrist += count;
+                  sessionTotalWrist += count;
+                  break;
+                case "snap":
+                  tSnap += count;
+                  sessionTotalSnap += count;
+                  break;
+                case "slap":
+                  tSlap += count;
+                  sessionTotalSlap += count;
+                  break;
+                case "backhand":
+                  tBackhand += count;
+                  sessionTotalBackhand += count;
+                  break;
+                default:
+              }
+            }
+
+            if (sessionTotal != s.total || sessionTotalWrist != s.totalWrist || sessionTotalSnap != s.totalSnap || sessionTotalSlap != s.totalSlap || sessionTotalBackhand != s.totalBackhand) {
+              // Update the session shot totals if changed
+              ShootingSession updatedSession = ShootingSession(
+                sessionTotal,
+                sessionTotalWrist,
+                sessionTotalSnap,
+                sessionTotalSlap,
+                sessionTotalBackhand,
+                s.date,
+                s.duration,
+                wristTargetsHit: s.wristTargetsHit,
+                snapTargetsHit: s.snapTargetsHit,
+                slapTargetsHit: s.slapTargetsHit,
+                backhandTargetsHit: s.backhandTargetsHit,
+                isChallengerRoad: s.isChallengerRoad,
               );
-              batch.update(i.reference!, updatedIteration.toMap());
-            });
+              batch.update(s.reference!, updatedSession.toMap());
+            }
+          } else {
+            // Fall back to shot totals stored directly on the session doc
+            final sessionTotal = s.total ?? 0;
+            final sessionWrist = s.totalWrist ?? 0;
+            final sessionSnap = s.totalSnap ?? 0;
+            final sessionSlap = s.totalSlap ?? 0;
+            final sessionBackhand = s.totalBackhand ?? 0;
+
+            sTotal += sessionTotal;
+            tWrist += sessionWrist;
+            tSnap += sessionSnap;
+            tSlap += sessionSlap;
+            tBackhand += sessionBackhand;
           }
-        });
-      }).then((_) async {
-        // Commit the changes
-        return await batch.commit().then((_) => true).onError((error, stackTrace) => false);
-      });
+        }
+
+        iTotal += sTotal;
+        totalWrist += tWrist;
+        totalSnap += tSnap;
+        totalSlap += tSlap;
+        totalBackhand += tBackhand;
+
+        // Update the iteration total
+        Iteration updatedIteration = Iteration(
+          i.startDate,
+          i.targetDate,
+          i.endDate,
+          iDuration,
+          iTotal,
+          totalWrist,
+          totalSnap,
+          totalSlap,
+          totalBackhand,
+          i.complete,
+          DateTime.now(),
+        );
+        batch.update(iDoc.reference, updatedIteration.toMap());
+      } else {
+        Iteration updatedIteration = Iteration(
+          i.startDate,
+          i.targetDate,
+          i.endDate,
+          Duration.zero,
+          0,
+          0,
+          0,
+          0,
+          0,
+          i.complete,
+          DateTime.now(),
+        );
+        batch.update(iDoc.reference, updatedIteration.toMap());
+      }
     }
 
+    await batch.commit();
+    return true;
+  } catch (e) {
+    print('Error in recalculateIterationTotals: $e');
     return false;
-  });
+  }
 }
 
 Future<bool?> startNewIteration(FirebaseAuth auth, FirebaseFirestore firestore) async {
