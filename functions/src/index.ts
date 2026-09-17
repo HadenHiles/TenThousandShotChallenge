@@ -35,6 +35,50 @@ if (getApps().length === 0) {
 }
 const db = getFirestore();
 
+async function reconcileIterationTotals(
+    userId: string,
+    iterationId: string,
+    sessionsSnap: FirebaseFirestore.QuerySnapshot,
+    eventTime: Timestamp,
+): Promise<void> {
+    const totals = {
+        total: 0,
+        total_wrist: 0,
+        total_snap: 0,
+        total_slap: 0,
+        total_backhand: 0,
+        total_duration: 0,
+    };
+
+    for (const sessionDoc of sessionsSnap.docs) {
+        const session = sessionDoc.data();
+        for (const field of Object.keys(totals) as Array<keyof typeof totals>) {
+            const sessionField = field === 'total_duration' ? 'duration' : field;
+            const value = session[sessionField] ?? 0;
+            if (!Number.isSafeInteger(value) || value < 0) {
+                logger.error(`Skipping iteration reconciliation because ${sessionDoc.ref.path}.${sessionField} is invalid.`);
+                return;
+            }
+            totals[field] += value;
+        }
+    }
+
+    const iterationRef = db.collection(`iterations/${userId}/iterations`).doc(iterationId);
+    await db.runTransaction(async (transaction) => {
+        const iterationSnap = await transaction.get(iterationRef);
+        if (!iterationSnap.exists) return;
+
+        const lastEventTime = iterationSnap.get('totals_reconciled_event_time');
+        if (lastEventTime instanceof Timestamp && lastEventTime.toMillis() > eventTime.toMillis()) return;
+
+        transaction.update(iterationRef, {
+            ...totals,
+            totals_reconciled_event_time: eventTime,
+            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+    });
+}
+
 // Secure admin key via Firebase Secrets Manager.
 // 1. Set with: firebase functions:secrets:set ADMIN_KEY
 // 2. Deployed functions that list it in their 'secrets' array can access via ADMIN_KEY_SECRET.value()
@@ -216,6 +260,12 @@ export const sessionCreated = onDocumentCreated({ document: "iterations/{userId}
     try {
         const weekStart = getWeekStartEST();
         const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
+        await reconcileIterationTotals(
+            context.params.userId,
+            context.params.iterationId,
+            sessionsSnap,
+            event.data!.createTime,
+        );
         let recentSessions = [];
         let seasonTotalShots = 0;
         let seasonTotalShotsWithAccuracy = 0;
@@ -473,6 +523,18 @@ export const sessionUpdated = onDocumentUpdated({ document: "iterations/{userId}
         return null;
     });
 
+    try {
+        const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).get();
+        await reconcileIterationTotals(
+            context.params.userId,
+            context.params.iterationId,
+            sessionsSnap,
+            event.data!.after.updateTime,
+        );
+    } catch (err) {
+        logger.error('Error reconciling iteration totals after session update:', err);
+    }
+
     // Call achievement logic after stats/weekly is updated
     let session: any = null;
     try {
@@ -502,6 +564,12 @@ export const sessionDeleted = onDocumentDeleted({ document: "iterations/{userId}
     try {
         const weekStart = getWeekStartEST();
         const sessionsSnap = await db.collection(`iterations/${context.params.userId}/iterations/${context.params.iterationId}/sessions`).orderBy('date', 'desc').get();
+        await reconcileIterationTotals(
+            context.params.userId,
+            context.params.iterationId,
+            sessionsSnap,
+            Timestamp.fromDate(new Date(event.time)),
+        );
         let recentSessions = [];
         let seasonTotalShots = 0;
         let seasonTotalShotsWithAccuracy = 0;

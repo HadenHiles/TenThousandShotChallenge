@@ -176,9 +176,10 @@ class _ProfileState extends State<Profile> {
         final docRef = firestore.collection('iterations').doc(authUser.uid).collection('iterations').doc(iterationId);
         final snap = await docRef.get();
         if (!snap.exists || !mounted) return;
-        final i = Iteration.fromSnapshot(snap);
-        final updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
-        await docRef.update(updated.toMap());
+        await docRef.update({
+          'target_date': date,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
         if (!mounted) return;
         setState(() {
           _progressTargetDate = date;

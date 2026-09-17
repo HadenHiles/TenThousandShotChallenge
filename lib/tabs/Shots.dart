@@ -198,8 +198,10 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
             setState(() {
               currentIteration = i;
             });
-            Iteration updated = Iteration(i.startDate, date, i.endDate, i.totalDuration, i.total, i.totalWrist, i.totalSnap, i.totalSlap, i.totalBackhand, i.complete, DateTime.now());
-            await ref.update(updated.toMap());
+            await ref.update({
+              'target_date': date,
+              'updated_at': FieldValue.serverTimestamp(),
+            });
             // Update the text field and state immediately so UI reflects the new date
             setState(() {
               _targetDate = date;
