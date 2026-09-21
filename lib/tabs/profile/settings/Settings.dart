@@ -1150,6 +1150,35 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                           ],
                         ),
                         SettingsSection(
+                          title: Text('Feedback & Requests', style: Theme.of(context).textTheme.titleLarge),
+                          tiles: [
+                            SettingsTile(
+                              title: Text(
+                                'Report a Bug or Request Something',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              description: Text(
+                                'Submit an idea, feature request, or content request on Next Shift.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              leading: Icon(
+                                Icons.feedback_outlined,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              trailing: Icon(
+                                Icons.open_in_new,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              onPressed: (BuildContext context) async {
+                                const link = 'https://nextshift.howtohockey.com';
+                                if (await canLaunchUrlString(link)) {
+                                  await launchUrlString(link, mode: LaunchMode.externalApplication);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
                           title: Text('Account', style: Theme.of(context).textTheme.titleLarge),
                           tiles: [
                             CustomSettingsTile(

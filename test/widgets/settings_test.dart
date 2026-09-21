@@ -155,6 +155,18 @@ void main() {
       expect(find.textContaining('How many pucks', findRichText: true), findsOneWidget);
     });
 
+    testWidgets('shows feedback and requests tile', (WidgetTester tester) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await pumpForDuration(tester);
+      await tester.dragUntilVisible(
+        find.textContaining('Report a Bug or Request Something', findRichText: true),
+        find.byType(Scrollable).first,
+        const Offset(0, -300),
+      );
+      expect(find.textContaining('Report a Bug or Request Something', findRichText: true), findsOneWidget);
+      expect(find.textContaining('feature request, or content request', findRichText: true), findsOneWidget);
+    });
+
     testWidgets('Dark Mode switch is present', (WidgetTester tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await pumpForDuration(tester);
