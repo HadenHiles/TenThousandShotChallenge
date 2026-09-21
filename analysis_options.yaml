@@ -10,6 +10,11 @@
 analyzer:
   exclude:
     - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - linux/**
   errors:
     avoid_types_as_parameter_names: ignore
     deprecated_member_use: ignore
