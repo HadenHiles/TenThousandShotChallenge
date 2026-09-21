@@ -14,6 +14,8 @@ import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 Future<void> shareTeamInvite(BuildContext context, Team team) async {
   final teamName = team.name ?? 'Our Team';
   final teamCode = team.code ?? '';
+  final renderBox = context.findRenderObject() as RenderBox?;
+  final sharePositionOrigin = renderBox == null ? null : renderBox.localToGlobal(Offset.zero) & renderBox.size;
 
   final controller = ScreenshotController();
 
@@ -37,10 +39,13 @@ Future<void> shareTeamInvite(BuildContext context, Team team) async {
       '3. Scan the QR code or enter the team code above\n\n'
       'See you on the ice! 🎯';
 
-  await Share.shareXFiles(
-    [XFile(file.path, mimeType: 'image/png')],
-    text: shareText,
-    subject: 'Join $teamName on 10,000 Shots!',
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [XFile(file.path, mimeType: 'image/png')],
+      text: shareText,
+      subject: 'Join $teamName on 10,000 Shots!',
+      sharePositionOrigin: sharePositionOrigin,
+    ),
   );
 }
 
