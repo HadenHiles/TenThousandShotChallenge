@@ -29,6 +29,7 @@ import 'package:tenthousandshotchallenge/tabs/profile/settings/EditPuckCount.dar
 import 'package:tenthousandshotchallenge/tabs/profile/settings/Settings.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/challenger_road/ChallengerRoadMapView.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
+import 'package:tenthousandshotchallenge/services/ObservabilityService.dart';
 import 'package:tenthousandshotchallenge/tabs/team/CreateTeam.dart';
 import 'package:tenthousandshotchallenge/tabs/notifications/NotificationsScreen.dart';
 import 'package:tenthousandshotchallenge/tabs/team/EditTeam.dart';
@@ -379,7 +380,10 @@ GoRouter createAppRouter(
   return GoRouter(
     initialLocation: initialLocation,
     refreshListenable: Listenable.merge([authNotifier, introShownNotifier, permissionsNotifier]),
-    observers: [FirebaseAnalyticsObserver(analytics: analytics)],
+    observers: [
+      FirebaseAnalyticsObserver(analytics: analytics),
+      ObservabilityNavigatorObserver(),
+    ],
     routes: [
       ..._buildAuthRoutes(),
       ..._buildShellRoutes(),

@@ -14,8 +14,10 @@ import 'services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/ObservabilityService.dart';
 import 'package:tenthousandshotchallenge/services/OfflineSessionQueue.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
+import 'package:tenthousandshotchallenge/services/TeamMembershipService.dart';
 import 'package:tenthousandshotchallenge/services/authentication/auth.dart';
 import 'package:tenthousandshotchallenge/services/session.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
@@ -44,9 +46,18 @@ const Color backhandShotColor = Color(0xff4050B5);
 const Color slapShotColor = Color(0xff009688);
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  runApp(const AppBootstrap());
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    ObservabilityService.installGlobalErrorHandlers();
+    runApp(const AppBootstrap());
+  }, (error, stackTrace) {
+    ObservabilityService.recordError(
+      error,
+      stackTrace,
+      reason: 'Uncaught root zone error',
+      fatal: true,
+    );
+  });
 }
 
 typedef AppInitializer = Future<Widget> Function();
@@ -91,6 +102,11 @@ class _AppBootstrapState extends State<AppBootstrap> {
       setState(() => _app = app);
     } catch (error, stackTrace) {
       _logStartupError('application', error, stackTrace);
+      ObservabilityService.recordError(
+        error,
+        stackTrace,
+        reason: 'Application initialization failed',
+      );
       if (!mounted || attempt != _attempt) return;
       setState(() => _error = error);
     }
@@ -190,6 +206,8 @@ Future<Widget> _initializeApp() async {
     }
     rethrow;
   }
+  await ObservabilityService.initialize();
+  await ObservabilityService.logEvent('app_started');
   AppleSignInAvailable appleSignInAvailable;
   try {
     appleSignInAvailable = await AppleSignInAvailable.check().timeout(const Duration(seconds: 5));
@@ -362,7 +380,12 @@ Future<void> _runOptionalStartupTask(
   Future<void> Function() operation,
 ) async {
   try {
-    await operation().timeout(const Duration(seconds: 10));
+    final traceName = 'startup_${name.replaceAll(' ', '_').toLowerCase()}';
+    await ObservabilityService.trace(
+      traceName,
+      operation,
+      reportErrors: false,
+    ).timeout(const Duration(seconds: 10));
   } catch (error, stackTrace) {
     _reportOptionalStartupError(name, error, stackTrace);
   }
@@ -370,6 +393,11 @@ Future<void> _runOptionalStartupTask(
 
 void _reportOptionalStartupError(String name, Object error, StackTrace stackTrace) {
   _logStartupError('optional service: $name', error, stackTrace);
+  ObservabilityService.recordError(
+    error,
+    stackTrace,
+    reason: 'Optional startup service failed: $name',
+  );
 }
 
 void _logStartupError(String stage, Object error, StackTrace stackTrace) {
@@ -541,6 +569,19 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         // Set _lastUser immediately (before any await) so re-entrant calls
         // from a second auth-state emission see the updated value and skip.
         _lastUser = user;
+        unawaited(ObservabilityService.setUser(user.uid));
+        try {
+          await TeamMembershipService.reconcileUserMemberships(
+            userId: user.uid,
+            firestore: Provider.of<FirebaseFirestore>(context, listen: false),
+          );
+        } catch (error, stackTrace) {
+          ObservabilityService.recordError(
+            error,
+            stackTrace,
+            reason: 'Reconciling team memberships after authentication',
+          );
+        }
         await initRevenueCat(user.uid);
         if (RevenueCatConfig.configured) {
           try {
@@ -559,7 +600,13 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
                 }
               });
             }
-          } catch (_) {}
+          } catch (error, stackTrace) {
+            ObservabilityService.recordError(
+              error,
+              stackTrace,
+              reason: 'Refreshing RevenueCat customer context',
+            );
+          }
         }
         // Set user's timezone in Firestore
         try {
@@ -567,9 +614,16 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
             'timezone': timezone,
           }, SetOptions(merge: true));
-        } catch (e) {
-          // Optionally log error
+        } catch (error, stackTrace) {
+          ObservabilityService.recordError(
+            error,
+            stackTrace,
+            reason: 'Updating user timezone',
+          );
         }
+      } else if (user == null && _lastUser != null) {
+        _lastUser = null;
+        unawaited(ObservabilityService.setUser(null));
       }
     };
     _authNotifier.addListener(_authListener);
