@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
@@ -56,6 +59,37 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   CustomerInfoNotifier? _customerInfoNotifier; // cache notifier to avoid lookups after dispose
 
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
+
+  Future<bool> _ensureNotificationPermission() async {
+    PermissionStatus status;
+    try {
+      status = await Permission.notification.status;
+      if (status.isGranted) return true;
+
+      if (Platform.isIOS) {
+        await LocalNotificationService.requestIOSPermissions();
+      } else {
+        status = await Permission.notification.request();
+      }
+      status = await Permission.notification.status;
+      if (status.isGranted) return true;
+    } catch (_) {
+      status = PermissionStatus.denied;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Notifications are disabled for this app.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: openAppSettings,
+          ),
+        ),
+      );
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -669,6 +703,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                               },
                                             );
                                             if (picked != null && picked != _friendNotificationMode) {
+                                              if (picked != 'off' && !await _ensureNotificationPermission()) return;
                                               await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
                                                 'friend_notification_mode': picked,
                                                 'friend_notifications': picked != 'off',
@@ -701,6 +736,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                           ),
                                           initialValue: _practiceReminders,
                                           onToggle: (bool value) async {
+                                            if (value && !await _ensureNotificationPermission()) return;
                                             await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'practice_reminders': value});
                                             if (mounted) setState(() => _practiceReminders = value);
                                           },
@@ -714,6 +750,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               leading: Icon(Icons.alarm_rounded, color: Theme.of(context).colorScheme.onPrimary),
                               initialValue: _localPracticeReminders,
                               onToggle: (bool value) async {
+                                if (value && !await _ensureNotificationPermission()) return;
                                 final prefs = await SharedPreferences.getInstance();
                                 await prefs.setBool('local_practice_reminders', value);
                                 if (mounted) setState(() => _localPracticeReminders = value);
@@ -751,6 +788,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                                     ),
                                   );
                                   if (picked != null) {
+                                    if (!await _ensureNotificationPermission()) return;
                                     final prefs = await SharedPreferences.getInstance();
                                     await prefs.setInt('reminder_hour', picked.hour);
                                     await prefs.setInt('reminder_minute', picked.minute);
@@ -771,6 +809,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               leading: Icon(Icons.local_fire_department_rounded, color: Colors.orange),
                               initialValue: _streakNotifications,
                               onToggle: (bool value) async {
+                                if (value && !await _ensureNotificationPermission()) return;
                                 final prefs = await SharedPreferences.getInstance();
                                 await prefs.setBool('streak_notifications', value);
                                 if (mounted) setState(() => _streakNotifications = value);
@@ -786,6 +825,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                               leading: Icon(Icons.sports_hockey_rounded, color: Theme.of(context).colorScheme.onPrimary),
                               initialValue: _activeSessionNotification,
                               onToggle: (bool value) async {
+                                if (value && !await _ensureNotificationPermission()) return;
                                 final prefs = await SharedPreferences.getInstance();
                                 await prefs.setBool('active_session_notification', value);
                                 if (mounted) setState(() => _activeSessionNotification = value);

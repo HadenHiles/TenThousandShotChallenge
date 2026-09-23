@@ -137,9 +137,8 @@ class IntroShownNotifier extends ChangeNotifier {
   }
 }
 
-/// Tracks whether the user has granted the permissions the app needs.
-/// Checks status at startup; existing users who are missing permissions
-/// are redirected to [PermissionsScreen] automatically.
+/// Tracks permission status for screens that choose to display it.
+/// Missing permissions never trigger navigation during app startup.
 class PermissionsNotifier extends ChangeNotifier {
   bool? _needsPermissions; // null while the async check is pending
 
@@ -170,8 +169,7 @@ class PermissionsNotifier extends ChangeNotifier {
   /// Re-run the permission check (call after granting permissions).
   Future<void> refresh() => _check();
 
-  /// Mark permissions as handled for this session so the router won't
-  /// redirect. The next cold start will re-check actual OS status.
+  /// Mark permissions as handled for the current session.
   void markGranted() {
     _needsPermissions = false;
     notifyListeners();
@@ -402,10 +400,6 @@ GoRouter createAppRouter(
       }
       // New user: show full intro flow first
       if (!introShown && path != AppRoutePaths.intro) return AppRoutePaths.intro;
-      // Existing user with missing permissions: show permissions screen
-      if (introShown && permissionsNotifier.checked && permissionsNotifier.needsPermissions && path != AppRoutePaths.permissions) {
-        return AppRoutePaths.permissions;
-      }
       if (user == null && path != AppRoutePaths.login && path != AppRoutePaths.intro && path != AppRoutePaths.permissions) {
         return AppRoutePaths.login;
       }

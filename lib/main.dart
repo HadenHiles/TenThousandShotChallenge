@@ -43,9 +43,102 @@ const Color snapShotColor = Color(0xff2296F3);
 const Color backhandShotColor = Color(0xff4050B5);
 const Color slapShotColor = Color(0xff009688);
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
+  runApp(const AppBootstrap());
+}
+
+typedef AppInitializer = Future<Widget> Function();
+
+Future<FirebaseApp>? _firebaseInitialization;
+
+class AppBootstrap extends StatefulWidget {
+  const AppBootstrap({super.key, this.initializer = _initializeApp});
+
+  final AppInitializer initializer;
+
+  @override
+  State<AppBootstrap> createState() => _AppBootstrapState();
+}
+
+class _AppBootstrapState extends State<AppBootstrap> {
+  static const _startupTimeout = Duration(seconds: 20);
+
+  Widget? _app;
+  Object? _error;
+  int _attempt = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Let Flutter replace the native launch screen before invoking plugins.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
+  }
+
+  Future<void> _initialize() async {
+    final attempt = ++_attempt;
+    if (mounted) {
+      setState(() {
+        _app = null;
+        _error = null;
+      });
+    }
+
+    try {
+      final app = await widget.initializer().timeout(_startupTimeout);
+      if (!mounted || attempt != _attempt) return;
+      setState(() => _app = app);
+    } catch (error, stackTrace) {
+      _logStartupError('application', error, stackTrace);
+      if (!mounted || attempt != _attempt) return;
+      setState(() => _error = error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = _app;
+    if (app != null) return app;
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xffCC3333),
+        body: SafeArea(
+          child: Center(
+            child: _error == null
+                ? const CircularProgressIndicator(color: Colors.white)
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.white, size: 48),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Unable to start the app',
+                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          'Check your connection and try again.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(onPressed: _initialize, child: const Text('Retry')),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<Widget> _initializeApp() async {
   // Use fvp as the video_player backend so WebM (VP8/VP9) works on iOS.
   //
   // Restricted to iOS only – on Android the default ExoPlayer backend already
@@ -60,10 +153,14 @@ Future<void> main() async {
   //                     The libmdk VT decoder only activates VP9 hardware on
   //                     macOS 11+, so this explicit entry is needed for iOS.
   //   3. FFmpeg   – software fallback for any codec not covered above.
-  fvp.registerWith(options: {
-    'platforms': ['ios'],
-    'video.decoders': ['VT', 'VideoToolbox', 'FFmpeg'],
-  });
+  try {
+    fvp.registerWith(options: {
+      'platforms': ['ios'],
+      'video.decoders': ['VT', 'VideoToolbox', 'FFmpeg'],
+    });
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('video backend', error, stackTrace);
+  }
 
   // Reduce Flutter's image cache from the 100 MB default to limit heap
   // pressure on low-memory Android devices.
@@ -71,137 +168,213 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
 
   // Lock device orientation to portrait mode
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  await _runOptionalStartupTask(
+    'device orientation',
+    () => SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]),
+  );
 
-  // Initialize the connection to our firebase project
-  await Firebase.initializeApp(
+  // Share an in-flight initialization across retries. Native initialization
+  // cannot be cancelled when a Dart timeout fires, and starting it twice can
+  // leave Firebase in an inconsistent state.
+  final firebaseInitialization = _firebaseInitialization ??= Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  final appleSignInAvailable = await AppleSignInAvailable.check();
+  try {
+    await firebaseInitialization.timeout(const Duration(seconds: 15));
+  } catch (error) {
+    if (error is! TimeoutException && identical(_firebaseInitialization, firebaseInitialization)) {
+      _firebaseInitialization = null;
+    }
+    rethrow;
+  }
+  AppleSignInAvailable appleSignInAvailable;
+  try {
+    appleSignInAvailable = await AppleSignInAvailable.check().timeout(const Duration(seconds: 5));
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('Apple Sign In availability', error, stackTrace);
+    appleSignInAvailable = AppleSignInAvailable(false);
+  }
 
   // RevenueCat will be initialized after user login
 
   // Load global app configurations
-  await GlobalConfiguration().loadFromAsset("youtube_settings");
+  await _runOptionalStartupTask(
+    'global configuration',
+    () => GlobalConfiguration().loadFromAsset("youtube_settings"),
+  );
 
   // Load user preferences
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  final puckCount = sanitizePuckCount(prefs.getInt('puck_count'));
-  if (puckCount != prefs.getInt('puck_count')) {
-    await prefs.setInt('puck_count', puckCount);
+  SharedPreferences? prefs;
+  try {
+    prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 5));
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('shared preferences', error, stackTrace);
   }
+  final storedPuckCount = prefs?.getInt('puck_count');
+  final puckCount = sanitizePuckCount(storedPuckCount);
+  if (prefs != null && puckCount != storedPuckCount) {
+    await _runOptionalStartupTask('puck count repair', () => prefs!.setInt('puck_count', puckCount));
+  }
+  final storedTargetDate = prefs?.getString('target_date');
+  final targetDate = storedTargetDate == null ? null : DateTime.tryParse(storedTargetDate);
   preferences = Preferences(
-    prefs.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
+    prefs?.getBool('dark_mode') ?? ThemeMode.system == ThemeMode.dark,
     puckCount,
-    prefs.getBool('friend_notifications') ?? true,
-    prefs.getString('target_date') != null ? DateTime.parse(prefs.getString('target_date')!) : DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
-    prefs.getString('fcm_token'),
+    prefs?.getBool('friend_notifications') ?? true,
+    targetDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 100),
+    prefs?.getString('fcm_token'),
   );
 
   // Load intro_shown synchronously before building the app; compare stored version
   // against the current app version so updates prompt the welcome screen again.
-  final packageInfo = await PackageInfo.fromPlatform();
-  final introShownVersion = prefs.getString('intro_shown_version');
-  final introShown = introShownVersion == packageInfo.version;
+  String? appVersion;
+  try {
+    appVersion = (await PackageInfo.fromPlatform().timeout(const Duration(seconds: 5))).version;
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('package information', error, stackTrace);
+  }
+  final introShownVersion = prefs?.getString('intro_shown_version');
+  final introShown = appVersion != null && introShownVersion == appVersion;
   final introShownNotifier = IntroShownNotifier.withValue(introShown);
 
-  // Initialize local notifications (channels + timezone setup).
-  await LocalNotificationService.initialize();
+  _configureFirebaseMessaging(prefs);
+  unawaited(_initializeOptionalServices(prefs));
 
-  // Re-schedule the daily reminder so it survives reboots and reinstalls.
-  final reminderH = prefs.getInt('reminder_hour') ?? 17;
-  final reminderM = prefs.getInt('reminder_minute') ?? 0;
-  await LocalNotificationService.scheduleDailyReminder(hour: reminderH, minute: reminderM);
+  return MultiProvider(
+    providers: [
+      Provider<AppleSignInAvailable>.value(value: appleSignInAvailable),
+      ChangeNotifierProvider<PreferencesStateNotifier>(
+        create: (_) => PreferencesStateNotifier(),
+      ),
+      Provider<Preferences>.value(value: preferences!),
+      Provider<FirebaseAuth>.value(value: FirebaseAuth.instance),
+      Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
+      Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
+      ChangeNotifierProvider<CustomerInfoNotifier>(
+        create: (_) => CustomerInfoNotifier(),
+      ),
+      Provider<NetworkStatusService>(
+        create: (context) => NetworkStatusService(
+          isTesting: false, // Always false in production
+        ),
+      ),
+      ChangeNotifierProvider<IntroShownNotifier>.value(value: introShownNotifier),
+      ChangeNotifierProvider<PermissionsNotifier>(
+        create: (_) => PermissionsNotifier(),
+      ),
+    ],
+    child: Home(introShownNotifier: introShownNotifier),
+  );
+}
 
-  // Initialize navigation environment (Android SDK + system paddings)
-  await initNavigationEnvironment();
+Future<void> _initializeOptionalServices(SharedPreferences? prefs) async {
+  await _runOptionalStartupTask('navigation environment', initNavigationEnvironment);
 
-  /**
-   * Firebase messaging setup
-   */
-  FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
-
-  // Get the user's FCM token
-  // Note: the OS notification permission dialog is now requested during the
-  // onboarding intro / permissions screen - not here at cold start.
-  firebaseMessaging.getToken().then((token) {
-    if (token != null && preferences!.fcmToken != token) {
-      prefs.setString('fcm_token', token);
-    }
-  }).catchError((e) {
-    // On iOS the APNS token may not be available immediately at cold start
-    // (e.g. first launch, device just booted). The token will be obtained
-    // later via onTokenRefresh, so this is safe to ignore.
-    debugPrint('FCM getToken skipped: $e');
-  });
-
-  // Refresh token whenever FCM rotates it so Firestore stays up to date.
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-    final savedPrefs = await SharedPreferences.getInstance();
-    await savedPrefs.setString('fcm_token', newToken);
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).update({'fcm_token': newToken});
-    }
-  });
-
-  // Show FCM messages that arrive while the app is in the foreground as an
-  // in-app banner so no system notification is added to the tray.
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    final notification = message.notification;
-    if (notification == null) return;
-    final title = notification.title ?? 'New notification';
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      _showInAppBanner(title: title, body: notification.body);
-      return;
-    }
-    // Wait until the Firestore notification doc actually lands before
-    // showing the banner so the list is already populated when tapped.
-    _showBannerWhenReady(uid: uid, title: title, body: notification.body);
-  });
-
-  // Listen for firebase background messages
-  FirebaseMessaging.onBackgroundMessage(_messageHandler);
-  // Listen for message clicks (app in background, not terminated)
-  FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
-
-  // Handle cold-start: app was terminated and launched by tapping a notification.
-  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-  if (initialMessage != null) {
-    LocalNotificationService.pendingRoute = '/notifications';
+  var notificationsInitialized = false;
+  try {
+    await LocalNotificationService.initialize().timeout(const Duration(seconds: 10));
+    notificationsInitialized = true;
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('local notifications', error, stackTrace);
   }
+  if (!notificationsInitialized) return;
 
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider<AppleSignInAvailable>.value(value: appleSignInAvailable),
-        ChangeNotifierProvider<PreferencesStateNotifier>(
-          create: (_) => PreferencesStateNotifier(),
-        ),
-        Provider<Preferences>.value(value: preferences!),
-        Provider<FirebaseAuth>.value(value: FirebaseAuth.instance),
-        Provider<FirebaseFirestore>.value(value: FirebaseFirestore.instance),
-        Provider<FirebaseAnalytics>.value(value: FirebaseAnalytics.instance),
-        ChangeNotifierProvider<CustomerInfoNotifier>(
-          create: (_) => CustomerInfoNotifier(),
-        ),
-        Provider<NetworkStatusService>(
-          create: (context) => NetworkStatusService(
-            isTesting: false, // Always false in production
-          ),
-        ),
-        ChangeNotifierProvider<IntroShownNotifier>.value(value: introShownNotifier),
-        ChangeNotifierProvider<PermissionsNotifier>(
-          create: (_) => PermissionsNotifier(),
-        ),
-      ],
-      child: Home(introShownNotifier: introShownNotifier),
+  await _runOptionalStartupTask(
+    'daily reminder',
+    () => LocalNotificationService.scheduleDailyReminder(
+      hour: prefs?.getInt('reminder_hour') ?? 17,
+      minute: prefs?.getInt('reminder_minute') ?? 0,
     ),
   );
+}
+
+bool _firebaseMessagingConfigured = false;
+
+void _configureFirebaseMessaging(SharedPreferences? prefs) {
+  if (_firebaseMessagingConfigured) return;
+  _firebaseMessagingConfigured = true;
+
+  try {
+    final firebaseMessaging = FirebaseMessaging.instance;
+    unawaited(_refreshFcmToken(firebaseMessaging, prefs));
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      try {
+        final savedPrefs = await SharedPreferences.getInstance();
+        await savedPrefs.setString('fcm_token', newToken);
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).update({'fcm_token': newToken});
+        }
+      } catch (error, stackTrace) {
+        _reportOptionalStartupError('FCM token refresh', error, stackTrace);
+      }
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      if (notification == null) return;
+      final title = notification.title ?? 'New notification';
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        _showInAppBanner(title: title, body: notification.body);
+        return;
+      }
+      _showBannerWhenReady(uid: uid, title: title, body: notification.body);
+    });
+
+    FirebaseMessaging.onBackgroundMessage(_messageHandler);
+    FirebaseMessaging.onMessageOpenedApp.listen(_messageClickHandler);
+    unawaited(_handleInitialMessage(firebaseMessaging));
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('Firebase Messaging setup', error, stackTrace);
+  }
+}
+
+Future<void> _refreshFcmToken(FirebaseMessaging messaging, SharedPreferences? prefs) async {
+  try {
+    final token = await messaging.getToken().timeout(const Duration(seconds: 10));
+    if (token != null && preferences?.fcmToken != token) {
+      await prefs?.setString('fcm_token', token);
+      preferences?.fcmToken = token;
+    }
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('FCM token', error, stackTrace);
+  }
+}
+
+Future<void> _handleInitialMessage(FirebaseMessaging messaging) async {
+  try {
+    final initialMessage = await messaging.getInitialMessage().timeout(const Duration(seconds: 10));
+    if (initialMessage != null) {
+      LocalNotificationService.navigateTo('/notifications');
+    }
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError('initial notification', error, stackTrace);
+  }
+}
+
+Future<void> _runOptionalStartupTask(
+  String name,
+  Future<void> Function() operation,
+) async {
+  try {
+    await operation().timeout(const Duration(seconds: 10));
+  } catch (error, stackTrace) {
+    _reportOptionalStartupError(name, error, stackTrace);
+  }
+}
+
+void _reportOptionalStartupError(String name, Object error, StackTrace stackTrace) {
+  _logStartupError('optional service: $name', error, stackTrace);
+}
+
+void _logStartupError(String stage, Object error, StackTrace stackTrace) {
+  debugPrint('Startup failure ($stage): $error');
+  debugPrintStack(stackTrace: stackTrace);
 }
 
 /*
