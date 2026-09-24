@@ -117,6 +117,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> with Widget
               ),
               const SizedBox(height: 20),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: HomeTheme.darkTheme.colorScheme.primary,
+                  foregroundColor: HomeTheme.darkTheme.colorScheme.onPrimary,
+                ),
                 onPressed: permission.isPermanentlyDenied ? openAppSettings : _requestCameraPermission,
                 child: Text(permission.isPermanentlyDenied ? 'Open Settings' : 'Allow Camera'),
               ),

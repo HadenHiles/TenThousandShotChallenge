@@ -354,6 +354,11 @@ void _configureFirebaseMessaging(SharedPreferences? prefs) {
 
 Future<void> _refreshFcmToken(FirebaseMessaging messaging, SharedPreferences? prefs) async {
   try {
+    if (Platform.isIOS || Platform.isMacOS) {
+      final apnsToken = await messaging.getAPNSToken().timeout(const Duration(seconds: 10));
+      if (apnsToken == null) return;
+    }
+
     final token = await messaging.getToken().timeout(const Duration(seconds: 10));
     if (token != null && preferences?.fcmToken != token) {
       await prefs?.setString('fcm_token', token);

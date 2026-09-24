@@ -35,7 +35,7 @@ class ProfileSettings extends StatefulWidget {
   State<ProfileSettings> createState() => _ProfileSettingsState();
 }
 
-class _ProfileSettingsState extends State<ProfileSettings> {
+class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingObserver {
   // State settings values
   bool _darkMode = false;
   String _friendNotificationMode = 'all'; // 'all' | 'selected' | 'off'
@@ -60,6 +60,54 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
+  Future<bool> _hasNotificationPermission() async {
+    try {
+      return (await Permission.notification.status).isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _disableAllNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await Future.wait([
+      prefs.setBool('local_practice_reminders', false),
+      prefs.setBool('streak_notifications', false),
+      prefs.setBool('active_session_notification', false),
+    ]);
+
+    try {
+      await Future.wait([
+        LocalNotificationService.cancelDailyReminder(),
+        LocalNotificationService.cancelStreakAtRisk(),
+        LocalNotificationService.cancelActiveSession(),
+      ]);
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final currentUser = user;
+    if (currentUser != null) {
+      try {
+        await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(currentUser.uid).update({
+          'friend_notification_mode': 'off',
+          'friend_notifications': false,
+          'practice_reminders': false,
+        });
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _friendNotificationMode = 'off';
+        _practiceReminders = false;
+        _localPracticeReminders = false;
+        _streakNotifications = false;
+        _activeSessionNotification = false;
+      });
+    }
+  }
+
   Future<bool> _ensureNotificationPermission() async {
     PermissionStatus status;
     try {
@@ -77,13 +125,21 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       status = PermissionStatus.denied;
     }
 
+    await _disableAllNotificationSettings();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         SnackBar(
-          content: const Text('Notifications are disabled for this app.'),
+          content: const Text('Notification permission is off. All notification settings will stay off until permission is granted.'),
+          duration: const Duration(seconds: 6),
+          showCloseIcon: true,
           action: SnackBarAction(
             label: 'Settings',
-            onPressed: openAppSettings,
+            onPressed: () {
+              messenger.hideCurrentSnackBar();
+              openAppSettings();
+            },
           ),
         ),
       );
@@ -94,6 +150,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
     _loadSubscriptionLevel();
     // Listen for RevenueCat entitlement changes
@@ -102,6 +159,15 @@ class _ProfileSettingsState extends State<ProfileSettings> {
       _customerInfoNotifier = Provider.of<CustomerInfoNotifier?>(context, listen: false);
       _customerInfoNotifier?.addListener(_onCustomerInfoChanged);
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _hasNotificationPermission().then((granted) {
+        if (!granted) _disableAllNotificationSettings();
+      });
+    }
   }
 
   void _onCustomerInfoChanged() {
@@ -128,12 +194,19 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   //Loading counter value on start
   _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    final notificationsAllowed = await _hasNotificationPermission();
+
+    if (!notificationsAllowed) {
+      await _disableAllNotificationSettings();
+    }
+
+    if (!mounted) return;
 
     setState(() {
       _darkMode = (prefs.getBool('dark_mode') ?? false);
-      _localPracticeReminders = prefs.getBool('local_practice_reminders') ?? true;
-      _streakNotifications = prefs.getBool('streak_notifications') ?? true;
-      _activeSessionNotification = prefs.getBool('active_session_notification') ?? true;
+      _localPracticeReminders = notificationsAllowed && (prefs.getBool('local_practice_reminders') ?? true);
+      _streakNotifications = notificationsAllowed && (prefs.getBool('streak_notifications') ?? true);
+      _activeSessionNotification = notificationsAllowed && (prefs.getBool('active_session_notification') ?? true);
       final h = prefs.getInt('reminder_hour') ?? 17;
       final m = prefs.getInt('reminder_minute') ?? 0;
       _reminderTime = TimeOfDay(hour: h, minute: m);
@@ -147,23 +220,24 @@ class _ProfileSettingsState extends State<ProfileSettings> {
         // friend_notification_mode takes precedence; fall back to legacy friend_notifications bool
         final rawMode = snapshot.data()?['friend_notification_mode'] as String?;
         if (rawMode != null && ['all', 'selected', 'off'].contains(rawMode)) {
-          _friendNotificationMode = rawMode;
+          _friendNotificationMode = notificationsAllowed ? rawMode : 'off';
         } else {
           // Migrate from legacy bool - default to 'all' so existing users keep receiving notifications.
           final legacyBool = snapshot.data()?['friend_notifications'] as bool?;
-          _friendNotificationMode = (legacyBool == false) ? 'off' : 'all';
+          _friendNotificationMode = notificationsAllowed && legacyBool != false ? 'all' : 'off';
           // Persist the migrated value so the function logic can use the new field immediately.
           Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
             'friend_notification_mode': _friendNotificationMode,
           });
         }
-        _practiceReminders = u.practiceReminders ?? false;
+        _practiceReminders = notificationsAllowed && (u.practiceReminders ?? false);
       });
     }).catchError((_) {});
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     try {
       _customerInfoNotifier?.removeListener(_onCustomerInfoChanged);
     } catch (_) {}
