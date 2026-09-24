@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tenthousandshotchallenge/services/ThumbnailCache.dart';
 import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_thumbnail_gdx_plus/video_thumbnail_gdx_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';

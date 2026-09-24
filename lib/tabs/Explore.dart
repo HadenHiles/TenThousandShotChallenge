@@ -1348,22 +1348,17 @@ class _ExploreVideoItemState extends State<_ExploreVideoItem> {
 
   @override
   void initState() {
-    _ytController = YoutubePlayerController(
-      initialVideoId: widget.video.id,
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
-      ),
+    _ytController = YoutubePlayerController.fromVideoId(
+      videoId: widget.video.id,
+      autoPlay: false,
+      params: const YoutubePlayerParams(mute: false),
     );
     super.initState();
   }
 
   @override
   void dispose() {
-    try {
-      _ytController.pause();
-      _ytController.dispose();
-    } catch (_) {}
+    _ytController.close();
     super.dispose();
   }
 
@@ -1375,30 +1370,9 @@ class _ExploreVideoItemState extends State<_ExploreVideoItem> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.max,
       children: [
-        YoutubePlayerBuilder(
-          player: YoutubePlayer(
-            controller: _ytController,
-            aspectRatio: 16 / 9,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: Theme.of(context).primaryColor,
-            progressColors: ProgressBarColors(
-              playedColor: Theme.of(context).primaryColor,
-              handleColor: Theme.of(context).primaryColor,
-            ),
-            bottomActions: const [
-              SizedBox(width: 14.0),
-              CurrentPosition(),
-              SizedBox(width: 8.0),
-              ProgressBar(
-                isExpanded: true,
-              ),
-              RemainingDuration(),
-              PlaybackSpeedButton(),
-            ],
-            actionsPadding: const EdgeInsets.all(2),
-            liveUIColor: Theme.of(context).primaryColor,
-          ),
-          builder: (context, player) => Column(children: [player]),
+        YoutubePlayer(
+          controller: _ytController,
+          aspectRatio: 16 / 9,
         ),
         Flexible(
           flex: 2,

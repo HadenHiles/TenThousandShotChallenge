@@ -6,7 +6,7 @@ import 'package:tenthousandshotchallenge/services/HttpProvider.dart';
 import 'package:tenthousandshotchallenge/services/ThumbnailCache.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_thumbnail_gdx_plus/video_thumbnail_gdx_plus.dart';
 import 'ChallengeStepsFullScreenViewer.dart';
 
 /// Horizontal PageView showing each [ChallengeStep] with its media, title,
