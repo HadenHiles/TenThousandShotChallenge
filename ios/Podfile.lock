@@ -1394,13 +1394,6 @@ PODS:
   - Flutter (1.0.0)
   - flutter_app_group_directory (0.0.1):
     - Flutter
-  - flutter_inappwebview_ios (0.0.1):
-    - Flutter
-    - flutter_inappwebview_ios/Core (= 0.0.1)
-    - OrderedSet (~> 6.0.3)
-  - flutter_inappwebview_ios/Core (0.0.1):
-    - Flutter
-    - OrderedSet (~> 6.0.3)
   - flutter_keyboard_visibility (0.0.1):
     - Flutter
   - flutter_local_notifications (0.0.1):
@@ -1587,17 +1580,17 @@ PODS:
   - image_picker_ios (0.0.1):
     - Flutter
   - leveldb-library (1.22.6)
-  - libwebp (1.5.0):
-    - libwebp/demux (= 1.5.0)
-    - libwebp/mux (= 1.5.0)
-    - libwebp/sharpyuv (= 1.5.0)
-    - libwebp/webp (= 1.5.0)
-  - libwebp/demux (1.5.0):
+  - libwebp (1.6.0):
+    - libwebp/demux (= 1.6.0)
+    - libwebp/mux (= 1.6.0)
+    - libwebp/sharpyuv (= 1.6.0)
+    - libwebp/webp (= 1.6.0)
+  - libwebp/demux (1.6.0):
     - libwebp/webp
-  - libwebp/mux (1.5.0):
+  - libwebp/mux (1.6.0):
     - libwebp/demux
-  - libwebp/sharpyuv (1.5.0)
-  - libwebp/webp (1.5.0):
+  - libwebp/sharpyuv (1.6.0)
+  - libwebp/webp (1.6.0):
     - libwebp/sharpyuv
   - live_activities (0.0.1):
     - Flutter
@@ -1610,7 +1603,6 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - OrderedSet (6.0.3)
   - package_info_plus (0.4.5):
     - Flutter
   - permission_handler_apple (9.4.8):
@@ -1652,11 +1644,14 @@ PODS:
   - video_player_avfoundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - video_thumbnail (0.0.1):
+  - video_thumbnail_gdx_plus (0.5.9):
     - Flutter
     - libwebp
   - wakelock_plus (0.0.1):
     - Flutter
+  - webview_flutter_wkwebview (0.0.1):
+    - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
@@ -1673,7 +1668,6 @@ DEPENDENCIES:
   - firebase_remote_config (from `.symlinks/plugins/firebase_remote_config/ios`)
   - Flutter (from `Flutter`)
   - flutter_app_group_directory (from `.symlinks/plugins/flutter_app_group_directory/ios`)
-  - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
@@ -1697,8 +1691,9 @@ DEPENDENCIES:
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - vibration (from `.symlinks/plugins/vibration/ios`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
-  - video_thumbnail (from `.symlinks/plugins/video_thumbnail/ios`)
+  - video_thumbnail_gdx_plus (from `.symlinks/plugins/video_thumbnail_gdx_plus/ios`)
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
+  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -1740,7 +1735,6 @@ SPEC REPOS:
     - libwebp
     - mdk
     - nanopb
-    - OrderedSet
     - PromisesObjC
     - PromisesSwift
     - PurchasesHybridCommon
@@ -1778,8 +1772,6 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_app_group_directory:
     :path: ".symlinks/plugins/flutter_app_group_directory/ios"
-  flutter_inappwebview_ios:
-    :path: ".symlinks/plugins/flutter_inappwebview_ios/ios"
   flutter_keyboard_visibility:
     :path: ".symlinks/plugins/flutter_keyboard_visibility/ios"
   flutter_local_notifications:
@@ -1826,10 +1818,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/vibration/ios"
   video_player_avfoundation:
     :path: ".symlinks/plugins/video_player_avfoundation/darwin"
-  video_thumbnail:
-    :path: ".symlinks/plugins/video_thumbnail/ios"
+  video_thumbnail_gdx_plus:
+    :path: ".symlinks/plugins/video_thumbnail_gdx_plus/ios"
   wakelock_plus:
     :path: ".symlinks/plugins/wakelock_plus/ios"
+  webview_flutter_wkwebview:
+    :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
@@ -1871,7 +1865,6 @@ SPEC CHECKSUMS:
   FirebaseSharedSwift: c91f36aeaa566e12b682caacc40d34c8303c3124
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_app_group_directory: 55b5362007d1c0cb45dc1dd1e94f67d615f45a6b
-  flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
@@ -1891,12 +1884,11 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
-  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
+  libwebp: af5937a13536ef73f3784d69cc342b98961acf33
   live_activities: 4dfa736d0736e1c77866a2f9c056a76513cc9e7b
   mdk: 3bfb53e0bcc9643180eaa864360051f281e4c17b
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e
   printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
@@ -1916,8 +1908,9 @@ SPEC CHECKSUMS:
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   vibration: ca8104a8875b9c493e15b21b04e456befd0ff6eb
   video_player_avfoundation: 3453f792138786248960ca029747fcd9f318ef52
-  video_thumbnail: b637e0ad5f588ca9945f6e2c927f73a69a661140
+  video_thumbnail_gdx_plus: 8400eeb7003453534a2f23abc6dedc4b8dacad9b
   wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
 PODFILE CHECKSUM: e6f959fd5955ae3def5cf7db4f5bb7291aed6704
 
