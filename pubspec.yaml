@@ -94,6 +94,8 @@ flutter_icons:
   image_path: assets/images/app-icon.png
   ios: true
 flutter:
+  config:
+    enable-swift-package-manager: false
   assets:
     - assets/cfg/
     - assets/images/
