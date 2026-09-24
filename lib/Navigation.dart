@@ -704,7 +704,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     if (shouldClose == true) {
       sessionService.reset();
-      sessionPanelController.close();
+      await LocalNotificationService.cancelActiveSession();
+      await sessionPanelController.close();
     }
   }
 

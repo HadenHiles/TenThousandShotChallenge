@@ -12,6 +12,7 @@ import 'package:tenthousandshotchallenge/tabs/shots/StartShooting.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/ShotButton.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:tenthousandshotchallenge/models/Preferences.dart';
+import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/main.dart' as main_globals;
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
@@ -46,6 +47,7 @@ void main() {
     });
 
     setUp(() async {
+      main_globals.sessionService.reset();
       mockUser = MockUser(
         uid: 'test_uid',
         displayName: 'Test User',
@@ -61,7 +63,7 @@ void main() {
       when(mockPanelController.close()).thenAnswer((_) async {});
     });
 
-    Widget createWidgetUnderTest() {
+    Widget createWidgetUnderTest({List<Shots> shots = const []}) {
       return MultiProvider(
         providers: [
           Provider<FirebaseAuth>.value(value: mockAuth),
@@ -79,7 +81,7 @@ void main() {
               children: [
                 StartShooting(
                   sessionPanelController: mockPanelController,
-                  shots: const [],
+                  shots: shots,
                 ),
               ],
             ),
@@ -156,6 +158,19 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await pump(tester);
       expect(find.textContaining('25', findRichText: true), findsWidgets);
+    });
+
+    testWidgets('clears retained shots when the session ends', (WidgetTester tester) async {
+      final shot = Shots(DateTime(2026, 9, 24, 10), 'wrist', 17, null);
+      await tester.pumpWidget(createWidgetUnderTest(shots: [shot]));
+      await pump(tester);
+      expect(find.text('17'), findsOneWidget);
+
+      main_globals.sessionService.start();
+      main_globals.sessionService.reset();
+      await pump(tester);
+
+      expect(find.text('17'), findsNothing);
     });
   });
 }

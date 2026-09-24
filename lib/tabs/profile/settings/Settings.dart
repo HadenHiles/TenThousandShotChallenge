@@ -60,9 +60,11 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
 
   User? get user => Provider.of<FirebaseAuth>(context, listen: false).currentUser;
 
+  bool _notificationPermissionGranted(PermissionStatus status) => status.isGranted || status.isProvisional;
+
   Future<bool> _hasNotificationPermission() async {
     try {
-      return (await Permission.notification.status).isGranted;
+      return _notificationPermissionGranted(await Permission.notification.status);
     } catch (_) {
       return false;
     }
@@ -112,27 +114,31 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
     PermissionStatus status;
     try {
       status = await Permission.notification.status;
-      if (status.isGranted) return true;
+      if (_notificationPermissionGranted(status)) return true;
 
-      if (Platform.isIOS) {
+      status = await Permission.notification.request();
+      if (_notificationPermissionGranted(status) && Platform.isIOS) {
         await LocalNotificationService.requestIOSPermissions();
-      } else {
-        status = await Permission.notification.request();
       }
       status = await Permission.notification.status;
-      if (status.isGranted) return true;
+      if (_notificationPermissionGranted(status)) return true;
     } catch (_) {
       status = PermissionStatus.denied;
     }
 
     await _disableAllNotificationSettings();
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      return false;
+    }
+
     if (mounted) {
       final messenger = ScaffoldMessenger.of(context);
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: const Text('Notification permission is off. All notification settings will stay off until permission is granted.'),
-          duration: const Duration(seconds: 6),
+          content: const Text('Notification permission is off.'),
+          duration: const Duration(seconds: 4),
           showCloseIcon: true,
           action: SnackBarAction(
             label: 'Settings',

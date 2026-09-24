@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/models/firestore/ChallengerRoadLevel.da
 import 'package:tenthousandshotchallenge/models/firestore/Shots.dart';
 import 'package:tenthousandshotchallenge/services/ChallengerRoadService.dart';
 import 'package:tenthousandshotchallenge/services/GlobalTrophyService.dart';
+import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/GlobalTrophyAwardScreen.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
@@ -623,7 +624,10 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
                               ],
                             ),
                           );
-                          if (confirm == true && mounted) setState(() => _shots.clear());
+                          if (confirm == true && mounted) {
+                            setState(() => _shots.clear());
+                            await _updateActiveSessionNotification();
+                          }
                         },
                         child: Text(
                           'CLEAR ALL',
@@ -704,14 +708,13 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: detailsColor.withValues(alpha: 0.12),
-          ),
+          side: BorderSide(color: detailsColor.withValues(alpha: 0.12)),
         ),
+        clipBehavior: Clip.antiAlias,
         child: ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -815,6 +818,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
         Shots(DateTime.now(), _selectedShotType, shotCount, targetsHit),
       );
     });
+    await _updateActiveSessionNotification();
 
     // Auto-complete if this try passed the challenge.
     if (targetsHit >= widget.levelDoc.shotsToPass && mounted) {
@@ -832,6 +836,15 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted && !_saving) _finishSession();
     }
+  }
+
+  Future<void> _updateActiveSessionNotification() {
+    final shotCount = _shots.fold<int>(0, (total, shot) => total + (shot.count ?? 0));
+    final startedAt = activeChallengeSession.value?.startedAt ?? DateTime.now();
+    return LocalNotificationService.showActiveSession(
+      shotCount: shotCount,
+      duration: DateTime.now().difference(startedAt),
+    );
   }
 
   List<Widget> _buildShotsList() {
@@ -862,7 +875,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
       return Dismissible(
         key: ValueKey('try_${s.date?.millisecondsSinceEpoch ?? i}'),
-        onDismissed: (_) {
+        onDismissed: (_) async {
           Fluttertoast.showToast(
             msg: 'Try #$tryNumber deleted',
             toastLength: Toast.LENGTH_SHORT,
@@ -872,6 +885,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
             fontSize: 16,
           );
           setState(() => _shots.remove(s));
+          await _updateActiveSessionNotification();
         },
         background: Container(
           color: Theme.of(context).primaryColor,

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:live_activities/live_activities.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -18,8 +19,11 @@ import 'package:timezone/timezone.dart' as tz;
 class LocalNotificationService {
   LocalNotificationService._();
 
+  static const _liveActivityAppGroup = 'group.com.howtohockey.tenthousandshotchallenge';
   static final _plugin = FlutterLocalNotificationsPlugin();
+  static final _liveActivities = LiveActivities();
   static bool _initialized = false;
+  static bool _liveActivitiesInitialized = false;
   static GoRouter? _router;
 
   // Tracks IDs of locally-posted foreground FCM notifications so they can be
@@ -79,6 +83,16 @@ class LocalNotificationService {
       const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: _onTapped,
     );
+
+    if (Platform.isIOS) {
+      try {
+        await _liveActivities.init(
+          appGroupId: _liveActivityAppGroup,
+          requestAndroidNotificationPermission: false,
+        );
+        _liveActivitiesInitialized = true;
+      } catch (_) {}
+    }
 
     // Create Android notification channels.
     if (Platform.isAndroid) {
@@ -304,6 +318,8 @@ class LocalNotificationService {
   /// Stores the latest shot count so [tickActiveSession] can update the
   /// notification every second without needing the caller to pass it again.
   static int _activeSessionShotCount = 0;
+  static String? _activeSessionLiveActivityId;
+  static DateTime? _activeSessionStartedAt;
 
   /// Show (or update) a persistent notification while a shooting session is
   /// active. Call this when the session starts and whenever the shot count
@@ -313,12 +329,14 @@ class LocalNotificationService {
     required Duration duration,
   }) async {
     _activeSessionShotCount = shotCount;
+    _activeSessionStartedAt ??= DateTime.now().subtract(duration);
     await _postActiveSession(shotCount: shotCount, duration: duration);
   }
 
   /// Called every second by the session timer so the elapsed-time display
   /// stays current. Uses the shot count last set by [showActiveSession].
   static Future<void> tickActiveSession(Duration duration) async {
+    if (Platform.isIOS) return;
     await _postActiveSession(shotCount: _activeSessionShotCount, duration: duration);
   }
 
@@ -328,6 +346,8 @@ class LocalNotificationService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool('active_session_notification') ?? true)) return;
+
+    if (Platform.isIOS && await _showIosLiveActivity(shotCount)) return;
 
     final minutes = duration.inMinutes;
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
@@ -351,6 +371,8 @@ class LocalNotificationService {
         ),
         iOS: const DarwinNotificationDetails(
           presentAlert: false,
+          presentBanner: false,
+          presentList: true,
           presentBadge: false,
           presentSound: false,
         ),
@@ -359,8 +381,44 @@ class LocalNotificationService {
     );
   }
 
+  static Future<bool> _showIosLiveActivity(int shotCount) async {
+    if (!_liveActivitiesInitialized) return false;
+
+    try {
+      if (!await _liveActivities.areActivitiesSupported() || !await _liveActivities.areActivitiesEnabled()) {
+        return false;
+      }
+
+      final data = <String, dynamic>{
+        'shotCount': shotCount,
+        'startedAt': (_activeSessionStartedAt ?? DateTime.now()).millisecondsSinceEpoch,
+      };
+      final activityId = _activeSessionLiveActivityId;
+      if (activityId == null) {
+        _activeSessionLiveActivityId = await _liveActivities.createActivity(
+          'shooting-${DateTime.now().millisecondsSinceEpoch}',
+          data,
+          iOSEnableRemoteUpdates: false,
+        );
+      } else {
+        await _liveActivities.updateActivity(activityId, data);
+      }
+      return _activeSessionLiveActivityId != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<void> cancelActiveSession() async {
     _activeSessionShotCount = 0;
+    _activeSessionStartedAt = null;
+    final activityId = _activeSessionLiveActivityId;
+    _activeSessionLiveActivityId = null;
+    if (activityId != null) {
+      try {
+        await _liveActivities.endActivity(activityId);
+      } catch (_) {}
+    }
     await _plugin.cancel(_activeSessionId);
   }
 

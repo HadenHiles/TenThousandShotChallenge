@@ -54,6 +54,7 @@ class _StartShootingState extends State<StartShooting> {
   bool _puckCountUpdating = false;
   bool _isFinishing = false;
   List<Shots> _shots = [];
+  late bool _sessionWasRunning;
   bool _showAccuracyPrompt = true;
   int? _lastTargetsHit;
   bool _chartCollapsed = true;
@@ -82,6 +83,8 @@ class _StartShootingState extends State<StartShooting> {
       _trackAccuracy = false;
     }
     super.initState();
+    _sessionWasRunning = sessionService.isRunning;
+    sessionService.addListener(_onSessionServiceChanged);
     _loadSubscriptionLevel();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -93,6 +96,7 @@ class _StartShootingState extends State<StartShooting> {
 
   @override
   void dispose() {
+    sessionService.removeListener(_onSessionServiceChanged);
     try {
       _customerInfoNotifier?.removeListener(_onEntitlementsChanged);
     } catch (_) {
@@ -102,6 +106,24 @@ class _StartShootingState extends State<StartShooting> {
     _shots = [];
     _currentShotCount = sanitizePuckCount(preferences?.puckCount);
     super.dispose();
+  }
+
+  void _onSessionServiceChanged() {
+    final isRunning = sessionService.isRunning;
+    final didEnd = _sessionWasRunning && !isRunning;
+    _sessionWasRunning = isRunning;
+    if (!didEnd || !mounted) return;
+
+    setState(() {
+      _isFinishing = false;
+      _shots = [];
+      _currentShotCount = sanitizePuckCount(preferences?.puckCount);
+      _chartCollapsed = true;
+      _sessionGoal = null;
+      _handsfreeActive = false;
+      _trackAccuracy = null;
+      _accuracyDialogShown = false;
+    });
   }
 
   void _onEntitlementsChanged() {
@@ -1823,429 +1845,431 @@ class _StartShootingState extends State<StartShooting> {
                       ),
                     )
                   : TextButton(
-                      onPressed: _isFinishing ? null : () async {
-                        if (_isFinishing) return;
-                        setState(() => _isFinishing = true);
-                        Feedback.forLongPress(context);
+                      onPressed: _isFinishing
+                          ? null
+                          : () async {
+                              if (_isFinishing) return;
+                              setState(() => _isFinishing = true);
+                              Feedback.forLongPress(context);
 
-                        int totalShots = 0;
-                        for (var s in _shots) {
-                          totalShots += s.count!;
-                        }
+                              int totalShots = 0;
+                              for (var s in _shots) {
+                                totalShots += s.count!;
+                              }
 
-                        // Capture per-type totals before _shots is cleared.
-                        int wristShots = 0, snapShots = 0, slapShots = 0, backhandShots = 0;
-                        int wristHits = 0, snapHits = 0, slapHits = 0, backhandHits = 0;
-                        for (final s in _shots) {
-                          switch (s.type) {
-                            case 'wrist':
-                              wristShots += s.count ?? 0;
-                              wristHits += s.targetsHit ?? 0;
-                              break;
-                            case 'snap':
-                              snapShots += s.count ?? 0;
-                              snapHits += s.targetsHit ?? 0;
-                              break;
-                            case 'slap':
-                              slapShots += s.count ?? 0;
-                              slapHits += s.targetsHit ?? 0;
-                              break;
-                            case 'backhand':
-                              backhandShots += s.count ?? 0;
-                              backhandHits += s.targetsHit ?? 0;
-                              break;
-                          }
-                        }
-                        final sessionSavedAt = DateTime.now();
-                        final sessionId = 'session_${sessionSavedAt.microsecondsSinceEpoch}';
-
-                        final auth = Provider.of<FirebaseAuth>(context, listen: false);
-                        final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-
-                        // Check connectivity - queue locally if offline
-                        final connectivity = await Connectivity().checkConnectivity();
-                        final isOffline = connectivity.contains(ConnectivityResult.none);
-                        if (isOffline) {
-                          final queuedDuration = sessionService.currentDuration;
-                          final queuedStartedAt = DateTime.now().subtract(queuedDuration);
-                          await OfflineSessionQueue.instance.enqueue(
-                            _shots,
-                            sessionId: sessionId,
-                            sessionStartedAt: queuedStartedAt,
-                            duration: queuedDuration,
-                          );
-                          final pending = await OfflineSessionQueue.instance.pendingCount();
-                          await widget.sessionPanelController.close();
-                          await LocalNotificationService.cancelActiveSession();
-                          sessionService.reset();
-                          if (mounted) {
-                            setState(() {
-                              _isFinishing = false;
-                              _shots = [];
-                              _currentShotCount = sanitizePuckCount(preferences?.puckCount);
-                              _chartCollapsed = true;
-                              _trackAccuracy = null;
-                              _accuracyDialogShown = false;
-                            });
-                            Fluttertoast.showToast(
-                              msg: 'No connection - session saved offline ($pending pending).',
-                              toastLength: Toast.LENGTH_LONG,
-                              gravity: ToastGravity.BOTTOM,
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              textColor: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 16.0,
-                            );
-                          }
-                          return;
-                        }
-
-                        // Online: sync any previously queued sessions first, then save current
-                        await OfflineSessionQueue.instance.syncPending(auth, firestore);
-
-                        await saveShootingSession(
-                          _shots,
-                          auth,
-                          firestore,
-                          sessionId: sessionId,
-                          sessionDateOverride: sessionSavedAt,
-                        ).then((success) async {
-                          // Reset service and clear widget state first so that
-                          // Navigation rebuilds with minHeight = 0 before the
-                          // close animation runs.
-                          await LocalNotificationService.cancelActiveSession();
-                          sessionService.reset();
-                          if (mounted) {
-                            setState(() {
-                              _isFinishing = false;
-                              _shots = [];
-                              _currentShotCount = sanitizePuckCount(preferences?.puckCount);
-                              _chartCollapsed = true;
-                              _trackAccuracy = null;
-                              _accuracyDialogShown = false;
-                            });
-                          }
-                          // Yield one frame so Navigation can rebuild with
-                          // minHeight = 0 before the close animation starts.
-                          // Without this the panel may not animate to 0.
-                          await WidgetsBinding.instance.endOfFrame;
-                          if (widget.sessionPanelController.isAttached) {
-                            await widget.sessionPanelController.close();
-                          }
-
-                          if (success) {
-                            // Evaluate global trophies (fire-and-forget).
-                            final uid = auth.currentUser?.uid;
-                            if (uid != null) {
-                              Future(() async {
-                                try {
-                                  final newTrophies = await GlobalTrophyService().evaluateAfterSession(
-                                    uid,
-                                    GlobalSessionInput(
-                                      total: totalShots,
-                                      wrist: wristShots,
-                                      snap: snapShots,
-                                      slap: slapShots,
-                                      backhand: backhandShots,
-                                      wristTargetsHit: wristHits,
-                                      snapTargetsHit: snapHits,
-                                      slapTargetsHit: slapHits,
-                                      backhandTargetsHit: backhandHits,
-                                      sessionDate: sessionSavedAt,
-                                    ),
-                                    isPro: _subscriptionLevel == 'pro',
-                                  );
-                                  if (newTrophies.isNotEmpty && mounted && context.mounted) {
-                                    await Navigator.of(context).push<void>(
-                                      MaterialPageRoute(
-                                        fullscreenDialog: true,
-                                        builder: (_) => GlobalTrophyAwardScreen(trophies: newTrophies),
-                                      ),
-                                    );
-                                  }
-                                } catch (_) {
-                                  // Trophy evaluation is best-effort; never block the user.
+                              // Capture per-type totals before _shots is cleared.
+                              int wristShots = 0, snapShots = 0, slapShots = 0, backhandShots = 0;
+                              int wristHits = 0, snapHits = 0, slapHits = 0, backhandHits = 0;
+                              for (final s in _shots) {
+                                switch (s.type) {
+                                  case 'wrist':
+                                    wristShots += s.count ?? 0;
+                                    wristHits += s.targetsHit ?? 0;
+                                    break;
+                                  case 'snap':
+                                    snapShots += s.count ?? 0;
+                                    snapHits += s.targetsHit ?? 0;
+                                    break;
+                                  case 'slap':
+                                    slapShots += s.count ?? 0;
+                                    slapHits += s.targetsHit ?? 0;
+                                    break;
+                                  case 'backhand':
+                                    backhandShots += s.count ?? 0;
+                                    backhandHits += s.targetsHit ?? 0;
+                                    break;
                                 }
-                              });
-                            }
-                          }
+                              }
+                              final sessionSavedAt = DateTime.now();
+                              final sessionId = 'session_${sessionSavedAt.microsecondsSinceEpoch}';
 
-                          await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
-                            if (snapshot.docs.isNotEmpty) {
-                              Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
+                              final auth = Provider.of<FirebaseAuth>(context, listen: false);
+                              final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
 
-                              if ((i.total! + totalShots) < 10000) {
-                                Fluttertoast.showToast(
-                                  msg: 'Shooting session saved!',
-                                  toastLength: Toast.LENGTH_SHORT,
-                                  gravity: ToastGravity.BOTTOM,
-                                  timeInSecForIosWeb: 1,
-                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                  textColor: Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16.0,
+                              // Check connectivity - queue locally if offline
+                              final connectivity = await Connectivity().checkConnectivity();
+                              final isOffline = connectivity.contains(ConnectivityResult.none);
+                              if (isOffline) {
+                                final queuedDuration = sessionService.currentDuration;
+                                final queuedStartedAt = DateTime.now().subtract(queuedDuration);
+                                await OfflineSessionQueue.instance.enqueue(
+                                  _shots,
+                                  sessionId: sessionId,
+                                  sessionStartedAt: queuedStartedAt,
+                                  duration: queuedDuration,
                                 );
+                                final pending = await OfflineSessionQueue.instance.pendingCount();
+                                await widget.sessionPanelController.close();
+                                await LocalNotificationService.cancelActiveSession();
+                                sessionService.reset();
+                                if (mounted) {
+                                  setState(() {
+                                    _isFinishing = false;
+                                    _shots = [];
+                                    _currentShotCount = sanitizePuckCount(preferences?.puckCount);
+                                    _chartCollapsed = true;
+                                    _trackAccuracy = null;
+                                    _accuracyDialogShown = false;
+                                  });
+                                  Fluttertoast.showToast(
+                                    msg: 'No connection - session saved offline ($pending pending).',
+                                    toastLength: Toast.LENGTH_LONG,
+                                    gravity: ToastGravity.BOTTOM,
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    textColor: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 16.0,
+                                  );
+                                }
+                                return;
+                              }
 
-                                // Check if a sub-milestone was crossed this session
-                                const subMilestones = [1000, 2500, 5000, 7500];
-                                for (final milestone in subMilestones) {
-                                  if (i.total! < milestone && (i.total! + totalShots) >= milestone) {
-                                    if (context.mounted) {
+                              // Online: sync any previously queued sessions first, then save current
+                              await OfflineSessionQueue.instance.syncPending(auth, firestore);
+
+                              await saveShootingSession(
+                                _shots,
+                                auth,
+                                firestore,
+                                sessionId: sessionId,
+                                sessionDateOverride: sessionSavedAt,
+                              ).then((success) async {
+                                // Reset service and clear widget state first so that
+                                // Navigation rebuilds with minHeight = 0 before the
+                                // close animation runs.
+                                await LocalNotificationService.cancelActiveSession();
+                                sessionService.reset();
+                                if (mounted) {
+                                  setState(() {
+                                    _isFinishing = false;
+                                    _shots = [];
+                                    _currentShotCount = sanitizePuckCount(preferences?.puckCount);
+                                    _chartCollapsed = true;
+                                    _trackAccuracy = null;
+                                    _accuracyDialogShown = false;
+                                  });
+                                }
+                                // Yield one frame so Navigation can rebuild with
+                                // minHeight = 0 before the close animation starts.
+                                // Without this the panel may not animate to 0.
+                                await WidgetsBinding.instance.endOfFrame;
+                                if (widget.sessionPanelController.isAttached) {
+                                  await widget.sessionPanelController.close();
+                                }
+
+                                if (success) {
+                                  // Evaluate global trophies (fire-and-forget).
+                                  final uid = auth.currentUser?.uid;
+                                  if (uid != null) {
+                                    Future(() async {
+                                      try {
+                                        final newTrophies = await GlobalTrophyService().evaluateAfterSession(
+                                          uid,
+                                          GlobalSessionInput(
+                                            total: totalShots,
+                                            wrist: wristShots,
+                                            snap: snapShots,
+                                            slap: slapShots,
+                                            backhand: backhandShots,
+                                            wristTargetsHit: wristHits,
+                                            snapTargetsHit: snapHits,
+                                            slapTargetsHit: slapHits,
+                                            backhandTargetsHit: backhandHits,
+                                            sessionDate: sessionSavedAt,
+                                          ),
+                                          isPro: _subscriptionLevel == 'pro',
+                                        );
+                                        if (newTrophies.isNotEmpty && mounted && context.mounted) {
+                                          await Navigator.of(context).push<void>(
+                                            MaterialPageRoute(
+                                              fullscreenDialog: true,
+                                              builder: (_) => GlobalTrophyAwardScreen(trophies: newTrophies),
+                                            ),
+                                          );
+                                        }
+                                      } catch (_) {
+                                        // Trophy evaluation is best-effort; never block the user.
+                                      }
+                                    });
+                                  }
+                                }
+
+                                await FirebaseFirestore.instance.collection('iterations').doc(Provider.of<FirebaseAuth>(context, listen: false).currentUser!.uid).collection('iterations').where('complete', isEqualTo: false).get().then((snapshot) async {
+                                  if (snapshot.docs.isNotEmpty) {
+                                    Iteration i = Iteration.fromSnapshot(snapshot.docs[0]);
+
+                                    if ((i.total! + totalShots) < 10000) {
+                                      Fluttertoast.showToast(
+                                        msg: 'Shooting session saved!',
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 1,
+                                        backgroundColor: Theme.of(context).cardTheme.color,
+                                        textColor: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 16.0,
+                                      );
+
+                                      // Check if a sub-milestone was crossed this session
+                                      const subMilestones = [1000, 2500, 5000, 7500];
+                                      for (final milestone in subMilestones) {
+                                        if (i.total! < milestone && (i.total! + totalShots) >= milestone) {
+                                          if (context.mounted) {
+                                            showDialog(
+                                              context: context,
+                                              builder: (_) => AlertDialog(
+                                                backgroundColor: Theme.of(context).colorScheme.surface,
+                                                title: Text(
+                                                  '$milestone Shots!'.toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 22,
+                                                    color: Theme.of(context).primaryColor,
+                                                  ),
+                                                ),
+                                                content: Text(
+                                                  "You've hit $milestone shots! Keep pushing toward 10,000!",
+                                                  style: TextStyle(
+                                                    fontFamily: 'NovecentoSans',
+                                                    fontSize: 16,
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(),
+                                                    child: Text('Close'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
+                                                  ),
+                                                  TextButton.icon(
+                                                    icon: const Icon(Icons.share),
+                                                    label: Text('Share'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                      shareMilestone(
+                                                        context: context,
+                                                        title: '$milestone SHOTS!',
+                                                        subtitle: 'Milestone reached toward 10,000',
+                                                        totalShots: i.total! + totalShots,
+                                                        displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
+                                                      );
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            // Also fire a milestone local notification.
+                                            await LocalNotificationService.showMilestoneReached(
+                                              totalShots: milestone,
+                                              isPro: _subscriptionLevel == 'pro',
+                                            );
+                                          }
+                                          break;
+                                        }
+                                      }
+                                    } else {
                                       showDialog(
                                         context: context,
-                                        builder: (_) => AlertDialog(
-                                          backgroundColor: Theme.of(context).colorScheme.surface,
-                                          title: Text(
-                                            '$milestone Shots!'.toUpperCase(),
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 22,
-                                              color: Theme.of(context).primaryColor,
-                                            ),
-                                          ),
-                                          content: Text(
-                                            "You've hit $milestone shots! Keep pushing toward 10,000!",
-                                            style: TextStyle(
-                                              fontFamily: 'NovecentoSans',
-                                              fontSize: 16,
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(context).pop(),
-                                              child: Text('Close'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
-                                            ),
-                                            TextButton.icon(
-                                              icon: const Icon(Icons.share),
-                                              label: Text('Share'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans')),
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                                shareMilestone(
-                                                  context: context,
-                                                  title: '$milestone SHOTS!',
-                                                  subtitle: 'Milestone reached toward 10,000',
-                                                  totalShots: i.total! + totalShots,
-                                                  displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      // Also fire a milestone local notification.
-                                      await LocalNotificationService.showMilestoneReached(
-                                        totalShots: milestone,
-                                        isPro: _subscriptionLevel == 'pro',
-                                      );
-                                    }
-                                    break;
-                                  }
-                                }
-                              } else {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return Dialog(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-                                      child: SingleChildScrollView(
-                                        clipBehavior: Clip.none,
-                                        child: Stack(
-                                          clipBehavior: Clip.none,
-                                          alignment: Alignment.topCenter,
-                                          children: [
-                                            SizedBox(
-                                              height: 550,
-                                              child: Padding(
-                                                padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
-                                                child: Column(
-                                                  children: [
-                                                    Text(
-                                                      "Challenge Complete!".toUpperCase(),
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).primaryColor,
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 32,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 5),
-                                                    Text(
-                                                      "Nice job, ya beauty!\n10,000 shots isn't easy.",
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).colorScheme.onPrimary,
-                                                        fontFamily: "NovecentoSans",
-                                                        fontSize: 22,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 5),
-                                                    Opacity(
-                                                      opacity: 0.8,
-                                                      child: Text(
-                                                        "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
-                                                        textAlign: TextAlign.center,
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 15),
-                                                    GestureDetector(
-                                                      onTap: () async {
-                                                        String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                        await canLaunchUrlString(link).then((can) {
-                                                          launchUrlString(link).catchError((err) {
-                                                            print(err);
-                                                            return false;
-                                                          });
-                                                        });
-                                                      },
-                                                      child: Card(
-                                                        color: Theme.of(context).cardTheme.color,
-                                                        elevation: 4,
-                                                        child: SizedBox(
-                                                          width: 125,
-                                                          height: 180,
-                                                          child: Column(
-                                                            mainAxisAlignment: MainAxisAlignment.start,
-                                                            children: [
-                                                              const Image(
-                                                                image: NetworkImage(
-                                                                  "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
-                                                                ),
-                                                                width: 150,
+                                        builder: (context) {
+                                          return Dialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                            child: SingleChildScrollView(
+                                              clipBehavior: Clip.none,
+                                              child: Stack(
+                                                clipBehavior: Clip.none,
+                                                alignment: Alignment.topCenter,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 550,
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.fromLTRB(10, 70, 10, 10),
+                                                      child: Column(
+                                                        children: [
+                                                          Text(
+                                                            "Challenge Complete!".toUpperCase(),
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).primaryColor,
+                                                              fontFamily: "NovecentoSans",
+                                                              fontSize: 32,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 5),
+                                                          Text(
+                                                            "Nice job, ya beauty!\n10,000 shots isn't easy.",
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).colorScheme.onPrimary,
+                                                              fontFamily: "NovecentoSans",
+                                                              fontSize: 22,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 5),
+                                                          Opacity(
+                                                            opacity: 0.8,
+                                                            child: Text(
+                                                              "To celebrate, here's 40% off our limited edition Sniper Snapback only available to snipers like yourself!",
+                                                              textAlign: TextAlign.center,
+                                                              style: TextStyle(
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 16,
                                                               ),
-                                                              Expanded(
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 15),
+                                                          GestureDetector(
+                                                            onTap: () async {
+                                                              String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                              await canLaunchUrlString(link).then((can) {
+                                                                launchUrlString(link).catchError((err) {
+                                                                  print(err);
+                                                                  return false;
+                                                                });
+                                                              });
+                                                            },
+                                                            child: Card(
+                                                              color: Theme.of(context).cardTheme.color,
+                                                              elevation: 4,
+                                                              child: SizedBox(
+                                                                width: 125,
+                                                                height: 180,
                                                                 child: Column(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                  mainAxisAlignment: MainAxisAlignment.start,
                                                                   children: [
-                                                                    Container(
-                                                                      padding: const EdgeInsets.all(5),
-                                                                      child: Text(
-                                                                        "Sniper Snapback".toUpperCase(),
-                                                                        maxLines: 2,
-                                                                        textAlign: TextAlign.center,
-                                                                        style: TextStyle(
-                                                                          fontFamily: "NovecentoSans",
-                                                                          fontSize: 18,
-                                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                                        ),
+                                                                    const Image(
+                                                                      image: NetworkImage(
+                                                                        "https://howtohockey.com/wp-content/uploads/2021/07/featured.jpg",
+                                                                      ),
+                                                                      width: 150,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Column(
+                                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                                        children: [
+                                                                          Container(
+                                                                            padding: const EdgeInsets.all(5),
+                                                                            child: Text(
+                                                                              "Sniper Snapback".toUpperCase(),
+                                                                              maxLines: 2,
+                                                                              textAlign: TextAlign.center,
+                                                                              style: TextStyle(
+                                                                                fontFamily: "NovecentoSans",
+                                                                                fontSize: 18,
+                                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
                                                                       ),
                                                                     ),
                                                                   ],
                                                                 ),
                                                               ),
-                                                            ],
+                                                            ),
                                                           ),
-                                                        ),
+                                                          const SizedBox(height: 5),
+                                                          Container(
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(context).colorScheme.primaryContainer,
+                                                            ),
+                                                            padding: const EdgeInsets.all(5),
+                                                            child: SelectableText(
+                                                              "TENKSNIPER",
+                                                              style: TextStyle(
+                                                                color: Theme.of(context).colorScheme.onPrimary,
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 24,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 5),
+                                                          TextButton(
+                                                            onPressed: () async {
+                                                              Navigator.of(context).pop();
+                                                              String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
+                                                              await canLaunchUrlString(link).then((can) {
+                                                                launchUrlString(link).catchError((err) {
+                                                                  print(err);
+                                                                  return false;
+                                                                });
+                                                              });
+                                                            },
+                                                            style: ButtonStyle(
+                                                              backgroundColor: WidgetStateProperty.all(
+                                                                Theme.of(context).primaryColor,
+                                                              ),
+                                                              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
+                                                            ),
+                                                            child: Text(
+                                                              "Get yours".toUpperCase(),
+                                                              style: const TextStyle(
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 30,
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 8),
+                                                          TextButton.icon(
+                                                            icon: const Icon(Icons.share, color: Colors.white70),
+                                                            label: Text(
+                                                              "Share Achievement".toUpperCase(),
+                                                              style: const TextStyle(
+                                                                fontFamily: "NovecentoSans",
+                                                                fontSize: 18,
+                                                                color: Colors.white70,
+                                                              ),
+                                                            ),
+                                                            onPressed: () {
+                                                              Navigator.of(context).pop();
+                                                              shareMilestone(
+                                                                context: context,
+                                                                title: '10,000 SHOTS!',
+                                                                subtitle: 'Challenge Complete 🏒',
+                                                                totalShots: i.total! + totalShots,
+                                                                displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
-                                                    const SizedBox(height: 5),
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color: Theme.of(context).colorScheme.primaryContainer,
-                                                      ),
-                                                      padding: const EdgeInsets.all(5),
-                                                      child: SelectableText(
-                                                        "TENKSNIPER",
-                                                        style: TextStyle(
-                                                          color: Theme.of(context).colorScheme.onPrimary,
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 24,
-                                                        ),
+                                                  ),
+                                                  const Positioned(
+                                                    top: -40,
+                                                    child: SizedBox(
+                                                      width: 100,
+                                                      height: 100,
+                                                      child: Image(
+                                                        image: AssetImage("assets/images/GoalLight.gif"),
                                                       ),
                                                     ),
-                                                    const SizedBox(height: 5),
-                                                    TextButton(
-                                                      onPressed: () async {
-                                                        Navigator.of(context).pop();
-                                                        String link = "https://howtohockey.com/link/sniper-snapback-coupon/";
-                                                        await canLaunchUrlString(link).then((can) {
-                                                          launchUrlString(link).catchError((err) {
-                                                            print(err);
-                                                            return false;
-                                                          });
-                                                        });
-                                                      },
-                                                      style: ButtonStyle(
-                                                        backgroundColor: WidgetStateProperty.all(
-                                                          Theme.of(context).primaryColor,
-                                                        ),
-                                                        padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 4, horizontal: 15)),
-                                                      ),
-                                                      child: Text(
-                                                        "Get yours".toUpperCase(),
-                                                        style: const TextStyle(
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 30,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    TextButton.icon(
-                                                      icon: const Icon(Icons.share, color: Colors.white70),
-                                                      label: Text(
-                                                        "Share Achievement".toUpperCase(),
-                                                        style: const TextStyle(
-                                                          fontFamily: "NovecentoSans",
-                                                          fontSize: 18,
-                                                          color: Colors.white70,
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop();
-                                                        shareMilestone(
-                                                          context: context,
-                                                          title: '10,000 SHOTS!',
-                                                          subtitle: 'Challenge Complete 🏒',
-                                                          totalShots: i.total! + totalShots,
-                                                          displayName: Provider.of<FirebaseAuth>(context, listen: false).currentUser?.displayName,
-                                                        );
-                                                      },
-                                                    ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            const Positioned(
-                                              top: -40,
-                                              child: SizedBox(
-                                                width: 100,
-                                                height: 100,
-                                                child: Image(
-                                                  image: AssetImage("assets/images/GoalLight.gif"),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
+                                      );
+                                    }
+                                  }
+                                });
+                              }).onError((error, stackTrace) {
+                                print(error);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Theme.of(context).cardTheme.color,
+                                    content: Text(
+                                      'There was an error saving your shooting session :(',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    duration: const Duration(milliseconds: 1500),
+                                  ),
                                 );
-                              }
-                            }
-                          });
-                        }).onError((error, stackTrace) {
-                          print(error);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              content: Text(
-                                'There was an error saving your shooting session :(',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                              duration: const Duration(milliseconds: 1500),
-                            ),
-                          );
-                        }).onError((error, stackTrace) {
-                          if (mounted) setState(() => _isFinishing = false);
-                        });
-                      },
+                              }).onError((error, stackTrace) {
+                                if (mounted) setState(() => _isFinishing = false);
+                              });
+                            },
                       style: TextButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
@@ -2261,21 +2285,21 @@ class _StartShootingState extends State<StartShooting> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.save_alt_rounded, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Finish".toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'NovecentoSans',
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.save_alt_rounded, color: Colors.white),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Finish".toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: 'NovecentoSans',
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                     ),
             ),
           ],
@@ -2334,47 +2358,50 @@ class _StartShootingState extends State<StartShooting> {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-          child: ListTile(
-            tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
-            leading: Container(
-              margin: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                s.count.toString(),
-                style: const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              tileColor: (i % 2 == 0) ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary,
+              leading: Container(
+                margin: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  s.count.toString(),
+                  style: const TextStyle(fontSize: 24, fontFamily: 'NovecentoSans'),
+                ),
               ),
-            ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Text(
-                  s.type!.toUpperCase(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 20,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-                Text(
-                  printTime(s.date!),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 20,
-                    fontFamily: 'NovecentoSans',
-                  ),
-                ),
-              ],
-            ),
-            subtitle: showAccuracyFeature && s.targetsHit != null
-                ? Text(
-                    "Accuracy: ${((s.targetsHit! / (s.count ?? 1)) * 100).round()}%",
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Text(
+                    s.type!.toUpperCase(),
                     style: TextStyle(
-                      color: Colors.green.shade700,
-                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 20,
                       fontFamily: 'NovecentoSans',
                     ),
-                  )
-                : null,
+                  ),
+                  Text(
+                    printTime(s.date!),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 20,
+                      fontFamily: 'NovecentoSans',
+                    ),
+                  ),
+                ],
+              ),
+              subtitle: showAccuracyFeature && s.targetsHit != null
+                  ? Text(
+                      "Accuracy: ${((s.targetsHit! / (s.count ?? 1)) * 100).round()}%",
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontSize: 14,
+                        fontFamily: 'NovecentoSans',
+                      ),
+                    )
+                  : null,
+            ),
           ),
         ),
       );
